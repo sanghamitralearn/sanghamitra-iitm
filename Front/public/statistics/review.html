@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Review - Statistics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .correct-answer {
+            background-color: #d1fae5;
+            border-left: 4px solid #10b981; 
+        }
+        .incorrect-answer {
+            background-color: #fee2e2;
+            border-left: 4px solid #ef4444;
+        }
+        .answer-chip {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            margin: 4px;
+            font-size: 14px;
+        }
+        .correct-chip {
+            background-color: #10b981;
+            color: white;
+        }
+        .incorrect-chip {
+            background-color: #ef4444;
+            color: white;
+        }
+        .neutral-chip {
+            background-color: #6b7280;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h1 class="text-3xl font-bold text-gray-800">📊 Exam Performance Review - Statistics</h1>
+                <div class="text-right">
+                    <p class="text-sm text-gray-600">Welcome back,</p>
+                    <p class="text-lg font-semibold text-gray-800" id="userName">Loading...</p>
+                </div>
+            </div>
+            
+            <button onclick="loadResults()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition duration-200">
+                Load Results
+            </button>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="hidden text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p class="mt-4 text-gray-600">Loading your results...</p>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
+            <strong>Error:</strong> <span id="errorText"></span>
+        </div>
+
+        <!-- Results Container -->
+        <div id="resultsContainer" class="hidden">
+            <!-- Dropdown Menu for Test Selection -->
+            <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Select Test to Review:</label>
+                <select id="testSelect" onchange="onTestSelect()" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">Select a test...</option>
+                </select>
+            </div>
+
+            <!-- Summary Cards -->
+            <div id="summaryCards" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"></div>
+
+            <!-- Detailed Review -->
+            <div id="detailedReview" class="bg-white rounded-lg shadow-md p-6"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentData = null;
+        let sortedTests = [];
+        let username = '';
+        let email = '';
+
+        // Fetch session info on page load
+        async function fetchSessionInfo() {
+            try {
+                const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/session-info');
+                if (response.ok) {
+                    const data = await response.json();
+                    username = data.username;
+                    email = data.email;
+                    console.log('Logged in as:', username, email);
+                    
+                    // Update header with username
+                    document.getElementById('userName').textContent = username;
+                    
+                    // Auto-load results
+                    await loadResults();
+                } else {
+                    window.location.href = 'user_login.html';
+                }
+            } catch (error) {
+                console.error('Error fetching session info:', error);
+                window.location.href = 'user_login.html';
+            }
+        }
+
+        // Sort data by timestamp (latest first)
+        function sortDataByTimestamp(userData) {
+            if (!userData || !userData.scores) return userData;
+            
+            // Create a copy to avoid modifying original
+            const sortedData = JSON.parse(JSON.stringify(userData));
+            
+            // Sort scores by timestamp in descending order (latest first)
+            sortedData.scores.sort((a, b) => {
+                // If both have timestamps, sort by timestamp
+                if (a.timestamp && b.timestamp) {
+                    return new Date(b.timestamp) - new Date(a.timestamp);
+                }
+                // Otherwise maintain original order
+                return 0;
+            });
+            
+            return sortedData;
+        }
+
+        function getQuizDisplayName(weekData) {
+            // Use the originalTopic (from database) to determine display name
+            if (weekData.originalTopic) {
+                // Map database topic fields to display names for Statistics
+                const topicToDisplayName = {
+                    'Week 1 - Basics of Data': 'Week 1 - Basics of Data',
+                    'Week1_Basics_of_Data': 'Week 1 - Basics of Data',
+                    'basics_of_data': 'Week 1 - Basics of Data',
+                    'Basics of Data': 'Week 1 - Basics of Data',
+                    
+                    'Week 2 - Categorical Analysis': 'Week 2 - Categorical Analysis',
+                    'Week2_Categorical_Analysis': 'Week 2 - Categorical Analysis',
+                    'categorical_analysis': 'Week 2 - Categorical Analysis',
+                    'Categorical Analysis': 'Week 2 - Categorical Analysis',
+                    
+                    'Week 3 - Descriptive Statistics': 'Week 3 - Descriptive Statistics',
+                    'Week3_Descriptive_Statistics': 'Week 3 - Descriptive Statistics',
+                    'descriptive_statistics': 'Week 3 - Descriptive Statistics',
+                    'Descriptive Statistics': 'Week 3 - Descriptive Statistics',
+                    
+                    'Week 4 - Variable Association': 'Week 4 - Variable Association',
+                    'Week4_Variable_Association': 'Week 4 - Variable Association',
+                    'variable_association': 'Week 4 - Variable Association',
+                    'Variable Association': 'Week 4 - Variable Association',
+                    
+                    'Week 5 - Basic Principles of Counting': 'Week 5 - Basic Principles of Counting',
+                    'Week5_Basic_Principles_of_Counting': 'Week 5 - Basic Principles of Counting',
+                    'basic_principles_of_counting': 'Week 5 - Basic Principles of Counting',
+                    'Basic Principles of Counting': 'Week 5 - Basic Principles of Counting',
+                    
+                    'Week 6 - Permutations and Combinations': 'Week 6 - Permutations and Combinations',
+                    'Week6_Permutations_and_Combinations': 'Week 6 - Permutations and Combinations',
+                    'permutations_and_combinations': 'Week 6 - Permutations and Combinations',
+                    'Permutations and Combinations': 'Week 6 - Permutations and Combinations'
+                };
+                
+                if (topicToDisplayName[weekData.originalTopic]) {
+                    return topicToDisplayName[weekData.originalTopic];
+                }
+            }
+            
+            // Fallback: if no mapping found, use the original topic
+            return weekData.originalTopic || `Week ${weekData.week}`;
+        }
+
+        async function loadResults() {
+            if (!email) {
+                showError('Please login to view your results');
+                return;
+            }
+
+            showLoading(true);
+            hideError();
+            hideResults();
+
+            try {
+                const url = `https://sanghamitra-learnworld.vercel.app/api/statistics_scores?email=${encodeURIComponent(email)}`;
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch results. Please try again.');
+                }
+
+                const result = await response.json();
+                console.log('Backend response:', result);
+                
+                // Check if we got successful response
+                if (result.success === false) {
+                    throw new Error(result.message || 'No exam results found for this email');
+                }
+
+                // Extract data based on backend response structure
+                const userData = result.data;
+                
+                if (!userData) {
+                    throw new Error('No user data found');
+                }
+
+                // Transform backend data to frontend format
+                let scores = [];
+                
+                if (userData.quizScores && Array.isArray(userData.quizScores)) {
+                    // Transform quizScores to the expected format
+                    scores = userData.quizScores.map((quiz, index) => {
+                        // Calculate week from topic or use index
+                        let weekNumber = 1;
+                        if (quiz.topic) {
+                            // Try to extract week from topic name
+                            const weekMatch = quiz.topic.match(/\bweek\s*(\d+)\b/i);
+                            weekNumber = weekMatch ? parseInt(weekMatch[1]) : (index + 1);
+                        } else {
+                            weekNumber = index + 1;
+                        }
+
+                        // Calculate correct answers
+                        let correctAnswers = quiz.correctAnswers;
+                        if (correctAnswers === undefined && quiz.questionResults) {
+                            correctAnswers = quiz.questionResults.filter(q => q.isCorrect).length;
+                        }
+
+                        // Calculate total questions
+                        let totalQuestions = quiz.totalQuestions;
+                        if (totalQuestions === undefined && quiz.questionResults) {
+                            totalQuestions = quiz.questionResults.length;
+                        }
+
+                        return {
+                            week: weekNumber,
+                            subtopic: quiz.topic || `Week ${weekNumber}`,
+                            originalTopic: quiz.topic,
+                            totalQuestions: totalQuestions || 0,
+                            correctAnswers: correctAnswers || 0,
+                            timestamp: quiz.timestamp || new Date().toISOString(), // Add timestamp
+                            responses: (quiz.questionResults || []).map(q => ({
+                                questionText: q.questionText || q.question || 'Question text not available',
+                                userResponse: Array.isArray(q.userAnswer) ? q.userAnswer : 
+                                             (q.userAnswer ? [q.userAnswer.toString()] : ['No answer provided']),
+                                correctAnswers: Array.isArray(q.correctAnswer) ? q.correctAnswer : 
+                                               (q.correctAnswer ? [q.correctAnswer.toString()] : ['']),
+                                isCorrect: q.isCorrect || false,
+                                marksAwarded: q.isCorrect ? 1 : 0
+                            }))
+                        };
+                    });
+                } else {
+                    // If no quizScores array, create empty data
+                    scores = [];
+                }
+
+                // Create the data structure frontend expects
+                const transformedData = {
+                    scores: scores
+                };
+
+                console.log('Transformed data:', transformedData);
+                
+                // Sort data by timestamp (latest first)
+                const sortedData = sortDataByTimestamp(transformedData);
+                currentData = sortedData;
+
+                // Populate dropdown and display results
+                populateTestDropdown(sortedData);
+
+                showLoading(false);
+                showResults();
+
+            } catch (error) {
+                showLoading(false);
+                showError(error.message);
+            }
+        }
+
+        function populateTestDropdown(userData) {
+            const testSelect = document.getElementById('testSelect');
+            testSelect.innerHTML = '<option value="">Select a test...</option>';
+            
+            if (!userData.scores || userData.scores.length === 0) {
+                showError('No exam results found.');
+                return;
+            }
+            
+            // Sort scores by timestamp (latest first) for dropdown
+            sortedTests = [...userData.scores].sort((a, b) => {
+                if (a.timestamp && b.timestamp) {
+                    return new Date(b.timestamp) - new Date(a.timestamp);
+                }
+                return 0;
+            });
+            
+            // Populate dropdown with sorted tests (latest first)
+            sortedTests.forEach((test, index) => {
+                const displayName = getQuizDisplayName(test);
+                
+                // Add date to display name if available
+                let optionText = displayName;
+                if (test.timestamp) {
+                    const date = new Date(test.timestamp);
+                    const dateStr = date.toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    optionText = `${displayName} (${dateStr})`;
+                }
+                
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = optionText;
+                testSelect.appendChild(option);
+            });
+            
+            // Automatically select and display the first (latest) test
+            if (sortedTests.length > 0) {
+                testSelect.value = 0;
+                displayTestResults(sortedTests[0]);
+            }
+        }
+
+        function onTestSelect() {
+            const testSelect = document.getElementById('testSelect');
+            const selectedIndex = parseInt(testSelect.value);
+            
+            if (!isNaN(selectedIndex) && selectedIndex >= 0 && sortedTests[selectedIndex]) {
+                displayTestResults(sortedTests[selectedIndex]);
+            }
+        }
+
+        function displayTestResults(testData) {
+            displaySummaryCards(currentData, testData);
+            displayDetailedReview(testData);
+        }
+
+        function displaySummaryCards(userData, weekData) {
+            const summaryCards = document.getElementById('summaryCards');
+            const percentage = weekData.totalQuestions > 0 ? ((weekData.correctAnswers / weekData.totalQuestions) * 100).toFixed(1) : 0;
+            const incorrectAnswers = weekData.totalQuestions - weekData.correctAnswers;
+
+            // Get the display name
+            const displayName = getQuizDisplayName(weekData);
+            
+            // Extract just the topic name without "Week X - " prefix for the main heading
+            let mainHeading = displayName;
+            if (displayName.includes(' - ')) {
+                mainHeading = displayName.split(' - ')[1];
+            }
+            
+            // Extract week number for the subheading
+            let weekText = '';
+            const weekMatch = displayName.match(/Week\s*(\d+)/i);
+            if (weekMatch) {
+                weekText = `Week ${weekMatch[1]}`;
+            } else {
+                weekText = `Week ${weekData.week}`;
+            }
+            
+            // Add date if available
+            let dateText = '';
+            if (weekData.timestamp) {
+                const date = new Date(weekData.timestamp);
+                dateText = date.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+            
+            summaryCards.innerHTML = `
+                <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white">
+                    <h3 class="text-lg font-semibold mb-2">${mainHeading}</h3>
+                    <p class="text-sm opacity-90">${weekText}</p>
+                    ${dateText ? `<p class="text-xs opacity-75 mt-1">${dateText}</p>` : ''}
+                </div>
+                <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white">
+                    <h3 class="text-lg font-semibold mb-2">Score</h3>
+                    <p class="text-4xl font-bold">${percentage}%</p>
+                    <p class="text-sm mt-2">${weekData.correctAnswers} / ${weekData.totalQuestions} correct</p>
+                </div>
+                <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white">
+                    <h3 class="text-lg font-semibold mb-2">Performance</h3>
+                    <div class="flex justify-between items-center mt-2">
+                        <div>
+                            <p class="text-sm">Correct</p>
+                            <p class="text-2xl font-bold">${weekData.correctAnswers}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm">Incorrect</p>
+                            <p class="text-2xl font-bold">${incorrectAnswers}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayDetailedReview(weekData) {
+            const detailedReview = document.getElementById('detailedReview');
+            
+            if (!weekData.responses || weekData.responses.length === 0) {
+                detailedReview.innerHTML = `
+                    <div class="text-center py-8">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4">Question-by-Question Review</h2>
+                        <p class="text-gray-600">No question data available for this test.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = `
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Question-by-Question Review</h2>
+            `;
+
+            weekData.responses.forEach((response, index) => {
+                const isCorrect = response.isCorrect;
+                const cardClass = isCorrect ? 'correct-answer' : 'incorrect-answer';
+                
+                // Ensure arrays exist
+                const userResponses = Array.isArray(response.userResponse) ? response.userResponse : [response.userResponse || ''];
+                const correctAnswers = Array.isArray(response.correctAnswers) ? response.correctAnswers : [response.correctAnswers || ''];
+                
+                html += `
+                    <div class="${cardClass} rounded-lg p-6 mb-6">
+                        <div class="flex items-start justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-800">Question ${index + 1}</h3>
+                            <span class="answer-chip ${isCorrect ? 'correct-chip' : 'incorrect-chip'}">
+                                ${isCorrect ? '✓ Correct' : '✗ Incorrect'}
+                            </span>
+                        </div>
+                        
+                        <p class="text-gray-700 mb-4">${response.questionText}</p>
+                        
+                        <div class="space-y-3">
+                            <div>
+                                <p class="font-semibold text-gray-700 mb-2">Your Answer:</p>
+                                <div class="flex flex-wrap">
+                                    ${userResponses.map(ans => 
+                                        `<span class="answer-chip ${isCorrect ? 'correct-chip' : 'incorrect-chip'}">${ans}</span>`
+                                    ).join('')}
+                                </div>
+                            </div>
+                            
+                            ${!isCorrect ? `
+                                <div>
+                                    <p class="font-semibold text-green-700 mb-2">Correct Answer:</p>
+                                    <div class="flex flex-wrap">
+                                        ${correctAnswers.map(ans => 
+                                            `<span class="answer-chip correct-chip">${ans}</span>`
+                                        ).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                            
+                            <div class="text-sm text-gray-600">
+                                Marks Awarded: <span class="font-semibold">${response.marksAwarded}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            detailedReview.innerHTML = html;
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('hidden', !show);
+        }
+
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorMessage').classList.remove('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').classList.add('hidden');
+        }
+
+        function showResults() {
+            document.getElementById('resultsContainer').classList.remove('hidden');
+        }
+
+        function hideResults() {
+            document.getElementById('resultsContainer').classList.add('hidden');
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', fetchSessionInfo);
+    </script>
+</body>
+</html>

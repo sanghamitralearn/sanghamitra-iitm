@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Programming Progress Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h2.section-title {
+            color: #34495e;
+            margin: 40px 0 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #3498db;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .topic-selector {
+            margin: 20px 0;
+            padding: 8px;
+            font-size: 16px;
+        }
+
+        .chart-container {
+            margin: 40px 0;
+            height: 600px;
+            position: relative;
+        }
+
+        .score-outof {
+            color: #222627;
+            font-size: 0.9em;
+        }
+
+        .percentage {
+            color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Programming Progress Dashboard</h1>
+
+        <!-- CT Foundation Section -->
+        <h2 class="section-title">CT Foundation Progress (30 Questions per Topic)</h2>
+        <table id="ctTable">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>CT Foundation<br><span class="score-outof">(out of 30)</span></th>
+                    <th>CT Foundation 1<br><span class="score-outof">(out of 30)</span></th>
+                    <th>CT Foundation 2<br><span class="score-outof">(out of 30)</span></th>
+                    <th>Total Solved<br><span class="score-outof">(out of 90)</span></th>
+                </tr>
+            </thead>
+            <tbody id="ctBody"></tbody>
+        </table>
+        <br>
+        <!-- Python Finger Section -->
+        <div id="pythonSection">
+            <h2 class="section-title">Python Finger Progress</h2>
+            <select id="topicSelect" class="topic-selector">
+                <option value="">Select a Topic</option>
+            </select>
+            <div class="chart-container">
+                <canvas id="pythonChart"></canvas>
+            </div>
+        </div>
+        <br>
+        <h2 class="section-title">Programming Diagnostics Scores</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Last Attempt Date</th>
+                    <th>Total Questions</th>
+                    <th>Score</th>
+                    <th>Success Rate</th>
+                </tr>
+            </thead>
+            <tbody id="diagnosticsScores"></tbody>
+        </table>
+    </div>
+
+    <script>
+        // Constants for CT scoring
+        const CT_QUESTIONS_PER_TOPIC = 30;
+        const CT_TOTAL_QUESTIONS = 90;
+        let pythonChart = null;
+
+        async function fetchData() {
+            try {
+                // Fetch and process CT data
+                const ctResponse = await fetch('https://sanghamitra-learnworld.vercel.app/api/CT_finger_scores');
+                const ctData = await ctResponse.json();
+                processCTData(ctData);
+
+                // Fetch and process Python data
+                const pythonResponse = await fetch('https://sanghamitra-learnworld.vercel.app/api/finger-exercise');
+                const pythonData = await pythonResponse.json();
+                processPythonData(pythonData);
+                // Fetch and process Diagnostics data
+                const diagResponse = await fetch('https://sanghamitra-learnworld.vercel.app/api/programming');
+                const diagData = await diagResponse.json();
+                processDiagnosticsData(diagData);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        function processCTData(users) {
+            const ctBody = document.getElementById('ctBody');
+
+            users.forEach(user => {
+                const topicScores = {
+                    'CT_foundation': 0,
+                    'CT_foundation_1': 0,
+                    'CT_foundation_2': 0
+                };
+
+                user.quizzes.forEach(quiz => {
+                    if (topicScores.hasOwnProperty(quiz.topic)) {
+                        topicScores[quiz.topic] += quiz.score;
+                    }
+                });
+
+                const totalSolved = Object.values(topicScores).reduce((a, b) => a + b, 0);
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${user.username}</td>
+                    <td>${topicScores.CT_foundation}<br><span class="score-outof">(${Math.round((topicScores.CT_foundation/CT_QUESTIONS_PER_TOPIC)*100)}%)</span></td>
+                    <td>${topicScores['CT_foundation_1']}<br><span class="score-outof">(${Math.round((topicScores['CT_foundation_1']/CT_QUESTIONS_PER_TOPIC)*100)}%)</span></td>
+                    <td>${topicScores['CT_foundation_2']}<br><span class="score-outof">(${Math.round((topicScores['CT_foundation_2']/CT_QUESTIONS_PER_TOPIC)*100)}%)</span></td>
+                    <td>${totalSolved}<br><span class="score-outof">(${Math.round((totalSolved/CT_TOTAL_QUESTIONS)*100)}%)</span></td>
+                `;
+                ctBody.appendChild(row);
+            });
+        }
+
+        function processPythonData(users) {
+            const topics = new Set();
+            const userMap = new Map();
+
+            // Collect data and topics
+            users.forEach(user => {
+                if (!userMap.has(user.username)) {
+                    userMap.set(user.username, {});
+                }
+                
+                user.topics.forEach(topic => {
+                    topics.add(topic.topicName);
+                    const correct = topic.submissions.filter(s => s.isCorrect).length;
+                    const total = topic.submissions.length;
+                    
+                    userMap.get(user.username)[topic.topicName] = {
+                        correct: correct,
+                        total: total
+                    };
+                });
+            });
+
+            // Populate topic selector
+            const topicSelect = document.getElementById('topicSelect');
+            let defaultTopic = null;
+            
+            topics.forEach(topic => {
+                const option = document.createElement('option');
+                option.value = topic;
+                option.textContent = formatTopicName(topic);
+                if (topic === 'python_basics') {
+                    option.selected = true;
+                    defaultTopic = topic;
+                }
+                topicSelect.appendChild(option);
+            });
+
+            // Set default to first topic if python_basics not found
+            if (!defaultTopic && topics.size > 0) {
+                defaultTopic = topics.values().next().value;
+                topicSelect.querySelector(`option[value="${defaultTopic}"]`).selected = true;
+            }
+
+            // Add event listener and initialize chart
+            topicSelect.addEventListener('change', () => {
+                updateChart(userMap, topicSelect.value);
+            });
+
+            // Initialize chart with default topic
+            if (defaultTopic) {
+                updateChart(userMap, defaultTopic);
+            }
+        }
+
+        function getLastAttempt(quizzes) {
+            if (!quizzes || quizzes.length === 0) return null;
+            return quizzes.reduce((latest, current) => {
+                const currentDate = new Date(current.datetime);
+                const latestDate = new Date(latest.datetime);
+                return currentDate > latestDate ? current : latest;
+            });
+        }
+
+        function renderQuestions(submissions) {
+            return submissions.map(sub => `
+                <div class="question-card">
+                    <div class="test-case-badge ${sub.test_cases_passed > 0 ? 'passed' : 'failed'}">
+                        Test Cases Passed: ${sub.test_cases_passed}
+                    </div>
+                    <div>Question ${sub.question_id}:</div>
+                    <pre class="code-block"><code class="language-python">${sub.user_code}</code></pre>
+                </div>
+            `).join('');
+        }
+
+        function processDiagnosticsData(users) {
+            const diagnosticsBody = document.getElementById('diagnosticsScores');
+            
+            users.forEach(user => {
+                const lastAttempt = getLastAttempt(user.quizzes);
+                if (!lastAttempt) return;
+
+                const totalQuestions = lastAttempt.submissions.length;
+                const score = lastAttempt.score;
+                const successRate = totalQuestions > 0 ? (score / totalQuestions) * 100 : 0;
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${user.username}</td>
+                    <td>${new Date(lastAttempt.datetime).toLocaleDateString()}</td>
+                    <td>${totalQuestions}</td>
+                    <td>${score}</td>
+                    <td class="score-cell">
+                        <div class="score-text">${successRate.toFixed(1)}%</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${successRate}%"></div>
+                        </div>
+                    </td>
+                `;
+                
+                // Add color coding
+                const progressFill = row.querySelector('.progress-fill');
+                if (successRate < 40) {
+                    progressFill.style.backgroundColor = '#e74c3c';
+                } else if (successRate < 70) {
+                    progressFill.style.backgroundColor = '#f1c40f';
+                }
+
+                diagnosticsBody.appendChild(row);
+            });
+
+            if (diagnosticsBody.children.length === 0) {
+                diagnosticsBody.innerHTML = `<tr><td colspan="5" style="text-align:center">No diagnostic attempts found</td></tr>`;
+            }
+        }
+
+        function formatTopicName(topic) {
+            return topic.split('_').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' ');
+        }
+
+        function updateChart(userMap, selectedTopic) {
+            const ctx = document.getElementById('pythonChart').getContext('2d');
+            
+            if (pythonChart) pythonChart.destroy();
+
+            const labels = Array.from(userMap.keys());
+            const attemptedData = [];
+            const correctData = [];
+            const attemptColors = [];
+
+            labels.forEach(username => {
+                const stats = userMap.get(username)[selectedTopic] || { correct: 0, total: 0 };
+                attemptedData.push(stats.total);
+                correctData.push(stats.correct);
+                attemptColors.push(stats.total === 20 ? '#ff6384' : '#36a2eb');
+            });
+
+            // Get max value for scaling
+            const maxValue = Math.max(...attemptedData, ...correctData) + 2;
+
+            pythonChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Attempted Questions',
+                            data: attemptedData,
+                            backgroundColor: attemptColors,
+                            borderWidth: 1,
+                            categoryPercentage: 0.4,
+                            barPercentage: 0.8
+                        },
+                        {
+                            label: 'Correct Questions',
+                            data: correctData,
+                            backgroundColor: '#4bc0c0',
+                            borderWidth: 1,
+                            categoryPercentage: 0.4,
+                            barPercentage: 0.8
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: false,
+                            max: maxValue,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + ' Q';
+                                },
+                                stepSize: 2
+                            }
+                        },
+                        y: {
+                            stacked: false,
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label;
+                                    const value = context.parsed.x;
+                                    if (label === 'Correct Questions') {
+                                        const attempts = context.chart.data.datasets[0].data[context.dataIndex];
+                                        const percentage = attempts > 0 
+                                            ? ((value / attempts) * 100).toFixed(1) + '%'
+                                            : '0%';
+                                        return `${label}: ${value} (${percentage})`;
+                                    }
+                                    return `${label}: ${value}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initial fetch
+        fetchData();
+    </script>
+</body>
+</html>

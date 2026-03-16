@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics Practice Quiz</title>
+   <script src="physics_questions_1.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .header p { font-size: 1.1rem; opacity: 0.9; }
+
+        .user-form {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; }
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .btn:disabled { 
+            background: #6c757d; 
+            cursor: not-allowed; 
+            transform: none; 
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .progress-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .question-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .btn-nav {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-nav:hover:not(:disabled) {
+            background: #545b62;
+            transform: translateY(-1px);
+        }
+
+        .btn-nav:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-next:hover:not(:disabled) {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+        }
+
+        .question-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .status-answered {
+            background: #28a745;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .status-unanswered {
+            background: #dc3545;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .quiz-container { padding: 30px; display: none; }
+
+        .question-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #667eea;
+        }
+
+        .question-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .question-number {
+            background: #667eea;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 15px;
+        }
+
+        .question-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #333;
+            margin-bottom: 20px;
+            white-space: pre-line;
+        }
+
+        .options { display: flex; flex-direction: column; gap: 12px; }
+
+        .option {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .option:hover { border-color: #667eea; background: #f0f8ff; }
+        .option.selected { border-color: #667eea; background: #e3f2fd; }
+
+        .numeric-input {
+            width: 200px;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .results-container {
+            display: none;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .score-display {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .score-display h2 { font-size: 2.5rem; margin-bottom: 10px; }
+        .hidden { display: none; }
+        .multi-part-container {
+    margin-top: 20px;
+}
+
+.sub-question {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.sub-question-header {
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.format-hint {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 10px;
+    font-style: italic;
+}
+
+.sub-answer-input, .answer-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 16px;
+    margin-top: 5px;
+}
+
+.sub-answer-input:focus, .answer-input:focus {
+    border-color: #667eea;
+    outline: none;
+}
+
+.single-part-container {
+    margin-top: 20px;
+}
+
+.hidden { display: none; }
+
+.results-container {
+    display: none;
+    padding: 30px;
+    text-align: center;
+}
+
+.score-display {
+    background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+    color: white;
+    padding: 40px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+}
+
+.score-display h2 { 
+    font-size: 2.5rem; 
+    margin-bottom: 10px; 
+}
+
+.score-display h3 { 
+    font-size: 2rem; 
+    margin-bottom: 10px;
+    opacity: 0.9;
+}
+
+/* Add styles for detailed results */
+.question-result {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.question-result.correct {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.question-result.incorrect {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+.context-reminder {
+    background: #e3f2fd;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid #2196f3;
+    font-size: 0.95rem;
+}
+
+.context-info {
+    background: #e3f2fd;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+    text-align: center;
+}
+
+.question-card.context {
+    border-left-color: #2196f3;
+    background: #f8f9ff;
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊Physics Practice Quiz</h1>
+           <p>Test your physics knowledge with comprehensive questions</p>
+        </div>
+
+        <!-- Quiz Container -->
+        <div id="quizContainer" class="quiz-container" style="display: none;">
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">Question 1 of 15</div>
+            </div>
+            
+            <div id="questionContainer"></div>
+            
+            <div class="question-navigation">
+                <button class="btn-nav" id="prevBtn" onclick="previousQuestion()" disabled>← Previous</button>
+                <div class="question-status">
+                    <span id="questionStatus">Question 1 of 15</span>
+                    <span id="answeredStatus" class="status-unanswered">Unanswered</span>
+                </div>
+                <button class="btn-nav btn-next" id="nextBtn" onclick="nextQuestion()">Next →</button>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 2px solid #667eea;">
+                <button class="btn" onclick="submitQuiz()" id="submitBtn">
+                   <span id="submitText">🔬 Submit Physics Quiz</span>
+                    <span id="submitLoading" class="loading" style="display: none;"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading Screen -->
+        <div id="loadingScreen" class="quiz-container" style="text-align: center; padding: 60px;">
+            <div class="loading" style="width: 40px; height: 40px; margin: 0 auto 20px;"></div>
+            <h3>Loading Physics Quiz...</h3>
+            <p>Verifying your session and preparing questions</p>
+        </div>
+
+        <!-- Results -->
+        <div id="resultsContainer" class="results-container">
+            <div class="score-display">
+                <h2 id="finalScore">0/15</h2>
+                <p>Quiz Completed Successfully!</p>
+            </div>
+            <button class="btn" onclick="goback()">Back to Physics</button>
+        </div>
+    </div>
+
+    <script>
+        
+        // Fallback answer validator if physicsAnswerValidator is not available
+if (typeof physicsAnswerValidator === 'undefined') {
+    window.physicsAnswerValidator = {
+        validateAnswer: function(userAnswer, question, subQuestion) {
+            if (subQuestion) {
+                // For sub-questions, do simple string comparison
+                return (userAnswer || '').toString().trim().toLowerCase() === 
+                       (subQuestion.correct_answer || '').toString().trim().toLowerCase();
+            } else {
+                // For main questions, do simple comparison
+                return (userAnswer || '').toString().trim().toLowerCase() === 
+                       (question.correct_answer || '').toString().trim().toLowerCase();
+            }
+        }
+    };
+}
+
+        let userAnswers = {};
+        let currentUser = {};
+        let username = null;
+        let email = null;
+        let currentQuestionIndex = 0;
+        const questions = physicsQuestions; // Reference the loaded physics questions
+
+        // Fetch user session info and start quiz immediately
+        async function fetchSessionInfo() {
+            try {
+                const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/session-info', {
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    username = data.username;
+                    email = data.email;
+                    console.log("User:", username, "Email:", email);
+                    return true;
+                } else {
+                    console.error('Failed to fetch session info');
+                    alert('Please login to take the assessment');
+                    window.location.href = '/login.html';
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error fetching session info:', error);
+                alert('Error connecting to server. Please try again.');
+                return false;
+            }
+        }
+
+       function showResults(quizData) {
+    // Hide quiz container
+    document.getElementById('quizContainer').style.display = 'none';
+    
+    // Show results container
+    document.getElementById('resultsContainer').style.display = 'block';
+    
+    // Update score display
+    document.getElementById('finalScore').textContent = `${quizData.score}/${quizData.totalQuestions}`;
+    
+    // Add detailed results breakdown
+    const resultsContainer = document.getElementById('resultsContainer');
+    const scoreDisplay = resultsContainer.querySelector('.score-display');
+    
+    // Add percentage and additional info
+    const percentage = quizData.percentage || Math.round((quizData.score / quizData.totalQuestions) * 100);
+    scoreDisplay.innerHTML = `
+        <h2 id="finalScore">${quizData.score}/${quizData.totalQuestions}</h2>
+        <h3>${percentage}%</h3>
+        <p>Quiz Completed Successfully!</p>
+        <p>Topic: ${quizData.topic}</p>
+    `;
+    
+    // Add detailed question-by-question results
+  
+const detailsHtml = `
+    <div style="text-align: left; margin-top: 30px; max-height: 400px; overflow-y: auto;">
+        <h3 style="text-align: center; margin-bottom: 20px;">Detailed Results</h3>
+        ${quizData.questionResults.map(result => `
+            <div style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: ${result.isCorrect ? '#d4edda' : '#f8d7da'};">
+                <div style="font-weight: bold; margin-bottom: 10px;">
+                    Question ${result.originalQuestionId || result.questionNumber}: ${result.isCorrect ? '✓ Correct' : '✗ Incorrect'}
+                </div>
+                <div style="margin-bottom: 8px;"><strong>Your Answer:</strong> ${result.userAnswer}</div>
+                <div style="margin-bottom: 8px;"><strong>Correct Answer:</strong> ${result.correctAnswer}</div>
+                ${result.explanation ? `<div style="color: #666; font-style: italic;">Explanation: ${result.explanation}</div>` : ''}
+            </div>
+        `).join('')}
+    </div>
+`;
+    
+    // Insert details after score display
+    scoreDisplay.insertAdjacentHTML('afterend', detailsHtml);
+}
+
+        // Initialize quiz directly without user form
+        async function initializeQuiz() {
+            try {
+                const sessionValid = await fetchSessionInfo();
+                if (sessionValid) {
+                    currentUser = { username, email };
+                    
+                    // Hide loading screen and show quiz
+                    document.getElementById('loadingScreen').style.display = 'none';
+                    document.getElementById('quizContainer').style.display = 'block';
+                    
+                    renderCurrentQuestion();
+                    updateProgress();
+                }
+            } catch (error) {
+                console.error('Error initializing quiz:', error);
+                alert('Failed to initialize quiz. Please try again.');
+            }
+        }
+
+       function renderCurrentQuestion() {
+        const container = document.getElementById('questionContainer');
+        const question = physicsQuestions[currentQuestionIndex];
+        
+        container.innerHTML = '';
+        const questionDiv = document.createElement('div');
+        questionDiv.className = 'question-card';
+
+        let questionHtml = '';
+
+        // Handle context questions
+        if (question.is_context) {
+            questionHtml = `
+                <div class="question-header">
+                    <div class="question-number">${question.question_number}</div>
+                    <div style="font-weight: 600; color: #2196f3;">Context</div>
+                </div>
+                <div class="question-text">${question.question_text}</div>
+                <div class="context-info" style="text-align: center; padding: 20px; background: #e3f2fd; border-radius: 8px; margin-top: 20px;">
+                    <p style="margin: 0; color: #1976d2; font-weight: 500;">
+                        📚 Read the above context carefully. The following questions are based on this scenario.
+                    </p>
+                </div>
+            `;
+        } else {
+            // Show context reminder for questions with parent
+            if (question.parent_question) {
+                const parentQuestion = physicsQuestions.find(q => q.question_number === question.parent_question);
+                if (parentQuestion) {
+                    questionHtml += `
+                        <div class="context-reminder" style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2196f3;">
+                            <strong>📝 Context:</strong> ${parentQuestion.question_text}
+                        </div>
+                    `;
+                }
+            }
+
+            questionHtml += `
+                <div class="question-header">
+                    <div class="question-number">${question.question_number}</div>
+                    <div style="font-weight: 600;">Points: ${question.points || 1}</div>
+                </div>
+                <div class="question-text">${question.question_text}</div>
+            `;
+
+            // Render input based on question type (no multi_part needed anymore)
+            if (question.question_type === 'multiple_choice') {
+                questionHtml += renderMultipleChoice(question);
+            } else if (question.question_type === 'single_part') {
+                questionHtml += renderSinglePart(question);
+            }
+        }
+
+        questionDiv.innerHTML = questionHtml;
+        container.appendChild(questionDiv);
+        
+        // Skip answer restoration and status for context questions
+        if (!question.is_context) {
+            restoreAnswer();
+            updateAnswerStatus();
+        }
+    }
+
+    function renderMultipleChoice(question) {
+        let optionsHtml = '<div class="options">';
+        
+        question.options.forEach((option, index) => {
+            optionsHtml += `
+                <div class="option" onclick="selectOption(${question.question_number - 1}, '${option.option_id}', 'radio')">
+                    <input type="radio" name="q${question.question_number - 1}" value="${option.option_id}" id="q${question.question_number - 1}_${index}">
+                    <label for="q${question.question_number - 1}_${index}">${option.option_text}</label>
+                </div>
+            `;
+        });
+        
+        optionsHtml += '</div>';
+        return optionsHtml;
+}
+
+function renderMultiPart(question) {
+    let partsHtml = '<div class="multi-part-container">';
+    
+    question.sub_questions.forEach((subQuestion, index) => {
+        partsHtml += `
+            <div class="sub-question">
+                <div class="sub-question-header">
+                    <strong>Part ${subQuestion.part_id}:</strong> ${subQuestion.sub_question_text}
+                </div>
+                <div class="format-hint">${subQuestion.format_hint}</div>
+                <input type="text" 
+                       class="sub-answer-input" 
+                       placeholder="${subQuestion.format_hint.split(':')[1]?.trim() || 'Enter your answer'}"
+                       oninput="handleSubQuestionInput(${question.question_number - 1}, '${subQuestion.part_id}', this.value)"
+                       id="q${question.question_number - 1}_${subQuestion.part_id}">
+            </div>
+        `;
+    });
+    
+    partsHtml += '</div>';
+    return partsHtml;
+}
+
+function renderSinglePart(question) {
+    return `
+        <div class="single-part-container">
+            <div class="format-hint">${question.format_hint}</div>
+            <input type="text" 
+                   class="answer-input" 
+                   placeholder="${question.format_hint.split(':')[1]?.trim() || 'Enter your answer'}"
+                   oninput="handleSingleInput(${currentQuestionIndex}, this.value)"
+                   id="q${currentQuestionIndex}_single">
+        </div>
+    `;
+}
+
+function handleSubQuestionInput(questionIndex, partId, value) {
+    if (!userAnswers[questionIndex]) {
+        userAnswers[questionIndex] = {};
+    }
+    userAnswers[questionIndex][partId] = value;
+    updateAnswerStatus();
+}
+
+function handleSingleInput(questionIndex, value) {
+    userAnswers[questionIndex] = value;
+    updateAnswerStatus();
+}
+
+        function restoreAnswer() {
+            const question = physicsQuestions[currentQuestionIndex];
+            const savedAnswer = userAnswers[currentQuestionIndex];
+            
+            if (!savedAnswer) return;
+
+            if (question.question_type === 'multiple_choice') {
+                const option = document.querySelector(`input[value="${savedAnswer}"]`);
+                if (option) {
+                    option.checked = true;
+                    option.closest('.option').classList.add('selected');
+                }
+            } else if (question.question_type === 'multi_part') {
+                // Restore answers for each sub-question
+                Object.keys(savedAnswer).forEach(partId => {
+                    const input = document.getElementById(`q${currentQuestionIndex}_${partId}`);
+                    if (input) {
+                        input.value = savedAnswer[partId];
+                    }
+                });
+            } else if (question.question_type === 'single_part') {
+            const input = document.querySelector('.answer-input');
+            if (input && savedAnswer) {
+                input.value = savedAnswer;
+            }
+        }
+        }
+
+        function updateProgress() {
+            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+            document.getElementById('progressText').textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+            document.getElementById('questionStatus').textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+            
+            // Update navigation buttons
+            document.getElementById('prevBtn').disabled = currentQuestionIndex === 0;
+            
+            const nextBtn = document.getElementById('nextBtn');
+            if (currentQuestionIndex === questions.length - 1) {
+                nextBtn.textContent = 'Finish →';
+                nextBtn.onclick = () => {
+                    document.getElementById('quizContainer').scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'end' 
+                    });
+                };
+            } else {
+                nextBtn.textContent = 'Next →';
+                nextBtn.onclick = nextQuestion;
+            }
+        }
+
+        function updateAnswerStatus() {
+    const statusSpan = document.getElementById('answeredStatus');
+    const question = physicsQuestions[currentQuestionIndex];
+    
+    // Don't show status for context questions
+    if (question.is_context) {
+        statusSpan.style.display = 'none';
+        return;
+    }
+    
+    statusSpan.style.display = 'inline-block';
+    let hasAnswer = false;
+
+    if (question.question_type === 'multi_part') {
+        // For multi-part questions, check if all parts have answers
+        const savedAnswer = userAnswers[currentQuestionIndex];
+        if (savedAnswer && typeof savedAnswer === 'object') {
+            hasAnswer = question.sub_questions.every(subQ => 
+                savedAnswer[subQ.part_id] && savedAnswer[subQ.part_id].trim() !== ''
+            );
+        }
+    } else {
+        hasAnswer = userAnswers[currentQuestionIndex] !== undefined && 
+                userAnswers[currentQuestionIndex] !== '' && 
+                userAnswers[currentQuestionIndex] !== null;
+    }
+    
+    if (hasAnswer) {
+        statusSpan.textContent = 'Answered';
+        statusSpan.className = 'status-answered';
+    } else {
+        statusSpan.textContent = 'Unanswered';
+        statusSpan.className = 'status-unanswered';
+    }
+}
+
+       function nextQuestion() {
+    const currentQuestion = physicsQuestions[currentQuestionIndex];
+    
+    // Auto-advance for context questions
+    if (currentQuestion.is_context) {
+        if (currentQuestionIndex < questions.length - 1) {
+            currentQuestionIndex++;
+            renderCurrentQuestion();
+            updateProgress();
+        }
+        return;
+    }
+    
+    // Regular navigation for other questions
+    if (currentQuestionIndex < questions.length - 1) {
+        currentQuestionIndex++;
+        renderCurrentQuestion();
+        updateProgress();
+    }
+}
+
+function updateProgress() {
+    // Count only non-context questions for progress
+    const totalAnswerableQuestions = questions.filter(q => !q.is_context).length;
+    const contextQuestionsBefore = questions.slice(0, currentQuestionIndex + 1).filter(q => q.is_context).length;
+    const currentAnswerableQuestion = Math.max(1, currentQuestionIndex + 1 - contextQuestionsBefore);
+    
+    const progress = (currentAnswerableQuestion / totalAnswerableQuestions) * 100;
+    document.getElementById('progressFill').style.width = `${progress}%`;
+    document.getElementById('progressText').textContent = `Question ${currentAnswerableQuestion} of ${totalAnswerableQuestions}`;
+    document.getElementById('questionStatus').textContent = `Question ${currentAnswerableQuestion} of ${totalAnswerableQuestions}`;
+    
+    // Update navigation buttons
+    document.getElementById('prevBtn').disabled = currentQuestionIndex === 0;
+    
+    const nextBtn = document.getElementById('nextBtn');
+    if (currentQuestionIndex === questions.length - 1) {
+        nextBtn.textContent = 'Finish →';
+        nextBtn.onclick = () => {
+            document.getElementById('quizContainer').scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'end' 
+            });
+        };
+    } else {
+        nextBtn.textContent = 'Next →';
+        nextBtn.onclick = nextQuestion;
+    }
+}
+
+        function previousQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderCurrentQuestion();
+                updateProgress();
+            }
+        }
+
+        function selectOption(questionIndex, value, type) {
+            if (type === 'radio') {
+                userAnswers[questionIndex] = value;
+                // Update UI
+                const options = document.querySelectorAll(`input[name="q${questionIndex}"]`);
+                options.forEach(opt => opt.closest('.option').classList.remove('selected'));
+                event.target.closest('.option').classList.add('selected');
+            } else if (type === 'checkbox') {
+                if (!userAnswers[questionIndex]) userAnswers[questionIndex] = [];
+                
+                const checkbox = event.target.closest('.option').querySelector('input');
+                if (checkbox.checked) {
+                    if (!userAnswers[questionIndex].includes(value)) {
+                        userAnswers[questionIndex].push(value);
+                    }
+                    event.target.closest('.option').classList.add('selected');
+                } else {
+                    userAnswers[questionIndex] = userAnswers[questionIndex].filter(ans => ans !== value);
+                    event.target.closest('.option').classList.remove('selected');
+                }
+                updateAnswerStatus();
+            }
+        }
+
+        function handleNumericInput(questionIndex, value) {
+            userAnswers[questionIndex] = parseFloat(value) || value;
+        }
+
+     async function submitQuiz() {
+    if (!username || !email) {
+        alert("Error: User session data not found. Please log in.");
+        return;
+    }
+
+    // Show loading state
+    document.getElementById('submitText').style.display = 'none';
+    document.getElementById('submitLoading').style.display = 'inline-block';
+    document.getElementById('submitBtn').disabled = true;
+
+    let score = 0;
+    const questionResults = [];
+    
+    // Filter out context questions for scoring
+    // Filter out context questions for scoring
+const answerableQuestions = questions.filter(q => !q.is_context);
+
+answerableQuestions.forEach((question, resultIndex) => {
+    const questionIndex = questions.indexOf(question); // Get original index
+    const userAnswer = userAnswers[questionIndex];
+    let isCorrect = false;
+    let correctAnswer = '';
+    let userAnswerFormatted = '';
+    
+    if (question.question_type === 'multiple_choice') {
+        const correctOption = question.options.find(opt => opt.is_correct);
+        correctAnswer = correctOption?.option_text || correctOption?.option_id;
+        const userOption = question.options.find(opt => opt.option_id === userAnswer);
+        userAnswerFormatted = userOption?.option_text || userAnswer || 'No answer';
+        isCorrect = userAnswer === correctOption?.option_id;
+    } else if (question.question_type === 'single_part') {
+        userAnswerFormatted = userAnswer || 'No answer';
+        correctAnswer = question.correct_answer;
+        isCorrect = physicsAnswerValidator.validateAnswer(userAnswer, question);
+    } else if (question.question_type === 'multi_part') {
+        // Handle multi-part questions
+        let allPartsCorrect = true;
+        let userParts = [];
+        let correctParts = [];
+        
+        question.sub_questions.forEach(subQ => {
+            const userSubAnswer = userAnswer?.[subQ.part_id] || '';
+            const isSubCorrect = physicsAnswerValidator.validateAnswer(userSubAnswer, question, subQ);
+            
+            userParts.push(`${subQ.part_id}: ${userSubAnswer || 'No answer'}`);
+            correctParts.push(`${subQ.part_id}: ${subQ.correct_answer}`);
+            
+            if (!isSubCorrect) allPartsCorrect = false;
+        });
+        
+        userAnswerFormatted = userParts.join('; ');
+        correctAnswer = correctParts.join('; ');
+        isCorrect = allPartsCorrect;
+    }
+    
+    if (isCorrect) score++;
+    
+    // FIXED: Use numeric question number instead of string
+    questionResults.push({
+        questionNumber: resultIndex + 1, // Use sequential number (1, 2, 3, etc.)
+        originalQuestionId: question.question_number, // Keep original ID for reference
+        questionText: question.question_text.substring(0, 100) + '...', // Truncate for API
+        userAnswer: userAnswerFormatted,
+        correctAnswer: correctAnswer,
+        explanation: question.explanation || '',
+        isCorrect: isCorrect
+    });
+});
+
+    // Create the quiz data object matching the expected API format
+    const quizData = {
+        username: username,
+        email: email,
+        score: score,
+        totalQuestions: answerableQuestions.length, // Use answerable questions count
+        percentage: Math.round((score / answerableQuestions.length) * 100),
+        topic: 'Physics - Kinematics 1', // Make sure this matches expected format
+        answers: userAnswers,
+        questionResults: questionResults,
+        correctAnswers: score,
+        maxPossibleScore: answerableQuestions.reduce((sum, q) => sum + (q.points || 1), 0),
+        difficultyBreakdown: {
+            easy: { attempted: 0, correct: 0 },
+            medium: { attempted: answerableQuestions.length, correct: score },
+            hard: { attempted: 0, correct: 0 }
+        },
+        totalTimeTaken: 0,
+        isCompleted: true,
+        quizType: 'physics', // Add quiz type
+        timestamp: new Date().toISOString() // Add timestamp
+    };
+
+    console.log('Submitting quiz data:', JSON.stringify(quizData, null, 2)); // Debug log
+
+    try {
+        const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/physics_scores', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify(quizData)
+        });
+
+        const responseText = await response.text();
+        console.log('Server response:', response.status, responseText);
+
+        if (response.ok) {
+            console.log('Quiz submitted successfully');
+            showResults(quizData);
+        } else {
+            console.error('Failed to submit quiz. Status:', response.status, 'Response:', responseText);
+            
+            // Try to parse error message
+            let errorMessage = 'Failed to submit quiz. Please try again.';
+            try {
+                const errorData = JSON.parse(responseText);
+                errorMessage = errorData.message || errorMessage;
+            } catch (e) {
+                // Use default message if JSON parsing fails
+            }
+            
+            alert(errorMessage);
+            // Reset button state
+            document.getElementById('submitText').style.display = 'inline';
+            document.getElementById('submitLoading').style.display = 'none';
+            document.getElementById('submitBtn').disabled = false;
+        }
+    } catch (error) {
+        console.error('Error submitting quiz:', error);
+        alert('Error submitting quiz. Please check your connection and try again.');
+        // Reset button state
+        document.getElementById('submitText').style.display = 'inline';
+        document.getElementById('submitLoading').style.display = 'none';
+        document.getElementById('submitBtn').disabled = false;
+    }
+}
+
+        // Initialize the quiz when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeQuiz();
+        });
+
+        // Fallback for browsers that don't support DOMContentLoaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeQuiz);
+        } else {
+            // DOM is already loaded
+            initializeQuiz();
+        }
+
+       function goback() {
+    // Reset quiz state
+    userAnswers = {};
+    currentQuestionIndex = 0;
+    
+    // Option 1: Reset to show quiz again
+    document.getElementById('resultsContainer').style.display = 'none';
+    document.getElementById('quizContainer').style.display = 'block';
+    renderCurrentQuestion();
+    updateProgress();
+    
+    // Option 2: Redirect to physics.html (if that page exists)
+    // window.location.href = 'physics.html';
+}
+
+function gobackWithResults(quizData) {
+    // Prepare data for the results page
+    const userAnswerArray = [];
+    const correctAnswerArray = [];
+    
+    // Process answers based on question types
+    questions.forEach((question, index) => {
+        const userAnswer = userAnswers[index];
+        
+        if (question.question_type === 'multiple_choice') {
+            const correctOption = question.options.find(opt => opt.is_correct);
+            userAnswerArray.push(userAnswer || 'No answer');
+            correctAnswerArray.push(correctOption?.option_text || correctOption?.option_id);
+        } else if (question.question_type === 'multi_part') {
+            // For multi-part, combine all sub-answers
+            let userSubAnswers = [];
+            let correctSubAnswers = [];
+            question.sub_questions.forEach(subQ => {
+                userSubAnswers.push(`${subQ.part_id}: ${userAnswer?.[subQ.part_id] || 'No answer'}`);
+                correctSubAnswers.push(`${subQ.part_id}: ${subQ.correct_answer}`);
+            });
+            userAnswerArray.push(userSubAnswers.join('; '));
+            correctAnswerArray.push(correctSubAnswers.join('; '));
+        } else if (question.question_type === 'single_part') {
+            userAnswerArray.push(userAnswer || 'No answer');
+            correctAnswerArray.push(question.correct_answer);
+        }
+    });
+    
+    // Redirect to physics course page with results parameters
+    const params = new URLSearchParams({
+        showResults: 'true',
+        topic: 'Physics Quiz',
+        score: quizData.score,
+        totalQuestions: quizData.totalQuestions,
+        userAnswers: encodeURIComponent(JSON.stringify(userAnswerArray)),
+        correctAnswers: encodeURIComponent(JSON.stringify(correctAnswerArray))
+    });
+    
+    window.location.href = `physics.html?${params.toString()}`;
+}
+    </script>
+</body>
+</html>

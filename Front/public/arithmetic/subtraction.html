@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+ 
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Arithmetic</title>
+  <meta content="" name="description">
+  <meta content="" name="keywords">
+
+  <!-- Favicons -->
+  <link href="../assets/img/favicon.png" rel="icon">
+  <link href="../assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="../assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="../assets/vendor/aos/aos.css" rel="stylesheet">
+  <link href="../assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+  <link href="../assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+
+  <!-- Main CSS File -->
+  <link href="../assets/css/main.css" rel="stylesheet">
+
+  <!-- =======================================================
+  * Template Name: Mentor
+  * Template URL: https://bootstrapmade.com/mentor-free-education-bootstrap-theme/
+  * Updated: Mar 19 2024 with Bootstrap v5.3.3
+  * Author: BootstrapMade.com
+  * License: https://bootstrapmade.com/license/
+  ======================================================== -->
+</head>
+<style>
+    /* ======================
+     Core Subtraction Styles
+     ====================== */
+    .subtraction-wrapper {
+      --tens-color: #dc3545;
+      --ones-color: #198754;
+      --operator-color: #6c757d;
+      --borrow-color: #dc3545;
+      --step-border: 2px solid #dee2e6;
+      --correct-color: #0d6efd;
+      --incorrect-color: #dc3545;
+    }
+  
+    /* Practice Test System */
+    .question-card, .progress-card {
+      height: 500px;
+      overflow-y: auto;
+    }
+  
+    .math-problem {
+      font-family: 'Courier New', monospace;
+      width: fit-content;
+      margin: 1rem auto;
+      padding: 1rem;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+  
+    #questionNavigation {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+      gap: 0.5rem;
+      padding: 1rem 0;
+    }
+  
+    .question-number {
+      padding: 10px;
+      margin: 5px;
+      border: 2px solid #dee2e6;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: white;
+      position: relative;
+      min-width: 45px;
+    }
+  
+    .question-number:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+  
+    .question-number.active {
+      border-color: var(--correct-color);
+      background-color: var(--correct-color);
+      color: white;
+      transform: scale(1.05);
+    }
+  
+    .question-number.answered.correct {
+      background: var(--correct-color) !important;
+      border-color: var(--correct-color) !important;
+      color: white !important;
+    }
+  
+    .question-number.answered.incorrect {
+      background: var(--incorrect-color) !important;
+      border-color: var(--incorrect-color) !important;
+      color: white !important;
+    }
+  
+    .question-number.answered::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      font-size: 0.8em;
+    }
+  
+    .question-number.answered.correct::after {
+      content: "✓";
+    }
+  
+    .question-number.answered.incorrect::after {
+      content: "✗";
+    }
+  
+    /* Progress System */
+    .progress {
+      height: 1.5rem;
+      border-radius: 10px;
+      background-color: #e9ecef;
+    }
+  
+    .progress-bar {
+      background-color: var(--correct-color);
+      border-radius: 10px;
+      transition: width 0.3s ease;
+    }
+  
+    /* Answer States */
+    .options-container button {
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+  
+    .options-container button:not(:disabled):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .options-container button.selected-answer {
+    border: 2px solid #0d6efd !important;
+    background-color: rgba(13, 110, 253, 0.1) !important;
+    position: relative;
+    }
+
+    .options-container button.selected-answer::after {
+    content: "Your selection";
+    position: absolute;
+    right: 10px;
+    font-size: 0.8rem;
+    color: #0d6efd;
+    font-style: italic;
+    }
+  
+    .btn-primary {
+      background-color: var(--correct-color) !important;
+      border-color: var(--correct-color) !important;
+    }
+  
+    .btn-danger {
+      background-color: var(--incorrect-color) !important;
+      border-color: var(--incorrect-color) !important;
+    }
+    .options-container button.btn-primary {
+    border-width: 2px !important;
+    font-weight: bold;
+    }
+
+    .options-container button.btn-danger {
+    border-width: 2px !important;
+    font-weight: bold;
+    }
+  
+    /* Feedback States */
+    .alert-success {
+      background-color: #d1ecf1;
+      border-color: #bee5eb;
+      color: #0c5460;
+    }
+  
+    .alert-danger {
+      background-color: #f8d7da;
+      border-color: #f5c6cb;
+      color: #721c24;
+    }
+  
+    /* Borrowing Visualization */
+    .crossed-digit {
+      text-decoration: line-through;
+      color: var(--incorrect-color);
+    }
+  
+    .adjusted-number {
+      color: var(--ones-color);
+      font-weight: bold;
+    }
+  
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .question-card, .progress-card {
+        height: auto;
+        margin-bottom: 1.5rem;
+      }
+      
+      .math-problem {
+        transform: scale(0.9);
+      }
+      
+      #questionNavigation {
+        grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+        gap: 0.3rem;
+      }
+    }
+  
+    /* Concept Steps */
+    .grade-section .card {
+      border: 2px solid var(--correct-color);
+      border-radius: 15px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+  
+    .grade-section .card-header {
+      background: var(--correct-color) !important;
+      border-radius: 15px 15px 0 0 !important;
+    }
+    /* 1. Make check answer button visible and blue */
+#checkAnswerBtn {
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+  color: white !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+/* 2. Question navigation fixes */
+#questionNavigation {
+  grid-template-columns: repeat(auto-fit, minmax(45px, 1fr));
+  min-height: 150px;
+  overflow: visible;
+}
+
+.question-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 45px;
+  width: 45px;
+  transition: all 0.3s ease;
+}
+
+/* Current question styling */
+.question-number.active {
+  border: 2px solid #0d6efd;
+  background-color: rgba(13, 110, 253, 0.1);
+  color: #0d6efd;
+  transform: scale(1.1);
+}
+
+/* Answered question states */
+.question-number.answered {
+  position: relative;
+  border-width: 2px;
+}
+
+.question-number.answered.correct {
+  background-color: #28a745 !important;
+  border-color: #28a745 !important;
+  color: white !important;
+}
+
+.question-number.answered.incorrect {
+  background-color: #dc3545 !important;
+  border-color: #dc3545 !important;
+  color: white !important;
+}
+
+.question-number.answered::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.question-number.answered.correct::after {
+  content: "✓";
+  color: #fff;
+}
+
+.question-number.answered.incorrect::after {
+  content: "✗";
+  color: #fff;
+}
+
+/* Progress panel fixes */
+.progress-card {
+  padding: 15px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Ensure question numbers remain visible */
+.progress-card .card-body {
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+}
+
+/* Options container adjustments */
+.options-container button {
+  margin: 8px 0;
+  padding: 12px;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.options-container button:disabled {
+  opacity: 1 !important;
+}
+  </style>
+<body>
+
+  <header id="header" class="header d-flex align-items-center sticky-top">
+    <div class="container-fluid container-xl position-relative d-flex align-items-center">
+
+      <a href="../index.html" class="logo d-flex align-items-center me-auto">
+        <!-- Uncomment the line below if you also wish to use an image logo -->
+        <img src="../img/sbi.logo.png" alt="Logo" width="80" height="80"> 
+        <h1 class="">Sanghamitra Learning</h1>
+      </a>
+
+      <nav id="navmenu" class="navmenu">
+        <div id="navbar-placeholder"></div>
+        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+      </nav>
+
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- Page Title -->
+    <div class="page-title" data-aos="fade" style="margin-bottom: 2rem;">
+        <div class="heading">
+          <div class="container">
+            <div class="row d-flex justify-content-center text-center">
+              <div class="col-lg-8">
+                <h1>Subtraction</h1>
+                <p class="mb-0">Welcome to our subtraction learning hub. Enhance your basics skills with our comprehensive resources and interactive lessons. Join our community and embark on an enriching journey towards mastering subtraction.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <nav class="breadcrumbs">
+          <div class="container">
+            <ol>
+              <li><a href="index.html">Home</a></li>
+              <li><a href="math.html">Math</a></li>
+              <li><a href="arithmetic.html">Arithmetic</a></li>
+              <li class="current">Subtraction</li>
+            </ol>
+          </div>
+        </nav>
+      </div><!-- End Page Title -->
+    <section class="intro-section py-5">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-12 text-center">
+            <h2 class="mb-4">➖ Let's Learn Subtraction! 🎉</h2>
+            <p class="lead">Master the art of taking away! 🧮</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grade-section py-5 bg-light">
+      <div class="container">
+        <!-- Grade 1 -->
+        <div class="row mb-5">
+          <div class="col-lg-12">
+            <div class="card shadow">
+              <div class="card-header bg-primary text-white">
+                <h3></i>Basic Subtraction</h3>
+              </div>
+              <div class="card-body">
+                <p>🍎🍎 - 🍎 = 🍎</p>
+                <p class="fs-4">Start with objects:</p>
+                <div class="d-flex gap-2 mb-3">
+                  <p>2 - 1 = 1</p>
+                </div>
+                <div class="alert alert-info">
+                  <i class="bi bi-lightbulb"></i> Try: 7 🍭 - 3 🍭 = ? 🍭
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grade 2 -->
+        <div class="row mb-5">
+          <div class="col-lg-12">
+              <div class="card shadow">
+                  <div class="card-header bg-success text-white">
+                      <h3 class="mb-0">Step-by-Step Subtraction: 35 - 17</h3>
+                  </div>
+                  <div class="card-body">
+                      <!-- Horizontal Steps -->
+                      <div class="d-flex justify-content-center gap-4 mb-4">
+                          <!-- Step 1 -->
+                          <div class="step-box">
+                              <div class="number-column">
+                                  <div class="digit-row">
+                                      <div class="tens">3</div>
+                                      <div class="ones">5</div>
+                                  </div>
+                                  <div class="digit-row operator">
+                                      <div class="symbol">-</div>
+                                      <div class="tens">1</div>
+                                      <div class="ones">7</div>
+                                  </div>
+                              </div>
+                              <div class="step-label">Step 1: Start Here</div>
+                          </div>
+      
+                          <!-- Arrow -->
+                          <div class="step-arrow">
+                              <i class="bi bi-arrow-right-circle fs-3 text-primary"></i>
+                          </div>
+      
+                          <!-- Step 2 -->
+                          <div class="step-box">
+                              <div class="number-column">
+                                  <div class="digit-row">
+                                      <div class="tens crossed">3</div>
+                                      <div class="ones">5</div>
+                                  </div>
+                                  <div class="digit-row operator">
+                                      <div class="symbol">-</div>
+                                      <div class="tens">1</div>
+                                      <div class="ones">7</div>
+                                  </div>
+                                  <div class="borrow-display">
+                                      <div class="tens adjusted">2</div>
+                                      <div class="ones adjusted">15</div>
+                                  </div>
+                              </div>
+                              <div class="step-label text-danger">
+                                  Step 2: Borrow 1 ten (10 ones)
+                                  <div class="borrow-arrow">↑</div>
+                              </div>
+                          </div>
+      
+                          <!-- Arrow -->
+                          <div class="step-arrow">
+                              <i class="bi bi-arrow-right-circle fs-3 text-primary"></i>
+                          </div>
+      
+                          <!-- Step 3 -->
+                          <div class="step-box">
+                              <div class="number-column">
+                                  <div class="digit-row">
+                                      <div class="tens">1</div>
+                                      <div class="ones">8</div>
+                                  </div>
+                              </div>
+                              <div class="step-label text-success">Step 3: Final Answer</div>
+                          </div>
+                      </div>
+      
+                      <!-- Enhanced Explanation -->
+                      <div class="step-explanation">
+                          <div class="list-group">
+                              <div class="list-group-item d-flex align-items-center">
+                                  <span class="badge bg-primary me-3">1</span>
+                                  <div>
+                                      <strong>Write the numbers vertically aligned:</strong><br>
+                                      <span class="text-muted">35 - 17</span>
+                                  </div>
+                              </div>
+                              <div class="list-group-item d-flex align-items-center">
+                                  <span class="badge bg-primary me-3">2</span>
+                                  <div>
+                                      <strong class="text-danger">Borrowing Process:</strong><br>
+                                      - Cross out 3 (tens place) and write 2<br>
+                                      - Add 10 to ones place (5 becomes 15)
+                                  </div>
+                              </div>
+                              <div class="list-group-item d-flex align-items-center">
+                                  <span class="badge bg-primary me-3">3</span>
+                                  <div>
+                                      <strong>Subtract ones place:</strong> 15 - 7 = 8
+                                  </div>
+                              </div>
+                              <div class="list-group-item d-flex align-items-center">
+                                  <span class="badge bg-primary me-3">4</span>
+                                  <div>
+                                      <strong>Subtract tens place:</strong> 2 - 1 = 1
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+
+        <!-- Grade 3 - Borrowing -->
+        <div class="row mb-5">
+          <div class="col-lg-12">
+              <div class="card shadow">
+                  <div class="card-header bg-warning text-dark">
+                      <h3>Borrowing Technique</h3>
+                  </div>
+                  <div class="card-body">
+                      <!-- Vertical Step Layout -->
+                      <div class="d-flex justify-content-center gap-4 mb-4">
+                          <!-- Original Problem -->
+                          <div class="step-box">
+                              <div class="number-column">
+                                  <div class="digit-row">
+                                      <div class="tens">3</div>
+                                      <div class="ones">5</div>
+                                  </div>
+                                  <div class="digit-row operator">
+                                      <div class="symbol">-</div>
+                                      <div class="tens">1</div>
+                                      <div class="ones">7</div>
+                                  </div>
+                              </div>
+                              <div class="step-label">Step 1: Initial Problem</div>
+                          </div>
+      
+                          <!-- Borrowing Visualization -->
+                          <div class="step-box">
+                              <div class="number-column">
+                                  <div class="digit-row position-relative">
+                                      <div class="tens crossed">3</div>
+                                      <div class="ones">5</div>
+                                      <div class="borrow-indicator text-danger">
+                                          <small>+10</small>
+                                          <i class="bi bi-arrow-up"></i>
+                                      </div>
+                                  </div>
+                                  <div class="digit-row operator">
+                                      <div class="symbol">-</div>
+                                      <div class="tens">1</div>
+                                      <div class="ones">7</div>
+                                  </div>
+                                  <div class="adjusted-row">
+                                      <div class="tens">2</div>
+                                      <div class="ones">15</div>
+                                  </div>
+                              </div>
+                              <div class="step-label text-danger">Step 2: Borrow 1 Ten</div>
+                          </div>
+      
+                          <!-- Final Result -->
+                          <div class="step-box result">
+                              <div class="number-column">
+                                  <div class="digit-row">
+                                      <div class="tens">1</div>
+                                      <div class="ones">8</div>
+                                  </div>
+                              </div>
+                              <div class="step-label text-success">Step 3: Final Result</div>
+                          </div>
+                      </div>
+      
+                      <!-- Enhanced Explanation -->
+                      <div class="step-explanation">
+                          <div class="list-group">
+                              <div class="list-group-item d-flex align-items-center">
+                                  <span class="badge bg-primary me-3">1</span>
+                                  <div>
+                                      <strong>Ones place subtraction:</strong><br>
+                                      5 - 7 (Need to borrow 1 ten = 10 ones)
+                                  </div>
+                              </div>
+                              <div class="list-group-item d-flex align-items-center">
+                                  <span class="badge bg-primary me-3">2</span>
+                                  <div>
+                                      <strong>Adjust numbers:</strong><br>
+                                      - Tens place: 3 becomes 2<br>
+                                      - Ones place: 5 becomes 15
+                                  </div>
+                              </div>
+                              <div class="list-group-item d-flex align-items-center">
+                                  <span class="badge bg-primary me-3">3</span>
+                                  <div>
+                                      <strong>Perform subtraction:</strong><br>
+                                      15 ones - 7 ones = 8 ones<br>
+                                      2 tens - 1 ten = 1 ten
+                                  </div>
+                              </div>
+                          </div>
+                          <div class="alert alert-warning mt-3">
+                              <i class="bi bi-exclamation-triangle"></i>
+                              Always cross out the original number when borrowing!
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+
+        <!-- Grade 4 - Large Numbers -->
+        <div class="row mb-5">
+          <div class="col-lg-12">
+            <div class="card shadow">
+              <div class="card-header bg-danger text-white">
+                <h3></i>Three-Digit Subtraction</h3>
+              </div>
+              <div class="card-body">
+                <div class="math-problem position-relative" style="max-width: 220px">
+                  <!-- Borrowing Indicators -->
+                  <div class="position-absolute" style="top: 30px; left: 40px">
+                    <small class="text-danger fw-bold">10</small>
+                  </div>
+                  <div class="position-absolute" style="top: 15px; left: -5px">
+                    <small class="text-danger fw-bold">2</small>
+                  </div>
+
+                  <div class="d-flex flex-column gap-2">
+                    <div class="d-flex justify-content-end gap-1">
+                      <div class="text-end" style="width: 30px">4</div>
+                      <div class="text-end" style="width: 30px"><span class="subtraction-mark">2</span></div>
+                      <div class="text-end" style="width: 30px">5</div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-1 border-bottom pb-2">
+                      <div class="text-end" style="width: 30px">-1</div>
+                      <div class="text-end" style="width: 30px">8</div>
+                      <div class="text-end" style="width: 30px">7</div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-1">
+                      <div class="text-end" style="width: 30px">2</div>
+                      <div class="text-end" style="width: 30px">3</div>
+                      <div class="text-end" style="width: 30px">8</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-4">
+                  <p class="fw-bold">Step-by-step explanation:</p>
+                  <ol class="list-unstyled">
+                    <li class="mb-2">
+                      <span class="badge bg-primary me-2">1</span>
+                      Ones place: 5 ➖ 7 (borrow 1 ten)
+                    </li>
+                    <li class="mb-2">
+                      <span class="badge bg-primary me-2">2</span>
+                      Tens place: 2 becomes 1, borrow again from hundreds
+                    </li>
+                    <li class="mb-2">
+                      <span class="badge bg-primary me-2">3</span>
+                      Final subtraction: 12 - 8 = 3, 3 - 1 = 2
+                    </li>
+                  </ol>
+                  <div class="alert alert-success mt-3">
+                    🚀 Pro Tip: Borrow from the next highest place value!
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grade 5 - Real World -->
+        <div class="row">
+          <div class="col-lg-12">
+            <div class="card shadow">
+              <div class="card-header bg-info text-white">
+                <h3></i>Real World Problems</h3>
+              </div>
+              <div class="card-body">
+                <p>🛒 Shopping Math:</p>
+                <blockquote class="blockquote">
+                  "If you have ₹500 and spend ₹375, how much remains?"
+                  <footer class="blockquote-footer mt-2">₹500 - ₹375 = ₹125</footer>
+                </blockquote>
+                <div class="alert alert-primary">
+                  🎮 Make it fun: Track video game score differences!
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="practice-section py-5">
+      <div class="container text-center">
+        <h3 class="mb-4">🎯 Subtraction Practice! 📚</h3>
+        <div class="row">
+          <div class="col-md-6 mb-4">
+            <div class="p-3 border rounded bg-light">
+              <p>🐻 (5) - 🐻 (2) = ?</p>
+              <button class="btn btn-primary">Show Answer</button>
+              <div class="answer mt-2" style="display:none">3 🐻</div>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <div class="p-3 border rounded bg-light">
+              <p>📚(82) - 📚(59) = ?</p>
+              <button class="btn btn-primary">Show Answer</button>
+              <div class="answer mt-2" style="display:none">23 📚</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Practice Section -->
+    <section class="practice-section py-5">
+        <div class="container">
+          <div class="card shadow-lg">
+            <div class="card-body">
+              <h3 class="text-center mb-4">➖ Subtraction Practice Test</h3>
+              
+              <div class="row g-4">
+                <!-- Question Panel -->
+                <div class="col-lg-6">
+                  <div class="question-card h-100">
+                    <div class="card h-100">
+                      <div class="card-header bg-primary text-white">
+                        <h5>Question</h5>
+                      </div>
+                      <div class="card-body d-flex flex-column">
+                        <h5 class="question-text mb-4"></h5>
+                        <div class="options-container mb-3 flex-grow-1"></div>
+                        <div class="feedback alert mb-3" style="display: none;"></div>
+                        <div class="explanation alert alert-info" style="display: none;"></div>
+                        <div class="mt-auto">
+                          <button class="btn btn-primary w-100" id="checkAnswerBtn" disabled>
+                            Check Answer
+                          </button>
+                          <div class="navigation-controls d-flex justify-content-between mt-3">
+                            <button class="btn btn-secondary" id="prevBtn" disabled>
+                              <i class="bi bi-chevron-left"></i> Previous
+                            </button>
+                            <button class="btn btn-secondary" id="nextBtn" disabled>
+                              Next <i class="bi bi-chevron-right"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+  
+                <!-- Progress Panel -->
+                <div class="col-lg-6">
+                  <div class="progress-card h-100">
+                    <div class="card h-100">
+                      <div class="card-header bg-primary text-white">
+                        <h5>Progress</h5>
+                      </div>
+                      <div class="card-body">
+                        <div class="row row-cols-4 g-2 mb-4" id="questionNavigation"></div>
+                        <div class="progress mt-4">
+                          <div class="progress-bar bg-primary" role="progressbar"></div>
+                        </div>
+                        <div class="mt-3 text-center">
+                          <span class="badge bg-primary me-2"><i class="bi bi-check-circle"></i> Answered</span>
+                          <span class="badge bg-secondary"><i class="bi bi-circle"></i> Unanswered</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Loading State -->
+          <div class="text-center mt-5" id="loading">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading practice questions...</p>
+          </div>
+  
+          <!-- Error State -->
+          <div class="alert alert-danger mt-5" id="error" style="display: none;"></div>
+        </div>
+      </section>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const QUESTIONS_API = 'https://sanghamitra-learnworld.vercel.app/api/arithmeticQuestionsDatabase';
+      const SCORES_API = 'https://sanghamitra-learnworld.vercel.app/api/arithmetic-scores';
+      const SESSION_API = 'https://sanghamitra-learnworld.vercel.app/api/session-info';
+      
+      let quizState = {
+          questions: [],
+          currentQuestionIndex: 0,
+          user: { email: null, username: null },
+          scores: null,
+          selectedAnswer: null
+      };
+  
+      // DOM Elements
+      const elements = {
+          questionText: document.querySelector('.question-text'),
+          optionsContainer: document.querySelector('.options-container'),
+          questionNav: document.getElementById('questionNavigation'),
+          loading: document.getElementById('loading'),
+          error: document.getElementById('error'),
+          progressBar: document.querySelector('.progress-bar'),
+          checkAnswerBtn: document.getElementById('checkAnswerBtn'),
+          prevBtn: document.getElementById('prevBtn'),
+          nextBtn: document.getElementById('nextBtn'),
+          feedback: document.querySelector('.feedback'),
+          explanation: document.querySelector('.explanation')
+      };
+  
+      async function initializeQuiz() {
+          try {
+              await fetchUserSession();
+              await loadQuestions();
+              await loadScores();
+              mergeAttemptData();
+              buildQuestionNavigation();
+              showQuestion(quizState.currentQuestionIndex);
+              setupEventListeners();
+              updateProgressBar();
+          } catch (error) {
+              showError(error.message);
+          } finally {
+              elements.loading.style.display = 'none';
+          }
+      }
+  
+      async function fetchUserSession() {
+          try {
+              const response = await fetch(SESSION_API, { credentials: 'include' });
+              if (!response.ok) throw new Error('Authentication required');
+              const { email, username } = await response.json();
+              quizState.user = { email, username };
+          } catch (error) {
+              showError('Please login to access this content');
+              window.location.href = '/login.html';
+          }
+      }
+  
+      async function loadQuestions() {
+          try {
+              const params = new URLSearchParams({ 
+                  operationType: 'subtraction',
+                  // Add fields parameter if needed (depends on your API implementation)
+                  fields: 'questionText,options,correctOption,explanation,difficultyLevel,arithmeticCategory,coreSkills,commonErrors,foundationalRequirements,gradeLevel'
+              });
+              
+              const response = await fetch(`${QUESTIONS_API}?${params}`);
+              const result = await response.json();
+              quizState.questions = result.questions.map(q => ({
+                  ...q,
+                  startTime: Date.now()
+              }));
+          } catch (error) {
+              showError(`Failed to load questions: ${error.message}`);
+          }
+      }
+  
+      async function loadScores() {
+          try {
+              const params = new URLSearchParams({
+                  userEmail: quizState.user.email,
+                  operationType: 'subtraction'
+              });
+              const response = await fetch(`${SCORES_API}?${params}`);
+              quizState.scores = await response.json();
+          } catch (error) {
+              quizState.scores = {
+                  questionsAttempted: [],
+                  totalQuestions: 0,
+                  correctAnswers: 0,
+                  timeTaken: 0
+              };
+          }
+      }
+  
+      function mergeAttemptData() {
+          quizState.questions = quizState.questions.map(question => {
+              const attempt = quizState.scores?.questionsAttempted?.find(a => 
+                  a.questionId?._id.toString() === question._id.toString()
+              );
+              
+              return attempt ? {
+                  ...question,
+                  attempted: true,
+                  userAnswer: attempt.userAnswer,
+                  isCorrect: attempt.isCorrect,
+                  timeSpent: attempt.timeSpent
+              } : { ...question, attempted: false };
+          });
+      }
+  
+      function buildQuestionNavigation() {
+          elements.questionNav.innerHTML = quizState.questions
+              .map((q, index) => `
+                  <div class="question-number" data-index="${index}">
+                      ${index + 1}
+                  </div>`
+              ).join('');
+      }
+  
+      function showQuestion(index) {
+          resetFeedback();
+          const question = quizState.questions[index];
+          
+          // Record start time for new attempts
+          if (!question.attempted) {
+              quizState.questions[index].startTime = Date.now();
+          }
+  
+          elements.questionText.textContent = question.questionText;
+          elements.optionsContainer.innerHTML = '';
+          elements.checkAnswerBtn.disabled = question.attempted;
+          quizState.selectedAnswer = null;
+  
+          Object.entries(question.options).forEach(([key, value]) => {
+              const button = document.createElement('button');
+              button.className = 'btn btn-outline-primary mb-2 w-100';
+              button.innerHTML = `<strong>${key}.</strong> ${value}`;
+              if (question.userAnswer === key) {
+                    button.classList.add('selected-answer');
+                }
+              
+              if (question.attempted) {
+                  button.disabled = true;
+                  const isCorrect = key === question.correctOption;
+                  const isUserAnswer = key === question.userAnswer;
+                  
+                  if (isCorrect) button.classList.add('btn-success');
+                  if (isUserAnswer) {
+                      button.classList.add(isCorrect ? 'btn-success' : 'btn-danger');
+                  }
+              } else {
+                  button.addEventListener('click', () => selectAnswer(key, button));
+              }
+              
+              elements.optionsContainer.appendChild(button);
+          });
+  
+          if (question.attempted) {
+              showPersistedFeedback(question);
+          }
+  
+          updateNavigationState();
+          updateButtonStates();
+      }
+  
+      function showPersistedFeedback(question) {
+          elements.feedback.textContent = question.isCorrect ? '🎉 Correct!' : '❌ Incorrect';
+          elements.feedback.className = `alert ${question.isCorrect ? 'alert-success' : 'alert-danger'}`;
+          elements.feedback.style.display = 'block';
+          
+          if (!question.isCorrect) {
+              elements.explanation.innerHTML = `
+                  <strong>Explanation:</strong> ${question.explanation}<br>
+                  <strong>Time Spent:</strong> ${Math.round(question.timeSpent/1000)}s
+              `;
+              elements.explanation.style.display = 'block';
+          }
+      }
+  
+      function selectAnswer(answer, button) {
+          document.querySelectorAll('.options-container button').forEach(btn => {
+              btn.classList.remove('active');
+          });
+          button.classList.add('active');
+          quizState.selectedAnswer = answer;
+          elements.checkAnswerBtn.disabled = false;
+      }
+  
+      async function handleCheckAnswer() {
+          const question = quizState.questions[quizState.currentQuestionIndex];
+          const timeSpent = Date.now() - question.startTime;
+          const isCorrect = quizState.selectedAnswer === question.correctOption;
+
+          try {
+              const response = await fetch(SCORES_API, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      userEmail: quizState.user.email,
+                      username: quizState.user.username,
+                      operationType: 'subtraction',
+                      totalQuestions: 1,
+                      correctAnswers: isCorrect ? 1 : 0,
+                      questionsAttempted: [{
+                          questionId: question._id,
+                          userAnswer: quizState.selectedAnswer,
+                          isCorrect: isCorrect,
+                          timeSpent: timeSpent,
+                          // Add question metadata
+                          difficultyLevel: question.difficultyLevel,
+                          coreSkills: question.coreSkills,
+                          commonErrors: question.commonErrors,
+                          foundationalRequirements: question.foundationalRequirements,
+                          arithmeticCategory: question.arithmeticCategory,
+                          gradeLevel: question.gradeLevel
+                      }],
+                      timeTaken: Math.round(timeSpent/1000)
+                  })
+              });
+
+            if (!response.ok) throw new Error('Save failed');
+            
+            // Update local state
+            const updatedQuestion = {
+                ...question,
+                attempted: true,
+                userAnswer: quizState.selectedAnswer,
+                isCorrect,
+                timeSpent
+            };
+            quizState.questions[quizState.currentQuestionIndex] = updatedQuestion;
+            
+            showQuestion(quizState.currentQuestionIndex);
+            updateProgressBar();
+            
+        } catch (error) {
+            showError(`Save failed: ${error.message}`);
+        }
+
+        // Immediate feedback
+        elements.feedback.textContent = isCorrect ? '🎉 Correct!' : '❌ Incorrect';
+        elements.feedback.className = `alert ${isCorrect ? 'alert-success' : 'alert-danger'}`;
+        elements.feedback.style.display = 'block';
+
+        if (!isCorrect) {
+            elements.explanation.innerHTML = `
+                <strong>Explanation:</strong> ${question.explanation}<br>
+                <strong>Time Spent:</strong> ${Math.round(timeSpent/1000)}s
+            `;
+            elements.explanation.style.display = 'block';
+        }
+    }
+  
+      function updateNavigationState() {
+          document.querySelectorAll('.question-number').forEach((btn, index) => {
+              const question = quizState.questions[index];
+              btn.classList.toggle('active', index === quizState.currentQuestionIndex);
+              btn.classList.toggle('answered', question.attempted);
+              btn.classList.toggle('correct', question.attempted && question.isCorrect);
+              btn.classList.toggle('incorrect', question.attempted && !question.isCorrect);
+          });
+      }
+  
+      function updateProgressBar() {
+          const attemptedCount = quizState.questions.filter(q => q.attempted).length;
+          const totalQuestions = quizState.questions.length;
+          const progress = (attemptedCount / totalQuestions) * 100;
+          elements.progressBar.style.width = `${progress}%`;
+          elements.progressBar.textContent = `${Math.round(progress)}% (${attemptedCount}/${totalQuestions})`;
+      }
+  
+      function resetFeedback() {
+          elements.feedback.style.display = 'none';
+          elements.explanation.style.display = 'none';
+      }
+  
+      function navigate(direction) {
+          const newIndex = quizState.currentQuestionIndex + direction;
+          if (newIndex >= 0 && newIndex < quizState.questions.length) {
+              quizState.currentQuestionIndex = newIndex;
+              showQuestion(newIndex);
+          }
+      }
+  
+      function updateButtonStates() {
+          elements.prevBtn.disabled = quizState.currentQuestionIndex === 0;
+          elements.nextBtn.disabled = quizState.currentQuestionIndex === quizState.questions.length - 1;
+      }
+  
+      function setupEventListeners() {
+          // Answer check handler
+          elements.checkAnswerBtn.addEventListener('click', handleCheckAnswer);
+  
+          // Navigation buttons
+          elements.prevBtn.addEventListener('click', () => navigate(-1));
+          elements.nextBtn.addEventListener('click', () => navigate(1));
+  
+          // Question number clicks
+          document.querySelectorAll('.question-number').forEach(btn => {
+              btn.addEventListener('click', () => {
+                  const index = parseInt(btn.dataset.index);
+                  if (!isNaN(index)) {
+                      quizState.currentQuestionIndex = index;
+                      showQuestion(index);
+                  }
+              });
+          });
+      }
+  
+      function showError(message) {
+          elements.error.textContent = message;
+          elements.error.style.display = 'block';
+          setTimeout(() => elements.error.style.display = 'none', 5000);
+      }
+  
+      initializeQuiz();
+  });
+  </script>
+
+  <footer id="footer" class="footer position-relative">
+    <div class="container footer-top">
+      <div class="row gy-4">
+        <div class="col-lg-4 col-md-6 footer-about">
+          <a href="index.html" class="logo d-flex align-items-center">
+            <span class="">Sanghamitra Learning</span>
+          </a>
+          <div class="footer-contact pt-3">
+            <p>GacchiBowli</p>
+            <p>Hyderabad, TS 500032</p>
+            <p class="mt-3"><strong>Phone:</strong> <span>+91 7020102729</span></p>
+            <p><strong>Email:</strong> <span>sanghamitra.learnworlds@gmail.com</span></p>
+          </div>
+          <div class="social-links d-flex mt-4">
+            <a href=""><i class="bi bi-twitter"></i></a>
+            <a href=""><i class="bi bi-facebook"></i></a>
+            <a href=""><i class="bi bi-instagram"></i></a>
+            <a href=""><i class="bi bi-linkedin"></i></a>
+          </div>
+        </div>
+
+        <div class="col-lg-4 col-md-12 footer-newsletter">
+          
+        </div>
+
+      </div>
+    </div>
+
+    <div class="container copyright text-center mt-4">
+      <p>© <span>Copyright</span> <strong class="px-1">Sanghamitra Learning</strong> <span>All Rights Reserved</span></p>
+      <div class="credits">
+        <!-- All the links in the footer should remain intact. -->
+        <!-- You can delete the links only if you've purchased the pro version. -->
+        <!-- Licensing information: https://bootstrapmade.com/license/ -->
+        <!-- Purchase the pro version with working PHP/AJAX contact form: [buy-url] -->
+        Designed by <a href="../index.html">Sanghamitra</a>
+      </div>
+    </div>
+
+  </footer>
+
+  <!-- Scroll Top -->
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+  <!-- Preloader -->
+  <div id="preloader"></div>
+
+  <!-- Vendor JS Files -->
+  <script src="../assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="../assets/vendor/php-email-form/validate.js"></script>
+  <script src="../assets/vendor/aos/aos.js"></script>
+  <script src="../assets/vendor/glightbox/js/glightbox.min.js"></script>
+  <script src="../assets/vendor/purecounter/purecounter_vanilla.js"></script>
+  <script src="../assets/vendor/swiper/swiper-bundle.min.js"></script>
+
+  <!-- Main JS File -->
+  <script src="../assets/js/main.js"></script>
+  <script src="navbar.js"></script>
+
+</body>
+
+</html>
+
+

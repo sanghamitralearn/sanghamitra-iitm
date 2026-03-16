@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Python IDE</title>
+    <script src="https://unpkg.com/monaco-editor@0.33.0/min/vs/loader.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* styles.css */
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        .ide-container {
+            display: flex;
+            height: 100vh;
+            background-color: #252526;
+        }
+
+        .editor {
+            flex: 1;
+            height: 100%;
+            min-width: 200px;
+            position: relative;
+        }
+
+        .output-container {
+            background-color: #1e1e1e;
+            border-left: 1px solid #444;
+            width: 30%;
+            min-width: 200px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .output-header {
+            padding: 10px;
+            background-color: #252526;
+            border-bottom: 1px solid #444;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .output-header button {
+            background: none;
+            border: none;
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .output-header button:hover {
+            color: #007acc;
+        }
+
+        .output {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            white-space: pre-wrap;
+        }
+
+        .run-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #007acc;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .run-button:hover {
+            background-color: #005f99;
+        }
+
+        /* Resize Handle */
+        .resize-handle {
+            width: 8px;
+            background-color: #444;
+            cursor: col-resize;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: -4px;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="ide-container">
+        <!-- Editor Section -->
+        <div id="editor" class="editor"></div>
+
+        <!-- Resize Handle -->
+        <div class="resize-handle" id="resize-handle"></div>
+
+        <!-- Output Section -->
+        <div id="output-container" class="output-container">
+            <div class="output-header">
+                <span>Output</span>
+                <button id="toggle-output-position" title="Toggle Output Position">
+                    <i class="fas fa-arrows-alt-h"></i>
+                </button>
+            </div>
+            <pre id="output" class="output"></pre>
+        </div>
+    </div>
+
+    <!-- Run Button -->
+    <button id="run-button" class="run-button" title="Run code (Shift + Enter)">
+        <i class="fas fa-play"></i> Run
+    </button>
+
+    <script>
+        require.config({ paths: { 'vs': 'https://unpkg.com/monaco-editor@0.33.0/min/vs' }});
+        require(['vs/editor/editor.main'], function() {
+            // Initialize Monaco Editor
+            var editor = monaco.editor.create(document.getElementById('editor'), {
+                value: '# Write your Python code here\nprint("Hello, World!")',
+                language: 'python',
+                theme: 'vs-dark',
+                automaticLayout: true
+            });
+
+            // Function to run the code
+            function runCode() {
+                const code = editor.getValue();
+                fetch('https://flask-hello-world-2-eta.vercel.app/run-python', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: code })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    outputElement.textContent = data.output;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    outputElement.textContent = 'Error: ' + error.message;
+                });
+            }
+
+            // Run Button Logic
+            const runButton = document.getElementById('run-button');
+            const outputElement = document.getElementById('output');
+            runButton.addEventListener('click', runCode);
+
+            // Add Shift + Enter shortcut to run the code
+            editor.onKeyDown((e) => {
+                if (e.KeyCode === 16 && e.keyCode === 13) { // 13 is the keyCode for Enter
+                    
+                    
+                    // Prevent the default behavior (e.g., inserting a newline)
+                    runCode(); // Run the code
+                }
+            });
+
+                // Custom Resize Handle Logic
+            const resizeHandle = document.getElementById('resize-handle');
+            const editorContainer = document.getElementById('editor');
+            const outputContainer = document.getElementById('output-container');
+
+            let isResizing = false;
+
+            resizeHandle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                document.addEventListener('mousemove', resize);
+                document.addEventListener('mouseup', stopResize);
+            });
+
+            function resize(e) {
+                if (isResizing) {
+                    const editorWidth = e.clientX - editorContainer.getBoundingClientRect().left;
+                    editorContainer.style.width = `${editorWidth}px`;
+                    outputContainer.style.width = `calc(100% - ${editorWidth}px)`;
+                }
+            }
+
+            function stopResize() {
+                isResizing = false;
+                document.removeEventListener('mousemove', resize);
+                document.removeEventListener('mouseup', stopResize);
+            }
+        });
+    </script>
+</body>
+</html>

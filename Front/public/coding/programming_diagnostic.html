@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Python Diagnostic Assessment</title>
+  <meta content="" name="description">
+  <meta content="" name="keywords">
+
+  <!-- Favicons -->
+  <link href="../assets/img/favicon.png" rel="icon">
+  <link href="../assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="../assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="../assets/vendor/aos/aos.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.css">
+  <link href="../assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+
+  <!-- Main CSS File -->
+  <link href="../assets/css/main.css" rel="stylesheet">
+
+  <style>
+    .diagnostic-content {
+      padding: 40px 0;
+    }
+    
+    .question-block {
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .CodeMirror {
+      border-radius: 8px !important;
+      margin: 15px 0;
+      font-size: 14px;
+      height: auto !important;
+    }
+    
+    .output {
+      background-color: #f8f9fa;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 8px;
+      font-family: 'Roboto Mono', monospace;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    #submitDiagnostic {
+      width: 100%;
+      padding: 15px;
+      font-size: 1.1rem;
+    }
+    
+    .diagnostic-intro {
+      background-color: #f8f9fa;
+      padding: 25px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+    
+    .difficulty-badge {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    
+    .beginner {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    
+    .intermediate {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+    
+    .advanced {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    
+    .question-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .task-description {
+      margin-bottom: 20px;
+    }
+    
+    .hint-container {
+      margin-top: 15px;
+      padding: 10px 15px;
+      background-color: #e2f0fd;
+      border-left: 4px solid #0d6efd;
+      border-radius: 4px;
+      display: none;
+    }
+    
+    .show-hint-btn {
+      margin-top: 10px;
+      background: none;
+      border: none;
+      color: #0d6efd;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .test-result {
+      margin-bottom: 15px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    
+    .output pre {
+      background-color: #f1f1f1;
+      padding: 8px;
+      border-radius: 4px;
+      margin: 5px 0;
+      white-space: pre-wrap;
+      font-size: 0.9rem;
+    }
+    
+    .raw-output {
+      margin-bottom: 15px;
+    }
+    
+    .run-btn {
+      margin-right: 10px;
+    }
+    
+    .btn-toolbar {
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }
+    
+    .test-status {
+      font-weight: bold;
+      margin-top: 5px;
+    }
+    
+    /* Loading spinner */
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top-color: #0d6efd;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 5px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Results section styling */
+    #results-section {
+      display: none;
+      background-color: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      border-left: 5px solid #0d6efd;
+    }
+    
+    .score-display {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    
+    .incorrect-question {
+      background-color: #fff0f0;
+      border-left: 4px solid #dc3545;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+    }
+    
+    .solution-code {
+      background-color: #f0fff0;
+      border-left: 4px solid #28a745;
+      padding: 15px;
+      margin-top: 10px;
+      border-radius: 5px;
+    }
+    
+    .correct-question {
+      background-color: #f0fff0;
+      border-left: 4px solid #28a745;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Header Section -->
+  <header id="header" class="header d-flex align-items-center sticky-top">
+    <div class="container-fluid container-xl position-relative d-flex align-items-center">
+      <a href="../index.html" class="logo d-flex align-items-center me-auto">
+        <h1><img src="../img/sbi.logo.png" alt="company logo" width="80" height="80">Sanghamitra Learning</h1>
+      </a>
+
+      <nav id="navmenu" class="navmenu">
+        <div id="navbar-placeholder"></div>
+        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main">
+    <div class="page-title" >
+      <div class="" >
+        <div class="container">
+          <div class="row d-flex justify-content-center text-center">
+            <div class="col-lg-8" style="padding: 20px;">
+              <h1>Python Diagnostic Assessment</h1>
+            </div>
+          </div>
+        </div>
+      </div>
+      <nav class="breadcrumbs">
+        <div class="container">
+          <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="programming.html">Programming</a></li>
+            <li class="current">Python Diagnostic</li>
+          </ol>
+        </div>
+      </nav>
+    </div>
+
+    <div class="container diagnostic-content">
+      <div class="row d-flex justify-content-center">
+        <div class="col-lg-10">
+          <div class="diagnostic-intro">
+            <h2><i class="bi bi-clipboard-check"></i> About This Diagnostic</h2>
+            <p>This diagnostic assessment will help you identify your strengths and areas for improvement in Python programming. The questions range from beginner to advanced levels, covering fundamental concepts like:</p>
+            <ul>
+              <li>Basic syntax and data types</li>
+              <li>Control structures (loops and conditionals)</li>
+              <li>Functions and modules</li>
+              <li>Data structures (lists, dictionaries, etc.)</li>
+              <li>Error handling and debugging</li>
+            </ul>
+            <p>Complete as many questions as you can. Don't worry if you can't solve all of them - this is meant to help you identify areas to focus on in your learning journey.</p>
+          </div>
+          <!-- Results Section (Hidden initially) -->
+          <div id="results-section">
+            <h2><i class="bi bi-award"></i> Assessment Results</h2>
+            <div class="score-display">Your score: <span id="score-percentage">0</span>%</div>
+            <div id="results-details"></div>
+          </div>
+        
+
+          <div id="diagnostic-container">
+            <!-- Question blocks will be inserted here by JavaScript -->
+          </div>
+          
+          <button class="btn btn-success" id="submitDiagnostic">Submit Diagnostic Assessment</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer Section -->
+  <footer id="footer" class="footer position-relative">
+    <div class="container footer-top">
+      <div class="row gy-4">
+        <div class="col-lg-4 col-md-6 footer-about">
+          <a href="index.html" class="logo d-flex align-items-center">
+            <span>Sanghamitra Learning</span>
+          </a>
+          <div class="footer-contact pt-3">
+            <p>GacchiBowli</p>
+            <p>Hyderabad, TS 500032</p>
+            <p class="mt-3"><strong>Phone:</strong> <span>+91 7020102729</span></p>
+            <p><strong>Email:</strong> <span>sanghamitra.learnworlds@gmail.com</span></p>
+          </div>
+          <div class="social-links d-flex mt-4">
+            <a href=""><i class="bi bi-twitter"></i></a>
+            <a href=""><i class="bi bi-facebook"></i></a>
+            <a href=""><i class="bi bi-instagram"></i></a>
+            <a href=""><i class="bi bi-linkedin"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container copyright text-center mt-4">
+      <p>© <span>Copyright</span> <strong class="px-1">Sanghamitra Learning</strong> <span>All Rights Reserved</span></p>
+      <div class="credits">
+        Designed by <a href="">Sanghamitra</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Vendor JS Files -->
+  <script src="../assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="../assets/vendor/aos/aos.js"></script>
+  <script src="../assets/vendor/swiper/swiper-bundle.min.js"></script>
+  <script src="../assets/vendor/purecounter/purecounter_vanilla.js"></script>
+
+  <!-- CodeMirror Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.0/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.0/mode/python/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.0/addon/edit/matchbrackets.min.js"></script>
+
+  <!-- Main JS File -->
+  <script src="../assets/js/main.js"></script>
+  <script src="navbar.js"></script>
+
+  <script type="module">
+    // Import programming questions
+    import { questions } from './programming_questions.js';
+
+    let username = "";
+    let email = "";
+
+    // Sample solutions for questions
+    const sampleSolutions = {
+      1: `# Create your variables here
+age = 25
+height = 5.9
+name = 'Alex'
+
+# Print them on separate lines
+print(age)
+print(height)
+print(name)`,
+      2: `def check_number(num):
+    if num > 0:
+        return "Positive"
+    elif num < 0:
+        return "Negative"
+    else:
+        return "Zero"`,
+      3: `def sum_even_numbers(numbers):
+    total = 0
+    for num in numbers:
+        if num % 2 == 0:
+            total += num
+    return total`,
+      4: `def count_vowels(text):
+    vowels = "aeiou"
+    count = 0
+    for char in text.lower():
+        if char in vowels:
+            count += 1
+    return count`,
+      5: `def word_frequency(text):
+    words = text.lower().split(" ")
+    frequency = {}
+    
+    for word in words:
+        # Remove punctuation
+        if word in frequency.keys():
+            frequency[word] = frequency[word] + 1
+        else:
+            frequency[word] = 1
+    
+    return frequency`,
+      6: `def safe_divide(a, b):
+    try:
+        return a / b
+    except ZeroDivisionError:
+        return "Error: Division by zero"`,
+      7: `def get_squares(numbers):
+    return [num**2 for num in numbers if num % 3 == 0]`,
+      8: `def create_email(first_name, last_name, domain='gmail.com'):
+    return f"{first_name}.{last_name}@{domain}"`,
+      9: `def factorial(n):
+    if n <= 1:
+        return 1
+    else:
+        return n * factorial(n-1)`,
+      10: `def is_palindrome(text):
+    # Remove non-alphanumeric characters and convert to lowercase
+    cleaned = ''.join(c.lower() for c in text if c.isalnum())
+    
+    # Compare with its reverse
+    return cleaned == cleaned[::-1]`
+    };
+
+    async function fetchSessionInfo() {
+      try {
+        const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/session-info', {
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          username = data.username;
+          email = data.email;
+          console.log("User:", username, "Email:", email);
+        } else {
+          console.error('Failed to fetch session info');
+        }
+      } catch (error) {
+        console.error('Error fetching session info:', error);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      await fetchSessionInfo(); // Fetch user session info before initializing the diagnostic.
+
+      const diagnosticContainer = document.getElementById("diagnostic-container");
+
+      // Create question blocks
+      questions.forEach((q) => {
+        const difficultyClass = q.difficulty.toLowerCase();
+        const div = document.createElement("div");
+        div.classList.add("question-block");
+        div.id = `question-block-${q.id}`;
+        div.innerHTML = `
+          <div class="question-header">
+            <h2>${q.title}</h2>
+            <span class="difficulty-badge ${difficultyClass}">${q.difficulty}</span>
+          </div>
+          <div class="task-description">${q.description}</div>
+          <textarea class="codeInput" id="code-${q.id}">${q.starter_code || ""}</textarea>
+          <div class="btn-toolbar">
+            <button class="btn btn-outline-primary btn-sm run-btn" onclick="runCode(this, ${q.id})">
+              <i class="bi bi-play-fill"></i> Run Code
+            </button>
+            <button class="btn btn-outline-secondary btn-sm show-hint-btn" onclick="toggleHint(this)">
+              <i class="bi bi-lightbulb"></i> Show Hint
+            </button>
+          </div>
+          <div class="hint-container">${q.hint || "No hint available for this question."}</div>
+          <div class="output" style="display: none;"></div>
+        `;
+        diagnosticContainer.appendChild(div);
+      });
+
+      // Initialize CodeMirror editors
+      setTimeout(() => {
+        document.querySelectorAll("textarea.codeInput").forEach((textarea) => {
+          try {
+            console.log("Initializing CodeMirror for:", textarea.id);
+            const editor = CodeMirror.fromTextArea(textarea, {
+              mode: "python",
+              theme: "dracula",
+              lineNumbers: true,
+              indentUnit: 4,
+              matchBrackets: true,
+              viewportMargin: Infinity,
+              lineWrapping: true
+            });
+
+            // Set initial height based on content
+            const lines = editor.lineCount();
+            const initialHeight = Math.max(120, lines * 20); // Minimum height of 120px
+            editor.setSize("100%", initialHeight + "px");
+            
+            // Add change handler to resize based on content
+            editor.on("change", function() {
+              const newLines = editor.lineCount();
+              const newHeight = Math.max(120, newLines * 20);
+              editor.setSize("100%", newHeight + "px");
+            });
+            
+            // Store a reference to the editor instance directly on the textarea
+            textarea.cmInstance = editor;
+          } catch (err) {
+            console.error(`Error initializing CodeMirror for ${textarea.id}:`, err);
+          }
+        });
+      }, 100);
+
+      document.getElementById("submitDiagnostic").addEventListener("click", submitDiagnostic);
+    });
+
+    window.toggleHint = function(button) {
+      const hintContainer = button.parentElement.nextElementSibling;
+      if (hintContainer.style.display === "block") {
+        hintContainer.style.display = "none";
+        button.innerHTML = '<i class="bi bi-lightbulb"></i> Show Hint';
+      } else {
+        hintContainer.style.display = "block";
+        button.innerHTML = '<i class="bi bi-lightbulb-fill"></i> Hide Hint';
+      }
+    };
+
+    window.runCode = async function(button, questionId) {
+      // Find the CodeMirror instance
+      const textarea = document.getElementById(`code-${questionId}`);
+      if (!textarea || !textarea.cmInstance) {
+        console.error(`CodeMirror instance not found for question ${questionId}`);
+        return;
+      }
+      
+      const code = textarea.cmInstance.getValue();
+      
+      // Find the output div
+      let outputDiv = button.closest('.btn-toolbar').nextElementSibling;
+      while (outputDiv && !outputDiv.classList.contains('output')) {
+        outputDiv = outputDiv.nextElementSibling;
+      }
+      
+      if (!outputDiv) {
+        console.error('Output div not found');
+        return;
+      }
+
+      // Show running message with spinner
+      outputDiv.style.display = "block";
+      outputDiv.innerHTML = `<div><span class="spinner"></span> Running your code...</div>`;
+      
+      // Get the question from the imported module
+      const question = questions.find(q => q.id === questionId);
+      if (!question) {
+        outputDiv.innerHTML = `<span style="color:red;">Error: Question not found!</span>`;
+        return;
+      }
+
+      try {
+        // Disable run button while code is running
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner"></span> Running...';
+        
+        // Call the test API
+        const response = await fetch('https://flask-hello-world-2-eta.vercel.app/diagnostic', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            code, 
+            test_cases: question.test_cases 
+          })
+        });
+
+        const result = await response.json();
+        outputDiv.innerHTML = "";
+
+        // Add section to show raw code output if available
+        if (result.raw_output) {
+          outputDiv.innerHTML += `<div class="raw-output">
+            <h4>Code Output:</h4>
+            <pre>${result.raw_output}</pre>
+          </div>`;
+        }
+
+        if (result.error) {
+          outputDiv.innerHTML += `<div class="error">
+            <h4>Error:</h4>
+            <pre style="color:red;">${result.error}</pre>
+          </div>`;
+        } else {
+          let passedCount = 0;
+
+          // Count passed tests first
+          result.results.forEach((res) => {
+            if (res.passed) passedCount++;
+          });
+
+          question.test_cases_passed = passedCount;
+  
+          // Progress feedback at the TOP
+          const totalTests = question.test_cases.length;
+          const percentage = Math.round((passedCount / totalTests) * 100);
+          
+          outputDiv.innerHTML += `
+            <div style="margin-bottom: 15px; font-weight: bold; font-size: 1.1em; ${passedCount === totalTests ? 'color: green;' : ''}">
+              <h4>Test Results: ${passedCount}/${totalTests} tests passing (${percentage}%)</h4>
+              ${passedCount === totalTests ? '<div style="color: green;">✅ Well done! All tests passed!</div>' : ''}
+            </div>
+          `;
+          
+          result.results.forEach((res, index) => {
+            const passed = res.passed;
+
+            // Format expected and actual output for better comparison
+            let expected = question.test_cases[index].expected;
+            let output = res.output;
+
+            // Handle special character display
+            expected = expected.replace(/\\n/g, '↵\n');
+            output = output.replace(/\\n/g, '↵\n');
+                    
+            outputDiv.innerHTML += `
+              <div class="test-result">
+                <b>Test ${index + 1}:</b> 
+                <div>Input: ${JSON.stringify(question.test_cases[index].input)}</div>
+                <div>Expected: <pre>${expected}</pre></div>
+                <div>Output: <pre>${output}</pre></div>
+                <div class="test-status" style="color: ${passed ? 'green' : 'red'};">
+                  ${passed ? '✔ Passed' : '✘ Failed'}
+                </div>
+              </div>
+            `;
+          });
+          
+        }
+      } catch (error) {
+        outputDiv.innerHTML = `<span style="color:red;">Error: ${error.message}</span>`;
+      } finally {
+        // Re-enable run button
+        button.disabled = false;
+        button.innerHTML = '<i class="bi bi-play-fill"></i> Run Code';
+      }
+    };
+
+    window.submitDiagnostic = async function() {
+        if (!username || !email) {
+          alert("Error: User session data not found. Please log in.");
+          return;
+        }
+
+        // Find all CodeMirror instances and check for unattempted questions
+        const submissions = questions.map(q => {
+          const textarea = document.getElementById(`code-${q.id}`);
+          let userCode = "";
+          
+          if (textarea && textarea.cmInstance) {
+            userCode = textarea.cmInstance.getValue();
+          }
+          
+          return {
+            question_id: q.id,
+            user_code: userCode,
+            test_cases_passed: q.test_cases_passed || 0,
+            total_test_cases: q.test_cases.length,
+            solution: sampleSolutions[q.id] || "",
+            attempted: userCode.trim() !== "" && userCode !== q.starter_code
+          };
+        });
+        
+        // Check if any questions are unattempted
+        const unattemptedQuestions = submissions.filter(s => !s.attempted);
+        
+        if (unattemptedQuestions.length > 0) {
+          const confirmMessage = `You have ${unattemptedQuestions.length} unattempted question(s). Are you sure you want to submit your assessment?`;
+          if (!confirm(confirmMessage)) {
+            return; // User canceled submission
+          }
+        }
+
+        // Show loading state
+        const submitButton = document.getElementById("submitDiagnostic");
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<span class="spinner"></span> Submitting...';
+
+        try {
+          console.log("Prepared submissions:", submissions);
+
+          // Calculate overall score
+          const totalTestCases = submissions.reduce((sum, q) => sum + q.total_test_cases, 0);
+          const totalPassed = submissions.reduce((sum, s) => sum + s.test_cases_passed, 0);
+          const overallScore = totalTestCases > 0 ? Math.round((totalPassed / totalTestCases) * 100) : 0;
+          
+          // Display results
+          const resultsSection = document.getElementById("results-section");
+          const scoreDisplay = document.getElementById("score-percentage");
+          const resultsDetails = document.getElementById("results-details");
+          const diagnosticContainer = document.getElementById("diagnostic-container");
+          
+          scoreDisplay.textContent = overallScore;
+          resultsDetails.innerHTML = '';
+          
+          // Hide diagnostic container and show results
+          diagnosticContainer.style.display = "none";
+          resultsSection.style.display = "block";
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+
+          // Generate results details for each question
+          for (const submission of submissions) {
+            const q = questions.find(q => q.id === submission.question_id);
+            if (!q) continue;
+            
+            const isFullyCorrect = submission.test_cases_passed === submission.total_test_cases;
+            const questionDiv = document.createElement('div');
+            questionDiv.className = isFullyCorrect ? 'correct-question' : 'incorrect-question';
+            
+            questionDiv.innerHTML = `
+              <h4>${q.title}</h4>
+              <p>${q.description}</p>
+              <p><strong>Score:</strong> ${submission.test_cases_passed} / ${submission.total_test_cases} tests passed</p>
+            `;
+            
+            // Add solution code for incorrect answers
+            if (!isFullyCorrect && submission.solution) {
+              questionDiv.innerHTML += `
+                <div class="solution-code">
+                  <h5>Solution:</h5>
+                  <pre>${submission.solution}</pre>
+                </div>
+              `;
+            }
+            
+            resultsDetails.appendChild(questionDiv);
+          }
+
+          // Add a return to programming page button
+          const returnButtonDiv = document.createElement('div');
+          returnButtonDiv.className = 'text-center mt-4';
+          returnButtonDiv.innerHTML = `
+            <a href="programming.html" class="btn btn-success">
+              <i class="bi bi-arrow-left"></i> Return to Programming Page
+            </a>         
+            <a href="programming_details.html" class="btn btn-success mx-4">
+              <i class="bi bi-file-earmark-code"></i>Programming Details
+            </a>
+          `;
+          resultsDetails.appendChild(returnButtonDiv);
+          
+          // Disable all code editors now that the assessment is submitted
+          submissions.forEach(s => {
+            const textarea = document.getElementById(`code-${s.question_id}`);
+            if (textarea && textarea.cmInstance) {
+              textarea.cmInstance.setOption('readOnly', true);
+            }
+          });
+
+          // Submit to server
+          const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/programming/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, username, submissions }),
+            credentials: 'include'
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Server responded with status: ${response.status}`);
+          }
+          
+          // Update submit button
+          submitButton.innerHTML = 'Assessment Submitted';
+          submitButton.disabled = true;
+          
+        } catch (error) {
+          console.error("Submission error:", error);
+          alert("Submission failed! " + error.message);
+          
+          // Reset submit button
+          submitButton.disabled = false;
+          submitButton.innerHTML = 'Submit Diagnostic Assessment';
+        }
+      };
+  </script>
+</body>
+</html>

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Basics</title>
+
+    <!-- Add modern fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Existing Prism and CodeMirror includes remain -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #3e6562;
+            --secondary-color: #455a64;
+            --accent-color: #d32f2f;
+            --light-bg: #f8f9fa;
+            --border-radius: 8px;
+        }
+
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--light-bg);
+            color: var(--secondary-color);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        h1, h2, h3 {
+            color: var(--primary-color);
+            margin-top: 1.5em;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+            color: #15441a;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 1.2rem;
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            font-weight: 500;
+            margin: 1.5rem 0 1rem;
+            color: var(--secondary-color);
+        }
+
+        .explanation {
+            padding: 1.5rem;
+            background: #ffffff;
+            border-left: 4px solid var(--primary-color);
+            margin: 1.5rem 0;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .code-section {
+            margin: 1.5rem 0;
+            position: relative;
+        }
+
+        .CodeMirror {
+            border-radius: var(--border-radius) !important;
+            border: 1px solid #e0e0e0 !important;
+            font-size: 0.95rem;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .CodeMirror:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .output {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: var(--border-radius);
+            white-space: pre-wrap;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            min-height: 50px;
+            display: none;
+            position: relative;
+        }
+
+        .output::before {
+            display: block;
+            font-weight: 500;
+            color: var(--secondary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        button {
+            padding: 0.8rem 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 1rem 0;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #28a745;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        ul {
+            padding-left: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .CodeMirror {
+            width: 100% !important;
+            max-width: 700px; /* Adjust as per your layout */
+        }
+
+        li {
+            margin: 0.5rem 0;
+            position: relative;
+            padding-left: 1rem;
+        }
+
+        
+
+        code {
+            background-color: var(--light-bg);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+
+</head>
+<body>
+    <div class="container">
+        <h1>Python Basics</h1>
+        
+        <div class="explanation">
+            <h2>1. Basic Python Data Types</h2>
+            <p>There are 4 basic data types in Python</p>
+            <ul>
+                <li><b>int</b>: Whole numbers, e.g., <code>10</code>, <code>-5</code></li>
+                <li><b>float</b>: Decimal numbers, e.g., <code>3.14</code>, <code>-0.5</code></li>
+                <li><b>str</b>: Text, e.g., <code>"Hello, World!"</code></li>
+                <li><b>bool</b>: True/False values</li>
+            </ul>
+            <p>It’s important for us to know about and understand the different types because certain operations are only allowed between certain types (for instance, we can’t divide a string by another string, what would that even mean?) and because the behavior and structure of our programs is going to depend in part on the types of our variables.</p>
+            <h3>Integers</h3>
+            <p>Python uses the int data type to represent whole integer values. For example, we can use the int data type to store the roll number of a student. The Integer type in Python is represented using a int class.</p>
+            <p>Integers are all whole numbers. As soon as there is a decimal point, the number is no longer an int, it’s a float instead.</p>
+            <p>Note: Numbers that you might be used to writing with a comma (such as 1,000,000) are written as 1000000 in python. This is because python would try to interpret 1,000,000 as three separate numbers!</p>
+            <p>We can create an integer variable using two ways:</p>
+            <ul>
+                <li>Directly assigning an integer value to a variable</li>
+                <li>Using the <code>int()</code> class</li>
+            </ul>
+            <div class="explanation">
+                <P>Run the cell and see how data type is find, change the number in editor</P>
+                <textarea class="codeInput"># store int value
+roll_no = 33
+# display roll no
+print("Roll number is:", roll_no)
+# output 33
+print(type(roll_no))  
+# output class 'int'</textarea>
+                <button onclick="runCode(this)">Run Code</button>
+                <div class="output"></div>
+            </div>
+            <div class="explanation">
+                <textarea class="codeInput"># store integer using int() class
+id = int(25)
+print(id)  # 25
+print(type(id))  # class 'int'</textarea>
+                <button onclick="runCode(this)">Run Code</button>
+                <div class="output"></div>
+            </div>
+            <h3>Float</h3>
+            <p>To represent floating-point values or decimal values, we can use the float data type. For example, if we want to store the salary, we can use the float type.</p>
+            <p>We can create an float variable using two ways:</p>
+            <ul>
+                <li>Directly assigning a float value to a variable</li>
+                <li>Using the <code>float()</code> class</li>
+            </ul>
+            <div class="explanation">
+                <P>Run the cell and see how data type is find, change the number in editor</P>
+                <textarea class="codeInput"># store a floating-point value
+salary = 8000.456
+print("Salary is :", salary)  # 8000.456
+print(type(salary))  # class 'float'</textarea>
+                <button onclick="runCode(this)">Run Code</button>
+                <div class="output"></div>
+            </div>
+            <div class="explanation">
+                <textarea class="codeInput"># store a floating-point value using float() class
+num = float(54.75)
+print(num)  # 54.75
+print(type(num))  # class 'float'</textarea>
+                <button onclick="runCode(this)">Run Code</button>
+                <div class="output"></div>
+            </div>
+            <h3>String</h3>
+            <p>In Python, A string is a sequence of characters enclosed within a single quote or double quote. These characters could be anything like letters, numbers, or special symbols enclosed within double quotation marks. For example, "PYnative" is a string.</p>
+            <p>The string type in Python is represented using a str class.</p>
+            <p>To work with text or character data in Python, we use Strings. Once a string is created, we can do many operations on it, such as searching inside it, creating a substring from it, and splitting it.</p>
+            <div class="explanation">
+                <P>Example</P>
+                <textarea class="codeInput">platform = "Sanghamitra"
+print(type(platform))  # <class 'str'>
+
+# display string
+print(platform)  # 'Sanghamitra'
+
+# accessing 2nd character of a string
+print(platform[1])  # a</textarea>
+                <button onclick="runCode(this)">Run Code</button>
+                <div class="output"></div>
+            </div>
+            <p>Note: The string is immutable, i.e., it can not be changed once defined. You need to create a copy of it if you want to modify it. This non-changeable behavior is called immutability.</p>
+            <div class="explanation">
+                <textarea class="codeInput">platform = "SANGHAMITRA"
+# Now let's try to change 2nd character of a string.
+platform[0] = 's'
+# Gives TypeError: 'str' object does not support item assignment</textarea>
+                <button onclick="runCode(this)">Run Code</button>
+                <div class="output"></div>
+            </div>
+            <h3>Boolean</h3>
+            <p>In Python, to represent boolean values (True and False) we use the bool data type. Boolean values are used to evaluate the value of the expression. For example, when we compare two values, the expression is evaluated, and Python returns the boolean True or False.</p>
+            <div class="explanation">
+                <P>Example</P>
+                <textarea class="codeInput">x = 25
+y = 20
+
+z = x > y
+print(z)  # True
+print(type(z))  # class 'bool'</textarea>
+                <button onclick="runCode(this)">Run Code</button>
+                <div class="output"></div>
+            </div>
+        </div>
+
+        <div class="explanation">
+            <h2>2. Variables in Python</h2>
+            <p>Variables store data values in Python:</p>
+            <p>In Python, to represent boolean values (True and False) we use the bool data type. Boolean values are used to evaluate the value of the expression. For example, when we compare two values, the expression is evaluated, and Python returns the boolean True or False.</p>
+            <p>A variable is a reserved memory area (memory address) to store value. For example, we want to store an employee’s salary. In such a case, we can create a variable and store salary using it. Using that variable name, you can read or modify the salary amount.</p>
+            <p>In other words, a variable is a value that varies according to the condition or input pass to the program. Everything in Python is treated as an object so every variable is nothing but an object in Python.</p>
+            <p>A variable can be either <b></b>mutable</b> or <b>immutable</b>. If the variable’s value can change, the object is called mutable, while if the value cannot change, the object is called immutable. We will learn the difference between mutable and immutable types in the later section of this article.</p>
+            <h3>Creating a variable</h3>
+            <p>Python programming language is dynamically typed, so there is no need to declare a variable before using it or declare the data type of variable like in other programming languages. The declaration happens automatically when we assign a value to the variable.</p>
+            <p>We can assign a value to the variable at that time variable is created. We can use the assignment operator <b>=</b> to assign a value to a variable.</p>
+            <div class="explanation">
+                <P>Example</P>
+                <textarea class="codeInput"># Run the cell to see outout
+x = 25
+print(x)
+
+
+</textarea>
+                <button onclick="runCode(this)">Run Code</button>
+                <div class="output"></div>
+            </div>
+            <p>The operand, which is on the left side of the assignment operator, is a variable name <b>'x'</b>. And the operand, which is the right side of the assignment operator, is the variable’s value <b>'25'</b>.</p>
+            <p>When we call <b>operand</b> it will provide the assigned value.</p>
+            <div class="explanation">
+                <P>Example</P>
+                <textarea class="codeInput">name = "John"  # string assignment
+age = 25  # integer assignment
+salary = 25800.60  # float assignment
+
+print(name)  # John
+print(age)  # 25
+print(salary)  # 25800.6
+
+</textarea>
+                <button onclick="runCode(this)">Run Code</button>
+                <div class="output"></div>
+            </div>
+            <h3>Changing the value of a variable</h3>
+            <p>A variable may be assigned to a value of <b>one type</b>, and then later, we can also re-assigned a value of a <b>different type</b>.</p>
+            <p>We can assign a value to the variable at that time variable is created. We can use the assignment operator <b>=</b> to assign a value to a variable.</p>
+            <div class="explanation">
+                <P>Example</P>
+                <textarea class="codeInput"># Run the cell to see outout
+var = 10
+print(var)  # 10
+# print its type
+print(type(var))  # <class 'int'>
+
+# assign different integer value to var
+var = 55
+print(var)  # 55
+
+# change var to string
+var = "Now I'm a string"
+print(var)  # Now I'm a string
+# print its type
+print(type(var))  # <class 'str'>
+
+# change var to float
+var = 35.69
+print(var)  # 35.69
+# print its type
+print(type(var))  # <class 'float'>
+
+
+</textarea>
+                <button onclick="runCode(this)">Run Code</button>
+                <div class="output"></div>
+            </div>
+            <h3>Deleting a variable</h3>
+            <p>Use the del keyword to delete the variable. Once we delete the variable, it will not be longer accessible and eligible.</p>
+            <div class="explanation">
+                <P>Example</P>
+                <textarea class="codeInput"># Run the cell to see outout
+x = 25
+print(x)
+
+</textarea>
+                <button onclick="runCode(this)">Run Code</button>
+                <div class="output"></div>
+            
+                <P>Now if we delete then we will not be able to see the value again and it will show error.</P>
+                <textarea class="codeInput">x = 25
+del x
+print(x)
+
+</textarea>
+                <button onclick="runCode(this)">Run Code</button>
+                <div class="output"></div>
+            </div>
+            <h3>Variable's are case-sensitive</h3>
+            <p>Python is a case-sensitive language. If we define a variable with names <b>a = 100</b> and <b>A =200</b> then, Python differentiates between <b>a</b> and <b>A</b>. These variables are treated as two different variables (or objects).</p>
+            <div class="explanation">
+                <P>Example</P>
+                <textarea class="codeInput"># Run the cell to see outout
+a = 100
+A = 200
+
+# value of a
+print(a)  # 100
+# Value of A
+print(A)  # 200
+
+a = a + A
+print(a)  # 300
+
+</textarea>
+                <button onclick="runCode(this)">Run Code</button>
+                <div class="output"></div>
+            </div>
+        </div>
+
+        <div class="explanation">
+            <h2>3. Conditional Statements</h2>
+            <p>In Python, condition statements act depending on whether a given condition is true or false. You can execute different blocks of codes depending on the outcome of a condition. Condition statements always evaluate to either True or False.</p>
+            <p>There are three four types of conditional statement</p>
+            <ul>
+                <li>if statement</li>
+                <li>if-else</li>
+                <li>if-elif-else</li> 
+                <li>nested if-else</li>
+            </ul>
+            <h3>1. If statement</h3>
+            <p>The <b>if</b> statement is the simplest form. It takes a condition and evaluates to either <b>True</b> or <b>False</b>.</p>
+            <p>If the condition is True, then the True block of code will be executed, and if the condition is False, then the block of code is skipped, and The controller moves to the next line</p>
+            <div class="explanation">
+                <p>Example</p>
+                <pre><code></code></pre>
+                <textarea class="codeInput">number = 6
+if number > 5:
+    # Calculate square
+    print(number * number)
+print('Next lines of code')
+
+</textarea>
+                <button onclick="runCode(this)">Run Code</button>
+                <div class="output"></div>
+            </div>
+            <h3>2. If-else statement</h3>
+            <p>The <b>if-else</b> statement checks the condition and executes the <b>if</b> block of code when the condition is True, and if the condition is False, it will execute the <b>else</b> block of code.</p>
+            <p>If the condition is True, then the True block of code will be executed, and if the condition is False, then the block of code is skipped, and The controller moves to the next line</p>
+            <div class="explanation">
+                <p>Example</p>
+                <pre><code></code></pre>
+                <textarea class="codeInput">password = 'Sanghamitra'
+if password == "Sanghamitra":
+    print("Correct password")
+else:
+    print("Incorrect Password")
+</textarea>
+                <button onclick="runCode(this)">Run Code</button>
+                <div class="output"></div>
+            <p><b>Output 1:</b></p>
+            <p>Enter password Sanghamitra</p>
+            <p>Correct password</p>
+            <p><b>Output 2:</b></p>
+            <p>Enter password sanghamitra</p>
+            <p>Incorrect password</p>
+            </div>
+            <h3>3. Multiple Conditions: if-elif-else</h3>
+            <p>In Python, the <b>if-elif-else</b> condition statement has an <b>elif</b> blocks to chain multiple conditions one after another. This is useful when you need to check multiple conditions.</p>
+            <div class="explanation">
+                <p>Try with different choice values</p>
+                <pre><code></code></pre>
+                <textarea class="codeInput">choice = 2
+if choice == 1:
+    print("Admin")
+elif choice == 2:
+    print("Editor")
+elif choice == 3:
+    print("Guest")
+else:
+    print("Wrong entry")
+
+</textarea>
+                <button onclick="runCode(this)">Run Code</button>
+                <div class="output"></div>
+            </div>
+            <h3>4. Nested if-else statement</h3>
+            <p>In Python, the nested <b>if-else</b> statement is an if statement inside another <b>if-else</b> statement. It is allowed in Python to put any number of <b>if</b> statements in another <b>if</b> statement.</p>
+            <p>If the condition is True, then the True block of code will be executed, and if the condition is False, then the block of code is skipped, and The controller moves to the next line</p>
+            <div class="explanation">
+                <p>Try different values for <b>num1</b> and <b>num2</b></p>
+                <pre><code></code></pre>
+                <textarea class="codeInput">num1 = 5
+num2 = 7
+
+if num1 >= num2:
+    if num1 == num2:
+        print(num1, 'and', num2, 'are equal')
+    else:
+        print(num1, 'is greater than', num2)
+else:
+    print(num1, 'is smaller than', num2)
+
+</textarea>
+                <button onclick="runCode(this)">Run Code</button>
+                <div class="output"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        document.addEventListener("DOMContentLoaded", function() {
+            document.querySelectorAll("textarea.codeInput").forEach((textarea) => {
+                const editor = CodeMirror.fromTextArea(textarea, {
+                    mode: "python",
+                    theme: "dracula",
+                    lineNumbers: true,
+                    indentUnit: 4,
+                    matchBrackets: true,
+                    viewportMargin: Infinity,  // Allows the editor to expand
+                });
+
+                // Set a small initial height
+                editor.setSize("300%", "auto");
+
+                // Adjust height dynamically based on content
+                editor.on("change", function(cm) {
+                    let lines = cm.lineCount();
+                    let newHeight = Math.min(30 + lines * 20, 200); // Min height 30px, max height 200px
+                    cm.setSize("100%", newHeight + "px");
+                });
+            });
+        });
+
+
+        function runCode(button) {
+            const cmInstance = button.previousElementSibling.CodeMirror;
+            const code = cmInstance.getValue();  // Get the code from CodeMirror editor
+            const outputDiv = button.nextElementSibling;
+
+            fetch('http://127.0.0.1:5000/execute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            })
+            .then(response => response.json())
+            .then(result => {
+                outputDiv.style.display = "block";
+                if (result.error) {
+                    outputDiv.innerHTML = `<span style="color:red;">${result.error}</span>`;  // Show error in red
+                } else {
+                    outputDiv.textContent = result.output;
+                }
+            })
+            .catch(error => {
+                outputDiv.style.display = "block";
+                outputDiv.innerHTML = `<span style="color:red;">Error: ${error.message}</span>`;
+            });
+        }
+    </script>
+</body>
+</html>

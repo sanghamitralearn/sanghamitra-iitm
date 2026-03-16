@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Assessment - Lists, Tuples & Functions</title>
+    
+    <!-- CodeMirror CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .instructions {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .instructions h3 {
+            margin-bottom: 10px;
+        }
+
+        .instructions ul {
+            list-style-position: inside;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .question-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-left: 5px solid #667eea;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .question-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .question-number {
+            background: #667eea;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .question-title {
+            font-size: 1.4rem;
+            color: #333;
+            flex-grow: 1;
+            margin: 0 20px;
+        }
+
+        .topic-badge {
+            background: #17a2b8;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+
+        .question-description {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .test-cases {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .test-case {
+            padding: 8px 12px;
+            background: #f1f3f4;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        /* CodeMirror Styles */
+        .CodeMirror {
+            width: 100% !important;
+            max-width: 100%;
+            height: 200px !important;
+            border: 2px solid #333;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        .CodeMirror-gutters {
+            background-color: #282a36;
+            border-right: 1px solid #44475a;
+        }
+
+        .test-button-container {
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .btn-test {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-test:hover {
+            background: linear-gradient(135deg, #218838 0%, #1aa179 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-test:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-test:active {
+            transform: translateY(0);
+        }
+
+        .results {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .result-item {
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .result-pass {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result-fail {
+            background: #f8d7da;
+            border: 1px solid #f1b0b7;
+            color: #721c24;
+        }
+
+        .result-info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .submit-section {
+            text-align: center;
+            padding: 40px;
+            border-top: 3px solid #667eea;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        .btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        .loading-small {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .summary {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        .summary.show {
+            display: block;
+        }
+
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 20px auto;
+        }
+
+        .score-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .score-item {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .timer-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-size: 1.2rem;
+            font-weight: bold;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .timer-container.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffeeba;
+        }
+
+        .timer-container.danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .timer-icon {
+            font-size: 1.4rem;
+        }
+
+        .submission-status {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .submission-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .submission-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .auto-submit-warning {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 2000;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .auto-submit-warning h3 {
+            color: #dc3545;
+            margin-bottom: 15px;
+        }
+
+        .auto-submit-warning p {
+            margin-bottom: 20px;
+        }
+
+        .scroll-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: none;
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .scroll-to-top:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .question-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .question-title {
+                margin: 0;
+            }
+
+            .CodeMirror {
+                height: 150px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="timer-container" id="timer">
+        <span class="timer-icon">⏱️</span>
+        <span id="timer-text">90:00</span>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Python Assessment - Lists, Tuples & Functions</h1>
+            <p>Complete all 15 questions to test your skills with Lists, Tuples & Functions</p>
+            
+            <div class="instructions">
+                <h3>Instructions:</h3>
+                <ul>
+                    <li>Write Python code for each question in the code editor</li>
+                    <li>You are alloted with 1 hour and 30 minutes to complete these questions</li>
+                    <li>Click "Test" to run individual questions and see results</li>
+                    <li>Don't use any AI to solve these basic questions</li>
+                    <li>Your function should match the exact function name specified</li>
+                    <li>Click "Submit All Answers" to get your final score</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="content">
+            <div id="questionsContainer"></div>
+
+            <div class="submit-section" id="submitSection">
+                <h2>Ready to Submit?</h2>
+                <p>Make sure you've completed all the questions you want to attempt.</p>
+                <button class="btn btn-primary" id="submitBtn" onclick="submitAllAnswers()">
+                    <span id="submitText">Submit All Answers</span>
+                    <span id="submitLoading" class="loading" style="display: none;"></span>
+                </button>
+            </div>
+
+            <div class="summary" id="summary">
+                <h2>Assessment Results</h2>
+                <div class="score-circle" id="scoreCircle">0/45</div>
+                <p id="scoreMessage">Great effort! Check your detailed results below.</p>
+                
+                <div class="score-breakdown" id="scoreBreakdown"></div>
+                
+                <button class="btn btn-primary" onclick="restartAssessment()">Home</button>
+            </div>
+        </div>
+    </div>
+
+    <button class="scroll-to-top" id="scrollToTop" onclick="scrollToTop()">↑</button>
+
+    <!-- CodeMirror JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
+
+    <script>
+        const questions = [
+            {
+                id: 1,
+                topic: "Lists",
+                title: "Create a function to find the maximum element in a list",
+                description: "Write a function called 'find_max' that takes a list of numbers and returns the maximum value.",
+                testCases: [
+                    { input: [[1, 5, 3, 9, 2]], expected: 9 },
+                    { input: [[-1, -5, -2]], expected: -1 },
+                    { input: [[10]], expected: 10 }
+                ],
+                initialCode: "def find_max(numbers):\n    # Your code here\n    pass"
+            },
+            {
+                id: 2,
+                topic: "Lists",
+                title: "Reverse a list without using built-in reverse()",
+                description: "Write a function called 'reverse_list' that takes a list and returns a new list with elements in reverse order.",
+                testCases: [
+                    { input: [[1, 2, 3, 4]], expected: [4, 3, 2, 1] },
+                    { input: [['a', 'b', 'c']], expected: ['c', 'b', 'a'] },
+                    { input: [[]], expected: [] }
+                ],
+                initialCode: "def reverse_list(lst):\n    # Your code here\n    pass"
+            },
+            {
+                id: 3,
+                topic: "Lists",
+                title: "Count occurrences of an element",
+                description: "Write a function called 'count_element' that takes a list and an element, returns how many times the element appears.",
+                testCases: [
+                    { input: [[1, 2, 3, 2, 2], 2], expected: 3 },
+                    { input: [['a', 'b', 'a', 'c'], "'a'"], expected: 2 },
+                    { input: [[1, 2, 3], 5], expected: 0 }
+                ],
+                initialCode: "def count_element(lst, element):\n    # Your code here\n    pass"
+            },
+            {
+                id: 4,
+                topic: "Lists",
+                title: "Remove duplicates from a list",
+                description: "Write a function called 'remove_duplicates' that takes a list and returns a new list with duplicates removed, maintaining order.",
+                testCases: [
+                    { input: [[1, 2, 2, 3, 1]], expected: [1, 2, 3] },
+                    { input: [['a', 'b', 'a', 'c', 'b']], expected: ['a', 'b', 'c'] },
+                    { input: [[]], expected: [] }
+                ],
+                initialCode: "def remove_duplicates(lst):\n    # Your code here\n    pass"
+            },
+            {
+                id: 5,
+                topic: "Lists",
+                title: "Find common elements between two lists",
+                description: "Write a function called 'find_common' that takes two lists and returns a list of common elements.",
+                testCases: [
+                    { input: [[1, 2, 3], [2, 3, 4]], expected: [2, 3] },
+                    { input: [['a', 'b'], ['b', 'c']], expected: ['b'] },
+                    { input: [[1, 2], [3, 4]], expected: [] }
+                ],
+                initialCode: "def find_common(list1, list2):\n    # Your code here\n    pass"
+            },
+            {
+                id: 6,
+                topic: "Tuples",
+                title: "Get the second element of a tuple",
+                description: "Write a function called 'get_second' that takes a tuple and returns the second element. Return None if tuple has less than 2 elements.",
+                testCases: [
+                    { input: [[1, 2, 3]], expected: 2 },
+                    { input: [['a', 'b', 'c', 'd']], expected: 'b' },
+                    { input: [[5]], expected: null }
+                ],
+                initialCode: "def get_second(tup):\n    # Your code here\n    pass"
+            },
+            {
+                id: 7,
+                topic: "Tuples",
+                title: "Convert tuple to list and back",
+                description: "Write a function called 'tuple_to_list_and_back' that takes a tuple, converts it to a list, adds an element, then converts back to tuple.",
+                testCases: [
+                    { input: [[1, 2, 3], 4], expected: '(1, 2, 3, 4)' },
+                    { input: [['a', 'b'], "'c'"], expected: "('a', 'b', 'c')" },
+                    { input: [[], 1], expected: '(1,)' }
+                ],
+                initialCode: "def tuple_to_list_and_back(tup, new_element):\n    # Your code here\n    pass"
+            },
+            {
+                id: 8,
+                topic: "Tuples",
+                title: "Find tuple with maximum sum",
+                description: "Write a function called 'max_sum_tuple' that takes a list of tuples (each containing numbers) and returns the tuple with the highest sum.",
+                testCases: [
+                    { input: [[[1, 2], [3, 4], [1, 1]]], expected: [3, 4] },
+                    { input: [[[5, 5], [2, 8], [3, 6]]], expected: [5, 5] },
+                    { input: [[[0, 0], [1, -1], [-2, 3]]], expected: [-2, 3] }
+                ],
+                initialCode: "def max_sum_tuple(tuple_list):\n    # Your code here\n    pass"
+            },
+            {
+                id: 9,
+                topic: "Tuples",
+                title: "Count elements in nested tuples",
+                description: "Write a function called 'count_nested_elements' that takes a tuple of tuples and returns the total count of all elements.",
+                testCases: [
+                    { input: [[[1, 2], [3, 4, 5]]], expected: 5 },
+                    { input: [[[1], [2, 3], [4, 5, 6]]], expected: 6 },
+                    { input: [[]], expected: 0 }
+                ],
+                initialCode: "def count_nested_elements(nested_tuple):\n    # Your code here\n    pass"
+            },
+            {
+                id: 10,
+                topic: "Tuples",
+                title: "Swap tuple elements",
+                description: "Write a function called 'swap_tuple' that takes a tuple with exactly 2 elements and returns a new tuple with elements swapped.",
+                testCases: [
+                    { input: [[1, 2]], expected: '(2, 1)' },
+                    { input: [[1, 2]], expected: '(2, 1)' },
+                    { input: [['hello', 'world']], expected: "('world', 'hello')" }
+                ],
+                initialCode: "def swap_tuple(tup):\n    # Your code here\n    pass"
+            },
+            {
+                id: 11,
+                topic: "Functions",
+                title: "Calculate factorial",
+                description: "Write a function called 'factorial' that takes a non-negative integer and returns its factorial.",
+                testCases: [
+                    { input: [5], expected: 120 },
+                    { input: [0], expected: 1 },
+                    { input: [3], expected: 6 }
+                ],
+                initialCode: "def factorial(n):\n    # Your code here\n    pass"
+            },
+            {
+                id: 12,
+                topic: "Functions",
+                title: "Check if number is prime",
+                description: "Write a function called 'is_prime' that takes a number and returns True if it's prime, False otherwise.",
+                testCases: [
+                    { input: [7], expected: true },
+                    { input: [4], expected: false },
+                    { input: [2], expected: true }
+                ],
+                initialCode: "def is_prime(n):\n    # Your code here\n    pass"
+            },
+            {
+                id: 13,
+                topic: "Functions",
+                title: "Sum of squares",
+                description: "Write a function called 'sum_of_squares' that takes two numbers and returns the sum of their squares.",
+                testCases: [
+                    { input: [3, 4], expected: 25 },
+                    { input: [1, 1], expected: 2 },
+                    { input: [0, 5], expected: 25 }
+                ],
+                initialCode: "def sum_of_squares(a, b):\n    # Your code here\n    pass"
+            },
+            {
+                id: 14,
+                topic: "Functions",
+                title: "Calculate average of positive numbers",
+                description: "Write a function called 'average_positive' that takes a list of numbers and returns the average of only the positive numbers. Return 0 if no positive numbers.",
+                testCases: [
+                    { input: [[1, -2, 3, -4, 5]], expected: '3.0' },
+                    { input: [[-1, -2, -3]], expected: 0 },
+                    { input: [[2, 4, 6]], expected: '4.0' }
+                ],
+                initialCode: "def average_positive(numbers):\n    # Your code here\n    pass"
+            },
+            {
+                id: 15,
+                topic: "Functions",
+                title: "Calculate sum of even numbers",
+                description: "Write a function called 'sum_even' that takes a list of integers and returns the sum of only the even numbers. Return 0 if no even numbers exist.",
+                testCases: [
+                    { input: [[2, 3, 4, 5, 6]], expected: 12 },
+                    { input: [[1, 3, 5, 7]], expected: 0 },
+                    { input: [[]], expected: 0 }
+                ],
+                initialCode: "def sum_even(numbers):\n    # Your code here\n    pass"
+            }
+        ];
+
+        let questionResults = {};
+        let isSubmitting = false;
+        let codeEditors = {};
+        let username = null;
+        let email = null;
+        let timerInterval = null;
+        let timeRemaining = 90 * 60; // 90 minutes in seconds
+        let assessmentStartTime = null;
+        let hasSubmitted = false;
+
+        // Fetch user session info
+        async function fetchSessionInfo() {
+            try {
+                const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/session-info', {
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    username = data.username;
+                    email = data.email;
+                    console.log("User:", username, "Email:", email);
+                    return true;
+                } else {
+                    console.error('Failed to fetch session info');
+                    alert('Please login to take the assessment');
+                    window.location.href = '/login.html';
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error fetching session info:', error);
+                alert('Error connecting to server. Please try again.');
+                return false;
+            }
+        }
+
+        // Timer functions
+        function startTimer() {
+            assessmentStartTime = new Date();
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function updateTimer() {
+            if (timeRemaining <= 0) {
+                clearInterval(timerInterval);
+                autoSubmit();
+                return;
+            }
+
+            timeRemaining--;
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            const timerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            document.getElementById('timer-text').textContent = timerText;
+            
+            const timerContainer = document.getElementById('timer');
+            if (timeRemaining <= 300) { // 5 minutes
+                timerContainer.classList.add('danger');
+            } else if (timeRemaining <= 600) { // 10 minutes
+                timerContainer.classList.add('warning');
+            }
+        }
+
+        async function autoSubmit() {
+            if (hasSubmitted) return;
+            
+            // Show auto-submit warning
+            const warningDiv = document.createElement('div');
+            warningDiv.className = 'auto-submit-warning';
+            warningDiv.innerHTML = `
+                <h3>⏰ Time's Up!</h3>
+                <p>Your assessment is being automatically submitted...</p>
+                <div class="loading"></div>
+            `;
+            document.body.appendChild(warningDiv);
+            
+            // Wait a moment for user to see the message
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            await submitAllAnswers(true);
+            
+            warningDiv.remove();
+        }
+
+        async function initializeAssessment() {
+            console.log('Initializing assessment...');
+            
+            // First fetch user session
+            const sessionValid = await fetchSessionInfo();
+            if (!sessionValid) return;
+            
+            renderAllQuestions();
+            setupScrollToTop();
+            startTimer();
+        }
+
+        function renderAllQuestions() {
+            console.log('Rendering questions...');
+            const container = document.getElementById('questionsContainer');
+            
+            if (!container) {
+                console.error('Questions container not found!');
+                return;
+            }
+            
+            container.innerHTML = '';
+
+            questions.forEach((question, index) => {
+                console.log(`Rendering question ${index + 1}: ${question.title}`);
+                
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question-card';
+                questionDiv.id = `question-${index}`;
+
+                const testCasesHtml = question.testCases.map(tc => 
+                    `<div class="test-case">Input: ${JSON.stringify(tc.input)} → Expected: ${JSON.stringify(tc.expected)}</div>`
+                ).join('');
+
+                questionDiv.innerHTML = `
+                    <div class="question-header">
+                        <span class="question-number">${question.id}</span>
+                        <h3 class="question-title">${question.title}</h3>
+                        <span class="topic-badge">${question.topic}</span>
+                    </div>
+                    
+                    <div class="question-description">
+                        <p>${question.description}</p>
+                    </div>
+
+                    <div class="test-cases">
+                        <h4>Test Cases:</h4>
+                        ${testCasesHtml}
+                    </div>
+
+                    <textarea id="code-${index}" style="display: none;">${question.initialCode}</textarea>
+
+                    <div class="test-button-container">
+                        <button class="btn-test" onclick="testSingleQuestion(${index})">Test</button>
+                    </div>
+
+                    <div class="results" id="results-${index}"></div>
+                `;
+
+                container.appendChild(questionDiv);
+            });
+            
+            // Initialize CodeMirror editors
+            setTimeout(() => {
+                setupCodeEditors();
+            }, 100);
+            
+            console.log('All questions rendered successfully!');
+        }
+
+        function setupCodeEditors() {
+            questions.forEach((_, index) => {
+                const textarea = document.getElementById(`code-${index}`);
+                if (textarea) {
+                    codeEditors[index] = CodeMirror.fromTextArea(textarea, {
+                        mode: "python",
+                        theme: "dracula",
+                        lineNumbers: true,
+                        indentUnit: 4,
+                        matchBrackets: true,
+                        viewportMargin: Infinity,
+                        lineWrapping: true,
+                        extraKeys: {
+                            "Tab": (cm) => {
+                                cm.replaceSelection("    ");
+                            }
+                        }
+                    });
+                    
+                    // Set initial height
+                    codeEditors[index].setSize("100%", "200px");
+                }
+            });
+        }
+
+        async function testSingleQuestion(questionIndex) {
+            const code = codeEditors[questionIndex].getValue().trim();
+            const resultsDiv = document.getElementById(`results-${questionIndex}`);
+            const testBtn = document.querySelector(`#question-${questionIndex} .btn-test`);
+            
+            if (!code || code === questions[questionIndex].initialCode) {
+                resultsDiv.innerHTML = '<div class="result-info">Please write some code before testing!</div>';
+                resultsDiv.classList.add('show');
+                return;
+            }
+
+            // Show running message
+            resultsDiv.style.display = "block";
+            resultsDiv.classList.add('show');
+            resultsDiv.innerHTML = '<div class="result-info"><span class="loading"></span> Running your code...</div>';
+            
+            testBtn.disabled = true;
+            testBtn.innerHTML = '<span class="loading-small"></span>Testing...';
+            
+            try {
+                // Call the Flask API for actual Python execution
+                const response = await fetch('https://flask-hello-world-2-eta.vercel.app/diagnostic', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        code: code, 
+                        test_cases: questions[questionIndex].testCases.map(tc => ({
+                            input: tc.input,
+                            expected: tc.expected
+                        }))
+                    })
+                });
+
+                const result = await response.json();
+                resultsDiv.innerHTML = "";
+
+                // Add raw output if available
+                if (result.raw_output) {
+                    resultsDiv.innerHTML += `<div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                        <h4 style="margin-bottom: 10px;">Code Output:</h4>
+                        <pre style="margin: 0; white-space: pre-wrap;">${result.raw_output}</pre>
+                    </div>`;
+                }
+
+                if (result.error) {
+                    resultsDiv.innerHTML += `<div class="result-fail">
+                        <h4>Error:</h4>
+                        <pre style="color: #721c24; white-space: pre-wrap;">${result.error}</pre>
+                    </div>`;
+                    questionResults[questionIndex] = { score: 0, total: questions[questionIndex].testCases.length, status: 'error' };
+                } else {
+                    let passedTests = 0;
+                    const totalTests = questions[questionIndex].testCases.length;
+
+                    // Count passed tests
+                    result.results.forEach((res) => {
+                        if (res.passed) passedTests++;
+                    });
+
+                    // Show overall progress
+                    const percentage = Math.round((passedTests / totalTests) * 100);
+                    resultsDiv.innerHTML += `
+                        <div style="margin-bottom: 15px; padding: 15px; background: ${passedTests === totalTests ? '#d4edda' : '#f8f9fa'}; border-radius: 8px; border-left: 4px solid ${passedTests === totalTests ? '#28a745' : '#667eea'};">
+                            <h4 style="margin: 0 0 10px 0;">Test Results: ${passedTests}/${totalTests} tests passing (${percentage}%)</h4>
+                            ${passedTests === totalTests ? '<div style="color: #155724; font-weight: bold;">✅ Excellent! All tests passed!</div>' : ''}
+                        </div>
+                    `;
+
+                    // Show individual test results
+                    result.results.forEach((res, index) => {
+                        const testCase = questions[questionIndex].testCases[index];
+                        const passed = res.passed;
+                        
+                        // Parse output if it's a string representation
+                        let output = res.output;
+                        try {
+                            // Try to parse JSON strings like "[1, 2, 3]" or "\"hello\""
+                            if (typeof output === 'string' && (output.startsWith('[') || output.startsWith('"') || output.startsWith('{'))) {
+                                output = JSON.parse(output);
+                            }
+                        } catch (e) {
+                            // Keep original if parsing fails
+                        }
+                        
+                        resultsDiv.innerHTML += `
+                            <div class="result-${passed ? 'pass' : 'fail'}" style="margin-bottom: 10px;">
+                                <strong>Test ${index + 1}: ${passed ? 'PASS ✓' : 'FAIL ✗'}</strong>
+                                <div style="margin-top: 5px;">
+                                    <div><strong>Input:</strong> <code>${JSON.stringify(testCase.input)}</code></div>
+                                    <div><strong>Expected:</strong> <code>${JSON.stringify(testCase.expected)}</code></div>
+                                    <div><strong>Your Output:</strong> <code>${output !== undefined ? JSON.stringify(output) : 'No output'}</code></div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    questionResults[questionIndex] = { 
+                        score: passedTests, 
+                        total: totalTests, 
+                        status: passedTests === totalTests ? 'perfect' : 'partial' 
+                    };
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="result-fail">
+                    <h4>Connection Error:</h4>
+                    <p>${error.message}</p>
+                    <p>Please check your internet connection and try again.</p>
+                </div>`;
+                questionResults[questionIndex] = { score: 0, total: questions[questionIndex].testCases.length, status: 'error' };
+            } finally {
+                testBtn.disabled = false;
+                testBtn.textContent = 'Test';
+            }
+        }
+
+        async function simulatePythonExecution(code, testCases) {
+            // This is a simulation - in a real environment, you'd send this to a Python execution service
+            const results = [];
+            
+            try {
+                // Extract function name
+                const funcMatch = code.match(/def\s+(\w+)\s*\(/);
+                if (!funcMatch) {
+                    throw new Error('No function definition found');
+                }
+                
+                const funcName = funcMatch[1];
+                
+                // Check if function only contains pass or is empty
+                const functionBody = code.substring(code.indexOf(':') + 1).trim();
+                const hasOnlyPass = functionBody === 'pass' || functionBody.match(/^\s*pass\s*$/);
+                const hasNoImplementation = hasOnlyPass || functionBody.includes('# Your code here\n    pass');
+                
+                if (hasNoImplementation) {
+                    throw new Error('Function not implemented - please write your code');
+                }
+                
+                // Simulate test execution
+                for (let i = 0; i < testCases.length; i++) {
+                    const testCase = testCases[i];
+                    
+                    try {
+                        // This is a mock result - replace with actual Python execution
+                        const mockResult = getMockResult(funcName, testCase, code);
+                        const passed = JSON.stringify(mockResult) === JSON.stringify(testCase.expected);
+                        
+                        results.push({
+                            input: testCase.input,
+                            expected: testCase.expected,
+                            output: mockResult,
+                            passed: passed
+                        });
+                    } catch (error) {
+                        results.push({
+                            input: testCase.input,
+                            expected: testCase.expected,
+                            error: error.message
+                        });
+                    }
+                }
+            } catch (error) {
+                throw new Error(`Code execution failed: ${error.message}`);
+            }
+            
+            return results;
+        }
+
+        function getMockResult(funcName, testCase, code) {
+            // Check if the function has actual implementation
+            if (!code || code.includes('pass') && !code.includes('return')) {
+                throw new Error('Function not implemented');
+            }
+            
+            // Mock implementation for demonstration
+            // In a real application, this would execute actual Python code
+            
+            switch (funcName) {
+                case 'find_max':
+                    return Math.max(...testCase.input[0]);
+                
+                case 'reverse_list':
+                    return [...testCase.input[0]].reverse();
+                
+                case 'count_element':
+                    return testCase.input[0].filter(x => x === testCase.input[1]).length;
+                
+                case 'remove_duplicates':
+                    const seen = new Set();
+                    return testCase.input[0].filter(x => {
+                        if (seen.has(x)) return false;
+                        seen.add(x);
+                        return true;
+                    });
+                
+                case 'find_common':
+                    const [list1, list2] = testCase.input;
+                    return list1.filter(x => list2.includes(x));
+                
+                case 'get_second':
+                    const tuple = testCase.input[0];
+                    return tuple.length >= 2 ? tuple[1] : null;
+                
+                case 'tuple_to_list_and_back':
+                    const [tup, newElement] = testCase.input;
+                    return [...tup, newElement];
+                
+                case 'max_sum_tuple':
+                    const tuples = testCase.input[0];
+                    let maxSum = -Infinity;
+                    let maxTuple = null;
+                    for (const t of tuples) {
+                        const sum = t.reduce((a, b) => a + b, 0);
+                        if (sum > maxSum) {
+                            maxSum = sum;
+                            maxTuple = t;
+                        }
+                    }
+                    return maxTuple;
+                
+                case 'count_nested_elements':
+                    const nested = testCase.input[0];
+                    return nested.reduce((count, subTuple) => count + subTuple.length, 0);
+                
+                case 'swap_tuple':
+                    const [a, b] = testCase.input[0];
+                    return [b, a];
+                
+                case 'factorial':
+                    const n = testCase.input[0];
+                    let result = 1;
+                    for (let i = 2; i <= n; i++) result *= i;
+                    return result;
+                
+                case 'is_prime':
+                    const num = testCase.input[0];
+                    if (num < 2) return false;
+                    for (let i = 2; i <= Math.sqrt(num); i++) {
+                        if (num % i === 0) return false;
+                    }
+                    return true;
+                
+                case 'sum_of_squares':
+                    const [a_val, b_val] = testCase.input;
+                    return a_val * a_val + b_val * b_val;
+                
+                
+                case 'average_positive':
+                    const numbers = testCase.input[0];
+                    const positives = numbers.filter(x => x > 0);
+                    return positives.length > 0 ? positives.reduce((a, b) => a + b) / positives.length : 0;
+                
+                default:
+                    return "Mock result - implement actual Python execution";
+            }
+        }
+
+        function displayResults(questionIndex, results) {
+            const resultsDiv = document.getElementById(`results-${questionIndex}`);
+            let passedTests = 0;
+            let resultsHtml = '<h4>Test Results:</h4>';
+
+            results.forEach((result, index) => {
+                if (result.error) {
+                    resultsHtml += `<div class="result-fail">Test ${index + 1}: ERROR - ${result.error}</div>`;
+                } else {
+                    const passed = result.passed;
+                    if (passed) passedTests++;
+                    
+                    resultsHtml += `
+                        <div class="result-${passed ? 'pass' : 'fail'}">
+                            <strong>Test ${index + 1}: ${passed ? 'PASS ✓' : 'FAIL ✗'}</strong><br>
+                            Input: ${JSON.stringify(result.input)}<br>
+                            Expected: ${JSON.stringify(result.expected)}<br>
+                            Your Output: ${JSON.stringify(result.output)}
+                        </div>
+                    `;
+                }
+            });
+
+            resultsHtml += `<div style="margin-top: 15px; padding: 10px; background: ${passedTests === results.length ? '#d4edda' : '#f8d7da'}; border-radius: 5px;">
+                <strong>Score: ${passedTests}/${results.length} tests passed</strong>
+            </div>`;
+            
+            questionResults[questionIndex] = { 
+                score: passedTests, 
+                total: results.length, 
+                status: passedTests === results.length ? 'perfect' : 'partial' 
+            };
+            resultsDiv.innerHTML = resultsHtml;
+        }
+
+        async function submitAllAnswers(isAutoSubmit = false) {
+            if (isSubmitting || hasSubmitted) return;
+
+            if (!username || !email) {
+                alert("Error: User session data not found. Please log in.");
+                return;
+            }
+
+            const hasAnyCode = questions.some((_, index) => {
+                const code = codeEditors[index].getValue().trim();
+                return code && code !== questions[index].initialCode;
+            });
+
+            if (!hasAnyCode && !isAutoSubmit) {
+                alert('Please write code for at least one question before submitting!');
+                return;
+            }
+
+            // Confirmation for manual submit
+            if (!isAutoSubmit) {
+                const unattemptedCount = questions.filter((_, index) => {
+                    const code = codeEditors[index].getValue().trim();
+                    return !code || code === questions[index].initialCode;
+                }).length;
+
+                if (unattemptedCount > 0) {
+                    const confirmMessage = `You have ${unattemptedCount} unattempted question(s). Are you sure you want to submit?`;
+                    if (!confirm(confirmMessage)) return;
+                }
+            }
+
+            isSubmitting = true;
+            hasSubmitted = true;
+            clearInterval(timerInterval); // Stop the timer
+
+            const submitBtn = document.getElementById('submitBtn');
+            const submitText = document.getElementById('submitText');
+            const submitLoading = document.getElementById('submitLoading');
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitText.style.display = 'none';
+                submitLoading.style.display = 'inline-block';
+            }
+
+            questionResults = {};
+            const completionTime = Math.floor((new Date() - assessmentStartTime) / 1000);
+
+            try {
+                // Test all questions first
+                for (let i = 0; i < questions.length; i++) {
+                    const code = codeEditors[i].getValue().trim();
+                    const resultsDiv = document.getElementById(`results-${i}`);
+
+                    if (!code || code === questions[i].initialCode) {
+                        resultsDiv.innerHTML = '<div class="result-info">Question skipped - No code provided</div>';
+                        resultsDiv.classList.add('show');
+                        questionResults[i] = { score: 0, total: 3, status: 'skipped' };
+                        continue;
+                    }
+
+                    try {
+                        resultsDiv.innerHTML = '<div class="result-info">Testing your solution...</div>';
+                        resultsDiv.classList.add('show');
+
+                        const response = await fetch('https://flask-hello-world-2-eta.vercel.app/diagnostic', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                                code: code, 
+                                test_cases: questions[i].testCases.map(tc => ({
+                                    input: tc.input,
+                                    expected: tc.expected
+                                }))
+                            })
+                        });
+
+                        const result = await response.json();
+                        
+                        let passedTests = 0;
+                        if (!result.error && result.results) {
+                            result.results.forEach(res => {
+                                if (res.passed) passedTests++;
+                            });
+                        }
+
+                        const isCorrect = passedTests === questions[i].testCases.length;
+                        
+                        resultsDiv.innerHTML = `<div style="padding: 10px; background: ${isCorrect ? '#d4edda' : '#f8d7da'}; border-radius: 5px;">
+                            <strong>Score: ${passedTests}/${questions[i].testCases.length} tests passed</strong>
+                        </div>`;
+                        
+                        questionResults[i] = { 
+                            score: passedTests, 
+                            total: questions[i].testCases.length, 
+                            status: isCorrect ? 'perfect' : 'partial' 
+                        };
+
+                    } catch (error) {
+                        resultsDiv.innerHTML = `<div class="result-fail">Error: Testing failed</div>`;
+                        questionResults[i] = { score: 0, total: 3, status: 'error' };
+                    }
+
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                // Calculate total score and time taken
+                const totalScore = Object.values(questionResults).reduce((sum, r) => sum + r.score, 0);
+                const maxScore = questions.length * 3;
+                const scorePercentage = Math.round((totalScore / maxScore) * 100);
+                
+                // Format time taken
+                const minutes = Math.floor(completionTime / 60);
+                const seconds = completionTime % 60;
+                const timeTaken = `${minutes}m ${seconds}s`;
+
+                // Prepare data for new API format
+                const submitData = {
+                    username: username,
+                    email: email,
+                    topics: [{
+                        topicName: 'Lists, Tuples & Functions',
+                        score: scorePercentage,
+                        timeTaken: timeTaken,
+                        timestamp: new Date(),
+                        submissions: [{
+                            score: scorePercentage,
+                            timeTaken: timeTaken,
+                            timestamp: new Date()
+                        }]
+                    }]
+                };
+
+                console.log('Submitting assessment data:', submitData);
+
+                // Submit to new endpoint
+                const submitResponse = await fetch('https://sanghamitra-learnworld.vercel.app/api/weekly-assessments', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(submitData)
+                });
+
+                if (!submitResponse.ok) {
+                    const errorData = await submitResponse.json();
+                    throw new Error(errorData.error || 'Failed to submit assessment');
+                }
+
+                const responseData = await submitResponse.json();
+                console.log('Assessment submitted successfully:', responseData);
+
+                // Show results
+                showSummary();
+
+                // Disable all editors
+                questions.forEach((_, index) => {
+                    if (codeEditors[index]) {
+                        codeEditors[index].setOption('readOnly', true);
+                    }
+                });
+
+                // Show success message
+                const statusDiv = document.createElement('div');
+                statusDiv.className = 'submission-status submission-success';
+                statusDiv.innerHTML = '✅ Assessment Successfully Submitted to Database!';
+                document.getElementById('summary').prepend(statusDiv);
+
+            } catch (error) {
+                console.error('Submission error:', error);
+                
+                // Show error message
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'submission-status submission-error';
+                errorDiv.innerHTML = `❌ Submission failed: ${error.message}`;
+                
+                // Add error div to the page
+                const container = document.querySelector('.content');
+                container.appendChild(errorDiv);
+                
+                // Still show results even if submission failed
+                showSummary();
+                
+                hasSubmitted = false; // Allow retry
+            } finally {
+                isSubmitting = false;
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitText.style.display = 'inline';
+                    submitText.textContent = hasSubmitted ? 'Assessment Submitted' : 'Submit All Answers';
+                    submitLoading.style.display = 'none';
+                }
+            }
+        }
+
+        function showSummary() {
+            document.getElementById('submitSection').style.display = 'none';
+            
+            const summary = document.getElementById('summary');
+            const totalScore = Object.values(questionResults).reduce((sum, result) => sum + result.score, 0);
+            const maxPossible = questions.length * 3;
+            const percentageScore = Math.round((totalScore / maxPossible) * 100);
+
+            document.getElementById('scoreCircle').textContent = `${percentageScore}%`;
+            
+            const breakdown = document.getElementById('scoreBreakdown');
+            breakdown.innerHTML = '';
+
+            // Add submission status
+            const statusDiv = document.createElement('div');
+            statusDiv.className = 'submission-status submission-success';
+            statusDiv.innerHTML = '✅ Assessment Successfully Submitted!';
+            breakdown.before(statusDiv);
+
+            // DEBUG: Log the results to console
+            console.log('Question Results:', questionResults);
+            console.log('Total Score:', totalScore);
+            console.log('Max Possible:', maxPossible);
+
+            const topics = ['Lists', 'Tuples', 'Functions'];
+            topics.forEach(topic => {
+                const topicQuestions = questions.filter(q => q.topic === topic);
+                
+                // FIXED: Calculate topic score correctly using array index instead of question ID
+                const topicScore = topicQuestions.reduce((sum, q) => {
+                    // Find the correct array index for this question
+                    const questionIndex = questions.findIndex(quest => quest.id === q.id);
+                    const result = questionResults[questionIndex];
+                    
+                    // DEBUG: Log each question's contribution
+                    console.log(`${topic} - Question ${q.id}: Index ${questionIndex}, Score ${result ? result.score : 'MISSING'}`);
+                    
+                    return sum + (result ? result.score : 0);
+                }, 0);
+                
+                const topicMax = topicQuestions.length * 3;
+
+                // DEBUG: Log topic totals
+                console.log(`${topic} Total: ${topicScore}/${topicMax}`);
+
+                const scoreItem = document.createElement('div');
+                scoreItem.className = 'score-item';
+                scoreItem.innerHTML = `
+                    <h4>${topic}</h4>
+                    <p>Score: ${topicScore}/${topicMax}</p>
+                    <p>Percentage: ${Math.round((topicScore/topicMax) * 100)}%</p>
+                `;
+                breakdown.appendChild(scoreItem);
+            });
+
+            const percentage = (totalScore / maxPossible) * 100;
+            let message = '';
+            
+            if (percentage >= 90) {
+                message = '🎉 Excellent! You have mastered Python fundamentals!';
+            } else if (percentage >= 70) {
+                message = '👍 Good job! You have a solid understanding of Python basics.';
+            } else if (percentage >= 50) {
+                message = '💪 Not bad! Keep practicing to improve your skills.';
+            } else {
+                message = '📚 Keep learning! Practice makes perfect in programming.';
+            }
+            
+            document.getElementById('scoreMessage').textContent = message;
+            
+            // Add completion time
+            const completionTime = Math.floor((new Date() - assessmentStartTime) / 1000);
+            const minutes = Math.floor(completionTime / 60);
+            const seconds = completionTime % 60;
+            
+            const timeDiv = document.createElement('div');
+            timeDiv.style.marginTop = '20px';
+            timeDiv.innerHTML = `<p><strong>Time Taken:</strong> ${minutes} minutes ${seconds} seconds</p>`;
+            breakdown.appendChild(timeDiv);
+            
+            summary.classList.add('show');
+            summary.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function restartAssessment() {
+            // go to ../weekly_assessment.html
+            window.location.href = '../weekly_assessment.html';
+        }
+
+        function setupScrollToTop() {
+            const scrollBtn = document.getElementById('scrollToTop');
+            
+            window.addEventListener('scroll', () => {
+                if (window.pageYOffset > 300) {
+                    scrollBtn.style.display = 'block';
+                } else {
+                    scrollBtn.style.display = 'none';
+                }
+            });
+        }
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Initialize the assessment
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeAssessment);
+        } else {
+            initializeAssessment();
+        }
+        
+        
+
+        // Prevent accidental navigation
+        window.addEventListener('beforeunload', function(e) {
+            if (!hasSubmitted && isSubmitting === false) {
+                e.preventDefault();
+                e.returnValue = 'Are you sure you want to leave? Your assessment progress will be lost!';
+                return e.returnValue;
+            }
+        });
+    </script>
+</body>
+</html>

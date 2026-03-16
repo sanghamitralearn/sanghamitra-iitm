@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Python Functions</title>
+  <meta content="" name="description">
+  <meta content="" name="keywords">
+
+  <!-- Favicons -->
+  <link href="../assets/img/favicon.png" rel="icon">
+  <link href="../assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="../assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="../assets/vendor/aos/aos.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+  <link href="../assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+
+  <!-- Main CSS File -->
+  <link href="../assets/css/main.css" rel="stylesheet">
+</head>
+
+<style>
+  .container h1 {
+    text-align: center;
+    font-family: "arial", sans-serif;
+  }
+
+  .container h2 {
+    font-family: 'Comic Sans MS', cursive;
+    font-size: 16px;
+  }
+
+  /* Add to existing style section */
+    .text-success { color: #28a745 !important; }
+    .text-danger { color: #dc3545 !important; }
+    .bi-1-circle, .bi-2-circle, .bi-3-circle { 
+    margin-right: 8px;
+    font-size: 1.2em;
+    }
+
+    .explanation {
+        
+        background: #ffffff;
+        
+        margin: 1.5rem 0;
+        
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    code {
+            background-color: var(--light-bg);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+
+        .code-section {
+            margin: 1.5rem 0;
+            position: relative;
+        }
+
+        .CodeMirror {
+            border-radius: var(--border-radius) !important;
+            border: 1px solid #e0e0e0 !important;
+            font-size: 0.95rem;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .CodeMirror:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .output {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: var(--border-radius);
+            white-space: pre-wrap;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            min-height: 50px;
+            display: none;
+            position: relative;
+        }
+
+        .output::before {
+            display: block;
+            font-weight: 500;
+            color: var(--secondary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        button {
+            padding: 0.8rem 1.5rem;
+            background-color: var(--primary-color);
+            color: rgb(0, 7, 7);
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 1rem 0;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #28a745;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        ul {
+            padding-left: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .CodeMirror {
+            width: 100% !important;
+            max-width: 1100px; /* Adjust as per your layout */
+        }
+
+
+        .guide-content .section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+
+            .flowchart-example {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            }
+
+
+</style>
+
+<body>
+
+  <!-- Header Section -->
+  <header id="header" class="header d-flex align-items-center sticky-top">
+    <div class="container-fluid container-xl position-relative d-flex align-items-center">
+      <a href="../index.html" class="logo d-flex align-items-center me-auto">
+        <h1><img src="../img/sbi.logo.png" alt="company logo" width="80" height="80">Sanghamitra Learning</h1>
+      </a>
+
+      <nav id="navmenu" class="navmenu">
+        <div id="navbar-placeholder"></div>
+        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+      </nav>
+    </div>
+  </header>
+
+  
+  <!-- Main Content -->
+  <main class="main">
+    <div class="page-title" data-aos="fade">
+        <div class="heading col-lg-12">
+          <div class="container">
+            <div class="row d-flex justify-content-center text-center">
+              <div class="col-lg-8">
+              <h1>Python Functions</h1>
+              <p class="mb-0">Master modular programming with reusable functions</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <nav class="breadcrumbs">
+        <div class="container">
+          <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="programming.html">Programming</a></li>
+            <li class="current">Python Functions</li>
+          </ol>
+        </div>
+      </nav>
+    </div>
+
+    <section class="guide-content">
+      <div class="container">
+        <div class="row justify-content-center">
+          <div class="col-lg-10">
+
+            <!-- Introduction Section -->
+            <div class="section" data-aos="fade-up">
+              <h2><i class="bi bi-gear icon icon-intro"></i>Introduction to Functions</h2>
+              <div class="flowchart-example">
+                <h4><i class="bi bi-lightbulb icon icon-imp"></i>Key Benefits</h4>
+                <ul>
+                  <li>Reduce code redundancy</li>
+                  <li>Improve readability</li>
+                  <li>Enable modular programming</li>
+                </ul>
+
+                <h4><i class="bi bi-lightbulb icon icon-imp"></i>Computational Thinking Principle</h4>
+                <p>Using functions is a key part of Computational Thinking—they help us organize our code by breaking tasks into smaller parts (decomposition) and by focusing on what a part does without worrying about how it works (abstraction).</p>
+
+
+                <h4><i class="bi bi-cup-hot icon icon-mistake"></i>Real-Life Examples</h4>
+                <ul>
+                  <li>Coffee machine workflow</li>
+                  <li>ATM transaction processing</li>
+                  <li>Calculator operations</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Function Representation -->
+            <div class="section" data-aos="fade-up">
+              <h2><i class="bi bi-diagram-3 icon icon-def"></i>Function Structure</h2>
+              <div class="flowchart-example">
+                <h4><i class="bi bi-shuffle icon icon-strategy"></i>Flowchart Representation</h4>
+                <ol>
+                  <li>Define function with meaningful name</li>
+                  <li>Declare parameters (inputs)</li>
+                  <li>Implement logic</li>
+                  <li>Return output (optional)</li>
+                  <li>Call function when needed</li>
+                </ol>
+              </div>
+            </div>
+
+            <!-- Function Implementation -->
+            <div class="container guide-content">
+              <div class="section" data-aos="fade-up">
+                  <h2><i class="bi bi-code-square icon icon-conclusion"></i> Function Implementation</h2>
+                  
+                  <div class="row">
+                  <div class="col-md-6">
+                      <div class="flowchart-example">
+                      <h4><i class="bi bi-code-square icon icon-conclusion"></i> Simple Function</h4>
+                      <div class="explanation">
+                          <textarea class="codeInput">def greet(name):
+    print("Hello, " + name)
+  
+greet("Alice")  # Output: Hello, Alice
+
+
+          </textarea>
+                          <button onclick="runCode(this)">Run Code</button>
+                          <div class="output"></div>
+                      </div>    
+                  </div>
+                  </div>
+                  
+                  <div class="col-md-6">
+                      <div class="flowchart-example">
+                      <h4><i class="bi bi-arrow-return-right"></i> Return Values</h4>
+                      <div class="explanation">
+                          <textarea class="codeInput">def add(a, b):
+    return a + b
+
+result = add(5, 3)
+print(result)  # Output: 8
+
+          </textarea>
+                          <button onclick="runCode(this)">Run Code</button>
+                          <div class="output"></div>
+                      </div>
+                      </div>
+                  </div>
+                  </div>
+                  <div class="flowchart-example">
+                    <h4><i class="bi bi-gear-wide-connected"></i> Default Parameters</h4>
+                    <p>Default parameters allow functions to be called with fewer arguments than defined. If an argument isn't provided, the default value is used.</p>
+                  <div class="explanation">
+                    
+                    <textarea class="codeInput">def power(base, exponent=2):
+    return base ** exponent
+
+print(power(3))    # 9
+print(power(3, 4)) # 81
+
+    </textarea>
+                    <button onclick="runCode(this)">Run Code</button>
+                    <div class="output"></div>
+                </div>
+              </div>
+          </div>
+   
+            <!-- Best Practices -->
+            <div class="section" data-aos="fade-up">
+              <h2><i class="bi bi-pencil icon icon-def"></i>Best Practices</h2>
+              
+              <div class="row">
+              <div class="col-md-6">
+                  <div class="flowchart-example">
+                  <h4><i class="bi bi-check-lg text-success"></i> Descriptive Naming</h4>
+                  <pre><code>def calculate_area(width, height):
+     return width * height</code></pre>
+                  </div>
+              </div>
+              
+              <div class="col-md-6">
+                  <div class="flowchart-example">
+                  <h4><i class="bi bi-x-lg text-danger"></i> Non-descriptive Naming</h4>
+                  <pre><code>def ca(w, h):
+     return w * h</code></pre>
+                  </div>
+              </div>
+              
+              </div>
+          </div>
+              
+
+            <!-- Examples Section -->
+            <div class="section" data-aos="fade-up">
+              <h2><i class="bi bi-code-slash"></i> Function Examples</h2>
+              
+              <div class="flowchart-example">
+              <h4><i class="bi bi-1-circle"></i> Example 1: Temperature Converter</h4>
+              <div class="explanation">
+                  <textarea class="codeInput">def celsius_to_fahrenheit(celsius):
+    return (celsius * 9/5) + 32
+
+temp_c = 25
+temp_f = celsius_to_fahrenheit(temp_c)
+print(temp_c, "Celsius is", temp_f, "Fahrenheit")
+
+</textarea>
+                  <button onclick="runCode(this)">Run Code</button>
+                  <div class="output"></div>
+              </div>
+          
+              <h4><i class="bi bi-2-circle"></i> Example 2: String Repeater</h4>
+              <div class="explanation">
+                  <textarea class="codeInput">def repeat_string(text, times=3):
+    return text * times
+
+print(repeat_string("Hello "))
+print(repeat_string("Python ", 5))
+
+</textarea>
+                  <button onclick="runCode(this)">Run Code</button>
+                  <div class="output"></div>
+              </div>
+          
+              <h4><i class="bi bi-3-circle"></i> Example 3: List Average</h4>
+              <div class="explanation">
+                  <textarea class="codeInput">def calculate_average(numbers):
+    return sum(numbers) / len(numbers)
+
+scores = [85, 90, 78, 92, 88]
+print("Average score:", calculate_average(scores))
+
+</textarea>
+                  <button onclick="runCode(this)">Run Code</button>
+                  <div class="output"></div>
+              </div>
+              </div>
+          </div>
+              
+
+            <!-- Problem Set -->
+            <div class="row d-flex justify-content-center">
+              <div class="col-lg-12">
+                <div class="card">
+                  <div class="card-header bg-success text-white">
+                    <h3><i class="bi bi-question-circle"></i> Practice Quiz</h3>
+                    <p class="mb-0">Test your Python skills with short practice exercises</p>
+                  </div>
+                  <div class="card-body">
+                    <div id="quiz-container">
+                      <div id="quiz-loading" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3">Loading practice questions...</p>
+                      </div>
+                      
+                      <div id="quiz-content" style="display: none;">
+                        <div class="quiz-header d-flex justify-content-between align-items-center mb-3">
+                          <h4 id="quiz-title">Question Title</h4>
+                          <span class="badge bg-info" id="quiz-topic">Topic</span>
+                        </div>
+                        
+                        <div id="question-counter" class="text-muted mb-2">
+                          Loading questions...
+                        </div>
+                        
+                        <div class="quiz-question mb-4" id="quiz-description">
+                          Question description goes here.
+                        </div>
+                        
+                        <textarea id="quiz-code-editor"></textarea>
+                        
+                        <div class="btn-toolbar mt-3 mb-3">
+                          <button class="btn btn-primary run-quiz-btn me-2" id="run-quiz-code">
+                            <i class="bi bi-play-fill"></i> Run Code
+                          </button>
+                          <button class="btn btn-outline-secondary show-quiz-hint-btn" id="show-quiz-hint">
+                            <i class="bi bi-lightbulb"></i> Show Hint
+                          </button>
+                          <button class="btn btn-success ms-auto" id="submit-quiz-answer">
+                            <i class="bi bi-check-circle"></i> Submit Answer
+                          </button>
+                        </div>
+                        
+                        <div class="quiz-hint-container alert alert-info" style="display: none;" id="quiz-hint">
+                          Hint will appear here.
+                        </div>
+                        
+                        <div class="quiz-output" style="display: none;" id="quiz-output">
+                          <h5>Output:</h5>
+                          <pre class="bg-light p-3 rounded"></pre>
+                        </div>
+                        
+                        <div class="quiz-result alert" style="display: none;" id="quiz-result">
+                          Result feedback will appear here.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="container guide-content">
+                <div class="section text-center" data-aos="fade-up">
+                  <h2>Ready to Learn More?</h2>
+                  <p>Now that you understand the Python Language, let's test these concepts!</p>
+                  <a href="programming_diagnostic.html" class="btn btn-primary">Continue to Next Lesson</a>
+                </div>
+              </div>  
+            </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer Section -->
+  <footer id="footer" class="footer position-relative">
+    <div class="container footer-top">
+      <div class="row gy-4">
+        <div class="col-lg-4 col-md-6 footer-about">
+          <a href="index.html" class="logo d-flex align-items-center">
+            <span>Sanghamitra Learning</span>
+          </a>
+          <div class="footer-contact pt-3">
+            <p>GacchiBowli</p>
+            <p>Hyderabad, TS 500032</p>
+            <p class="mt-3"><strong>Phone:</strong> <span>+91 7020102729</span></p>
+            <p><strong>Email:</strong> <span>sanghamitra.learnworlds@gmail.com</span></p>
+          </div>
+          <div class="social-links d-flex mt-4">
+            <a href=""><i class="bi bi-twitter"></i></a>
+            <a href=""><i class="bi bi-facebook"></i></a>
+            <a href=""><i class="bi bi-instagram"></i></a>
+            <a href=""><i class="bi bi-linkedin"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container copyright text-center mt-4">
+      <p>© <span>Copyright</span> <strong class="px-1">Sanghamitra Learning</strong> <span>All Rights Reserved</span></p>
+      <div class="credits">
+        Designed by <a href="">Sanghamitra</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Global variables for user info
+    let username = null;
+    let email = null;
+    let quizQuestions = [];
+    let answeredQuestionIds = [];
+    let currentQuizIndex = 0;
+    let quizCodeEditor = null;
+
+    // Function to fetch session info
+    async function fetchSessionInfo() {
+      try {
+        const sessionResponse = await fetch('https://sanghamitra-learnworld.vercel.app/api/session-info', { credentials: 'include' });
+        if (sessionResponse.ok) {
+          const sessionData = await sessionResponse.json();
+          email = sessionData.email;
+          username = sessionData.username;
+          window.username = username;
+          window.email = email;
+          
+          // Once we have user info, fetch their answered questions
+          await fetchUserAnsweredQuestions();
+        } else {
+          window.location.href = 'user_login.html';
+        }
+      } catch (error) {
+        console.error('Error fetching session info:', error);
+        showError('Failed to get session information. Please refresh or log in again.');
+      }
+    }
+
+    // Function to fetch questions the user has already answered
+    async function fetchUserAnsweredQuestions() {
+      try {
+        if (!email) {
+          console.error('Email not available');
+          return;
+        }
+        
+        const response = await fetch(`https://sanghamitra-learnworld.vercel.app/api/finger-exercise?email=${email}&topic=python_functions`, {
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch user's answered questions: ${response.status}`);
+        }
+        
+        const answeredData = await response.json();
+        
+        // Extract the IDs of questions the user has already answered
+        answeredQuestionIds = (answeredData.submissions || [])
+          .map(sub => String(sub.questionId));
+        
+            
+      } catch (error) {
+        console.error('Error fetching user answered questions:', error);
+      }
+      
+      // Initialize the quiz after getting user history (or failing to do so)
+      await initPracticeQuiz();
+    }
+
+    // Helper function to display errors in the quiz container
+    function showError(message) {
+      document.getElementById('quiz-loading').innerHTML = `
+        <div class="alert alert-danger">
+          <p>${message}</p>
+        </div>
+      `;
+    }
+
+    // Initialize CodeMirror for all code input areas
+    function initCodeEditors() {
+      document.querySelectorAll("textarea.codeInput").forEach((textarea) => {
+        const editor = CodeMirror.fromTextArea(textarea, {
+          mode: "python",
+          theme: "dracula",
+          lineNumbers: true,
+          indentUnit: 4,
+          matchBrackets: true,
+          viewportMargin: Infinity,
+        });
+
+        editor.setSize("100%", "auto");
+
+        editor.on("change", function(cm) {
+          let lines = cm.lineCount();
+          let newHeight = Math.min(30 + lines * 20, 200);
+          cm.setSize("100%", newHeight + "px");
+        });
+      });
+    }
+
+    // Function to run Python code (used by both regular examples and quiz)
+    async function executePythonCode(code, testCases = null) {
+      const endpoint = testCases ? 'https://flask-hello-world-2-eta.vercel.app/test' : 
+                                  'https://flask-hello-world-2-eta.vercel.app/run-python';
+      
+      const payload = testCases ? { code, test_cases: testCases } : { code };
+      
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        return await response.json();
+      } catch (error) {
+        return { error: error.message };
+      }
+    }
+
+    // Function for running regular code examples
+    function runCode(button) {
+      const cmInstance = button.previousElementSibling.CodeMirror;
+      const code = cmInstance.getValue();
+      const outputDiv = button.nextElementSibling;
+
+      executePythonCode(code)
+        .then(result => {
+          outputDiv.style.display = "block";
+          if (result.error) {
+            outputDiv.innerHTML = `<span style="color:red;">${result.error}</span>`;
+          } else {
+            outputDiv.textContent = result.output;
+          }
+        });
+    }
+
+    // Initialize the practice quiz section
+    async function initPracticeQuiz() {
+      try {
+        // Show loading state
+        document.getElementById('quiz-loading').style.display = 'block';
+        document.getElementById('quiz-content').style.display = 'none';
+        
+        // Fetch all questions from the API
+        const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/finger-questions?topic=python_functions', {
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Failed to fetch questions: ${response.status}`);
+          }
+          
+          // Get all available questions
+          const allQuestions = await response.json()
+          
+          // Filter out questions the user has already answered
+          // Create a Set for faster lookups
+          const answeredSet = new Set(answeredQuestionIds);
+
+          // Filter questions to get only unanswered ones
+          quizQuestions = allQuestions.filter(q => 
+            !answeredSet.has(String(q.id))
+          );
+          
+          
+          // If no questions left, show completion message
+          if (quizQuestions.length === 0) {
+            document.getElementById('quiz-loading').innerHTML = `
+              <div class="alert alert-success">
+                <h4><i class="bi bi-trophy"></i> You've completed all available questions!</h4>
+                <p>Great job! You have answered all the practice questions available.</p>
+                <p>Check back later for new questions or review your previous work.</p>
+              </div>
+            `;
+            return;
+          }
+          
+          // Initialize CodeMirror for quiz
+          initQuizCodeEditor();
+          
+          // Add event listeners
+          setupQuizEventListeners();
+          
+          // Show the quiz content
+          document.getElementById('quiz-loading').style.display = 'none';
+          document.getElementById('quiz-content').style.display = 'block';
+          
+          // Update question counter
+          updateQuestionCounter();
+
+          // Load the first question
+          loadQuizQuestion(0);
+        } catch (error) {
+          console.error('Error initializing practice quiz:', error);
+          showError(`Failed to load practice questions: ${error.message}`);
+        }
+      }
+
+      function addResizeHandleToEditor(editor) {
+        const wrapper = editor.getWrapperElement();
+        
+        // Create resize handle
+        const resizeHandle = document.createElement('div');
+        resizeHandle.className = 'editor-resize-handle';
+        resizeHandle.style.cssText = `
+          height: 10px;
+          cursor: ns-resize;
+        `;
+        
+        // Append handle after the editor
+        wrapper.parentNode.insertBefore(resizeHandle, wrapper.nextSibling);
+        
+        // Implement resize functionality
+        let startY, startHeight;
+        
+        function dragStart(e) {
+          startY = e.clientY;
+          startHeight = parseInt(window.getComputedStyle(wrapper).height, 10);
+          document.addEventListener('mousemove', dragMove);
+          document.addEventListener('mouseup', dragEnd);
+          e.preventDefault();
+        }
+        
+        function dragMove(e) {
+          const newHeight = startHeight + e.clientY - startY;
+          if (newHeight > 100) { // Minimum height
+            editor.setSize(null, newHeight + 'px');
+          }
+        }
+      
+        function dragEnd() {
+          document.removeEventListener('mousemove', dragMove);
+          document.removeEventListener('mouseup', dragEnd);
+        }
+        
+        resizeHandle.addEventListener('mousedown', dragStart);
+      }
+
+      function autoResizeEditor(editor) {
+        const lines = editor.lineCount();
+        const lineHeight = editor.defaultTextHeight();
+        const padding = 20;
+        
+        // Calculate appropriate height based on content (min 150px, max 600px)
+        const newHeight = Math.max(150, Math.min(600, (lines * lineHeight) + padding));
+        
+        // Only resize if significantly different from current height
+        const currentHeight = editor.getScrollInfo().clientHeight;
+        if (Math.abs(currentHeight - newHeight) > 30) {
+          editor.setSize(null, newHeight + 'px');
+        }
+      }
+
+    function initQuizCodeEditor() {
+        const quizTextarea = document.getElementById('quiz-code-editor');
+        quizCodeEditor = CodeMirror.fromTextArea(quizTextarea, {
+          mode: "python",
+          theme: "dracula",
+          lineNumbers: false,
+          indentUnit: 4,
+          matchBrackets: true,
+          viewportMargin: Infinity,
+          lineWrapping: true,
+          autoRefresh: true
+        });
+        
+        // Set initial height to be more generous
+        quizCodeEditor.setSize("100%", "250px");
+        
+        // Add resize handle for manual adjustment
+        addResizeHandleToEditor(quizCodeEditor);
+        
+        // Auto-adjust height based on content
+        quizCodeEditor.on("change", function() {
+          autoResizeEditor(quizCodeEditor);
+        });
+      }
+
+    function setupQuizEventListeners() {
+      document.getElementById('run-quiz-code').addEventListener('click', runQuizCode);
+      document.getElementById('show-quiz-hint').addEventListener('click', toggleQuizHint);
+      document.getElementById('submit-quiz-answer').addEventListener('click', submitQuizAnswer);
+      
+      // Add event listener for next button if it exists
+      const nextButton = document.getElementById('next-question');
+      if (nextButton) {
+        nextButton.addEventListener('click', goToNextQuestion);
+      }
+    }
+
+    function updateQuestionCounter() {
+      const counterElement = document.getElementById('question-counter');
+      if (counterElement) {
+        counterElement.innerHTML = `<i class="bi bi-bookmark-check"></i> ${quizQuestions.length} questions remaining`;
+      }
+    }
+
+    function loadQuizQuestion(index) {
+      // Update current index
+      currentQuizIndex = index;
+      const question = quizQuestions[index];
+      
+      if (!question) {
+        console.error("Question not found at index:", index);
+        showError("Question data not found. Please try refreshing the page.");
+        return;
+      }
+      
+      // Update the question details
+      document.getElementById('quiz-title').textContent = question.title || 'Practice Question';
+      document.getElementById('quiz-topic').textContent = question.topic || 'Python';
+      document.getElementById('quiz-description').innerHTML = question.description || '';
+      
+      // Update code editor with starter code
+      quizCodeEditor.setValue(question.starter_code || '');
+      
+      // Update hint (hidden by default)
+      document.getElementById('quiz-hint').innerHTML = question.hint || 'No hint available for this question.';
+      document.getElementById('quiz-hint').style.display = 'none';
+      document.getElementById('show-quiz-hint').innerHTML = '<i class="bi bi-lightbulb"></i> Show Hint';
+      
+      // Hide output and result
+      document.getElementById('quiz-output').style.display = 'none';
+      document.getElementById('quiz-result').style.display = 'none';
+      
+      // Hide the next button if it exists
+      const nextButton = document.getElementById('next-question');
+      if (nextButton) {
+        nextButton.style.display = 'none';
+      }
+      
+      document.getElementById('submit-quiz-answer').style.display = 'none';
+      // Enable submit button
+      document.getElementById('submit-quiz-answer').disabled = false;
+
+      // Update question counter with current position
+      const counterElement = document.getElementById('question-counter');
+      if (counterElement) {
+        counterElement.textContent = `Question ${index + 1} of ${quizQuestions.length}`;
+      }
+    }
+
+    function goToNextQuestion() {
+      // Go to next question if available
+      if (currentQuizIndex < quizQuestions.length - 1) {
+        loadQuizQuestion(currentQuizIndex + 1);
+      } else {
+        // If this was the last question, show completion message
+        document.getElementById('quiz-content').innerHTML = `
+          <div class="alert alert-success">
+            <h4>Congratulations!</h4>
+            <p>You have completed all the practice questions.</p>
+          </div>
+        `;
+      }
+    }
+
+    function toggleQuizHint() {
+      const hintContainer = document.getElementById('quiz-hint');
+      const hintButton = document.getElementById('show-quiz-hint');
+      
+      if (hintContainer.style.display === 'block') {
+        hintContainer.style.display = 'none';
+        hintButton.innerHTML = '<i class="bi bi-lightbulb"></i> Show Hint';
+      } else {
+        hintContainer.style.display = 'block';
+        hintButton.innerHTML = '<i class="bi bi-lightbulb-fill"></i> Hide Hint';
+      }
+    }
+
+    // Function for running quiz code
+    async function runQuizCode() {
+      const runButton = document.getElementById('run-quiz-code');
+      const submitButton = document.getElementById('submit-quiz-answer');
+      const outputDiv = document.getElementById('quiz-output');
+      const outputContent = outputDiv.querySelector('pre');
+      const currentQuestion = quizQuestions[currentQuizIndex];
+      const code = quizCodeEditor.getValue();
+      
+      // Show loading state
+      runButton.disabled = true;
+      runButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Running...';
+      outputDiv.style.display = 'block';
+      outputContent.textContent = 'Running your code...';
+      
+      // Hide submit button initially
+      submitButton.style.display = 'none';
+      
+      try {
+        // Run the code with test cases
+        const result = await executePythonCode(code, currentQuestion.test_cases || []);
+        
+        // Process and display results
+        if (result.error) {
+          outputContent.textContent = `Error: ${result.error}`;
+          outputContent.style.color = 'red';
+          submitButton.style.display = 'none'; // Keep submit hidden if error
+        } else {
+          // Process raw output
+          let output = '';
+          let allTestsPassed = true;
+          
+          // Handle raw output, ignoring lone "None"
+          if (result.raw_output) {
+            const rawOutput = result.raw_output.trim();
+            if (rawOutput !== "None") {
+              output = rawOutput + '\n';
+            }
+          }
+          
+          // Add test results if available
+          if (result.results && result.results.length > 0) {
+            if (output) output += '\n';
+            output += '--- Test Results ---\n';
+            
+            result.results.forEach((res, i) => {
+              const testCase = currentQuestion.test_cases[i];
+              const expectedOutput = String(testCase.expected).trim();
+              const actualOutput = String(res.output).trim();
+              const passed = expectedOutput === actualOutput;
+              
+              if (!passed) allTestsPassed = false;
+              
+              output += `Test ${i + 1}: ${passed ? 'PASSED' : 'FAILED'}\n`;
+              if (!passed) {
+                output += `  Expected: ${expectedOutput}\n`;
+                output += `  Got: ${actualOutput}\n`;
+              }
+            });
+          }
+          
+          // If there's still no output, show success message
+          if (!output.trim()) {
+            output = "Code executed successfully.";
+          }
+          
+          outputContent.textContent = output;
+          outputContent.style.color = '';
+          
+          // Show submit button only if all tests pass
+          submitButton.style.display = allTestsPassed ? 'inline-block' : 'none';
+        }
+      } catch (error) {
+        outputContent.textContent = `Error running code: ${error.message}`;
+        outputContent.style.color = 'red';
+        submitButton.style.display = 'none'; // Keep submit hidden if error
+      } finally {
+        // Reset button
+        runButton.disabled = false;
+        runButton.innerHTML = '<i class="bi bi-play-fill"></i> Run Code';
+      }
+    }
+
+    async function submitQuizAnswer() {
+      const submitButton = document.getElementById('submit-quiz-answer');
+      const resultDiv = document.getElementById('quiz-result');
+      const currentQuestion = quizQuestions[currentQuizIndex];
+      const userCode = quizCodeEditor.getValue();
+      
+      // Show loading state
+      submitButton.disabled = true;
+      submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...';
+      
+      try {
+        // Run tests to verify the answer
+        const testResult = await executePythonCode(userCode, currentQuestion.test_cases || []);
+        
+        // Determine if the answer is correct
+        let isCorrect = false;
+        if (testResult.results && testResult.results.length > 0) {
+          // Check if all tests pass using proper string comparison
+          isCorrect = testResult.results.every((res, i) => {
+            const testCase = currentQuestion.test_cases[i];
+            return String(res.output).trim() === String(testCase.expected).trim();
+          });
+        } else if (!testResult.error && testResult.raw_output) {
+          // If no test cases but code runs without error, consider it correct
+          isCorrect = true;
+        }
+
+        // Submit to server
+        const submitResponse = await fetch('https://sanghamitra-learnworld.vercel.app/api/finger-exercise/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            username: window.username,
+            email: window.email,
+            topic: 'python_functions',
+            questionId: currentQuestion.id,
+            userAnswer: userCode,
+            isCorrect
+          })
+        });
+        
+        if (!submitResponse.ok) {
+          throw new Error(`Server responded with status: ${submitResponse.status}`);
+        }
+        
+        // If answer is correct, add it to our local answered questions list
+        if (isCorrect) {
+          answeredQuestionIds.push(currentQuestion.id);
+        }
+        
+        // Show result
+        resultDiv.className = isCorrect 
+          ? 'quiz-result alert alert-success' 
+          : 'quiz-result alert alert-warning';
+        
+        // Handle next button visibility and result message
+        handleQuizResultDisplay(isCorrect, resultDiv);
+        
+      } catch (error) {
+        console.error('Error submitting answer:', error);
+        resultDiv.className = 'quiz-result alert alert-danger';
+        resultDiv.innerHTML = `<strong>Submission Error:</strong> ${error.message}`;
+        resultDiv.style.display = 'block';
+      } finally {
+        // Reset button
+        submitButton.disabled = false;
+        submitButton.innerHTML = '<i class="bi bi-check-circle"></i> Submit Answer';
+      }
+    }
+
+    function handleQuizResultDisplay(isCorrect, resultDiv) {
+      // Check if we have the next question button element
+      let nextButton = document.getElementById('next-question');
+      const submitButton = document.getElementById('submit-quiz-answer');
+  
+      // Disable submit button after submission
+      submitButton.disabled = true;
+      submitButton.style.display = 'none';
+      
+      if (isCorrect) {
+        // Create next button if it doesn't exist
+        if (!nextButton) {
+          nextButton = document.createElement('button');
+          nextButton.id = 'next-question';
+          nextButton.className = 'btn btn-primary ml-2';
+          nextButton.innerHTML = '<i class="bi bi-arrow-right"></i> Next Question';
+          nextButton.addEventListener('click', goToNextQuestion);
+          
+          // Add it after the submit button
+          const submitButton = document.getElementById('submit-quiz-answer');
+          submitButton.parentNode.insertBefore(nextButton, submitButton.nextSibling);
+        }
+        
+        // Only show next button if there are more questions
+        if (currentQuizIndex < quizQuestions.length - 1) {
+          nextButton.style.display = 'inline-block';
+          resultDiv.innerHTML = '<strong>Correct!</strong> Great job! Your solution has been submitted. Click "Next Question" to continue.';
+        } else {
+          // Last question
+          resultDiv.innerHTML = '<strong>Correct!</strong> Congratulations! You\'ve completed all the practice questions.';
+        }
+      } else {
+        // Hide next button if answer is incorrect
+        if (nextButton) {
+          nextButton.style.display = 'none';
+        }
+        resultDiv.innerHTML = '<strong>Keep Trying!</strong> Your solution has been recorded, but it\'s not quite right yet.';
+      }
+      
+      resultDiv.style.display = 'block';
+    }
+
+    // Function to reset all questions for the user (optional feature)
+    async function resetAllQuestions() {
+      try {
+        const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/finger-exercise/reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            email: window.email,
+            topic: 'python_functions'
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to reset questions: ${response.status}`);
+        }
+        
+        // Reload the page to restart
+        window.location.reload();
+      } catch (error) {
+        console.error('Error resetting questions:', error);
+        alert(`Failed to reset questions: ${error.message}`);
+      }
+    }
+
+    // Initialize everything after the page loads
+    document.addEventListener("DOMContentLoaded", () => {
+      // Initialize code editors for regular examples
+      initCodeEditors();
+      
+      // Fetch user session info and start the quiz
+      fetchSessionInfo();
+      
+      // Add question counter if it doesn't exist
+      if (!document.getElementById('question-counter')) {
+        const quizTitleElement = document.getElementById('quiz-title');
+        if (quizTitleElement) {
+          const counterElement = document.createElement('div');
+          counterElement.id = 'question-counter';
+          counterElement.className = 'text-muted mb-2';
+          counterElement.textContent = 'Loading questions...';
+          quizTitleElement.parentNode.insertBefore(counterElement, quizTitleElement);
+        }
+      }
+    });
+
+  </script>
+
+  <!-- Scroll Top -->
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+<!-- Vendor JS Files -->
+  <script src="../assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="../assets/vendor/php-email-form/validate.js"></script>
+  <script src="../assets/vendor/aos/aos.js"></script>
+  <script src="../assets/vendor/glightbox/js/glightbox.min.js"></script>
+  <script src="../assets/vendor/purecounter/purecounter_vanilla.js"></script>
+  <script src="../assets/vendor/swiper/swiper-bundle.min.js"></script>
+
+  <!-- Main JS File -->
+  <script src="../assets/js/main.js"></script>
+  <script src="navbar.js"></script>
+
+
+  <!-- Add this script to your existing HTML before the closing </body> tag -->
+
+
+</body>
+
+
+</html>

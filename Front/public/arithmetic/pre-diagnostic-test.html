@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+ 
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Arithmetic</title>
+  <meta content="" name="description">
+  <meta content="" name="keywords">
+
+  <!-- Favicons -->
+  <link href="../assets/img/favicon.png" rel="icon">
+  <link href="../assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="../assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="../assets/vendor/aos/aos.css" rel="stylesheet">
+  <link href="../assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+  <link href="../assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+
+  <!-- Main CSS File -->
+  <link href="../assets/css/main.css" rel="stylesheet">
+
+  <!-- =======================================================
+  * Template Name: Mentor
+  * Template URL: https://bootstrapmade.com/mentor-free-education-bootstrap-theme/
+  * Updated: Mar 19 2024 with Bootstrap v5.3.3
+  * Author: BootstrapMade.com
+  * License: https://bootstrapmade.com/license/
+  ======================================================== -->
+</head>
+
+
+
+
+<style>
+    
+    .course-list {
+        max-width: 900px;  /* Reduced container width */
+        margin: 0 auto;
+        padding: 0 15px;
+    }
+
+    .course-item {
+        margin-bottom: 2rem !important;  /* Increased spacing between cards */
+    }
+
+    .course-card {
+        max-width: 100%;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .course-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .icon-box {
+        width: 40px !important;
+        height: 40px !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .progress {
+        height: 6px !important;
+        background-color: #f0f0f0;
+    }
+
+    .fs-7 {
+        font-size: 0.85rem !important;
+    }
+
+    .course-card .btn {
+        min-width: 120px;
+        padding: 0.4rem 1rem;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    /* Add these styles to your existing style block */
+.quiz {
+  padding: 40px 0;
+}
+
+.question-card {
+  border-radius: 15px;
+  border: none;
+}
+
+.questions-sidebar {
+  position: sticky;
+  top: 100px;
+  border-radius: 15px;
+  border: none;
+}
+
+.questions-grid .q-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #f8f9fa;
+  border: 2px solid #dee2e6;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.questions-grid .q-number:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.questions-grid .q-number.active {
+  background: #0d6efd;
+  color: white;
+  border-color: #0d6efd;
+}
+
+.list-group-item {
+  margin-bottom: 10px;
+  border-radius: 8px!important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.list-group-item:hover {
+  background: #f8f9fa;
+}
+
+.list-group-item.selected {
+  background: #0d6efd;
+  color: white;
+  border-color: #0d6efd;
+}
+
+.list-group-item.selected:hover {
+  background: #0b5ed7;
+}
+.q-number.answered {
+  background-color: #0d6efd;
+  color: white;
+  border-color: #0d6efd;
+}
+</style>
+
+
+
+<body>
+
+  <header id="header" class="header d-flex align-items-center sticky-top">
+    <div class="container-fluid container-xl position-relative d-flex align-items-center">
+
+      <a href="index.html" class="logo d-flex align-items-center me-auto">
+        <!-- Uncomment the line below if you also wish to use an image logo -->
+        <img src="../img/sbi.logo.png" alt="Logo" width="80" height="80"> 
+        <h1 class="">Sanghamitra Learning</h1>
+      </a>
+
+      <nav id="navmenu" class="navmenu">
+        <div id="navbar-placeholder"></div>
+        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+      </nav>
+
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- Page Title -->
+    <div class="page-title" data-aos="fade" style="margin-bottom: 2rem;">
+      <div class="heading">
+        <div class="container">
+          <div class="row d-flex justify-content-center text-center">
+            <div class="col-lg-8">
+              <h1>Pre-Diagnostic-Test</h1>
+              <p class="mb-0">Welcome to our arithmetic Learning Hub. Enhance your arithmetic skills with our comprehensive resources and interactive lessons. Join our community and embark on an enriching journey towards mastering arithmetic.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <nav class="breadcrumbs">
+        <div class="container">
+          <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../math.html">Math</a></li>
+            <li><a href="arithmetic.html">Arithmetic</a></li>
+            <li class="../current">Pre-Diagnostic-Test</li>
+          </ol>
+        </div>
+      </nav>
+    </div><!-- End Page Title -->
+
+    <!-- Add this inside the <main> section where you want the quiz to appear -->
+<section id="quiz" class="quiz">
+    <div class="container" data-aos="fade-up">
+      <div class="row g-5">
+        <!-- Main Question Area -->
+        <div class="col-lg-8">
+          <div class="question-card card shadow-sm p-4">
+            <div class="progress mb-4">
+              <div class="progress-bar" role="progressbar" style="width: 5%" aria-valuenow="5" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            
+            <h3 class="question-text mb-4">Question <span id="current-qnum">1</span>/20</h3>
+            
+            <div class="question-body">
+              <p id="question" class="fs-5 mb-4">Loading question...</p>
+              
+              <div class="options-list">
+                <div class="list-group">
+                  <!-- Options will be injected here by JavaScript -->
+                </div>
+              </div>
+            </div>
+  
+            <div class="quiz-controls d-flex justify-content-between mt-4">
+              <button class="btn btn-outline-primary" id="prev-btn" disabled>
+                <i class="bi bi-chevron-left"></i> Previous
+              </button>
+              <button class="btn btn-primary" id="next-btn">
+                Next <i class="bi bi-chevron-right"></i>
+              </button>
+              <button class="btn btn-success d-none" id="submit-btn">
+                Submit Test
+              </button>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Questions Sidebar -->
+        <div class="col-lg-4">
+          <div class="questions-sidebar card shadow-sm p-3">
+            <h5 class="mb-3">Questions</h5>
+            <div class="questions-grid row row-cols-5 g-2">
+              <!-- Question numbers will be injected here by JavaScript -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      let questions = [];
+      let userResponses = {};
+      let timeSpent = {};
+      let currentQuestion = 0;
+      let startTime = null;
+      let userData = {
+        email: null,
+        username: null
+      };
+
+      function showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger position-fixed top-0 start-50 translate-x mt-3';
+        errorDiv.style.zIndex = '9999';
+        errorDiv.textContent = message;
+        document.body.prepend(errorDiv);
+        setTimeout(() => errorDiv.remove(), 5000);
+      }
+
+      async function fetchSessionInfo() {
+        try {
+          const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/session-info', {
+            credentials: 'include'
+          });
+          
+          if (!response.ok) throw new Error('Session fetch failed');
+          
+          const data = await response.json();
+          userData.email = data.email;
+          userData.username = data.username;
+          
+          if (!userData.email) throw new Error('User not authenticated');
+          
+        } catch (error) {
+          showError('Please login to take the quiz!');
+          window.location.href = '/user_login.html';
+        }
+      }
+
+      async function fetchQuestions() {
+        try {
+          const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/arithmetic-pre-test-questions');
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          
+          const data = await response.json();
+          if (!Array.isArray(data)) throw new Error('Invalid questions format');
+          
+          questions = data;
+          initializeQuestionNavigation();
+          loadQuestion(currentQuestion);
+          
+        } catch (error) {
+          showError(`Failed to load questions: ${error.message}`);
+        }
+      }
+
+      function initializeQuestionNavigation() {
+        const qGrid = document.querySelector('.questions-grid');
+        qGrid.innerHTML = questions.map((_, i) => `
+          <div class="col">
+            <div class="q-number" data-qidx="${i}">${i + 1}</div>
+          </div>
+        `).join('');
+
+        document.querySelectorAll('.q-number').forEach(btn => {
+          btn.addEventListener('click', () => {
+            trackTime(currentQuestion);
+            currentQuestion = parseInt(btn.dataset.qidx);
+            loadQuestion(currentQuestion);
+          });
+        });
+      }
+
+      function loadQuestion(qidx) {
+        try {
+          trackTime(currentQuestion);
+          startTime = Date.now();
+          
+          const question = questions[qidx];
+          document.getElementById('question').textContent = question.questionText;
+          document.getElementById('current-qnum').textContent = qidx + 1;
+
+          const progress = ((qidx + 1) / questions.length) * 100;
+          document.querySelector('.progress-bar').style.width = `${progress}%`;
+
+          const optionsContainer = document.querySelector('.list-group');
+          optionsContainer.innerHTML = Object.entries(question.questionOptions)
+            .map(([key, value]) => `
+              <div class="list-group-item" data-option="${key}">
+                ${value}
+              </div>
+            `).join('');
+
+          // Restore selection with proper enum conversion
+          const selectedOption = userResponses[qidx];
+          if (selectedOption) {
+            document.querySelectorAll('.list-group-item').forEach(item => {
+              const optionKey = item.dataset.option.replace('option', '').toLowerCase();
+              if (optionKey === selectedOption) {
+                item.classList.add('selected');
+              }
+            });
+          }
+
+          updateNavigation(qidx);
+        } catch (error) {
+          showError('Error loading question');
+        }
+      }
+
+      function updateNavigation(qidx) {
+        document.querySelectorAll('.q-number').forEach(btn => {
+          const idx = parseInt(btn.dataset.qidx);
+          btn.classList.toggle('active', idx === qidx);
+          btn.classList.toggle('answered', !!userResponses[idx]);
+        });
+
+        document.getElementById('prev-btn').disabled = qidx === 0;
+        document.getElementById('next-btn').disabled = qidx === questions.length - 1;
+        document.getElementById('submit-btn').classList.toggle('d-none', qidx !== questions.length - 1);
+      }
+
+      function trackTime(qidx) {
+        if (startTime && qidx !== null) {
+          const endTime = Date.now();
+          const duration = Math.round((endTime - startTime) / 1000);
+          timeSpent[qidx] = (timeSpent[qidx] || 0) + duration;
+        }
+      }
+
+      async function submitQuiz() {
+        try {
+          trackTime(currentQuestion);
+          
+          const submissionData = {
+            userEmail: userData.email,
+            userName: userData.username,
+            responses: questions.map((question, idx) => ({
+              questionData: {
+                _id: question._id,
+                questionText: question.questionText,
+                questionOptions: question.questionOptions,
+                questionCorrectAnswer: question.questionCorrectAnswer,
+                explanationText: question.explanationText,
+                questionDifficulty: question.questionDifficulty,
+                questionTopicArea: question.questionTopicArea,
+                questionTopic: question.questionTopic,
+                testedConcepts: question.testedConcepts,
+                questionMisconceptions: question.questionMisconceptions,
+                averageTime: question.averageTime,
+                prerequisiteTopics: question.prerequisiteTopics,
+                gradeLevel: question.gradeLevel
+              },
+              userAnswer: userResponses[idx] || 'unanswered',
+              timeSpent: timeSpent[idx] || 0
+            }))
+          };
+
+          const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/save-arithmetic-response', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(submissionData),
+            credentials: 'include'
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Submission failed');
+          }
+
+          window.location.href = `resultsPreDiagnos.html?email=${encodeURIComponent(userData.email)}`;
+        } catch (error) {
+          showError(`Submission failed: ${error.message}`);
+        }
+      }
+
+      function setupEventListeners() {
+        document.querySelector('.list-group').addEventListener('click', (e) => {
+          const option = e.target.closest('.list-group-item');
+          if (!option) return;
+
+          document.querySelectorAll('.list-group-item').forEach(item => {
+            item.classList.remove('selected');
+          });
+
+          // Convert "optionA" to "a", etc.
+          const rawValue = option.dataset.option;
+          const cleanValue = rawValue.replace('option', '').toLowerCase();
+          userResponses[currentQuestion] = cleanValue;
+          
+          option.classList.add('selected');
+          updateNavigation(currentQuestion);
+        });
+
+        document.getElementById('prev-btn').addEventListener('click', () => {
+          currentQuestion = Math.max(0, currentQuestion - 1);
+          loadQuestion(currentQuestion);
+        });
+
+        document.getElementById('next-btn').addEventListener('click', () => {
+          currentQuestion = Math.min(questions.length - 1, currentQuestion + 1);
+          loadQuestion(currentQuestion);
+        });
+
+        document.getElementById('submit-btn').addEventListener('click', submitQuiz);
+      }
+
+      (async function init() {
+        try {
+          await fetchSessionInfo();
+          await fetchQuestions();
+          setupEventListeners();
+        } catch (error) {
+          showError('Failed to initialize quiz: ' + error.message);
+        }
+      })();
+    });
+</script>
+
+
+
+</main>
+
+<footer id="footer" class="footer position-relative">
+  <div class="container footer-top">
+    <div class="row gy-4">
+      <div class="col-lg-4 col-md-6 footer-about">
+        <a href="../index.html" class="logo d-flex align-items-center">
+          <span class="">Sanghamitra Learning</span>
+        </a>
+        <div class="footer-contact pt-3">
+          <p>GacchiBowli</p>
+          <p>Hyderabad, TS 500032</p>
+          <p class="mt-3"><strong>Phone:</strong> <span>+91 7020102729</span></p>
+          <p><strong>Email:</strong> <span>sanghamitra.learnworlds@gmail.com</span></p>
+        </div>
+        <div class="social-links d-flex mt-4">
+          <a href=""><i class="bi bi-twitter"></i></a>
+          <a href=""><i class="bi bi-facebook"></i></a>
+          <a href=""><i class="bi bi-instagram"></i></a>
+          <a href=""><i class="bi bi-linkedin"></i></a>
+        </div>
+      </div>
+
+      <div class="col-lg-4 col-md-12 footer-newsletter">
+        
+      </div>
+
+    </div>
+  </div>
+
+  <div class="container copyright text-center mt-4">
+    <p>© <span>Copyright</span> <strong class="px-1">Sanghamitra Learning</strong> <span>All Rights Reserved</span></p>
+    <div class="credits">
+      <!-- All the links in the footer should remain intact. -->
+      <!-- You can delete the links only if you've purchased the pro version. -->
+      <!-- Licensing information: https://bootstrapmade.com/license/ -->
+      <!-- Purchase the pro version with working PHP/AJAX contact form: [buy-url] -->
+      Designed by <a href="../index.html">Sanghamitra</a>
+    </div>
+  </div>
+
+</footer>
+
+<!-- Scroll Top -->
+<a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+<!-- Preloader -->
+<div id="preloader"></div>
+
+<!-- Vendor JS Files -->
+<script src="../assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="../assets/vendor/php-email-form/validate.js"></script>
+<script src="../assets/vendor/aos/aos.js"></script>
+<script src="../assets/vendor/glightbox/js/glightbox.min.js"></script>
+<script src="../assets/vendor/purecounter/purecounter_vanilla.js"></script>
+<script src="../assets/vendor/swiper/swiper-bundle.min.js"></script>
+
+<!-- Main JS File -->
+<script src="../assets/js/main.js"></script>
+<script src="../navbar.js"></script>
+
+</body>
+
+</html>

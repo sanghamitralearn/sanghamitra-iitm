@@ -1,0 +1,914 @@
+ <!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Arithmetic</title>
+  <meta content="" name="description">
+  <meta content="" name="keywords">
+
+  <!-- Favicons -->
+  <link href="../assets/img/favicon.png" rel="icon">
+  <link href="../assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="../assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="../assets/vendor/aos/aos.css" rel="stylesheet">
+  <link href="../assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+  <link href="../assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+
+  <!-- Main CSS File -->
+  <link href="../assets/css/main.css" rel="stylesheet">
+
+  <!-- =======================================================
+  * Template Name: Mentor
+  * Template URL: https://bootstrapmade.com/mentor-free-education-bootstrap-theme/
+  * Updated: Mar 19 2024 with Bootstrap v5.3.3
+  * Author: BootstrapMade.com
+  * License: https://bootstrapmade.com/license/
+  ======================================================== -->
+</head>
+<style>
+    /* ======================
+     Core Multiplication Styles
+     ====================== */
+     :root {
+        --primary-color: #007bff;
+        --secondary-color: #0056b3;
+        --correct-color: #28a745;
+        --incorrect-color: #dc3545;
+        --text-color: #2d3436;
+    }
+  
+    /* Card System */
+    .grade-section .card {
+        border: 2px solid var(--primary-color);
+        border-radius: 15px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .grade-section .card-header {
+        background: var(--primary-color) !important;
+        border-radius: 15px 15px 0 0 !important;
+        padding: 1.2rem;
+    }
+  
+    .grade-section .card-header h3 {
+      color: white;
+      font-weight: 600;
+      margin: 0;
+      font-size: 1.4rem;
+    }
+  
+    /* Question Interface */
+    .question-card, .progress-card {
+      height: 500px;
+      overflow-y: auto;
+    }
+  
+    .math-problem {
+      font-family: 'Courier New', Courier, monospace;
+      width: fit-content;
+      margin: 0 auto;
+      padding: 1rem;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      font-size: 1.2rem;
+    }
+  
+    /* Question Navigation */
+    #questionNavigation {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+      gap: 0.5rem;
+      padding: 1rem 0;
+    }
+  
+    .question-number {
+      padding: 10px;
+      margin: 5px;
+      border: 2px solid #dee2e6;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+      background: white;
+      position: relative;
+      min-width: 45px;
+    }
+  
+    .question-number:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+  
+    .question-number.active {
+        border-color: var(--primary-color);
+        background-color: var(--primary-color);
+    }
+  
+    .question-number.answered.correct {
+      background: var(--correct-color) !important;
+      border-color: var(--correct-color) !important;
+      color: white !important;
+    }
+  
+    .question-number.answered.incorrect {
+      background: var(--incorrect-color) !important;
+      border-color: var(--incorrect-color) !important;
+      color: white !important;
+    }
+  
+    .question-number.answered::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      font-size: 0.8em;
+    }
+  
+    .question-number.answered.correct::after {
+      content: "✓";
+    }
+  
+    .question-number.answered.incorrect::after {
+      content: "✗";
+    }
+  
+    /* Progress System */
+    .progress {
+      height: 1.5rem;
+      border-radius: 10px;
+      background-color: #e9ecef;
+      overflow: visible;
+    }
+  
+    .progress-bar {
+        background-color: var(--primary-color);
+    }
+  
+    /* Answer States */
+    .options-container button {
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+  
+    .options-container button:not(:disabled):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+  
+    .options-container button.selected-answer {
+        border: 2px solid var(--primary-color) !important;
+        background-color: rgba(0, 123, 255, 0.1) !important;
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color) !important;
+        border-color: var(--primary-color) !important;
+    }
+  
+    .btn-success {
+      background-color: var(--correct-color) !important;
+      border-color: var(--correct-color) !important;
+    }
+  
+    .btn-danger {
+      background-color: var(--incorrect-color) !important;
+      border-color: var(--incorrect-color) !important;
+    }
+  
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .question-card, .progress-card {
+        height: auto;
+        margin-bottom: 1.5rem;
+      }
+      
+      #questionNavigation {
+        grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+      }
+      
+      .math-problem {
+        transform: scale(0.9);
+      }
+    }
+  
+    /* Multiplication-specific Visuals */
+    .carry-number {
+        color: var(--primary-color);
+    }
+
+    .partial-product {
+        border-top: 2px dashed var(--primary-color);
+    }
+  </style>
+
+<body>
+
+  <header id="header" class="header d-flex align-items-center sticky-top">
+    <div class="container-fluid container-xl position-relative d-flex align-items-center">
+
+      <a href="../index.html" class="logo d-flex align-items-center me-auto">
+        <!-- Uncomment the line below if you also wish to use an image logo -->
+        <img src="../img/sbi.logo.png" alt="Logo" width="80" height="80"> 
+        <h1 class="">Sanghamitra Learning</h1>
+      </a>
+
+      <nav id="navmenu" class="navmenu">
+        <div id="navbar-placeholder"></div>
+        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+      </nav>
+
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- Page Title -->
+    <div class="page-title" data-aos="fade" style="margin-bottom: 2rem;">
+        <div class="heading">
+          <div class="container">
+            <div class="row d-flex justify-content-center text-center">
+              <div class="col-lg-8">
+                <h1>Multiplication</h1>
+                <p class="mb-0">Welcome to our multiplication learning hub. Enhance your basics skills with our comprehensive resources and interactive lessons. Join our community and embark on an enriching journey towards mastering multiplication.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <nav class="breadcrumbs">
+          <div class="container">
+            <ol>
+              <li><a href="index.html">Home</a></li>
+              <li><a href="math.html">Math</a></li>
+              <li><a href="arithmetic.html">Arithmetic</a></li>
+              <li class="current">Multiplication</li>
+            </ol>
+          </div>
+        </nav>
+      </div><!-- End Page Title -->
+    <section class="intro-section py-5">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-12 text-center">
+            <h2 class="mb-4">✖️ Let's Multiply! 🚀</h2>
+            <p class="lead">Master the art of repeated addition! 🧮</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  
+    <section class="grade-section py-5 bg-light">
+      <div class="container">
+        <!-- Grade 1 -->
+        <div class="row mb-5">
+          <div class="col-lg-12">
+            <div class="card shadow">
+              <div class="card-header bg-primary text-white">
+                <h3><i class="bi bi-1-circle"></i>Basic Multiplication (1-10)</h3>
+              </div>
+              <div class="card-body">
+                <p>⭐ Groups of stars: Suppose there are two groups having three stars in each group.</p>
+                <div class="d-flex gap-2 mb-3">
+                  <p>3 ⭐ × 2  = 6 ⭐</p>
+                </div>
+                <div class="alert alert-info">
+                  <i class="bi bi-lightbulb"></i> Try: 4 🍽️ × 3  = ? 🍽️
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Grade 2 -->
+        <div class="row mb-5">
+          <div class="col-lg-12">
+            <div class="card shadow">
+              <div class="card-header bg-success text-white">
+                <h3><i class="bi bi-2-circle"></i>Two-Digit Multiplication</h3>
+              </div>
+              <div class="card-body">
+                <div class="math-problem position-relative" style="max-width: 150px">
+                  <div class="d-flex flex-column gap-2">
+                    <div class="d-flex justify-content-end gap-1">
+                      <div class="text-end" style="width: 30px">1</div>
+                      <div class="text-end" style="width: 30px">2</div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-1 border-bottom pb-2">
+                      <div class="text-end" style="width: 30px">×</div>
+                      <div class="text-end" style="width: 30px">3</div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-1">
+                      <div class="text-end" style="width: 30px">3</div>
+                      <div class="text-end" style="width: 30px">6</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="alert alert-warning mt-3">
+                  <i class="bi bi-abacus"></i> Multiply ones first, then tens!
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Grade 3 - Carrying -->
+        <div class="row mb-5">
+          <div class="col-lg-12">
+            <div class="card shadow">
+              <div class="card-header bg-warning text-dark">
+                <h3><i class="bi bi-3-circle"></i>Multiplication with Carrying</h3>
+              </div>
+              <div class="card-body">
+                <div class="math-problem position-relative" style="max-width: 150px">
+                  <div class="position-absolute start-0" style="top: -20px; left: 30px">
+                    <small class="text-success fw-bold">1</small>
+                  </div>
+                  <div class="d-flex flex-column gap-2">
+                    <div class="d-flex justify-content-end gap-1">
+                      <div class="text-end" style="width: 30px">2</div>
+                      <div class="text-end" style="width: 30px">4</div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-1 border-bottom pb-2">
+                      <div class="text-end" style="width: 30px">×</div>
+                      <div class="text-end" style="width: 30px">3</div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-1">
+                      <div class="text-end" style="width: 30px">7</div>
+                      <div class="text-end" style="width: 30px">2</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-4">
+                  <p class="fw-bold">Step-by-step explanation:</p>
+                  <ol class="list-unstyled">
+                    <li class="mb-2">
+                      <span class="badge bg-primary me-2">1</span>
+                      4 × 3 = 12 (write 2, carry 1)
+                    </li>
+                    <li class="mb-2">
+                      <span class="badge bg-primary me-2">2</span>
+                      2 × 3 = 6 + 1 = 7
+                    </li>
+                  </ol>
+                  <p class="mt-3 text-success">✅ Remember to add carried numbers!</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Grade 4 - Big Numbers -->
+        <div class="row mb-5">
+          <div class="col-lg-12">
+            <div class="card shadow">
+              <div class="card-header bg-danger text-white">
+                <h3><i class="bi bi-4-circle"></i>Multi-Digit Multiplication</h3>
+              </div>
+              <div class="card-body">
+                <div class="math-problem position-relative" style="max-width: 220px">
+                  <div class="position-absolute" style="top: 20px; left: 30px">
+                    <small class="text-success fw-bold">2</small>
+                  </div>
+                  <div class="d-flex flex-column gap-2">
+                    <div class="d-flex justify-content-end gap-1">
+                      <div class="text-end" style="width: 30px">1</div>
+                      <div class="text-end" style="width: 30px">2</div>
+                      <div class="text-end" style="width: 30px">3</div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-1 border-bottom pb-2">
+                      <div class="text-end" style="width: 30px">×</div>
+                      <div class="text-end" style="width: 30px">4</div>
+                      <div class="text-end" style="width: 30px">5</div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-1">
+                      <div class="text-end" style="width: 30px">5</div>
+                      <div class="text-end" style="width: 30px">5</div>
+                      <div class="text-end" style="width: 30px">3</div>
+                      <div class="text-end" style="width: 30px">5</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="alert alert-success mt-3">
+                  🚀 Pro Tip: Multiply each digit systematically!
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Grade 5 - Real World -->
+        <div class="row">
+          <div class="col-lg-12">
+            <div class="card shadow">
+              <div class="card-header bg-info text-white">
+                <h3><i class="bi bi-5-circle"></i>Real World Problems</h3>
+              </div>
+              <div class="card-body">
+                <p>🛍️ Shopping Math:</p>
+                <blockquote class="blockquote">
+                  "If 1 book costs ₹250, how much for 12 books?"
+                  <footer class="blockquote-footer mt-2">₹250 × 12 = ₹3,000</footer>
+                </blockquote>
+                <div class="alert alert-primary">
+                  🎮 Make it fun: Calculate total game points!
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  
+    <section class="practice-section py-5">
+      <div class="container text-center">
+        <h3 class="mb-4">🎯 Multiplication Practice! 📚</h3>
+        <div class="row">
+          <div class="col-md-6 mb-4">
+            <div class="p-3 border rounded bg-light">
+              <p>🐱 (3) × 🐱 (4) = ?</p>
+              <button class="btn btn-primary">Show Answer</button>
+              <div class="answer mt-2" style="display:none">12 🐱</div>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <div class="p-3 border rounded bg-light">
+              <p>📘(15) × 📘(6) = ?</p>
+              <button class="btn btn-primary">Show Answer</button>
+              <div class="answer mt-2" style="display:none">90 📘</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Practice Section -->
+    <section class="practice-section py-5">
+        <div class="container">
+          <div class="card shadow-lg">
+            <div class="card-body">
+              <h3 class="text-center mb-4">➖ Multiplication Practice Test</h3>
+              
+              <div class="row g-4">
+                <!-- Question Panel -->
+                <div class="col-lg-6">
+                  <div class="question-card h-100">
+                    <div class="card h-100">
+                      <div class="card-header bg-primary text-white">
+                        <h5>Question</h5>
+                      </div>
+                      <div class="card-body d-flex flex-column">
+                        <h5 class="question-text mb-4"></h5>
+                        <div class="options-container mb-3 flex-grow-1"></div>
+                        <div class="feedback alert mb-3" style="display: none;"></div>
+                        <div class="explanation alert alert-info" style="display: none;"></div>
+                        <div class="mt-auto">
+                          <button class="btn btn-primary w-100" id="checkAnswerBtn" disabled>
+                            Check Answer
+                          </button>
+                          <div class="navigation-controls d-flex justify-content-between mt-3">
+                            <button class="btn btn-secondary" id="prevBtn" disabled>
+                              <i class="bi bi-chevron-left"></i> Previous
+                            </button>
+                            <button class="btn btn-secondary" id="nextBtn" disabled>
+                              Next <i class="bi bi-chevron-right"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+  
+                <!-- Progress Panel -->
+                <div class="col-lg-6">
+                  <div class="progress-card h-100">
+                    <div class="card h-100">
+                      <div class="card-header bg-primary text-white">
+                        <h5>Progress</h5>
+                      </div>
+                      <div class="card-body">
+                        <div class="row row-cols-4 g-2 mb-4" id="questionNavigation"></div>
+                        <div class="progress mt-4">
+                          <div class="progress-bar bg-primary" role="progressbar"></div>
+                        </div>
+                        <div class="mt-3 text-center">
+                          <span class="badge bg-primary me-2"><i class="bi bi-check-circle"></i> Answered</span>
+                          <span class="badge bg-secondary"><i class="bi bi-circle"></i> Unanswered</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Loading State -->
+          <div class="text-center mt-5" id="loading">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading practice questions...</p>
+          </div>
+  
+          <!-- Error State -->
+          <div class="alert alert-danger mt-5" id="error" style="display: none;"></div>
+        </div>
+      </section>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const QUESTIONS_API = 'https://sanghamitra-learnworld.vercel.app/api/arithmeticQuestionsDatabase';
+      const SCORES_API = 'https://sanghamitra-learnworld.vercel.app/api/arithmetic-scores';
+      const SESSION_API = 'https://sanghamitra-learnworld.vercel.app/api/session-info';
+      
+      let quizState = {
+          questions: [],
+          currentQuestionIndex: 0,
+          user: { email: null, username: null },
+          scores: null,
+          selectedAnswer: null
+      };
+  
+      // DOM Elements
+      const elements = {
+          questionText: document.querySelector('.question-text'),
+          optionsContainer: document.querySelector('.options-container'),
+          questionNav: document.getElementById('questionNavigation'),
+          loading: document.getElementById('loading'),
+          error: document.getElementById('error'),
+          progressBar: document.querySelector('.progress-bar'),
+          checkAnswerBtn: document.getElementById('checkAnswerBtn'),
+          prevBtn: document.getElementById('prevBtn'),
+          nextBtn: document.getElementById('nextBtn'),
+          feedback: document.querySelector('.feedback'),
+          explanation: document.querySelector('.explanation')
+      };
+  
+      async function initializeQuiz() {
+          try {
+              await fetchUserSession();
+              await loadQuestions();
+              await loadScores();
+              mergeAttemptData();
+              buildQuestionNavigation();
+              showQuestion(quizState.currentQuestionIndex);
+              setupEventListeners();
+              updateProgressBar();
+          } catch (error) {
+              showError(error.message);
+          } finally {
+              elements.loading.style.display = 'none';
+          }
+      }
+  
+      async function fetchUserSession() {
+          try {
+              const response = await fetch(SESSION_API, { credentials: 'include' });
+              if (!response.ok) throw new Error('Authentication required');
+              const { email, username } = await response.json();
+              quizState.user = { email, username };
+          } catch (error) {
+              showError('Please login to access this content');
+              window.location.href = '/login.html';
+          }
+      }
+  
+      async function loadQuestions() {
+          try {
+              const params = new URLSearchParams({ 
+                  operationType: 'multiplication',
+                  // Add fields parameter if needed (depends on your API implementation)
+                  fields: 'questionText,options,correctOption,explanation,difficultyLevel,arithmeticCategory,coreSkills,commonErrors,foundationalRequirements,gradeLevel'
+              });
+              
+              const response = await fetch(`${QUESTIONS_API}?${params}`);
+              const result = await response.json();
+              quizState.questions = result.questions.map(q => ({
+                  ...q,
+                  startTime: Date.now()
+              }));
+          } catch (error) {
+              showError(`Failed to load questions: ${error.message}`);
+          }
+      }
+  
+      async function loadScores() {
+          try {
+              const params = new URLSearchParams({
+                  userEmail: quizState.user.email,
+                  operationType: 'multiplication'
+              });
+              const response = await fetch(`${SCORES_API}?${params}`);
+              quizState.scores = await response.json();
+          } catch (error) {
+              quizState.scores = {
+                  questionsAttempted: [],
+                  totalQuestions: 0,
+                  correctAnswers: 0,
+                  timeTaken: 0
+              };
+          }
+      }
+  
+      function mergeAttemptData() {
+          quizState.questions = quizState.questions.map(question => {
+              const attempt = quizState.scores?.questionsAttempted?.find(a => 
+                  a.questionId?._id.toString() === question._id.toString()
+              );
+              
+              return attempt ? {
+                  ...question,
+                  attempted: true,
+                  userAnswer: attempt.userAnswer,
+                  isCorrect: attempt.isCorrect,
+                  timeSpent: attempt.timeSpent
+              } : { ...question, attempted: false };
+          });
+      }
+  
+      function buildQuestionNavigation() {
+          elements.questionNav.innerHTML = quizState.questions
+              .map((q, index) => `
+                  <div class="question-number" data-index="${index}">
+                      ${index + 1}
+                  </div>`
+              ).join('');
+      }
+  
+      function showQuestion(index) {
+          resetFeedback();
+          const question = quizState.questions[index];
+          
+          // Record start time for new attempts
+          if (!question.attempted) {
+              quizState.questions[index].startTime = Date.now();
+          }
+  
+          elements.questionText.textContent = question.questionText;
+          elements.optionsContainer.innerHTML = '';
+          elements.checkAnswerBtn.disabled = question.attempted;
+          quizState.selectedAnswer = null;
+  
+          Object.entries(question.options).forEach(([key, value]) => {
+              const button = document.createElement('button');
+              button.className = 'btn btn-outline-primary mb-2 w-100';
+              button.innerHTML = `<strong>${key}.</strong> ${value}`;
+              if (question.userAnswer === key) {
+                    button.classList.add('selected-answer');
+                }
+              
+              if (question.attempted) {
+                  button.disabled = true;
+                  const isCorrect = key === question.correctOption;
+                  const isUserAnswer = key === question.userAnswer;
+                  
+                  if (isCorrect) button.classList.add('btn-success');
+                  if (isUserAnswer) {
+                      button.classList.add(isCorrect ? 'btn-success' : 'btn-danger');
+                  }
+              } else {
+                  button.addEventListener('click', () => selectAnswer(key, button));
+              }
+              
+              elements.optionsContainer.appendChild(button);
+          });
+  
+          if (question.attempted) {
+              showPersistedFeedback(question);
+          }
+  
+          updateNavigationState();
+          updateButtonStates();
+      }
+  
+      function showPersistedFeedback(question) {
+          elements.feedback.textContent = question.isCorrect ? '🎉 Correct!' : '❌ Incorrect';
+          elements.feedback.className = `alert ${question.isCorrect ? 'alert-success' : 'alert-danger'}`;
+          elements.feedback.style.display = 'block';
+          
+          if (!question.isCorrect) {
+              elements.explanation.innerHTML = `
+                  <strong>Explanation:</strong> ${question.explanation}<br>
+                  <strong>Time Spent:</strong> ${Math.round(question.timeSpent/1000)}s
+              `;
+              elements.explanation.style.display = 'block';
+          }
+      }
+  
+      function selectAnswer(answer, button) {
+          document.querySelectorAll('.options-container button').forEach(btn => {
+              btn.classList.remove('active');
+          });
+          button.classList.add('active');
+          quizState.selectedAnswer = answer;
+          elements.checkAnswerBtn.disabled = false;
+      }
+  
+      async function handleCheckAnswer() {
+          const question = quizState.questions[quizState.currentQuestionIndex];
+          const timeSpent = Date.now() - question.startTime;
+          const isCorrect = quizState.selectedAnswer === question.correctOption;
+
+          try {
+              const response = await fetch(SCORES_API, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      userEmail: quizState.user.email,
+                      username: quizState.user.username,
+                      operationType: 'multiplication',
+                      totalQuestions: 1,
+                      correctAnswers: isCorrect ? 1 : 0,
+                      questionsAttempted: [{
+                          questionId: question._id,
+                          userAnswer: quizState.selectedAnswer,
+                          isCorrect: isCorrect,
+                          timeSpent: timeSpent,
+                          // Add question metadata
+                          difficultyLevel: question.difficultyLevel,
+                          coreSkills: question.coreSkills,
+                          commonErrors: question.commonErrors,
+                          foundationalRequirements: question.foundationalRequirements,
+                          arithmeticCategory: question.arithmeticCategory,
+                          gradeLevel: question.gradeLevel
+                      }],
+                      timeTaken: Math.round(timeSpent/1000)
+                  })
+              });
+
+            if (!response.ok) throw new Error('Save failed');
+            
+            // Update local state
+            const updatedQuestion = {
+                ...question,
+                attempted: true,
+                userAnswer: quizState.selectedAnswer,
+                isCorrect,
+                timeSpent
+            };
+            quizState.questions[quizState.currentQuestionIndex] = updatedQuestion;
+            
+            showQuestion(quizState.currentQuestionIndex);
+            updateProgressBar();
+            
+        } catch (error) {
+            showError(`Save failed: ${error.message}`);
+        }
+
+        // Immediate feedback
+        elements.feedback.textContent = isCorrect ? '🎉 Correct!' : '❌ Incorrect';
+        elements.feedback.className = `alert ${isCorrect ? 'alert-success' : 'alert-danger'}`;
+        elements.feedback.style.display = 'block';
+
+        if (!isCorrect) {
+            elements.explanation.innerHTML = `
+                <strong>Explanation:</strong> ${question.explanation}<br>
+                <strong>Time Spent:</strong> ${Math.round(timeSpent/1000)}s
+            `;
+            elements.explanation.style.display = 'block';
+        }
+    }
+  
+      function updateNavigationState() {
+          document.querySelectorAll('.question-number').forEach((btn, index) => {
+              const question = quizState.questions[index];
+              btn.classList.toggle('active', index === quizState.currentQuestionIndex);
+              btn.classList.toggle('answered', question.attempted);
+              btn.classList.toggle('correct', question.attempted && question.isCorrect);
+              btn.classList.toggle('incorrect', question.attempted && !question.isCorrect);
+          });
+      }
+  
+      function updateProgressBar() {
+          const attemptedCount = quizState.questions.filter(q => q.attempted).length;
+          const totalQuestions = quizState.questions.length;
+          const progress = (attemptedCount / totalQuestions) * 100;
+          elements.progressBar.style.width = `${progress}%`;
+          elements.progressBar.textContent = `${Math.round(progress)}% (${attemptedCount}/${totalQuestions})`;
+      }
+  
+      function resetFeedback() {
+          elements.feedback.style.display = 'none';
+          elements.explanation.style.display = 'none';
+      }
+  
+      function navigate(direction) {
+          const newIndex = quizState.currentQuestionIndex + direction;
+          if (newIndex >= 0 && newIndex < quizState.questions.length) {
+              quizState.currentQuestionIndex = newIndex;
+              showQuestion(newIndex);
+          }
+      }
+  
+      function updateButtonStates() {
+          elements.prevBtn.disabled = quizState.currentQuestionIndex === 0;
+          elements.nextBtn.disabled = quizState.currentQuestionIndex === quizState.questions.length - 1;
+      }
+  
+      function setupEventListeners() {
+          // Answer check handler
+          elements.checkAnswerBtn.addEventListener('click', handleCheckAnswer);
+  
+          // Navigation buttons
+          elements.prevBtn.addEventListener('click', () => navigate(-1));
+          elements.nextBtn.addEventListener('click', () => navigate(1));
+  
+          // Question number clicks
+          document.querySelectorAll('.question-number').forEach(btn => {
+              btn.addEventListener('click', () => {
+                  const index = parseInt(btn.dataset.index);
+                  if (!isNaN(index)) {
+                      quizState.currentQuestionIndex = index;
+                      showQuestion(index);
+                  }
+              });
+          });
+      }
+  
+      function showError(message) {
+          elements.error.textContent = message;
+          elements.error.style.display = 'block';
+          setTimeout(() => elements.error.style.display = 'none', 5000);
+      }
+  
+      initializeQuiz();
+  });
+  </script>
+
+  <footer id="footer" class="footer position-relative">
+    <div class="container footer-top">
+      <div class="row gy-4">
+        <div class="col-lg-4 col-md-6 footer-about">
+          <a href="../index.html" class="logo d-flex align-items-center">
+            <span class="">Sanghamitra Learning</span>
+          </a>
+          <div class="footer-contact pt-3">
+            <p>GacchiBowli</p>
+            <p>Hyderabad, TS 500032</p>
+            <p class="mt-3"><strong>Phone:</strong> <span>+91 7020102729</span></p>
+            <p><strong>Email:</strong> <span>sanghamitra.learnworlds@gmail.com</span></p>
+          </div>
+          <div class="social-links d-flex mt-4">
+            <a href=""><i class="bi bi-twitter"></i></a>
+            <a href=""><i class="bi bi-facebook"></i></a>
+            <a href=""><i class="bi bi-instagram"></i></a>
+            <a href=""><i class="bi bi-linkedin"></i></a>
+          </div>
+        </div>
+
+        <div class="col-lg-4 col-md-12 footer-newsletter">
+          
+        </div>
+
+      </div>
+    </div>
+
+    <div class="container copyright text-center mt-4">
+      <p>© <span>Copyright</span> <strong class="px-1">Sanghamitra Learning</strong> <span>All Rights Reserved</span></p>
+      <div class="credits">
+        <!-- All the links in the footer should remain intact. -->
+        <!-- You can delete the links only if you've purchased the pro version. -->
+        <!-- Licensing information: https://bootstrapmade.com/license/ -->
+        <!-- Purchase the pro version with working PHP/AJAX contact form: [buy-url] -->
+        Designed by <a href="../index.html">Sanghamitra</a>
+      </div>
+    </div>
+
+  </footer>
+
+  <!-- Scroll Top -->
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+  <!-- Preloader -->
+  <div id="preloader"></div>
+
+  <!-- Vendor JS Files -->
+  <script src="../assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="../assets/vendor/php-email-form/validate.js"></script>
+  <script src="../assets/vendor/aos/aos.js"></script>
+  <script src="../assets/vendor/glightbox/js/glightbox.min.js"></script>
+  <script src="../assets/vendor/purecounter/purecounter_vanilla.js"></script>
+  <script src="../assets/vendor/swiper/swiper-bundle.min.js"></script>
+
+  <!-- Main JS File -->
+  <script src="../assets/js/main.js"></script>
+  <script src="navbar.js"></script>
+
+</body>
+
+</html>
+
+

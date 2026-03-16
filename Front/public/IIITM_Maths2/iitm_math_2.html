@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+ 
+<head> 
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>IITM Mathematics - II</title>
+  <meta content="" name="description">
+  <meta content="" name="keywords">
+
+  <!-- Favicons -->
+  <link href="../assets/img/favicon.png" rel="icon">
+  <link href="../assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="../assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="../assets/vendor/aos/aos.css" rel="stylesheet">
+  <link href="../assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+  <link href="../assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+
+  <!-- Main CSS File -->
+  <link href="../assets/css/main.css" rel="stylesheet">
+
+  <style>
+    .course-list {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 15px;
+    }
+
+    .course-item {
+      margin-bottom: 2rem !important;
+    }
+
+    .course-card {
+      max-width: 100%;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .course-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .icon-box {
+      width: 40px !important;
+      height: 40px !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .progress {
+      height: 6px !important;
+      background-color: #f0f0f0;
+    }
+
+    .fs-7 {
+      font-size: 0.85rem !important;
+    }
+
+    .course-card .btn {
+      min-width: 120px;
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .percentage-badge {
+      background: linear-gradient(45deg, #007bff, #0056b3);
+      color: white;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      box-shadow: 0 2px 4px rgba(0,123,255,0.3);
+    }
+
+    .completed-badge {
+      background: linear-gradient(45deg, #28a745, #20c997);
+      color: white;
+      font-weight: 600;
+      font-size: 1rem;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(40,167,69,0.3);
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .error-message {
+      color: #dc3545;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+
+<body>
+  <header id="header" class="header d-flex align-items-center sticky-top">
+    <div class="container-fluid container-xl position-relative d-flex align-items-center">
+      <a href="index.html" class="logo d-flex align-items-center me-auto">
+        <img src="../img/sbi.logo.png" alt="Logo" width="80" height="80">
+        <h1 class="">Sanghamitra Learning</h1>
+      </a>
+      <nav id="navmenu" class="navmenu">
+        <div id="navbar-placeholder"></div>
+        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- Page Title -->
+    <div class="page-title" data-aos="fade" style="margin-bottom: 2rem;">
+      <div class="heading">
+        <div class="container">
+          <div class="row d-flex justify-content-center text-center">
+            <div class="col-lg-8">
+              <h1>IITM Mathematics - II</h1>
+              <p class="mb-0">Master advanced mathematical concepts including linear algebra, calculus, and differential equations for engineering applications.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <nav class="breadcrumbs">
+        <div class="container">
+          <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li class="../current">IITM Mathematics - II</li>
+          </ol>
+        </div>
+      </nav>
+    </div><!-- End Page Title -->
+
+    <main id="main" class="main">
+      <div class="container">
+        <div class="course-list" id="courseList">
+          <!-- Loading message -->
+          <div id="loadingMessage" class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading course data...</p>
+          </div>
+          
+          <!-- Error message -->
+          <div id="errorMessage" class="alert alert-danger d-none">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <span id="errorText">Failed to load course data. Please try refreshing the page.</span>
+          </div>
+
+          <!-- Course items will be dynamically generated here -->
+        </div>
+      </div>
+    </main>
+  </main>
+
+  <footer id="footer" class="footer position-relative">
+    <div class="container footer-top">
+      <div class="row gy-4">
+        <div class="col-lg-4 col-md-6 footer-about">
+          <a href="../index.html" class="logo d-flex align-items-center">
+            <span class="">Sanghamitra Learning</span>
+          </a>
+          <div class="footer-contact pt-3">
+            <p>GacchiBowli</p>
+            <p>Hyderabad, TS 500032</p>
+            <p class="mt-3"><strong>Phone:</strong> <span>+91 7020102729</span></p>
+            <p><strong>Email:</strong> <span>sanghamitra.learnworlds@gmail.com</span></p>
+          </div>
+          <div class="social-links d-flex mt-4">
+            <a href=""><i class="bi bi-twitter"></i></a>
+            <a href=""><i class="bi bi-facebook"></i></a>
+            <a href=""><i class="bi bi-instagram"></i></a>
+            <a href=""><i class="bi bi-linkedin"></i></a>
+          </div>
+        </div>
+
+        <div class="col-lg-4 col-md-12 footer-newsletter">
+        </div>
+      </div>
+    </div>
+
+    <div class="container copyright text-center mt-4">
+      <p>© <span>Copyright</span> <strong class="px-1">Sanghamitra Learning</strong> <span>All Rights Reserved</span></p>
+      <div class="credits">
+        Designed by <a href="../index.html">Sanghamitra</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scroll Top -->
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+  <!-- Preloader -->
+  <div id="preloader"></div>
+
+  <!-- Vendor JS Files -->
+  <script src="../assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="../assets/vendor/php-email-form/validate.js"></script>
+  <script src="../assets/vendor/aos/aos.js"></script>
+  <script src="../assets/vendor/glightbox/js/glightbox.min.js"></script>
+  <script src="../assets/vendor/purecounter/purecounter_vanilla.js"></script>
+  <script src="../assets/vendor/swiper/swiper-bundle.min.js"></script>
+
+  <!-- Main JS File -->
+  <script src="../assets/js/main.js"></script>
+  <script src="../navbar.js"></script>
+  
+  <!-- Script to fetch and display course data from API -->
+  <script>
+    let currentUser = null;
+
+    // Define topic groups to map all variations to a single display topic
+    const topicGroups = {
+        'Vectors_and_Matrices': ['Vectors_and_Matrices', 'Vectors', 'Matrices', 'Systems_of_Linear_Equations', 'Determinants_1', 'Determinants_2', 'Week1'],
+        'Vector_Spaces_and_Linear_Maps': ['Vector_Spaces_and_Linear_Maps', 'Vectors', 'Matrices', 'Systems_of_Linear_Equations', 'Determinants_1', 'Determinants_2', 'Week1'],
+        "Vector_Spaces_and_Linear_Independence" : ['Vector_Spaces_and_Linear_Independence'],
+        'Basis_Rank_and_Dimension':['Basis_Rank_and_Dimension'],
+
+        // 'Solving Linear Equations (Week 2)': ['Solving_Linear_Equations', 'Determinants_3', 'Cramers_Rule', 'Invertible_Coefficient_Matrix', 'Echelon_Form', 'Row_Reduction', 'Gaussian_Elimination', 'Week2'],
+        // 'Vector Spaces (Week 3)': ['Vector_Spaces', 'Introduction_to_Vector_Spaces', 'Properties_of_Vector_Spaces', 'Linear_Dependence', 'Linear_Independence_1', 'Linear_Independence_2', 'Week3'],
+        // 'Basis and Dimension (Week 4)': ['Basis_and_Dimension', 'Basis_for_Vector_Space', 'Finding_Bases', 'Rank_Dimension', 'Rank_Dimension_Gaussian', 'Week4'],
+        // 'Rank, Nullity and Linear Transformation (Week 5)': ['Rank_Nullity_Linear_Transformation', 'Rank_Nullity_of_Matrix', 'Null_Space_1', 'Null_Space_2', 'Linear_Mapping_1', 'Linear_Mapping_2', 'Linear_Transformation', 'Week5'],
+        // 'Kernel and Images (Week 6)': ['Kernel_and_Images', 'Linear_Transformations_Bases_Matrices', 'Image_Kernel_Linear_Transformations', 'Bases_Kernel_Image_Examples', 'Week6'],
+        // 'Equivalent Matrices and Inner Products (Week 7)': ['Equivalent_Matrices_Inner_Products', 'Equivalent_Similar_Matrices', 'Affine_Subspaces_Mappings', 'Lengths_Angles', 'Inner_Products_Norms', 'Week7'],
+        // 'Orthogonality and Gram-Schmidt (Week 8)': ['Orthogonality_Gram_Schmidt', 'Orthogonality_Linear_Independence', 'Orthonormal_Basis', 'Projections_Inner_Products', 'Gram_Schmidt_Process', 'Orthogonal_Transformations_Rotations', 'Week8'],
+        // 'Multivariable Functions (Week 9)': ['Multivariable_Functions', 'Multivariable_Functions_Visualization', 'Partial_Derivatives', 'Directional_Derivatives', 'Limits_Multivariable_Functions', 'Continuity_Multivariable_Functions', 'Directional_Derivatives_Gradient', 'Week9'],
+        // 'Tangent Planes and Critical Points (Week 10)': ['Tangent_Planes_Critical_Points', 'Steepest_Ascent_Descent', 'Tangents_Multivariable_Functions', 'Finding_Tangent_Hyperplane', 'Critical_Points_Multivariable', 'Week10'],
+        // 'Higher Order Derivatives and Hessian (Week 11)': ['Higher_Order_Derivatives_Hessian', 'Higher_Order_Partial_Derivatives', 'Hessian_Matrix', 'Hessian_Local_Extrema_2D', 'Hessian_Local_Extrema_3D', 'Differentiability_Multivariable', 'Review_Maths_2', 'Week11']
+    };
+
+    
+    const availableTopics = [
+        {
+            id: 'review_page',
+            name: 'Review Page',
+            displayName: 'Review Page',
+            description: 'Review your submitted answers',
+            icon: 'bi-cpu',
+            url: 'review.html'
+        },
+
+        // {
+        //     id: 'Quiz 1 Midterm',
+        //     name: 'Quiz 1 Midterm',
+        //     displayName: 'Quiz 1 Midterm',
+        //     description: 'Assessment on IITM Math 1 - Quiz 1 Midterm',
+        //     icon: 'bi-cpu',
+        //     url: 'quiz1.html'
+        // },
+        // {
+        //     id: 'sets_relations',
+        //     name: 'Sets and Relations (Quiz 6)',
+        //     displayName: 'Week 1 - Sets and Relations ',
+        //     description: 'Assessment on IITM Math 1 - Sets and Relations',
+        //     icon: 'bi-cpu',
+        //     url: 'quiz6.html'
+        // },
+        {
+            id: 'Vectors_and_Matrices',
+            name: 'Vectors_and_Matrices',
+            displayName: 'Week 1 - Vectors_and_Matrices',
+            description: 'Assessment on IITM Math - II - Vector and Matrices',
+            icon: 'bi-cpu',
+            url: 'quiz1.html'
+        },
+       {
+             id: 'Vector_Spaces_and_Linear_Maps',
+             name: 'Vector_Spaces_and_Linear_Maps',
+             displayName: 'Week 2- Vector_Spaces_and_Linear_Maps',
+             description: 'Assessment on IITM Math II - Vector_Spaces_and_Linear_Maps',
+             icon: 'bi-cpu',
+             url: 'quiz2.html'
+         },
+         {
+            id: 'Vector_Spaces_and_Linear_Independence',
+            name: 'Vector_Spaces_and_Linear_Independence',
+            displayName: 'Week 3- Vector_Spaces_and_Linear_Independence',
+            description: 'Assessment on IITM Math II - Vector_Spaces_and_Linear_Independence',
+            icon: 'bi-cpu',
+            url: 'quiz3.html'
+        },
+        {
+            id: 'Basis_Rank_and_Dimension',
+            name: 'Basis_Rank_and_Dimension',
+            displayName: 'Week 4- Basis_Rank_and_Dimension',
+            description: 'Assessment on IITM Math II - Basis_Rank_and_Dimension',
+            icon: 'bi-cpu',
+            url: 'quiz4.html'
+        },
+    //  {
+    //         id: 'linear_functions_2',
+    //         name: 'Linear function',
+    //         displayName: 'Week 2 - Linear Functions (Week 2)',
+    //         description: 'Assessment on IITM Math 1 - Linear Functions',
+    //         icon: 'bi-cpu',
+    //         url: 'quiz5.html'
+    //     },
+    //     {
+    //         id: 'quadratic_functions',
+    //         name: 'Quadratic Functions (Quiz 4)',
+    //         displayName: 'Week 3 - Quadratic Functions',
+    //         description: 'Assessment on IITM Math 1 - Quadratic Functions',
+    //         icon: 'bi-cpu',
+    //         url: 'quiz4.html'
+    //     },
+
+    //     {
+    //         id: 'Polynomial - 1: Zeros and Multiplicity',
+    //         name: 'Polynomial - 1: Zeros and Multiplicity',
+    //         displayName: 'Week 4 - Polynomial - 1: Zeros and Multiplicity',
+    //         description: 'Assessment on IITM Math 1 - Polynomial Functions',
+    //         icon: 'bi-cpu',
+    //         url: 'quiz15.html'
+    //     },
+     
+    //     {
+    //         id: 'polynomials',
+    //         name: 'Polynomials (Quiz 7)',
+    //         displayName: 'Week 4 - Polynomial Functions',
+    //         description: 'Assessment on IITM Math 1 - Polynomial Functions',
+    //         icon: 'bi-cpu',
+    //         url: 'quiz7.html'
+    //     },
+    //     {
+    //         id: 'exponential_functions',
+    //         name: 'Exponential Functions (Week 5)',
+    //         displayName: 'Week 5 - Exponential Functions',
+    //         description: 'Assessment on IITM Math 1 - Exponential Functions',
+    //         icon: 'bi-cpu',
+    //         url: 'quiz8.html'
+    //     },
+    //     {
+    //         id: 'logarithmic_functions',
+    //         name: 'Logarithmic Functions (Quiz 9)',
+    //         displayName: 'Week 6 - Logarithmic Functions',
+    //         description: 'Assessment on IITM Math 1 - Logarithmic Functions',
+    //         icon: 'bi-cpu',
+    //         url: 'quiz9.html'
+    //     },
+    //     {
+    //         id: 'sequence_limits',
+    //         name: 'Sequence and limit week 7',
+    //         displayName: 'Week 7 - Sequence, Limits and Continuity',
+    //         description: 'Assessment on Sequence, Limits and Continuity',
+    //         icon: 'bi-cpu',
+    //         url: 'quiz10.html'
+    //     },
+    //     {
+    //         id: 'limits_continuity',
+    //         name: 'Limits, Continuity and Differentiation (Quiz 11)',
+    //         displayName: 'Week 8 - Limits, Continuity and Differentiation',
+    //         description: 'Assessment on Limits, Continuity and Differentiation',
+    //         icon: 'bi-cpu',
+    //         url: 'quiz11.html'
+    //     },
+    //     {
+    //         id: 'derivatives_integrals',
+    //         name: 'Week 9 - Derivatives and Integrals',
+    //         displayName: 'Week 9 - Derivatives and Integrals',
+    //         description: 'Assessment on Derivatives and Integrals',
+    //         icon: 'bi-cpu',
+    //         url: 'quiz12.html'
+    //     },
+    //     {
+    //         id: 'graph_theory',
+    //         name: 'Graph Theory (Quiz 13)',
+    //         displayName: 'Week 10 - Graph Theory',
+    //         description: 'Assessment on Graph Theory',
+    //         icon: 'bi-cpu',
+    //         url: 'quiz13.html'
+    //     },
+    //     {
+    //         id: 'graph_properties',
+    //         name: 'Graph Properties (Quiz 14)',
+    //         displayName: 'Week 11 - Graph Properties',
+    //         description: 'Assessment on Graph Properties',
+    //         icon: 'bi-cpu',
+    //         url: 'quiz14.html'
+    //     }
+    ];
+
+    // Initialize the application
+    async function initializeApp() {
+        try {
+            showLoading(true);
+            await fetchSessionInfo();
+            await loadCourseData();
+        } catch (error) {
+            console.error('Initialization error:', error);
+            showError('Failed to initialize the application. Please try refreshing the page.');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    // Fetch user session information
+    async function fetchSessionInfo() {
+        try {
+            const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/session-info', {
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error('Session expired or invalid');
+            }
+            
+            const data = await response.json();
+            currentUser = {
+                email: data.email,
+                username: data.username
+            };
+            
+            console.log('Session info fetched:', currentUser);
+        } catch (error) {
+            console.error('Session error:', error);
+            currentUser = { email: 'test@example.com', username: 'Test User' };
+        }
+    }
+
+    // Update your getDisplayTopic() function to be more flexible
+function getDisplayTopic(topicName) {
+    if (!topicName) return null;
+    
+    // Convert to lowercase for case-insensitive matching
+    const searchName = topicName.toLowerCase().trim();
+    
+    console.log(`🔍 Searching for display topic for: "${topicName}" (normalized: "${searchName}")`);
+    
+    // Special handling for specific patterns
+    if (searchName === 'graph_properties') {
+        return 'Graph Properties (Quiz 14)';
+    }
+    
+    // General matching logic
+    for (const [displayTopic, variations] of Object.entries(topicGroups)) {
+        for (const variation of variations) {
+            const variationLower = variation.toLowerCase();
+            
+            // Check multiple matching strategies
+            if (variationLower === searchName ||
+                searchName.includes(variationLower) ||
+                variationLower.includes(searchName) ||
+                searchName.replace(/_/g, ' ') === variationLower.replace(/_/g, ' ')) {
+                
+                console.log(`✅ Matched "${topicName}" to display topic: "${displayTopic}" via variation: "${variation}"`);
+                return displayTopic;
+            }
+        }
+    }
+    
+    console.log(`❌ No match found for: "${topicName}"`);
+    return topicName; // Return original if no match
+}
+
+async function loadCourseData() {
+    try {
+        if (!currentUser) {
+            console.warn('No user session found');
+            renderCourses(null);
+            return;
+        }
+
+        const apiUrl = `https://sanghamitra-learnworld.vercel.app/api/iitm_maths2_scores_databases?email=${encodeURIComponent(currentUser.email)}`;
+        console.log('📡 Fetching from:', apiUrl);
+        
+        const response = await fetch(apiUrl, { credentials: 'include' });
+        
+        console.log('📡 Response Status:', response.status, response.statusText);
+        
+        if (!response.ok) {
+            throw new Error(`API returned ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('📦 API Response keys:', Object.keys(data));
+        
+        // CORRECTED: Extract quizScores from the correct location
+        let scores = [];
+        
+        if (data.success && data.data) {
+            console.log('📊 User data structure:', {
+                hasQuizScores: 'quizScores' in data.data,
+                quizScoresLength: data.data.quizScores?.length || 0,
+                allKeys: Object.keys(data.data)
+            });
+            
+            if (data.data.quizScores && Array.isArray(data.data.quizScores)) {
+                scores = data.data.quizScores;
+                console.log(`✅ Found ${scores.length} quiz scores`);
+                
+                // Log each score for debugging
+                scores.forEach((score, i) => {
+                    console.log(`Score ${i + 1}: topic="${score.topic}", percentage=${score.percentage}%`);
+                });
+            } else {
+                console.log('⚠️ No quizScores array found in data.data');
+                console.log('Available in data.data:', Object.keys(data.data));
+            }
+        } else {
+            console.log('⚠️ Unexpected response structure:', data);
+        }
+        
+        console.log(`📊 Total scores to render: ${scores.length}`);
+        
+        // Pass the scores to render function
+        renderCourses({ scores: scores });
+        
+    } catch (error) {
+        console.error('❌ Failed to load course data:', error);
+        showError(`Failed to load assessment data: ${error.message}`);
+        renderCourses(null);
+    }
+}
+
+    // Debug topic grouping
+    function debugTopicGrouping(userScoreData) {
+        console.log('=== TOPIC GROUPING DEBUG ===');
+        
+        if (!userScoreData?.scores) return;
+        
+        // Group scores by display topic
+        const groupedScores = {};
+        
+        userScoreData.scores.forEach(score => {
+            const displayTopic = getDisplayTopic(score.topic);
+            
+            if (!groupedScores[displayTopic]) {
+                groupedScores[displayTopic] = [];
+            }
+            
+            groupedScores[displayTopic].push({
+                topic: score.topic,
+                percentage: score.percentage,
+                score: score.score,
+                totalQuestions: score.totalQuestions,
+                timestamp: score.timestamp
+            });
+        });
+        
+        // Log the grouped results
+        Object.entries(groupedScores).forEach(([displayTopic, scores]) => {
+            console.log(`\n📊 ${displayTopic}: ${scores.length} attempt(s)`);
+            scores.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            scores.forEach((score, i) => {
+                const date = new Date(score.timestamp).toLocaleString();
+                console.log(`  ${i+1}. ${score.topic} - ${score.percentage}% (${score.score}/${score.totalQuestions}) - ${date}`);
+            });
+            
+            const latest = scores[0];
+            console.log(`  ✅ Latest percentage: ${latest.percentage}%`);
+        });
+    }
+
+    // Find assessment data for a specific topic - Groups all variations and shows latest percentage
+    function findTopicAssessment(userScoreData, topicName) {
+        if (!userScoreData || !userScoreData.scores || !Array.isArray(userScoreData.scores)) {
+            console.log(`No scores found for user`);
+            return null;
+        }
+
+        // Get the display topic name for this topic
+        const displayTopic = getDisplayTopic(topicName);
+        console.log(`Looking for display topic: "${displayTopic}" for topic name: "${topicName}"`);
+
+        // Find all variations for this display topic
+        const variations = topicGroups[displayTopic] || [topicName];
+        
+        // Collect all scores that match any variation of this topic
+        let allTopicScores = [];
+        
+        userScoreData.scores.forEach(score => {
+            if (!score.topic) return;
+            
+            const scoreTopic = score.topic.trim();
+            const scoreTopicLower = scoreTopic.toLowerCase();
+            
+            // Check if this score belongs to any variation of our display topic
+            for (const variation of variations) {
+                const variationLower = variation.toLowerCase();
+                
+                if (scoreTopicLower === variationLower ||
+                    scoreTopicLower.includes(variationLower) ||
+                    variationLower.includes(scoreTopicLower)) {
+                    
+                    // Validate we have a percentage value
+                    if (score.percentage !== undefined && score.percentage !== null) {
+                        allTopicScores.push({
+                            ...score,
+                            displayTopic: displayTopic,
+                            matchedVariation: variation
+                        });
+                    }
+                    break; // Found a match, no need to check other variations
+                }
+            }
+        });
+
+        if (allTopicScores.length === 0) {
+            console.log(`No assessment found for topic group: ${displayTopic} (variations: ${variations.join(', ')})`);
+            return null;
+        }
+
+        console.log(`Found ${allTopicScores.length} scores for ${displayTopic}:`, 
+            allTopicScores.map(s => ({ topic: s.topic, percentage: s.percentage, timestamp: s.timestamp })));
+
+        // Sort by timestamp (most recent first) and take the latest
+        const latestScore = allTopicScores.sort((a, b) => {
+            const dateA = new Date(a.timestamp || 0);
+            const dateB = new Date(b.timestamp || 0);
+            return dateB - dateA; // Most recent first
+        })[0];
+        
+        // Calculate percentage (use stored percentage or calculate from score)
+        let percentage = 0;
+        if (latestScore.percentage !== undefined && latestScore.percentage !== null) {
+            percentage = Math.round(parseFloat(latestScore.percentage));
+        } else if (latestScore.score !== undefined && latestScore.totalQuestions) {
+            percentage = Math.round((latestScore.score / latestScore.totalQuestions) * 100);
+        }
+        
+        console.log(`Latest assessment for ${displayTopic}: ${percentage}% from ${latestScore.topic}`);
+        
+        return {
+            displayName: displayTopic,
+            score: percentage,
+            percentage: percentage,
+            timeTaken: null,
+            timestamp: latestScore.timestamp,
+            totalQuestions: latestScore.totalQuestions || 15,
+            actualScore: latestScore.score || 0,
+            answers: latestScore.answers,
+            attemptCount: allTopicScores.length,
+            originalTopic: latestScore.topic
+        };
+    }
+
+    // Render courses based on available topics and assessment data
+    function renderCourses(userScoreData) {
+        const courseList = document.getElementById('courseList');
+        courseList.innerHTML = '';
+
+        availableTopics.forEach(topic => {
+            const topicAssessment = findTopicAssessment(userScoreData, topic.name);
+            const courseHTML = createCourseHTML(topic, topicAssessment);
+            courseList.insertAdjacentHTML('beforeend', courseHTML);
+        });
+    }
+
+    // Create HTML for a course item
+function createCourseHTML(topic, assessment) {
+    const isCompleted = assessment && assessment.score !== undefined && assessment.score !== null;
+    const score = assessment ? Math.round(assessment.score || 0) : 0;
+    const actualScore = assessment ? assessment.actualScore : 0;
+    const totalQuestions = assessment ? assessment.totalQuestions : 15;
+    const lastAttempted = assessment ? assessment.timestamp : null;
+    const attemptCount = assessment ? assessment.attemptCount : 0;
+    
+    // Use display name from assessment if available, otherwise from topic
+    const displayName = assessment?.displayName || topic.displayName;
+    
+    // Determine progress bar color based on score 
+    let progressBarClass = 'bg-primary';
+    let badgeStyle = 'background: linear-gradient(45deg, #007bff, #0056b3);';
+    
+    if (score >= 80) {
+        progressBarClass = 'bg-success';
+        badgeStyle = 'background: linear-gradient(45deg, #28a745, #20c997);';
+    } else if (score >= 60) {
+        progressBarClass = 'bg-info';
+        badgeStyle = 'background: linear-gradient(45deg, #17a2b8, #138496);';
+    } else if (score >= 40) {
+        progressBarClass = 'bg-warning';
+        badgeStyle = 'background: linear-gradient(45deg, #ffc107, #fd7e14);';
+    } else if (score > 0) {
+        progressBarClass = 'bg-danger';
+        badgeStyle = 'background: linear-gradient(45deg, #dc3545, #c82333);';
+    }
+
+    // Updated action button logic with Retest button
+    const actionButton = isCompleted 
+        ? `<a href="${topic.url}" class="btn btn-primary btn-sm">
+            <span>Retest</span>
+            <i class="bi bi-arrow-clockwise ms-2"></i>
+        </a>
+        <div class="mt-2">
+            <small class="text-muted d-block">Score: ${actualScore}/${totalQuestions}</small>
+            ${attemptCount > 1 ? `<small class="text-muted d-block">${attemptCount} attempts</small>` : ''}
+        </div>`
+        : `<a href="${topic.url}" class="btn btn-primary btn-sm">
+            <span>Start Assessment</span>
+            <i class="bi bi-arrow-right ms-2"></i>
+        </a>`;
+
+    // Set progress bar width
+    const progressWidth = isCompleted ? score : 0;
+
+    return `
+        <div class="course-item mb-3" data-topic="${topic.id}">
+            <div class="card course-card h-100 border-0 shadow-sm hover-shadow">
+                <div class="card-body p-3">
+                    <div class="row align-items-center">
+                        <div class="col-lg-1 col-md-2 text-center">
+                            <div class="icon-box ${isCompleted ? 'bg-success' : 'bg-primary'} text-white rounded-circle p-2" style="width: 40px; height: 40px;">
+                                <i class="bi ${isCompleted ? 'bi-check-circle' : topic.icon} fs-5"></i>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 col-md-5">
+                            <h4 class="mb-1 fs-5">${displayName}</h4>
+                            <p class="text-muted mb-2 fs-6">${topic.description}</p>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar ${progressBarClass}" role="progressbar" 
+                                    style="width: ${progressWidth}%"
+                                    aria-valuenow="${score}" aria-valuemin="0" aria-valuemax="100">
+                                </div>
+                            </div>
+                            ${lastAttempted ? 
+                                `<small class="text-muted">Last attempt: ${new Date(lastAttempted).toLocaleDateString('en-US', { 
+                                    year: 'numeric', 
+                                    month: 'short', 
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                })}</small>` 
+                                : '<small class="text-muted">Not attempted yet</small>'}
+                        </div>
+                        <div class="col-lg-2 col-md-2 text-center">
+                            <span class="percentage-badge" style="${badgeStyle}">${score}%</span>
+                        </div>
+                        <div class="col-lg-3 col-md-3 text-end">
+                            ${actionButton}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+    // Show/hide loading indicator
+    function showLoading(show) {
+        const loadingMessage = document.getElementById('loadingMessage');
+        if (loadingMessage) {
+            loadingMessage.style.display = show ? 'block' : 'none';
+        }
+    }
+
+    // Show error message
+    function showError(message) {
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        
+        if (errorMessage && errorText) {
+            errorText.textContent = message;
+            errorMessage.classList.remove('d-none');
+        }
+    }
+
+    // Hide error message
+    function hideError() {
+        const errorMessage = document.getElementById('errorMessage');
+        if (errorMessage) {
+            errorMessage.classList.add('d-none');
+        }
+    }
+
+    // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOM loaded, initializing application...');
+        initializeApp();
+    });
+
+    // Add refresh functionality
+    function refreshCourseData() {
+        hideError();
+        initializeApp();
+    }
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

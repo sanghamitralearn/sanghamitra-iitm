@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Traits Vocabulary Test</title>
+    <link href="../assets/img/favicon.png" rel="icon">
+    <link href="../assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
+
+    <!-- Vendor CSS Files -->
+    <link href="../assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+    <link href="../assets/vendor/aos/aos.css" rel="stylesheet">
+    <link href="../assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+    <link href="../assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+
+    <!-- Main CSS File -->
+    <link href="../assets/css/main.css" rel="stylesheet">
+
+    <!-- Custom CSS for Vocabulary Quiz -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header, .main, .footer {
+            display: block;
+            width: 100%;
+        }
+
+        .page {
+            display: none;
+            text-align: center;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .quiz-container {
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #f9f9f9;
+        }
+
+        #options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            color: black;
+        }
+
+        .option.selected {
+            background-color: #5fcf80;
+        }
+
+        .option.correct {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+
+        .option.incorrect {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        .option.correct::before {
+            content: "✔ ";
+            color: #155724;
+        }
+
+        .option.incorrect::before {
+            content: "✖ ";
+            color: #721c24;
+        }
+
+        .option:hover {
+            background-color: #e6e6e6;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        /* Specific rules for Next and Previous buttons */
+        #next-button, #previous-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #5fcf80; /* New background color */
+            color: rgb(10, 10, 10);
+            transition: background-color 0.3s;
+        }
+
+        #next-button:hover, #previous-button:hover {
+            background-color: #e6e6e6; /* New hover background color */
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #007bff; /* Original background color */
+            color: white;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #525456; /* Hover background color */
+        }
+
+        #feedback {
+            text-align: left;
+            margin-top: 20px;
+        }
+
+        #feedback p {
+            margin: 5px 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #comprehensive-analysis {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .analysis-question {
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+
+        .question-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .correct-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background-color: #28a745;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 20px;
+            margin-right: 10px;
+            position: relative;
+        }
+
+        .correct-icon::after {
+            content: "✔";
+            color: white;
+            font-weight: bold;
+            position: absolute;
+            top: 0;
+            left: 5px;
+            font-size: 14px;
+        }
+
+        .incorrect-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background-color: #dc3545;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 20px;
+            margin-right: 10px;
+            position: relative;
+        }
+
+        .incorrect-icon::after {
+            content: "✖";
+            color: white;
+            font-weight: bold;
+            position: absolute;
+            top: 0;
+            left: 5px;
+            font-size: 14px;
+        }
+
+        .skipped-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background-color: #6c757d;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 20px;
+            margin-right: 10px;
+            position: relative;
+        }
+
+        .skipped-icon::after {
+            content: "❔";
+            color: white;
+            font-weight: bold;
+            position: absolute;
+            top: 0;
+            left: 5px;
+            font-size: 14px;
+        }
+        .question-nav {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .question-nav .question-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .question-nav .question-circle.active {
+            background-color: #5fcf80;
+            color: #fff;
+        }
+        .question-nav .question-circle.attempted::after {
+            content: "✔";
+            color: #5fcf80;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+
+    </style>
+</head>
+<body>
+
+  <header id="header" class="header d-flex align-items-center sticky-top">
+    <div class="container-fluid container-xl position-relative d-flex align-items-center">
+
+      <a href="../index.html" class="logo d-flex align-items-center me-auto">
+        <img src="../img/sbi.logo.png" alt="Logo" width="80" height="80"> 
+        <h1 class="">Sanghamitra Learning</h1>
+      </a>
+
+      <nav id="navmenu" class="navmenu">
+        <ul>
+          <li><a href="../index.html" class="">Home</a></li>
+          <li><a href="../about.html" class="">About</a></li>
+          <li><a href="../contact.html">Contact</a></li>
+        </ul>
+        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+      </nav>
+
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- Page Title -->
+    <div class="page-title" data-aos="fade">
+      <div class="heading">
+        <div class="container">
+          <div class="row d-flex justify-content-center text-center">
+            <div class="col-lg-8">
+              <h1>Character Traits Vocabulary Test</h1>
+              <p class="mb-0">Welcome to the Character Traits Vocabulary Test</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <nav class="breadcrumbs">
+        <div class="container">
+          <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li class="current">Character Traits Vocabulary Test</li>
+          </ol>
+        </div>
+      </nav>
+    </div><!-- End Page Title -->
+
+    <div id="home" class="page active">
+        <div class="container">
+            <div class="row d-flex justify-content-center text-center">
+                <div class="col-lg-8">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="quiz" class="page hidden">
+        <div class="container quiz-container">
+            <div class="row">
+                <div class="question-nav" id="question-nav"></div>
+                <div class="col-lg-8 mx-auto">
+                    <h2 id="question" class="mb-4">Question</h2>
+                    <div id="options" class="mb-4">
+                        <button class="option btn btn-outline-secondary" data-option="a"></button>
+                        <button class="option btn btn-outline-secondary" data-option="b"></button>
+                        <button class="option btn btn-outline-secondary" data-option="c"></button>
+                        <button class="option btn btn-outline-secondary" data-option="d"></button>
+                    </div>
+                    <div class="buttons d-flex justify-content-between">
+                        <button id="previous-button" class="btn btn-secondary hidden">Previous Question</button>
+                        <button id="next-button" class="btn btn-primary hidden">Next Question</button>
+                        <button id="end-button" class="btn btn-danger hidden">End Quiz</button>
+                    </div>
+                
+                </div>
+            </div>
+            <div id="feedback" class="hidden mt-4">
+                <p id="explanation">Explanation: </p>
+                <p id="synonyms">Synonyms: </p>
+                <p id="antonyms">Antonyms: </p>
+                <p id="phonetic">Phonetic: </p>
+                <p id="points">Points Earned: </p>
+                <p id="cefr">CEFR Level: </p>
+            </div>
+        </div>
+    </div>
+
+    <div id="result" class="page hidden">
+        <div class="container">
+            <div class="row d-flex justify-content-center text-center">
+                <div class="col-lg-8">
+                    <h2>Quiz Completed!</h2>
+                    <p id="total-score">Total Points: </p>
+                    <div id="comprehensive-analysis"></div>
+                    <button id="restart-button" class="btn btn-primary mt-4">Restart Quiz</button>
+                    <button id="analytics-button" class="btn btn-secondary mt-4" onclick="window.location.href='assess-analytics.html'">View Analytics</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  </main>
+
+  <footer id="footer" class="footer position-relative">
+    <div class="container footer-top">
+      <div class="row gy-4">
+        <div class="col-lg-4 col-md-6 footer-about">
+          <a href="../index.html" class="logo d-flex align-items-center">
+            <span class="">Sanghamitra Learning</span>
+          </a>
+          <div class="footer-contact pt-3">
+            <p>GacchiBowli</p>
+            <p>Hyderabad, TS 500032</p>
+            <p class="mt-3"><strong>Phone:</strong> <span>+91 7020102729</span></p>
+            <p><strong>Email:</strong> <span>sanghamitra.learnworlds@gmail.com</span></p>
+          </div>
+          <div class="social-links d-flex mt-4">
+            <a href=""><i class="bi bi-twitter"></i></a>
+            <a href=""><i class="bi bi-facebook"></i></a>
+            <a href=""><i class="bi bi-instagram"></i></a>
+            <a href=""><i class="bi bi-linkedin"></i></a>
+          </div>
+        </div>
+
+        <div class="col-lg-4 col-md-12 footer-newsletter">
+          <!-- Optional content for the newsletter section -->
+        </div>
+
+      </div>
+    </div>
+
+    <div class="container copyright text-center mt-4">
+      <p>© <span>Copyright</span> <strong class="px-1">Sanghamitra Learning</strong> <span>All Rights Reserved</span></p>
+      <div class="credits">
+        Designed by <a href="index.html">Sanghamitra</a>
+      </div>
+    </div>
+
+  </footer>
+
+  <!-- Scroll Top -->
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+  <!-- Preloader -->
+  <div id="preloader"></div>
+
+  <!-- Vendor JS Files -->
+  <script src="../assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="../assets/vendor/php-email-form/validate.js"></script>
+  <script src="../assets/vendor/aos/aos.js"></script>
+  <script src="../assets/vendor/glightbox/js/glightbox.min.js"></script>
+  <script src="../assets/vendor/purecounter/purecounter_vanilla.js"></script>
+  <script src="../assets/vendor/swiper/swiper-bundle.min.js"></script>
+
+  <!-- Main JS File -->
+  <script src="../assets/js/main.js"></script>
+
+  <!-- Custom JS for Vocabulary Quiz -->
+  <script>
+    console.log("Javascript Loaded");
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const startButton = document.getElementById('start-button');
+        const nextButton = document.getElementById('next-button');
+        const previousButton = document.getElementById('previous-button');
+        const endButton = document.getElementById('end-button');
+        const restartButton = document.getElementById('restart-button');
+        
+        const homePage = document.getElementById('home');
+        const quizPage = document.getElementById('quiz');
+        const resultPage = document.getElementById('result');
+        
+        const questionElement = document.getElementById('question');
+        const optionButtons = document.querySelectorAll('.option');
+        const feedbackSection = document.getElementById('feedback');
+        const explanationElement = document.getElementById('explanation');
+        const synonymsElement = document.getElementById('synonyms');
+        const antonymsElement = document.getElementById('antonyms');
+        const phoneticElement = document.getElementById('phonetic');
+        const pointsElement = document.getElementById('points');
+        const cefrElement = document.getElementById('cefr');
+        const totalScoreElement = document.getElementById('total-score');
+        const comprehensiveAnalysis = document.getElementById('comprehensive-analysis');
+        const vocabularyLevelElement = document.createElement('div');
+        resultPage.appendChild(vocabularyLevelElement);
+
+        let username = "";
+        let email = "";
+    
+        async function fetchSessionInfo() {
+            try {
+                const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/session-info');
+                if (response.ok) {
+                    const data = await response.json();
+                    username = data.username;
+                    email = data.email;
+                    console.log(username, email);
+                    fetchQuestions(); // Automatically fetch questions after getting session info
+                } else {
+                    console.error('Failed to fetch session info');
+                }
+            } catch (error) {
+                console.error('Error fetching session info:', error);
+            }
+        }
+    
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let totalPoints = 0;
+        let quizRunning = false;
+        let answers = []; // To store user answers and feedback
+        let cefrScores = { A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 }; // To track scores by CEFR level
+        let correctAnswers = { A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 }; // Correct answers by CEFR level
+        let totalQuestions = { A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 }; // Total questions by CEFR level
+    
+        async function fetchQuestions() {
+            console.log('Fetching questions...');
+            try {
+                const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/vocab-questions?topic=science');
+                const data = await response.json();
+                questions = data.sort(() => 0.5 - Math.random()).slice(0, 10); // Randomly select 10 questions
+                answers = new Array(questions.length).fill(null); // Initialize answers array
+                startQuiz();
+            } catch (error) {
+                console.error('Error fetching questions:', error);
+            }
+        }
+    
+        function createQuestionNav() {
+            const questionNav = document.getElementById('question-nav');
+            questionNav.innerHTML = '';
+            for (let i = 0; i < questions.length; i++) {
+                const questionCircle = document.createElement('div');
+                questionCircle.classList.add('question-circle');
+                questionCircle.textContent = i + 1;
+                questionCircle.dataset.questionIndex = i;
+                questionCircle.addEventListener('click', () => {
+                    currentQuestionIndex = i;
+                    showQuestion();
+                });
+                questionNav.appendChild(questionCircle);
+            }
+        }
+    
+        function startQuiz() {
+            if (quizRunning) {
+                console.log('Quiz already running. Ignoring start request.');
+                return; // Prevent multiple starts
+            }
+            console.log('Starting quiz...');
+            homePage.classList.add('hidden');
+            homePage.classList.remove('active');
+            quizPage.classList.remove('hidden');
+            quizPage.classList.add('active');
+            currentQuestionIndex = 0;
+            totalPoints = 0;
+            answers = new Array(questions.length).fill(null); // Reset answers array
+            cefrScores = { A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 }; // Reset CEFR scores
+            correctAnswers = { A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 }; // Reset correct answers
+            totalQuestions = { A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 }; // Reset total questions
+            quizRunning = true;
+            createQuestionNav(); // Add this line
+            showQuestion();
+        }
+    
+        function showQuestion() {
+            console.log('Showing question:', currentQuestionIndex);
+            if (currentQuestionIndex >= questions.length) {
+                console.log('No more questions. Ending quiz.');
+                endQuiz();
+                return;
+            }
+            const question = questions[currentQuestionIndex];
+            questionElement.textContent = question.question;
+            optionButtons.forEach(button => {
+                const optionKey = button.getAttribute('data-option');
+                button.textContent = question.options[optionKey];
+                button.classList.remove('selected', 'correct', 'incorrect');
+            });
+            feedbackSection.classList.add('hidden'); // Hide feedback section initially
+    
+            // Restore the previously selected option, if any
+            const savedAnswer = answers[currentQuestionIndex];
+            if (savedAnswer) {
+                const selectedOption = Array.from(optionButtons).find(button => button.getAttribute('data-option') === savedAnswer.selectedOption);
+                if (selectedOption) {
+                    selectedOption.classList.add('selected');
+                }
+            }
+    
+            // Show or hide the "Previous" button
+            if (currentQuestionIndex === 0) {
+                previousButton.classList.add('hidden');
+            } else {
+                previousButton.classList.remove('hidden');
+            }
+    
+            // Show "Next Question" or "End Quiz" button
+            if (currentQuestionIndex === questions.length - 1) {
+                nextButton.classList.add('hidden');
+                endButton.classList.remove('hidden');
+            } else {
+                nextButton.classList.remove('hidden');
+                endButton.classList.add('hidden');
+            }
+    
+            // Highlight current question in nav
+            const questionCircles = document.querySelectorAll('.question-circle');
+            questionCircles.forEach((circle, index) => {
+                circle.classList.toggle('active', index === currentQuestionIndex);
+            });
+        }
+    
+        function recordAnswer(option) {
+            const question = questions[currentQuestionIndex];
+            const selectedOption = option.getAttribute('data-option');
+            const selectedAnswer = question.options[selectedOption];
+            const isCorrect = selectedAnswer === question.correctOption;
+    
+            optionButtons.forEach(button => button.classList.remove('selected'));
+            option.classList.add('selected');
+    
+            if (isCorrect) {
+                correctAnswers[question.CEFRLevel]++;
+                totalPoints += question.points; // Add points for correct answer
+            }
+    
+            totalQuestions[question.CEFRLevel]++;
+    
+            // Store the answer and feedback
+            answers[currentQuestionIndex] = {
+                question_id: question._id,
+                question_text: question.question,
+                user_response: selectedAnswer,
+                selectedOption: selectedOption,  // Store the selected option
+                correct_option: question.correctOption,
+                is_correct: isCorrect,
+                points_awarded: isCorrect ? question.points : 0,
+                difficulty_level: question.difficultyLevel,
+                CEFR_level: question.CEFRLevel,
+                topic: question.topic
+            };
+    
+            // Mark question as answered in nav
+            const questionCircles = document.querySelectorAll('.question-circle');
+            questionCircles[currentQuestionIndex].classList.add('active', 'attempted');
+        }
+    
+        async function postUserData(userData) {
+            try {
+                const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/vocabscoreadd', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userData)
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to post user data');
+                }
+                const data = await response.json();
+                console.log('User data posted successfully:', data);
+            } catch (error) {
+                console.error('Error posting user data:', error);
+            }
+        }
+    
+        function endQuiz() {
+            // Evaluate unanswered questions as skipped
+            for (let i = 0; i < questions.length; i++) {
+                if (answers[i] === null) {
+                    answers[i] = {
+                        question_id: questions[i]._id,
+                        question_text: questions[i].question,
+                        user_response: "You did not answer this question.",
+                        correct_option: questions[i].correctOption,
+                        is_correct: false,
+                        points_awarded: 0,
+                        difficulty_level: questions[i].difficultyLevel || 'Unknown',
+                        CEFR_level: questions[i].CEFRLevel,
+                        topic: questions[i].topic
+                    };
+                }
+            }
+            quizPage.classList.add('hidden');
+            quizPage.classList.remove('active');
+            resultPage.classList.remove('hidden');
+            resultPage.classList.add('active');
+            totalScoreElement.textContent = `Total Points: ${totalPoints}`;
+            displayComprehensiveAnalysis();
+            quizRunning = false; // Reset state when quiz ends
+            console.log('Quiz ended. Total points:', totalPoints);
+    
+            // Post user data
+            const userData = {
+                username: username,
+                email: email,
+                assessments: [
+                    {
+                        total_score: totalPoints,
+                        questions: answers
+                    }
+                ]
+            };
+            postUserData(userData);
+        }
+    
+        function displayComprehensiveAnalysis() {
+            comprehensiveAnalysis.innerHTML = `<h3>Total Points: ${totalPoints}</h3>`;
+            questions.forEach((question, index) => {
+                const answer = answers[index];
+                const answerDiv = document.createElement('div');
+                answerDiv.classList.add('analysis-question');
+                answerDiv.classList.add(answer.is_correct ? 'correct-answer' : 'incorrect-answer');
+                answerDiv.innerHTML = `
+                    <div class="question-header">
+                        <span class="${answer.is_correct ? 'correct-icon' : answer.user_response === "You did not answer this question." ? 'skipped-icon' : 'incorrect-icon'}"></span>
+                        <p>Question ${index + 1}: ${question.question}</p>
+                    </div>
+                    <p>Your answer: ${answer.user_response}</p>
+                    <p>Correct answer: ${answer.correct_option}</p>
+                    <button class="expand-button">Explanation</button>
+                    <div class="expandable hidden">
+                        <p>Explanation: ${question.explanation}</p>
+                        <p>Synonyms: ${question.synonyms.join(', ')}</p>
+                        <p>Antonyms: ${question.antonyms.join(', ')}</p>
+                        <p>Phonetic: ${question.phonetic}</p>
+                        <p>Points Earned: ${answer.points_awarded}</p>
+                        <p>CEFR Level: ${question.CEFRLevel}</p>
+                    </div>
+                `;
+                comprehensiveAnalysis.appendChild(answerDiv);
+            });
+    
+            // Add event listeners to expand buttons
+            const expandButtons = document.querySelectorAll('.expand-button');
+            expandButtons.forEach((button, index) => {
+                button.addEventListener('click', () => {
+                    const expandable = button.nextElementSibling;
+                    expandable.classList.toggle('hidden');
+                    if (!expandable.classList.contains('hidden')) {
+                        button.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+        }
+    
+        nextButton.addEventListener('click', () => {
+            console.log('Next button clicked');
+            currentQuestionIndex++;
+            showQuestion();
+        });
+    
+        previousButton.addEventListener('click', () => {
+            console.log('Previous button clicked');
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                showQuestion();
+            }
+        });
+    
+        endButton.addEventListener('click', () => {
+            console.log('End button clicked');
+            endQuiz();
+        });
+    
+        restartButton.addEventListener('click', () => {
+            console.log('Restart button clicked');
+            resultPage.classList.add('hidden');
+            resultPage.classList.remove('active');
+            homePage.classList.remove('hidden');
+            homePage.classList.add('active');
+            quizRunning = false; // Reset state on restart
+            console.log('Quiz restarted.');
+            fetchSessionInfo(); // Fetch session info again when restarting
+        });
+    
+        optionButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                recordAnswer(button);
+            });
+        });
+    
+        await fetchSessionInfo(); // Fetch session info and start quiz on page load
+    });
+  </script>
+  
+</body>
+</html>

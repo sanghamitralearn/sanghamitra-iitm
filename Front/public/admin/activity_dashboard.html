@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Algebra Topic Scores Visualization</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Vendor CSS Files -->
+  <link href="../assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="../assets/vendor/aos/aos.css" rel="stylesheet">
+  <link href="../assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+  <link href="../assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+
+  <!-- Main CSS File -->
+  <link href="../assets/css/main.css" rel="stylesheet">
+
+  <style>
+    /* Import Roboto Font */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+
+        body {
+            font-family: 'Roboto', Arial, sans-serif; /* Ensures font consistency */
+            background: linear-gradient(to bottom, #b4f6d7, #00f2fe);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        /* Main Container */
+        .container {
+            background: white;
+            border-radius: 35px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 1s ease-in-out;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+            font-weight: 700;
+            font-size: 42px;
+        }
+
+        /* Student List */
+        #studentList {
+            display: none;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+
+        #studentList ol {
+            padding-left: 20px;
+        }
+
+        /* Canvas */
+        canvas {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 16px;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+            font-weight: 700;
+        }
+
+        .hidden-row {
+            display: none;
+        }
+
+        /* Button Styling */
+        .button-container {
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        button {
+            padding: 12px 18px;
+            border: none;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+            font-weight: 500;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+            font-family: 'Roboto', Arial, sans-serif; /* Ensuring button font consistency */
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .bottom-three {
+            margin-top: 1cm;
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+  </style>
+</head>
+<body>
+
+
+  
+
+  <main>
+    <nav id="navmenu" class="navmenu">
+        <ul>
+          <li><a href="../index.html" class="">Platfrom</a></li>
+          <li><a href="programming_dashboard.html" class="">Programming Dashboard</a></li>
+          <li><a href="content_dashboard.html" class="">Content Dashboard</a></li>
+        </ul>
+        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+    </nav>
+    <div class="container">
+        
+    <h1 class="header">Sanghamitra Learning Activity Dashboard</h1>
+    <h2>All students performance and activites</h2>
+        <!-- Enrolled Students Section -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+
+        <div class="row mb-4 align-items-center">
+            <div class="col-md-6">
+                <h5 class="mb-0">
+                    <i class="bi bi-person-circle"></i> <!-- Student Icon -->
+                    Students: <span id="studentCount">0</span> 
+                    <button id="toggleStudentList" class="btn btn-primary">
+                        <i class="bi bi-eye"></i> Show List <!-- Eye Icon for visibility -->
+                    </button>
+                </h5>
+            </div>
+        </div>
+
+        <!-- Student List (Hidden Initially) -->
+        <div id="studentList" class="border rounded p-3" style="display: none;">
+            <h6><i class="bi bi-people"></i> Student List</h6> <!-- Group Icon -->
+            <ol id="studentListContent"></ol>
+        
+
+    </div>
+
+    <h2 class="text-start mt-4">English Diagnostic Scores</h2>
+    <div class="row mb-3">
+      <div class="col-md-12">
+        <canvas id="englishDiagnosticChart"></canvas>
+      </div>
+    </div>
+
+    <!-- User Vocabulary Assessment Summary Section -->
+    <h2>Vocabulary Assessment</h2>
+    <div id="user-vocab-summary-table"></div>
+    <div class="button-container">
+      <button id="show-more-btn">Show More</button>
+      <button id="show-less-btn" style="display: none;">Show Less</button>
+    </div>
+
+    <!-- Algebra Scores Section -->
+    <h2 class="text-start mt-4">Algebra Scores by Topic</h2>
+    <select id="topicSelect" class="form-select mt-3">
+      <option value="" disabled selected>Select Topic</option>
+    </select>
+    <h3 id="chart-heading" style="text-align: center; margin-bottom: 15px;"></h3>
+    <canvas id="topicScoresChart"></canvas>
+    <p id="errorMsg" class="text-danger mt-3"></p>
+
+
+    <h2 class="bottom-three">Reading Comprehension </h2>
+    <!-- 📖 Reading Comprehension Table -->
+    <div id="rc-section" class="mt-4">
+      <div class="table-responsive">
+          <table class="table table-bordered table-striped" id="rc-table">
+              <thead class="table-dark">
+                  <tr id="rc-table-head">
+                      <th>User Name</th>
+                      <th>Total Passages</th>
+                      <th>Overall Score (%)</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  <!-- RC Data will be populated dynamically -->
+              </tbody>
+          </table>
+      </div>
+
+    </div>
+  </main>
+
+
+
+    
+
+
+
+
+  <script>
+    const apiUrl = 'https://sanghamitra-learnworld.vercel.app/api/algebra_scores';
+    const studentCountApi = 'https://sanghamitra-learnworld.vercel.app/api/students-count'; // Endpoint for student count and list
+    let chart;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Elements
+      const studentCountEl = document.getElementById("studentCount");
+      const studentListEl = document.getElementById("studentList");
+      const studentListContent = document.getElementById("studentListContent");
+      const toggleStudentListBtn = document.getElementById("toggleStudentList");
+      const vocabTableEl = document.getElementById("user-vocab-summary-table");
+      const showMoreVocabBtn = document.getElementById("show-more-btn");
+      const showLessVocabBtn = document.getElementById("show-less-btn");
+
+      try {
+        // Fetch student count and list
+        const response = await fetch(studentCountApi);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch students: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const totalUsers = data.totalUsers; // Total student count
+        const users = data.users; // Array of users
+
+        // Update the student count
+        studentCountEl.textContent = totalUsers;
+
+        // Populate the student list
+        users.forEach((user, index) => {
+          const li = document.createElement('li');
+          li.textContent = `${user.name}`;
+          studentListContent.appendChild(li);
+        });
+
+        // Toggle the visibility of the student list
+        toggleStudentListBtn.addEventListener('click', () => {
+          studentListEl.style.display =
+            studentListEl.style.display === 'none' || studentListEl.style.display === ''
+              ? 'block'
+              : 'none';
+        });
+
+      } catch (error) {
+        console.error('Error loading student data:', error);
+        studentListEl.textContent = `Failed to load students: ${error.message}`;
+      }
+
+      const topicSelect = document.getElementById('topicSelect');
+      const errorMsg = document.getElementById('errorMsg');
+
+      try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error(`Error fetching data: ${response.statusText}`);
+    
+        const userScores = await response.json();
+        const topics = new Set();
+    
+        // 1. Extract topics with validation
+        userScores.forEach(user => {
+            // Check if user has topics array
+            if (Array.isArray(user?.topics)) {
+                user.topics.forEach(topicObj => {
+                    // Validate topic object structure
+                    if (topicObj?.topic && typeof topicObj.topic === 'string') {
+                        const cleanTopic = topicObj.topic.trim();
+                        if (cleanTopic) topics.add(cleanTopic);
+                    }
+                });
+            }
+        });
+    
+        // Convert to array and validate we have topics
+        const topicsArray = Array.from(topics);
+        if (topicsArray.length === 0) throw new Error('No valid topics found in data');
+    
+        const firstTopic = topicsArray[0];
+    
+        // 2. Populate dropdown with validation
+        topics.forEach(topic => {
+            if (typeof topic === 'string' && topic.length > 0) {
+                const option = document.createElement('option');
+                option.value = topic;
+                option.textContent = topic.charAt(0).toUpperCase() + topic.slice(1);
+                topicSelect.appendChild(option);
+            }
+        });
+    
+        // 3. Get first topic data with protection
+        const firstTopicData = userScores.map(user => {
+            const topicInfo = user.topics?.find(t => t?.topic === firstTopic);
+            return topicInfo ? {
+                username: user.username || 'Anonymous',
+                mastered: topicInfo.current_level === "mastered",
+                scores: (topicInfo.questions || []).map(q => ({
+                    questionId: q.questionId,
+                    correct: q.correct === true,
+                    difficultyLevel: q.difficultyLevel || 'unknown'
+                }))
+            } : null;
+        }).filter(user => user !== null);
+    
+        if (firstTopicData.length === 0) throw new Error('No data for first topic');
+        
+        renderChart(firstTopicData, firstTopic);
+    
+        // 4. Event listener with validation
+        topicSelect.addEventListener('change', () => {
+            const selectedTopic = topicSelect.value;
+            if (selectedTopic) {
+                const topicData = userScores.map(user => {
+                    const topicInfo = user.topics?.find(t => t?.topic === selectedTopic);
+                    return topicInfo ? {
+                        username: user.username || 'Anonymous',
+                        mastered: topicInfo.current_level === "mastered",
+                        scores: (topicInfo.questions || []).map(q => ({
+                            questionId: q.questionId,
+                            correct: q.correct === true,
+                            difficultyLevel: q.difficultyLevel || 'unknown'
+                        }))
+                    } : null;
+                }).filter(user => user !== null);
+                
+                if (topicData.length > 0) {
+                    renderChart(topicData, selectedTopic);
+                }
+            }
+        });
+    
+    } catch (error) {
+        console.error('Error loading topics:', error);
+        errorMsg.textContent = `Failed to load topics: ${error.message}`;
+        topicSelect.disabled = true;
+    }
+});
+
+function renderChart(data, topic = 'Fractions') {
+    // Set the chart heading dynamically
+    document.getElementById('chart-heading').textContent = `Performance in ${topic}`;
+
+    const usernames = data.map(user => user.username);
+    const correctScores = data.map(user => user.scores.filter(q => q.correct).length);
+    const totalScores = data.map(user => user.scores.length);
+    const masteryColors = data.map(user => user.mastered ? 'rgba(75, 192, 192, 0.6)' : 'rgba(54, 162, 235, 0.8)');
+    const borderColorMastery = data.map(user => user.mastered ? 'rgba(75, 192, 192, 1)' : 'rgba(54, 162, 235, 1)');
+
+    const ctx = document.getElementById('topicScoresChart').getContext('2d');
+    
+    // Destroy existing chart instance if it exists
+    if (window.chart) {
+        window.chart.destroy();
+    }
+
+    // Create new horizontal bar chart
+    window.chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: usernames, // Names on Y-axis
+            datasets: [
+                {
+                    label: `Correct Answers in ${topic}`,
+                    data: correctScores,
+                    backgroundColor: masteryColors,
+                    borderColor: borderColorMastery,
+                    borderWidth: 1
+                },
+                {
+                    label: `Total Questions in ${topic}`,
+                    data: totalScores,
+                    backgroundColor: 'rgba(153, 102, 255, 0.6)',
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            indexAxis: 'y', // Converts to horizontal bar chart
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const user = data[context.dataIndex];
+                            return `${context.dataset.label}: ${context.raw} (${user.mastered ? 'Mastered' : 'Not Mastered'})`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { beginAtZero: true },
+                y: {
+                    ticks: {
+                        font: { size: 14 },
+                        autoSkip: false
+                    }
+                }
+            }
+        }
+    });
+}
+
+
+    async function fetchVocabData() {
+      try {
+          const response = await fetch("https://sanghamitra-learnworld.vercel.app/api/vocabscores");
+          const data = await response.json();
+
+          const userSummary = data.map(user => {
+              let totalAssessments = user.assessments.length;
+              let totalQuestions = 0;
+              let correctAnswers = 0;
+              let lastActivity = "No Activity";
+
+              if (user.assessments.length > 0) {
+                  // Find the latest assessment date
+                  lastActivity = new Date(
+                      Math.max(...user.assessments.map(a => new Date(a.date)))
+                  ).toLocaleDateString();
+              }
+
+              user.assessments.forEach(assessment => {
+                  totalQuestions += assessment.questions.length;
+                  correctAnswers += assessment.questions.filter(q => q.is_correct).length;
+              });
+
+              let averagePercentage = totalQuestions > 0 ? ((correctAnswers / totalQuestions) * 100).toFixed(2) : "N/A";
+
+              return {
+                  username: user.username,
+                  lastActivity,
+                  totalAssessments,
+                  totalQuestions,
+                  correctAnswers,
+                  averagePercentage
+              };
+          });
+
+          generateVocabTable(userSummary);
+      } catch (error) {
+          console.error("Error fetching vocab data:", error);
+      }
+  }
+
+  // Generate Vocabulary Table (Updated)
+  function generateVocabTable(userSummary) {
+      let tableHTML = `<table>
+          <tr>
+              <th>Username</th>
+              <th>Last Activity</th>
+              <th>Total Assessments</th>
+              <th>Total Questions Attempted</th>
+              <th>Correct Answers</th>
+              <th>Average Score (%)</th>
+          </tr>`;
+
+      userSummary.forEach((user, index) => {
+          tableHTML += `<tr class="${index >= 5 ? 'hidden-row' : ''}">
+              <td>${user.username}</td>
+              <td>${user.lastActivity}</td>
+              <td>${user.totalAssessments}</td>
+              <td>${user.totalQuestions}</td>
+              <td>${user.correctAnswers}</td>
+              <td>${user.averagePercentage}</td>
+          </tr>`;
+      });
+
+      tableHTML += `</table>`;
+      document.getElementById("user-vocab-summary-table").innerHTML = tableHTML;
+      setupVocabTableButtons();
+  }
+
+  // Setup Vocabulary Table Toggle
+  function setupVocabTableButtons() {
+      const showMoreVocabBtn = document.getElementById("show-more-btn");
+      const showLessVocabBtn = document.getElementById("show-less-btn");
+
+      showMoreVocabBtn.addEventListener("click", () => {
+          document.querySelectorAll(".hidden-row").forEach(row => row.style.display = "table-row");
+          showMoreVocabBtn.style.display = "none";
+          showLessVocabBtn.style.display = "inline-block";
+      });
+
+      showLessVocabBtn.addEventListener("click", () => {
+          document.querySelectorAll(".hidden-row").forEach(row => row.style.display = "none");
+          showMoreVocabBtn.style.display = "inline-block";
+          showLessVocabBtn.style.display = "none";
+      });
+  }
+
+      async function fetchReadingComprehensionData() {
+            try {
+                const response = await fetch("https://sanghamitra-learnworld.vercel.app/api/readingcomprehensionscore");
+                if (!response.ok) {
+                    throw new Error("Failed to fetch data");
+                }
+                const data = await response.json();
+                processRCData(data);
+            } catch (error) {
+                console.error("Error fetching Reading Comprehension data:", error);
+            }
+        }
+
+        function processRCData(data) {
+            let userMap = {};
+            let uniqueTopics = new Set();
+
+            data.forEach(userEntry => {
+                let email = userEntry.email;
+
+                if (!userMap[email]) {
+                    userMap[email] = { totalPassages: 0, totalScore: 0, topicScores: {}, scoreEntries: 0 };
+                }
+
+                Object.entries(userEntry.topics).forEach(([topic, topicData]) => {
+                    uniqueTopics.add(topic);
+                    let passagesCount = topicData.solvedPassages.length;
+                    let totalScore = topicData.solvedPassages.reduce((sum, p) => sum + (p.score || 0), 0);
+                    
+                    userMap[email].totalPassages += passagesCount;
+                    userMap[email].totalScore += totalScore;
+                    userMap[email].scoreEntries += passagesCount;
+
+                    userMap[email].topicScores[topic] = {
+                        passages: passagesCount,
+                        avgScore: passagesCount ? (totalScore / passagesCount).toFixed(1) : "N/A"
+                    };
+                });
+            });
+
+            populateRCTable(userMap, uniqueTopics);
+        }
+
+        // Function to fetch and visualize English diagnostic scores
+        async function fetchAndVisualizeEnglishScores() {
+          try {
+            const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/eng_diagnostic_scores');
+            if (!response.ok) {
+              throw new Error(`Error fetching data: ${response.statusText}`);
+            }
+      
+            const data = await response.json();
+            processEnglishDiagnosticData(data);
+          } catch (error) {
+            console.error('Error loading English diagnostic data:', error);
+            document.getElementById('englishDiagnosticChart').insertAdjacentHTML(
+              'afterend', 
+              `<p class="text-danger">Failed to load English diagnostic data: ${error.message}</p>`
+            );
+          }
+        }
+      
+        // Process English diagnostic data and create chart
+        function processEnglishDiagnosticData(data) {
+          // Process data and extract unique users
+          const uniqueUsers = new Set();
+          
+          // Prepare data for visualization
+          const processedData = data;
+          
+          // Extract usernames and organize scores
+          const usernames = [];
+          const preScoresPercentage = [];
+          const postScoresPercentage = [];
+          
+          processedData.forEach(user => {
+            if (user.username) {
+              usernames.push(user.username);
+              
+              // Find pre and post diagnostic scores
+              let preScore = null;
+              let postScore = null;
+              
+              if (user.quizzes && user.quizzes.length > 0) {
+                user.quizzes.forEach(quiz => {
+                  if (quiz.diagnosticType === "pre") {
+                    preScore = (quiz.score / quiz.totalQuestions) * 100;
+                  } else if (quiz.diagnosticType === "post") {
+                    postScore = (quiz.score / quiz.totalQuestions) * 100;
+                  }
+                });
+              }
+              
+              preScoresPercentage.push(preScore !== null ? preScore.toFixed(1) : null);
+              postScoresPercentage.push(postScore !== null ? postScore.toFixed(1) : null);
+            }
+          });
+          
+          // Create chart configuration
+          const ctx = document.getElementById('englishDiagnosticChart').getContext('2d');
+          
+          // Destroy any existing chart instance
+          if (window.englishDiagnosticChart instanceof Chart) {
+            window.englishDiagnosticChart.destroy();
+          }
+          
+          // Create new chart
+          window.englishDiagnosticChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: usernames,
+              datasets: [
+                {
+                  label: 'Pre-Diagnostic (%)',
+                  data: preScoresPercentage,
+                  backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                  borderColor: 'rgba(54, 162, 235, 1)',
+                  borderWidth: 1
+                },
+                {
+                  label: 'Post-Diagnostic (%)',
+                  data: postScoresPercentage,
+                  backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                  borderColor: 'rgba(75, 192, 192, 1)',
+                  borderWidth: 1
+                }
+              ]
+            },
+            options: {
+              indexAxis: 'y', // Horizontal bar chart
+              responsive: true,
+              plugins: {
+                legend: {
+                  position: 'top',
+                },
+                title: {
+                  display: true,
+                  text: 'English Diagnostic Scores (out of 25 questions)'
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      const label = context.dataset.label || '';
+                      const value = context.raw || 0;
+                      return `${label}: ${value}%`;
+                    }
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  beginAtZero: true,
+                  max: 100,
+                  title: {
+                    display: true,
+                    text: 'Score Percentage (%)'
+                  }
+                },
+                y: {
+                  title: {
+                    display: true,
+                    text: 'Students'
+                  }
+                }
+              }
+            }
+          });
+        }
+
+        function populateRCTable(userMap, uniqueTopics) {
+            let tableHead = document.querySelector("#rc-table-head");
+            let tableBody = document.querySelector("#rc-table tbody");
+
+            // Clear previous data
+            tableBody.innerHTML = "";
+
+            // Add new topic headers dynamically
+            uniqueTopics.forEach(topic => {
+                let th = document.createElement("th");
+                th.textContent = `${topic} (Passages)`;
+                tableHead.appendChild(th);
+            });
+
+            uniqueTopics.forEach(topic => {
+                let th = document.createElement("th");
+                th.textContent = `${topic} (%)`;
+                tableHead.appendChild(th);
+            });
+
+            // Populate table rows
+            Object.keys(userMap).forEach(email => {
+                let userStats = userMap[email];
+                let avgOverallScore = userStats.scoreEntries > 0 ? (userStats.totalScore / userStats.scoreEntries).toFixed(1) : 0;
+
+                let row = `<tr>
+                    <td>${email}</td>
+                    <td>${userStats.totalPassages}</td>
+                    <td>${avgOverallScore}%</td>`;
+
+                uniqueTopics.forEach(topic => {
+                    row += `<td>${userStats.topicScores[topic]?.passages || 0}</td>`;
+                });
+
+                uniqueTopics.forEach(topic => {
+                    row += `<td>${userStats.topicScores[topic]?.avgScore || 0}</td>`;
+                });
+
+                row += `</tr>`;
+                tableBody.innerHTML += row;
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", fetchReadingComprehensionData);
+
+  // Call function to fetch data
+  fetchVocabData();
+  fetchAndVisualizeEnglishScores();
+  </script>
+
+<a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+  
+<!-- Preloader -->
+<div id="preloader"></div>
+
+<!-- Vendor JS Files -->
+<script src="../assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="../assets/vendor/php-email-form/validate.js"></script>
+<script src="../assets/vendor/aos/aos.js"></script>
+<script src="../assets/vendor/glightbox/js/glightbox.min.js"></script>
+<script src="../assets/vendor/purecounter/purecounter_vanilla.js"></script>
+<script src="../assets/vendor/swiper/swiper-bundle.min.js"></script>
+
+<!-- Main JS File -->
+<script src="../assets/js/main.js"></script>
+<script src="navbar.js"></script>
+
+</body>
+</html>

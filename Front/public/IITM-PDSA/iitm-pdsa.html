@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+ 
+<head> 
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>IITM-PDSA</title>
+  <meta content="" name="description">
+  <meta content="" name="keywords">
+  <!-- Favicons -->
+  <link href="../assets/img/favicon.png" rel="icon">
+  <link href="../assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="../assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="../assets/vendor/aos/aos.css" rel="stylesheet">
+  <link href="../assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+  <link href="../assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+
+  <!-- Main CSS File -->
+  <link href="../assets/css/main.css" rel="stylesheet">
+ 
+  <style>
+    .course-list {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 15px;
+    }
+
+    .course-item {
+      margin-bottom: 2rem !important;
+    }
+    .course-card {
+      max-width: 100%;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+    .course-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .icon-box {
+      width: 40px !important;
+      height: 40px !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .progress {
+      height: 6px !important;
+      background-color: #f0f0f0;
+    }
+
+    .fs-7 {
+      font-size: 0.85rem !important;
+    }
+
+    .course-card .btn {
+      min-width: 120px;
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* CHANGES: Added styles for test paper button */
+    .test-paper-btn {
+      background: linear-gradient(45deg, #28a745, #20c997);
+      color: white;
+      border: none;
+      min-width: 120px;
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+    }
+
+    .test-paper-btn:hover {
+      background: linear-gradient(45deg, #218838, #1e9e8a);
+      color: white;
+      transform: translateY(-1px);
+    }
+
+    .percentage-badge {
+      background: linear-gradient(45deg, #007bff, #0056b3);
+      color: white;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      box-shadow: 0 2px 4px rgba(0,123,255,0.3);
+    }
+
+    .completed-badge {
+      background: linear-gradient(45deg, #28a745, #20c997);
+      color: white;
+      font-weight: 600;
+      font-size: 1rem;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(40,167,69,0.3);
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .error-message {
+      color: #dc3545;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+
+    /* CHANGES: Added style for button container to stack buttons vertically */
+    .button-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.5rem;
+      width: 100%;
+    }
+    
+    .button-container .btn {
+      min-width: 200px;
+      width: 100%;
+      justify-content: space-between;
+    }
+
+   /* Add these styles to your existing CSS */
+
+    /* Interview button style */
+    .interview-btn {
+      background: linear-gradient(45deg, #6f42c1, #8a63d2);
+      color: white;
+      border: none;
+      min-width: 120px;
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+    }
+    
+    .interview-btn:hover {
+      background: linear-gradient(45deg, #5a32a3, #7b52c9);
+      color: white;
+      transform: translateY(-1px);
+    }
+    
+    /* Outline button for interview - FIXED: More specific selector */
+    .btn.btn-outline-purple {
+      border: 1px solid #6f42c1 !important;
+      color: #6f42c1 !important;
+      background-color: transparent !important;
+    }
+    
+    .btn.btn-outline-purple:hover {
+      background: linear-gradient(45deg, #6f42c1, #8a63d2) !important;
+      color: white !important;
+      border: none !important;
+      transform: translateY(-1px);
+    }
+
+    /* Authentication warning styles */
+    .auth-warning {
+      background-color: #fff3cd;
+      border: 1px solid #ffc107;
+      color: #856404;
+      padding: 1.5rem;
+      border-radius: 8px;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    
+    .auth-warning h3 {
+      color: #856404;
+      margin-bottom: 1rem;
+    }
+    
+    .auth-warning a {
+      color: #856404;
+      text-decoration: underline;
+      font-weight: bold;
+    }
+    
+    .auth-warning a:hover {
+      color: #5a4b00;
+    }
+
+    /* Disabled button styles */
+    .btn-disabled {
+      opacity: 0.5;
+      pointer-events: none;
+      cursor: not-allowed;
+    }
+
+    /* FIXED: Specific styles for outline-primary and outline-success buttons */
+    .btn.btn-outline-primary {
+      border: 1px solid #007bff !important;
+      color: #007bff !important;
+      background-color: transparent !important;
+    }
+    
+    .btn.btn-outline-primary:hover {
+      background: linear-gradient(45deg, #007bff, #0056b3) !important;
+      color: white !important;
+      border: none !important;
+      transform: translateY(-1px);
+    }
+    
+    .btn.btn-outline-success {
+      border: 1px solid #28a745 !important;
+      color: #28a745 !important;
+      background-color: transparent !important;
+    }
+    
+    .btn.btn-outline-success:hover {
+      background: linear-gradient(45deg, #28a745, #20c997) !important;
+      color: white !important;
+      border: none !important;
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+
+<body>
+  <header id="header" class="header d-flex align-items-center sticky-top">
+    <div class="container-fluid container-xl position-relative d-flex align-items-center">
+      <a href="indexx.html" class="logo d-flex align-items-center me-auto">
+        <img src="../img/sbi.logo.png" alt="Logo" width="80" height="80">
+        <h1 class="">Sanghamitra Learning</h1>
+      </a>
+      <nav id="navmenu" class="navmenu">
+        <div id="navbar-placeholder"></div>
+        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- Page Title -->
+    <div class="page-title" data-aos="fade" style="margin-bottom: 2rem;">
+      <div class="heading">
+        <div class="container">
+          <div class="row d-flex justify-content-center text-center">
+            <div class="col-lg-8">
+              <h1>IITM-PDSA</h1>
+              <p class="mb-0">From basic data structures to advanced algorithms, master problem-solving with Python every step of the way.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <nav class="breadcrumbs">
+        <div class="container">
+          <ol>
+            <li><a href="../indexx.html">Home</a></li>
+            <li class="../current">PDSA</li>
+          </ol>
+        </div>
+      </nav>
+    </div><!-- End Page Title -->
+
+    <main id="main" class="main">
+      <div class="container">
+        <!-- Authentication Warning (hidden by default) -->
+        <div id="authWarning" class="auth-warning d-none">
+          <h3><i class="bi bi-exclamation-triangle me-2"></i>Authentication Required</h3>
+          <p>You must be logged in to access quizzes, tests, and view your progress.</p>
+          <p>Please <a href="../login.html">login</a> to continue or <a href="../register.html">register</a> if you don't have an account.</p>
+        </div>
+
+        <div class="course-list" id="courseList">
+          <!-- Loading message -->
+          <div id="loadingMessage" class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading course data...</p>
+          </div>
+          
+          <!-- Error message -->
+          <div id="errorMessage" class="alert alert-danger d-none">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <span id="errorText">Failed to load course data. Please try refreshing the page.</span>
+          </div>
+
+          <!-- Course items will be dynamically generated here -->
+        </div>
+      </div>
+    </main>
+  </main>
+
+  <footer id="footer" class="footer position-relative">
+    <div class="container footer-top">
+      <div class="row gy-4">
+        <div class="col-lg-4 col-md-6 footer-about">
+          <a href="../indexx.html" class="logo d-flex align-items-center">
+            <span class="">Sanghamitra Learning</span>
+          </a>
+          <div class="footer-contact pt-3">
+            <p>GacchiBowli</p>
+            <p>Hyderabad, TS 500032</p>
+            <p class="mt-3"><strong>Phone:</strong> <span>+91 7020102729</span></p>
+            <p><strong>Email:</strong> <span>sanghamitra.learnworlds@gmail.com</span></p>
+          </div>
+          <div class="social-links d-flex mt-4">
+            <a href=""><i class="bi bi-twitter"></i></a>
+            <a href=""><i class="bi bi-facebook"></i></a>
+            <a href=""><i class="bi bi-instagram"></i></a>
+            <a href=""><i class="bi bi-linkedin"></i></a>
+          </div>
+        </div>
+
+        <div class="col-lg-4 col-md-12 footer-newsletter">
+        </div>
+      </div>
+    </div>
+
+    <div class="container copyright text-center mt-4">
+      <p>© <span>Copyright</span> <strong class="px-1">Sanghamitra Learning</strong> <span>All Rights Reserved</span></p>
+      <div class="credits">
+        Designed by <a href="../indexx.html">Sanghamitra</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scroll Top -->
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+  <!-- Preloader -->
+  <div id="preloader"></div>
+
+  <!-- Vendor JS Files -->
+  <script src="../assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="../assets/vendor/php-email-form/validate.js"></script>
+  <script src="../assets/vendor/aos/aos.js"></script>
+  <script src="../assets/vendor/glightbox/js/glightbox.min.js"></script>
+  <script src="../assets/vendor/purecounter/purecounter_vanilla.js"></script>
+  <script src="../assets/vendor/swiper/swiper-bundle.min.js"></script>
+
+  <!-- Main JS File -->
+  <script src="../assets/js/main.js"></script>
+  <script src="../navbar.js"></script>
+  
+  <!-- Script to fetch and display course data from API -->
+  <script>
+    let currentUser = null;
+    let isAuthenticated = false;
+
+    // Available topics configuration for PDSA
+    const availableTopics = [
+      {
+        id: 'Python-basics',
+        name: 'Python basics',
+        displayName: 'WEEK 1: Python Codes',
+        description: 'Assessment on basic data structures: Lists and Tuples',
+        icon: 'bi-list-ul',
+        url: 'pdsa_quiz1.html',
+        testUrl: 'test_1.html',
+        interviewUrl: 'interview_1.html'
+      },
+      {
+        id: 'Sorting-Algorithms',
+        name: 'Sorting Algorithms',
+        displayName: 'WEEK 2: Sorting Algorithms',
+        description: 'Assessment on Quick Sort, Merge Sort, Selection Sort, Insertion Sort, and Bubble Sort',
+        icon: 'bi-diagram-3',
+        url: 'pdsa_quiz2.html',
+        testUrl: 'test_2.html',
+        interviewUrl: 'interview_2.html'
+      },
+      {
+        id: 'Linear-Data-Structures',
+        name: 'Linear Data Structures',
+        displayName: 'WEEK 3: Linear Data Structures',
+        description: 'Assessment on Linked Lists, Arrays, Stacks, Queues, and Hashing',
+        icon: 'bi-arrow-repeat',
+        url: 'pdsa_quiz3.html',
+        testUrl: 'test_3.html',
+        interviewUrl: 'interview_3.html'
+      },
+      {
+        id: 'Introduction-to-Graphs',
+        name: 'Introduction to Graphs',
+        displayName: 'WEEK 4: Introduction to Graphs',
+        description: 'Assessment on BFS (Breadth-First Search), DFS (Depth-First Search), Directed Acyclic Graphs (DAGs), and Topological Sorting',
+        icon: 'bi-diagram-2',
+        url: 'pdsa_quiz4.html',
+        testUrl: 'test_4.html',
+        interviewUrl: 'interview_4.html'
+      },
+     {
+        id: 'Midterm-1',
+        name: 'Midterm 1',
+        displayName: 'Midterm-1',
+        description: '',
+        icon: 'bi-arrow-repeat',
+        testUrl: 'mid_term_1.html',
+      },
+      {
+        id: 'Graph-Algorithms',
+        name: 'Graph Algorithms',
+        displayName: 'WEEK 5: Graph Algorithms',
+        description: 'Assessment on Dijkstra\'s Algorithm, Bellman-Ford Algorithm, Floyd-Warshall Algorithm, Prim\'s Algorithm, and Kruskal\'s Algorithm',
+        icon: 'bi-graph-up',
+        url: 'pdsa_quiz5.html',
+        testUrl: 'test_5.html',
+        interviewUrl: 'interview_5.html'
+      },
+      {
+        id: 'Advanced-Data-Structures',
+        name: 'Advanced Data Structures',
+        displayName: 'WEEK 6: Advanced Data Structures',
+        description: 'Assessment on Union-Find Data Structure, Priority Queues, Heaps, and Binary Search Trees',
+        icon: 'bi-database',
+        url: 'pdsa_quiz6.html',
+        testUrl: 'test_6.html',
+        interviewUrl: 'interview_6.html'
+      },
+     {
+        id: 'Advanced-Algorithms',
+        name: 'Advanced Algorithms',
+        displayName: 'WEEK 7: Advanced Algorithms',
+        description: 'Assessment on Balanced search tree, Scheduling algorithms, Huffman algorithms.',
+        icon: 'bi-database',
+        url: 'pdsa_quiz7.html',
+        testUrl: 'test_7.html',
+        interviewUrl: 'interview_7.html'
+      },
+     {
+        id: 'Divide-and-Conquer-Algorithms',
+        name: 'Divide and Conquer Algorithms',
+        displayName: 'WEEK 8: Divide and Conquer Algorithms',
+        description: 'Assessment on Closest Pair of Points, Integer Multiplication, Recursion Trees, Quick Select/Fast Select Algorithms',
+        icon: 'bi-database',
+        url: 'pdsa_quiz8.html',
+        testUrl: 'test_8.html',
+        interviewUrl: 'interview_8.html'
+      },
+     {
+        id: 'Midterm-2',
+        name: 'Midterm 2',
+        displayName: 'Midterm-2',
+        description: '',
+        icon: 'bi-arrow-repeat',
+        testUrl: 'mid_term_2.html',
+      },
+     {
+        id: 'Dynamic-programming',
+        name: 'Dynamic programming',
+        displayName: 'WEEK 9: Dynamic programming',
+        description: '',
+        icon: 'bi-database',
+        url: 'pdsa_quiz9.html',
+        testUrl: 'test_9.html',
+        interviewUrl: 'interview_9.html'
+      },
+     {
+        id: 'Linear-Programming',
+        name: 'Linear Programming',
+        displayName: 'WEEK 10: Linear Programming',
+        description: '',
+        icon: 'bi-database',
+        url: 'pdsa_quiz10.html',
+        testUrl: 'test_10.html',
+        interviewUrl: 'interview_10.html'
+      },
+     {
+        id: 'End-Term',
+        name: 'End Term',
+        displayName: 'End Term',
+        description: '',
+        icon: 'bi-database',
+        url: '',
+        testUrl: 'end_term.html'
+      },
+    ];
+
+    // Initialize the application
+    async function initializeApp() {
+      try {
+        showLoading(true);
+        
+        // First check authentication
+        await checkAuthentication();
+        
+        // Only load course data if user is authenticated
+        if (isAuthenticated && currentUser) {
+          await loadCourseData();
+        } else {
+          showAuthenticationWarning();
+          renderCoursesForUnauthenticated();
+        }
+      } catch (error) {
+        console.error('Initialization error:', error);
+        showError('Failed to initialize the application. Please try refreshing the page.');
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // Check if user is authenticated
+    async function checkAuthentication() {
+      try {
+        const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/session-info', {
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          currentUser = {
+            email: data.email,
+            username: data.username
+          };
+          isAuthenticated = true;
+          console.log('User authenticated:', currentUser);
+          return true;
+        } else {
+          console.warn('User not authenticated');
+          isAuthenticated = false;
+          currentUser = null;
+          return false;
+        }
+      } catch (error) {
+        console.error('Authentication check failed:', error);
+        isAuthenticated = false;
+        currentUser = null;
+        return false;
+      }
+    }
+
+    // Show authentication warning
+    function showAuthenticationWarning() {
+      const authWarning = document.getElementById('authWarning');
+      if (authWarning) {
+        authWarning.classList.remove('d-none');
+      }
+    }
+
+    // Hide authentication warning
+    function hideAuthenticationWarning() {
+      const authWarning = document.getElementById('authWarning');
+      if (authWarning) {
+        authWarning.classList.add('d-none');
+      }
+    }
+
+    // Load course data from all three APIs
+    async function loadCourseData() {
+      try {
+        if (!currentUser || !isAuthenticated) {
+          console.warn('No authenticated user found');
+          renderCourses([], [], []);
+          return;
+        }
+
+        console.log('Fetching scores for user:', currentUser.email);
+
+        // Fetch from all three APIs in parallel
+        const [codingSubmissions, pdsaSubmissions, interviewSubmissions] = await Promise.all([
+          fetchCodingSubmissions(),
+          fetchPDSASubmissions(),
+          fetchInterviewSubmissions()
+        ]);
+
+        console.log('Coding submissions for current user:', codingSubmissions);
+        console.log('PDSA submissions for current user:', pdsaSubmissions);
+        console.log('Interview submissions for current user:', interviewSubmissions);
+
+        renderCourses(codingSubmissions, pdsaSubmissions, interviewSubmissions);
+        
+      } catch (error) {
+        console.error('Failed to load course data:', error);
+        showError('Failed to load course data. Please try again.');
+        renderCourses([], [], []);
+      }
+    }
+
+    // Fetch coding submissions - MODIFIED to filter by current user
+    async function fetchCodingSubmissions() {
+      try {
+        const response = await fetch(`https://sanghamitra-learnworld.vercel.app/api/coding-submissions`, {
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const submissions = data.submissions || [];
+          
+          // Filter submissions to only show current user's data
+          const userSubmissions = submissions.filter(submission => {
+            return submission.email === currentUser?.email || submission.username === currentUser?.username;
+          });
+          
+          console.log(`Filtered coding submissions: ${userSubmissions.length} out of ${submissions.length} total`);
+          return userSubmissions;
+        }
+        return [];
+      } catch (error) {
+        console.warn('Failed to fetch coding submissions:', error);
+        return [];
+      }
+    }
+
+    // Fetch PDSA (quiz) submissions - MODIFIED to filter by current user
+    async function fetchPDSASubmissions() {
+      try {
+        const response = await fetch("https://sanghamitra-learnworld.vercel.app/api/pdsa-submissions", {
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const submissions = data.submissions || [];
+          
+          // Filter submissions to only show current user's data
+          const userSubmissions = submissions.filter(submission => {
+            return submission.email === currentUser?.email || submission.username === currentUser?.username;
+          });
+          
+          console.log(`Filtered PDSA submissions: ${userSubmissions.length} out of ${submissions.length} total`);
+          return userSubmissions;
+        }
+        return [];
+      } catch (error) {
+        console.warn('Failed to fetch PDSA submissions:', error);
+        return [];
+      }
+    }
+
+    // Fetch interview submissions - MODIFIED to filter by current user
+    async function fetchInterviewSubmissions() {
+      try {
+        const response = await fetch("https://sanghamitra-learnworld.vercel.app/api/interview-submissions", {
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const submissions = data.submissions || [];
+          
+          // Filter submissions to only show current user's data
+          const userSubmissions = submissions.filter(submission => {
+            return submission.email === currentUser?.email || submission.username === currentUser?.username;
+          });
+          
+          console.log(`Filtered interview submissions: ${userSubmissions.length} out of ${submissions.length} total`);
+          return userSubmissions;
+        }
+        return [];
+      } catch (error) {
+        console.warn('Failed to fetch interview submissions:', error);
+        return [];
+      }
+    }
+
+    // Find submissions for a specific topic
+    function findSubmissionsForTopic(submissions, topicName) {
+      if (!submissions || !Array.isArray(submissions) || submissions.length === 0) {
+        return [];
+      }
+
+      return submissions.filter(submission => {
+        const submissionTopic = (submission.topic || '').trim().toLowerCase();
+        const targetTopic = topicName.toLowerCase();
+        
+        // Exact match
+        if (submissionTopic === targetTopic) {
+          return true;
+        }
+        
+        // Contains match
+        if (submissionTopic.includes(targetTopic) || targetTopic.includes(submissionTopic)) {
+          return true;
+        }
+        
+        return false;
+      });
+    }
+
+    // Get the most recent submission for a topic
+    function getMostRecentSubmission(submissions, topicName) {
+      const topicSubmissions = findSubmissionsForTopic(submissions, topicName);
+      
+      if (topicSubmissions.length === 0) {
+        return null;
+      }
+
+      // Sort by timestamp (newest first) and take the first one
+      topicSubmissions.sort((a, b) => {
+        const dateA = a.timestamp ? new Date(a.timestamp) : new Date(0);
+        const dateB = b.timestamp ? new Date(b.timestamp) : new Date(0);
+        return dateB - dateA;
+      });
+
+      return {
+        percentage: topicSubmissions[0].percentage || 0,
+        score: topicSubmissions[0].score || 0,
+        maxScore: topicSubmissions[0].maxScore || 100,
+        timestamp: topicSubmissions[0].timestamp,
+        questions: topicSubmissions[0].questions || []
+      };
+    }
+
+    // Render courses based on available topics and assessment data
+    function renderCourses(codingSubmissions, pdsaSubmissions, interviewSubmissions) {
+      const courseList = document.getElementById('courseList');
+      
+      if (!courseList) {
+        console.error('Course list element not found');
+        return;
+      }
+
+      courseList.innerHTML = '';
+
+      availableTopics.forEach(topic => {
+        // Get most recent submissions for each type
+        const coding = getMostRecentSubmission(codingSubmissions, topic.name);
+        const mcq = getMostRecentSubmission(pdsaSubmissions, topic.name);
+        const interview = getMostRecentSubmission(interviewSubmissions, topic.name);
+        
+        const courseHTML = createCourseHTML(topic, coding, mcq, interview);
+        courseList.insertAdjacentHTML('beforeend', courseHTML);
+      });
+
+      // If no courses were rendered, show a message
+      if (courseList.innerHTML === '') {
+        courseList.innerHTML = `
+          <div class="text-center py-4">
+            <p class="text-muted">No courses available at the moment.</p>
+          </div>
+        `;
+      }
+    }
+
+    // Render courses for unauthenticated users (no data, disabled buttons)
+    function renderCoursesForUnauthenticated() {
+      const courseList = document.getElementById('courseList');
+      
+      if (!courseList) {
+        console.error('Course list element not found');
+        return;
+      }
+
+      courseList.innerHTML = '';
+
+      availableTopics.forEach(topic => {
+        const courseHTML = createCourseHTMLForUnauthenticated(topic);
+        courseList.insertAdjacentHTML('beforeend', courseHTML);
+      });
+    }
+
+    function createCourseHTML(topic, coding, mcq, interview) {
+       const codingPercentage = coding ? Math.round(coding.percentage) : 0;
+       const mcqPercentage = mcq ? Math.round(mcq.percentage) : 0;
+       const interviewPercentage = interview ? Math.round(interview.percentage) : 0;
+       
+       const hasCoding = coding !== null;
+       const hasMCQ = mcq !== null;
+       const hasInterview = interview !== null;
+       
+       // Calculate overall percentage (average of all three if they exist)
+       let overallPercentage = 0;
+       let count = 0;
+       
+       if (hasCoding) {
+         overallPercentage += codingPercentage;
+         count++;
+       }
+       if (hasMCQ) {
+         overallPercentage += mcqPercentage;
+         count++;
+       }
+       if (hasInterview) {
+         overallPercentage += interviewPercentage;
+         count++;
+       }
+       
+       overallPercentage = count > 0 ? Math.round(overallPercentage / count) : 0;
+       
+       // Determine progress bar color based on overall score
+       let progressBarClass = 'bg-primary';
+       let badgeStyle = 'background: linear-gradient(45deg, #007bff, #0056b3);';
+       
+       if (overallPercentage >= 80) {
+         progressBarClass = 'bg-success';
+         badgeStyle = 'background: linear-gradient(45deg, #28a745, #20c997);';
+       } else if (overallPercentage >= 60) {
+         progressBarClass = 'bg-info';
+         badgeStyle = 'background: linear-gradient(45deg, #17a2b8, #138496);';
+       } else if (overallPercentage >= 40) {
+         progressBarClass = 'bg-warning';
+         badgeStyle = 'background: linear-gradient(45deg, #ffc107, #fd7e14);';
+       } else if (overallPercentage > 0) {
+         progressBarClass = 'bg-danger';
+         badgeStyle = 'background: linear-gradient(45deg, #dc3545, #c82333);';
+       }
+       
+       // Coding assessment button
+       const codingButton = `<a href="${isAuthenticated ? topic.url : 'javascript:void(0)'}" 
+         class="btn ${hasCoding ? 'btn-primary' : 'btn-outline-primary'} btn-sm ${!isAuthenticated ? 'btn-disabled' : ''}" 
+         style="min-width: 200px;"
+         ${!isAuthenticated ? 'onclick="showAuthMessage()"' : ''}>
+         <span>${hasCoding ? `Coding: ${codingPercentage}%` : 'Start Coding'}</span>
+         <i class="bi ${hasCoding ? 'bi-code-square ms-2' : 'bi-arrow-right ms-2'}"></i>
+       </a>`;
+       
+       // MCQ/Quiz-Test button
+       const mcqButton = topic.testUrl 
+         ? `<a href="${isAuthenticated ? topic.testUrl : 'javascript:void(0)'}" 
+            class="btn ${hasMCQ ? 'test-paper-btn' : 'btn-outline-success'} btn-sm ${!isAuthenticated ? 'btn-disabled' : ''}" 
+            style="min-width: 200px;"
+            ${!isAuthenticated ? 'onclick="showAuthMessage()"' : ''}>
+             <span>${hasMCQ ? `Quiz-Test: ${mcqPercentage}%` : 'Take Quiz-Test'}</span>
+             <i class="bi ${hasMCQ ? 'bi-card-checklist ms-2' : 'bi-file-text ms-2'}"></i>
+           </a>`
+         : '';
+       
+       // Interview button
+       const interviewButton = topic.interviewUrl 
+         ? `<a href="${isAuthenticated ? topic.interviewUrl : 'javascript:void(0)'}" 
+            class="btn ${hasInterview ? 'interview-btn' : 'btn-outline-purple'} btn-sm ${!isAuthenticated ? 'btn-disabled' : ''}" 
+            style="min-width: 200px;"
+            ${!isAuthenticated ? 'onclick="showAuthMessage()"' : ''}>
+             <span>${hasInterview ? `Interview: ${interviewPercentage}%` : 'Take Interview'}</span>
+             <i class="bi ${hasInterview ? 'bi-mic-fill ms-2' : 'bi-mic ms-2'}"></i>
+           </a>`
+         : '';
+       
+       // Set progress bar width
+       const progressWidth = (hasCoding || hasMCQ || hasInterview) ? overallPercentage : 0;
+       
+       // Format last attempted date
+       let lastAttempted = null;
+       const timestamps = [];
+       
+       if (coding && coding.timestamp) timestamps.push(new Date(coding.timestamp));
+       if (mcq && mcq.timestamp) timestamps.push(new Date(mcq.timestamp));
+       if (interview && interview.timestamp) timestamps.push(new Date(interview.timestamp));
+       
+       if (timestamps.length > 0) {
+         lastAttempted = new Date(Math.max(...timestamps));
+       }
+       
+       let dateDisplay = '';
+       if (lastAttempted) {
+         try {
+           dateDisplay = lastAttempted.toLocaleDateString('en-US', { 
+             year: 'numeric', 
+             month: 'short', 
+             day: 'numeric'
+           });
+         } catch (e) {
+           dateDisplay = 'Recently';
+         }
+       }
+       
+       return `
+         <div class="course-item mb-3" data-topic="${topic.id}">
+           <div class="card course-card h-100 border-0 shadow-sm hover-shadow">
+             <div class="card-body p-3">
+               <div class="row align-items-center">
+                 <div class="col-lg-1 col-md-2 text-center">
+                   <div class="icon-box ${(hasCoding || hasMCQ || hasInterview) ? 'bg-info' : 'bg-primary'} text-white rounded-circle p-2" style="width: 40px; height: 40px;">
+                     <i class="bi ${(hasCoding || hasMCQ || hasInterview) ? 'bi-arrow-repeat' : topic.icon} fs-5"></i>
+                   </div>
+                 </div>
+                 <div class="col-lg-6 col-md-5">
+                   <h4 class="mb-1 fs-5">${topic.displayName}</h4>
+                   <p class="text-muted mb-2 fs-6">${topic.description}</p>
+                   <div class="progress" style="height: 8px; background-color: #e9ecef;">
+                     <div class="progress-bar ${progressBarClass}" role="progressbar" 
+                          style="width: ${progressWidth}%"
+                          aria-valuenow="${overallPercentage}" aria-valuemin="0" aria-valuemax="100">
+                     </div>
+                   </div>
+               
+                   ${dateDisplay ? `<small class="text-muted d-block mt-1">Last: ${dateDisplay}</small>` : ''}
+                 </div>
+                 <div class="col-lg-2 col-md-2 text-center">
+                   <span class="percentage-badge" style="${badgeStyle}">${isAuthenticated ? overallPercentage + '%' : 'N/A'}</span>
+                 </div>
+                 <div class="col-lg-3 col-md-3">
+                   <div class="button-container">
+                     ${codingButton}
+                     ${mcqButton}
+                     ${interviewButton}
+                   </div>
+                 </div>
+               </div>
+             </div>
+           </div>
+         </div>
+       `;
+     }
+
+    // Create course HTML for unauthenticated users
+    function createCourseHTMLForUnauthenticated(topic) {
+      return `
+        <div class="course-item mb-3" data-topic="${topic.id}">
+          <div class="card course-card h-100 border-0 shadow-sm hover-shadow">
+            <div class="card-body p-3">
+              <div class="row align-items-center">
+                <div class="col-lg-1 col-md-2 text-center">
+                  <div class="icon-box bg-secondary text-white rounded-circle p-2" style="width: 40px; height: 40px;">
+                    <i class="bi ${topic.icon} fs-5"></i>
+                  </div>
+                </div>
+                <div class="col-lg-6 col-md-5">
+                  <h4 class="mb-1 fs-5">${topic.displayName}</h4>
+                  <p class="text-muted mb-2 fs-6">${topic.description}</p>
+                  <div class="progress" style="height: 8px; background-color: #e9ecef;">
+                    <div class="progress-bar bg-secondary" role="progressbar" 
+                         style="width: 0%"
+                         aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                    </div>
+                  </div>
+                  <small class="text-muted d-block mt-1">Login to view progress</small>
+                </div>
+                <div class="col-lg-2 col-md-2 text-center">
+                  <span class="percentage-badge" style="background: linear-gradient(45deg, #6c757d, #495057);">N/A</span>
+                </div>
+                <div class="col-lg-3 col-md-3">
+                  <div class="button-container">
+                    <button class="btn btn-outline-secondary btn-sm btn-disabled" style="min-width: 200px;" onclick="showAuthMessage()">
+                      <span>Login Required</span>
+                      <i class="bi bi-lock ms-2"></i>
+                    </button>
+                    ${topic.testUrl ? `
+                      <button class="btn btn-outline-secondary btn-sm btn-disabled" style="min-width: 200px;" onclick="showAuthMessage()">
+                        <span>Login Required</span>
+                        <i class="bi bi-lock ms-2"></i>
+                      </button>
+                    ` : ''}
+                    ${topic.interviewUrl ? `
+                      <button class="btn btn-outline-secondary btn-sm btn-disabled" style="min-width: 200px;" onclick="showAuthMessage()">
+                        <span>Login Required</span>
+                        <i class="bi bi-lock ms-2"></i>
+                      </button>
+                    ` : ''}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Show authentication message
+    function showAuthMessage() {
+      alert('Please login to access quizzes and tests. Click OK to continue to login page.');
+      window.location.href = '../login.html';
+    }
+
+    // Show/hide loading indicator
+    function showLoading(show) {
+      const loadingMessage = document.getElementById('loadingMessage');
+      if (loadingMessage) {
+        loadingMessage.style.display = show ? 'block' : 'none';
+      }
+    }
+
+    // Show error message
+    function showError(message) {
+      const errorMessage = document.getElementById('errorMessage');
+      const errorText = document.getElementById('errorText');
+      
+      if (errorMessage && errorText) {
+        errorText.textContent = message;
+        errorMessage.classList.remove('d-none');
+      }
+    }
+
+    // Hide error message
+    function hideError() {
+      const errorMessage = document.getElementById('errorMessage');
+      if (errorMessage) {
+        errorMessage.classList.add('d-none');
+      }
+    }
+
+    // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('DOM loaded, initializing application...');
+      initializeApp();
+    });
+
+    // Add refresh functionality
+    function refreshCourseData() {
+      hideError();
+      initializeApp();
+    }
+
+  </script>
+</body>
+</html>
+

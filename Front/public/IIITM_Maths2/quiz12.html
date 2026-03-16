@@ -1,0 +1,2298 @@
+<!DOCTYPE html>      
+<html lang="en">    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>Derivatives and Integrals Quiz</title>
+   
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .header p { font-size: 1.1rem; opacity: 0.9; }
+
+        .user-form {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; }
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        /* Anti-cheating CSS */
+        * {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            -webkit-print-color-adjust: exact;
+            pointer-events: auto;
+        }
+        
+        /* Disable context menu */
+        .no-context {
+            pointer-events: none;
+        }
+        
+        /* Hide scrollbars to prevent inspection */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+        
+        /* Blur content when window loses focus */
+        body.blurred {
+            filter: blur(5px);
+            pointer-events: none;
+        }
+        
+        /* Warning overlay */
+        .warning-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(220, 53, 69, 0.95);
+            color: white;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            font-size: 2rem;
+            text-align: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .btn:disabled { 
+            background: #6c757d; 
+            cursor: not-allowed; 
+            transform: none; 
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .progress-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .question-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .btn-nav {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-nav:hover:not(:disabled) {
+            background: #545b62;
+            transform: translateY(-1px);
+        }
+
+        .btn-nav:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-next:hover:not(:disabled) {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+        }
+
+        .question-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .status-answered {
+            background: #28a745;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .status-unanswered {
+            background: #dc3545;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .question-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #333;
+            margin-bottom: 20px;
+            white-space: pre-line;
+        }
+
+        .quiz-container { padding: 30px; display: none; }
+
+        .question-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #667eea;
+        }
+
+        .question-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .question-number {
+            background: #667eea;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 15px;
+        }
+
+        .options { display: flex; flex-direction: column; gap: 12px; }
+
+        .option {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .option:hover { border-color: #667eea; background: #f0f8ff; }
+        .option.selected { border-color: #667eea; background: #e3f2fd; }
+
+        .numeric-input {
+            width: 100%;
+            max-width: 400px;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .results-container {
+            display: none;
+            padding: 30px;
+            text-align: center;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .score-display {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .score-display h2 { font-size: 2.5rem; margin-bottom: 10px; }
+        .hidden { display: none; }
+                /* ========== CALCULATOR STYLES ========== */
+        .calculator-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 9999;
+            transition: all 0.3s ease;
+            border: none;
+            font-weight: 600;
+        }
+
+        .calculator-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .calculator-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .calculator-modal {
+            position: fixed;
+            width: 590px;
+            min-height: 400px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            z-index: 10000;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+            cursor: move;
+            user-select: none;
+        }
+
+        .calculator-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+        }
+
+        .calculator-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .calculator-header .help-btn {
+            background: #4fc3f7;
+            color: white;
+            border: none;
+            padding: 6px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-left: auto;
+            margin-right: 10px;
+        }
+
+        .calculator-header .minimize-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0 8px;
+        }
+
+        .calculator-header .calculator-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .calculator-header .calculator-close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .mode-selector {
+            padding: 10px 15px;
+            background: #f0f0f0;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .mode-selector label {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .calculator-display {
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        #calcDisplay {
+            width: 100%;
+            padding: 12px;
+            font-size: 1.5rem;
+            text-align: right;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 5px;
+        }
+
+        #resultDisplay {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 1.8rem;
+            text-align: right;
+            border: none;
+            background: transparent;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+
+        .calculator-buttons {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: #f8f9fa;
+        }
+
+        .calc-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .calc-btn {
+            flex: 1;
+            padding: 12px 0;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: white;
+            border: 1px solid #e0e0e0;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .calc-btn:hover {
+            background: #f0f0f0;
+            transform: translateY(-1px);
+        }
+
+        .calc-btn.func {
+            background: #e3e8ff;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .calc-btn.sci {
+            font-size: 0.9rem;
+            padding: 10px 0;
+            background: #f0f0f0;
+        }
+
+        .calc-btn.operator {
+            background: #ff6b6b;
+            color: white;
+            font-weight: 600;
+        }
+
+        .calc-btn.equals {
+            background: #51cf66;
+            color: white;
+            font-weight: 600;
+        }
+
+        .calc-btn.memory {
+            background: #e3e8ff;
+            color: #667eea;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            .calculator-modal {
+                width: 320px;
+                min-height: 500px;
+            }
+            
+            .calc-btn {
+                padding: 10px 0;
+                font-size: 1rem;
+            }
+            
+            .calc-btn.sci {
+                font-size: 0.85rem;
+            }
+            
+            .calculator-btn {
+                bottom: 15px;
+                right: 15px;
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+        }
+        /* Difficulty badges */
+        .difficulty-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+            text-transform: uppercase;
+        }
+
+        .difficulty-easy { background: #d4edda; color: #155724; }
+        .difficulty-medium { background: #fff3cd; color: #856404; }
+        .difficulty-hard { background: #f8d7da; color: #721c24; }
+        /* Results review styling */
+        .results-container h3 {
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .results-container {
+                padding: 15px;
+            }
+            
+            .score-display {
+                padding: 20px;
+            }
+            
+            .score-display h2 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Derivatives and Integrals Quiz</h1>
+            <p>Test your knowledge of derivatives and integrals with 50 comprehensive questions</p>
+        </div>
+
+        <!-- Quiz Container -->
+        <div id="quizContainer" class="quiz-container" style="display: none;">
+             <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                
+            </div>
+           
+            
+            <div id="questionContainer"></div>
+            
+            <div class="question-navigation">
+                <button class="btn-nav" id="prevBtn" onclick="previousQuestion()" disabled>Previous</button>
+                <div class="question-status">
+                    <span id="questionStatus">Question 1 of 50</span>
+                    <span id="answeredStatus" class="status-unanswered">Unanswered</span>
+                </div>
+                <button class="btn-nav btn-next" id="nextBtn" onclick="nextQuestion()">Next</button>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 2px solid #667eea;">
+                <button class="btn" onclick="submitQuiz()" id="submitBtn">
+                    <span id="submitText">Submit Derivatives and Integrals Quiz</span>
+                    <span id="submitLoading" class="loading" style="display: none;"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading Screen -->
+        <div id="loadingScreen" class="quiz-container" style="text-align: center; padding: 60px;">
+            <div class="loading" style="width: 40px; height: 40px; margin: 0 auto 20px;"></div>
+            <h3>Loading Derivatives and Integrals Quiz...</h3>
+            <p>Verifying your session and preparing questions</p>
+        </div>
+
+        <!-- Results -->
+        <div id="resultsContainer" class="results-container">
+            <div class="score-display">
+                <h2 id="finalScore">0/50</h2>
+                <p>Quiz Completed Successfully!</p>
+            </div>
+            <button class="btn" onclick="goback()">Home Page</button>
+        </div>
+                <!-- ========== CALCULATOR ========== -->
+        <div id="calculatorBtn" class="calculator-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect>
+                <line x1="8" y1="6" x2="16" y2="6"></line>
+                <line x1="8" y1="10" x2="16" y2="10"></line>
+                <line x1="8" y1="14" x2="10" y2="14"></line>
+                <line x1="14" y1="14" x2="16" y2="14"></line>
+                <line x1="8" y1="18" x2="10" y2="18"></line>
+                <line x1="14" y1="18" x2="16" y2="18"></line>
+            </svg>
+            <span>Calculator</span>
+        </div>
+
+        <div id="calculatorModal" class="calculator-modal">
+            <div class="calculator-header">
+                <h3>Scientific Calculator</h3>
+                <button class="help-btn">Help</button>
+                <button class="minimize-btn">―</button>
+                <button class="calculator-close">×</button>
+            </div>
+            <div class="mode-selector">
+                <label>mod</label>
+                <input type="radio" name="angleMode" value="Deg" id="degMode" checked>
+                <label for="degMode">Deg</label>
+                <input type="radio" name="angleMode" value="Rad" id="radMode">
+                <label for="radMode">Rad</label>
+            </div>
+            <div class="calculator-display">
+                <input type="text" id="calcDisplay" readonly>
+                <input type="text" id="resultDisplay" readonly value="0">
+            </div>
+            <div class="calculator-buttons">
+                <!-- Row 1 - Hyperbolic and Advanced Functions -->
+                <div class="calc-row">
+                    <button class="calc-btn sci" onclick="calcFunction('sinh')">sinh</button>
+                    <button class="calc-btn sci" onclick="calcFunction('cosh')">cosh</button>
+                    <button class="calc-btn sci" onclick="calcFunction('tanh')">tanh</button>
+                    <button class="calc-btn sci" onclick="calcFunction('Exp')">Exp</button>
+                    <button class="calc-btn" onclick="addToDisplay('(')">(</button>
+                    <button class="calc-btn" onclick="addToDisplay(')')">)</button>
+                    <button class="calc-btn operator" onclick="backspace()">⌫</button>
+                    <button class="calc-btn operator" onclick="clearCalculator()">C</button>
+                    <button class="calc-btn operator" onclick="addToDisplay('+/-')">+/-</button>
+                    <button class="calc-btn sci" onclick="addToDisplay('Math.sqrt(')">√</button>
+                </div>
+                
+                <!-- Row 2 - Inverse Hyperbolic -->
+                <div class="calc-row">
+                    <button class="calc-btn sci" onclick="calcFunction('sinh⁻¹')">sinh⁻¹</button>
+                    <button class="calc-btn sci" onclick="calcFunction('cosh⁻¹')">cosh⁻¹</button>
+                    <button class="calc-btn sci" onclick="calcFunction('tanh⁻¹')">tanh⁻¹</button>
+                    <button class="calc-btn sci" onclick="calcFunction('logₓ')">log_x</button>
+                    <button class="calc-btn sci" onclick="calcFunction('ln')">ln</button>
+                    <button class="calc-btn sci" onclick="calcFunction('log')">log</button>
+                    <button class="calc-btn" onclick="addToDisplay('7')">7</button>
+                    <button class="calc-btn" onclick="addToDisplay('8')">8</button>
+                    <button class="calc-btn" onclick="addToDisplay('9')">9</button>
+                    <button class="calc-btn operator" onclick="addToDisplay('/')">/</button>
+                    <button class="calc-btn operator" onclick="addToDisplay('%')">%</button>
+                </div>
+                
+                <!-- Row 3 - Constants and Trig -->
+                <div class="calc-row">
+                    <button class="calc-btn sci" onclick="addToDisplay('Math.PI')">π</button>
+                    <button class="calc-btn sci" onclick="addToDisplay('Math.E')">e</button>
+                    <button class="calc-btn sci" onclick="calcFunction('n!')">n!</button>
+                    <button class="calc-btn sci" onclick="calcFunction('logₓ')">log_x</button>
+                    <button class="calc-btn sci" onclick="calcFunction('eˣ')">eˣ</button>
+                    <button class="calc-btn sci" onclick="calcFunction('10ˣ')">10ˣ</button>
+                    <button class="calc-btn" onclick="addToDisplay('4')">4</button>
+                    <button class="calc-btn" onclick="addToDisplay('5')">5</button>
+                    <button class="calc-btn" onclick="addToDisplay('6')">6</button>
+                    <button class="calc-btn operator" onclick="addToDisplay('*')">*</button>
+                    <button class="calc-btn operator" onclick="calcFunction('1/x')">1/x</button>
+                </div>
+                
+                <!-- Row 4 - Trig Functions -->
+                <div class="calc-row">
+                    <button class="calc-btn sci" onclick="calcFunction('sin')">sin</button>
+                    <button class="calc-btn sci" onclick="calcFunction('cos')">cos</button>
+                    <button class="calc-btn sci" onclick="calcFunction('tan')">tan</button>
+                    <button class="calc-btn sci" onclick="calcFunction('xʸ')">xʸ</button>
+                    <button class="calc-btn sci" onclick="calcFunction('x³')">x³</button>
+                    <button class="calc-btn sci" onclick="calcFunction('x²')">x²</button>
+                    <button class="calc-btn" onclick="addToDisplay('1')">1</button>
+                    <button class="calc-btn" onclick="addToDisplay('2')">2</button>
+                    <button class="calc-btn" onclick="addToDisplay('3')">3</button>
+                    <button class="calc-btn operator" onclick="addToDisplay('-')">-</button>
+                </div>
+                
+                <!-- Row 5 - Inverse Trig and Numbers -->
+                <div class="calc-row">
+                    <button class="calc-btn sci" onclick="calcFunction('sin⁻¹')">sin⁻¹</button>
+                    <button class="calc-btn sci" onclick="calcFunction('cos⁻¹')">cos⁻¹</button>
+                    <button class="calc-btn sci" onclick="calcFunction('tan⁻¹')">tan⁻¹</button>
+                    <button class="calc-btn sci" onclick="calcFunction('ⁿ√x')">ⁿ√x</button>
+                    <button class="calc-btn sci" onclick="calcFunction('³√')">³√</button>
+                    <button class="calc-btn sci" onclick="calcFunction('|x|')">|x|</button>
+                    <button class="calc-btn" onclick="addToDisplay('0')">0</button>
+                    <button class="calc-btn" onclick="addToDisplay('.')">.</button>
+                    <button class="calc-btn equals" onclick="calculateResult()">=</button>
+                    <button class="calc-btn operator" onclick="addToDisplay('+')">+</button>
+                </div>
+                
+                <!-- Row 6 - Memory Functions -->
+                <div class="calc-row">
+                    <button class="calc-btn memory" onclick="memoryFunction('MC')">MC</button>
+                    <button class="calc-btn memory" onclick="memoryFunction('MR')">MR</button>
+                    <button class="calc-btn memory" onclick="memoryFunction('MS')">MS</button>
+                    <button class="calc-btn memory" onclick="memoryFunction('M+')">M+</button>
+                    <button class="calc-btn memory" onclick="memoryFunction('M-')">M-</button>
+                </div>
+            </div>
+        </div>
+        <!-- ========== CALCULATOR ENDS ========== -->
+    </div>
+   
+    <!-- Anti-cheating warning overlay -->
+    <div id="warningOverlay" class="warning-overlay">
+        <div>
+            <h2>CHEATING ATTEMPT DETECTED</h2>
+            <p>Please return to the quiz window</p>
+            <p>Your activity is being monitored</p>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced Answer validation utility with flexible infinity support
+        const answerNormalizer = {
+            normalizeInterval: (answer) => {
+                return (answer || '').toString().trim()
+                    .replace(/\s+/g, '')  // Remove all spaces
+                    .replace(/infinity|Infinity|INFINITY|∞/gi, 'inf') // Convert all infinity variations to 'inf'
+                    .replace(/\+inf/gi, 'inf') // Convert +inf to inf
+                    .replace(/-\s*inf/gi, '-inf') // Ensure -inf format
+                    .replace(/\[/g, '[')
+                    .replace(/\]/g, ']')
+                    .replace(/\(/g, '(')
+                    .replace(/\)/g, ')')
+                    .toLowerCase();
+            },
+            
+            normalizeCoordinate: (coord) => {
+                return (coord || '').toString().trim()
+                    .replace(/\s+/g, '')  // Remove all spaces
+                    .replace(/[()]/g, '')  // Remove parentheses for comparison
+                    .toLowerCase();
+            },
+            
+            normalizeEquation: (eq) => {
+                return (eq || '').toString()
+                    .replace(/\s+/g, '')  // Remove all spaces
+                    .replace(/\*\*/g, '^')  // Convert ** to ^
+                    .replace(/\^/g, '^')
+                    .replace(/\+\-/g, '-')
+                    .replace(/\-\+/g, '-')
+                    .replace(/log/gi, 'log')  // Normalize log functions
+                    .replace(/ln/gi, 'ln')    // Normalize natural log
+                    .toLowerCase();
+            },
+            
+            normalizeNumeric: (num) => {
+                const str = (num || '').toString().trim().toLowerCase();
+                
+                // Handle positive infinity variations
+                if (str === 'inf' || str === 'infinity' || str === '+inf' || str === '+infinity' || str === '∞' || str === '+∞') {
+                    return Infinity;
+                }
+                
+                // Handle negative infinity variations  
+                if (str === '-inf' || str === '-infinity' || str === '-∞' || str === '-inf' || str === '-infinity') {
+                    return -Infinity;
+                }
+                
+                // Handle regular numbers
+                const cleaned = str.replace(/[^\d.-]/g, '');
+                return cleaned ? parseFloat(cleaned) : NaN;
+            },
+            
+            // New method to normalize any answer type generically
+            normalizeAnswer: (answer, questionType) => {
+                if (!answer) return '';
+                
+                const str = answer.toString().trim();
+                
+                if (questionType === 'interval_input') {
+                    return answerNormalizer.normalizeInterval(str);
+                } else if (questionType === 'numeric' || questionType === 'numeric_input') {
+                    const normalized = answerNormalizer.normalizeNumeric(str);
+                    return isFinite(normalized) ? normalized.toString() : 
+                           normalized === Infinity ? 'inf' : 
+                           normalized === -Infinity ? '-inf' : str;
+                } else if (questionType === 'coordinate_input') {
+                    return answerNormalizer.normalizeCoordinate(str);
+                } else if (questionType === 'equation_input') {
+                    return answerNormalizer.normalizeEquation(str);
+                } else {
+                    return str.toLowerCase();
+                }
+            }
+        };
+
+        let userAnswers = {};
+        let currentUser = {};
+        let username = null;
+        let email = null;
+        let currentQuestionIndex = 0;
+        let quizStartTime = null;
+        let questionStartTime = null;
+        let questionTimes = {}; // Track time per question
+        let questions = []; // Add this line to declare the questions array globally
+
+        // Anti-cheating variables
+        let cheatingAttempts = 0;
+        let isQuizActive = false;
+        let devToolsWarned = false;
+            // Calculator variables
+        let calculatorOpen = false;
+        let isDragging = false;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+        let angleMode = 'Deg';
+        let memory = 0;
+            
+        // Function to validate and prepare questions with default values
+        function validateAndPrepareQuestions(questionsArray) {
+            return questionsArray.map((q, index) => {
+                return {
+                    ...q,
+                    _id: q._id || `question-${index}`,
+                    question_number: q.question_number || (index + 1),
+                    question_text: q.question_text || 'Question text not available',
+                    correct_answer: q.correct_answer !== undefined ? q.correct_answer : '',
+                    explanation: q.explanation || '',
+                    difficulty: q.difficulty || 'medium',
+                    points: q.points || 1,
+                    type: q.type || 'multiple_choice',
+                    alternative_answers: q.alternative_answers || []
+                };
+            });
+        }
+        
+        // Anti-cheating initialization
+        function initializeAntiCheating() {
+            // Disable right-click
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                recordCheatingAttempt('right_click');
+                return false;
+            });
+            
+            // Disable common keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                // Disable F12, Ctrl+Shift+I, Ctrl+U, Ctrl+S, Print Screen
+                if (e.keyCode === 123 || // F12
+                    (e.ctrlKey && e.shiftKey && e.keyCode === 73) || // Ctrl+Shift+I
+                    (e.ctrlKey && e.keyCode === 85) || // Ctrl+U
+                    (e.ctrlKey && e.keyCode === 83) || // Ctrl+S
+                    e.keyCode === 44) { // Print Screen
+                    e.preventDefault();
+                    recordCheatingAttempt('keyboard_shortcut');
+                    return false;
+                }
+                
+                // Disable Ctrl+A, Ctrl+C, Ctrl+V
+                if (e.ctrlKey && (e.keyCode === 65 || e.keyCode === 67 || e.keyCode === 86)) {
+                    e.preventDefault();
+                    recordCheatingAttempt('copy_attempt');
+                    return false;
+                }
+            });
+            
+            // Detect developer tools
+            let devtools = {open: false, orientation: null};
+            const threshold = 160;
+            
+            setInterval(function() {
+                if (window.outerHeight - window.innerHeight > threshold || 
+                    window.outerWidth - window.innerWidth > threshold) {
+                    if (!devtools.open) {
+                        devtools.open = true;
+                        recordCheatingAttempt('developer_tools');
+                        if (!devToolsWarned) {
+                            alert('Developer tools detected! This attempt has been logged.');
+                            devToolsWarned = true;
+                        }
+                    }
+                } else {
+                    devtools.open = false;
+                }
+            }, 500);
+            
+            // Detect window focus changes
+            window.addEventListener('focus', function() {
+                document.body.classList.remove('blurred');
+                document.getElementById('warningOverlay').style.display = 'none';
+            });
+            
+            // Prevent text selection
+            document.onselectstart = function() {
+                recordCheatingAttempt('text_selection');
+                return false;
+            };
+            
+            // Disable drag
+            document.ondragstart = function() {
+                return false;
+            };
+            
+            // Monitor for screenshot attempts (limited effectiveness)
+            document.addEventListener('keyup', function(e) {
+                if (e.keyCode === 44) { // Print Screen released
+                    recordCheatingAttempt('screenshot_attempt');
+                    alert('Screenshot attempt detected and logged!');
+                }
+            });
+        }
+        
+        // Record cheating attempts
+        function recordCheatingAttempt(type) {
+            cheatingAttempts++;
+            console.warn(`Cheating attempt #${cheatingAttempts}: ${type}`);
+            
+            // FIXED: Correct API endpoint for logging cheating
+            if (username && email) {
+                fetch('https://sanghamitra-learnworld.vercel.app/api/log-cheating', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        username: username,
+                        email: email,
+                        cheatingType: type,
+                        timestamp: new Date(),
+                        currentQuestion: currentQuestionIndex + 1
+                    })
+                }).catch(err => console.error('Failed to log cheating attempt:', err));
+            }
+            
+            // Auto-submit quiz after too many attempts
+            if (cheatingAttempts >= 5) {
+                alert('Too many suspicious activities detected. Quiz will be auto-submitted.');
+                submitQuiz();
+            }
+        }
+        
+        // Disable printing
+        window.addEventListener('beforeprint', function(e) {
+            recordCheatingAttempt('print_attempt');
+            e.preventDefault();
+            return false;
+        });
+        
+       function obfuscateQuestions() {
+    // Only define once to avoid "cannot redefine" error
+    try {
+        if (!Object.getOwnPropertyDescriptor(window, 'questions')?.get) {
+            Object.defineProperty(window, 'questions', {
+                get: function() {
+                    recordCheatingAttempt('questions_access');
+                    return [];
+                },
+                configurable: true
+            });
+        }
+    } catch (err) {
+        console.warn('Could not obfuscate questions:', err);
+    }
+}
+        
+        // Initialize quiz timing
+        function initializeQuizTiming() {
+            quizStartTime = new Date();
+            questionStartTime = new Date();
+        }
+
+        // Track question timing
+        function trackQuestionTime() {
+            if (questionStartTime) {
+                const timeSpent = Math.floor((new Date() - questionStartTime) / 1000);
+                questionTimes[currentQuestionIndex] = timeSpent;
+            }
+            questionStartTime = new Date(); // Reset for next question
+        }
+
+        // Fetch user session info and start quiz immediately
+        async function fetchSessionInfo() {
+            try {
+                const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/session-info', {
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    username = data.username;
+                    email = data.email;
+                    console.log("User:", username, "Email:", email);
+                    return true;
+                } else {
+                    console.log('Session invalid, redirecting to login');
+                    window.location.href = '/login.html';
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error fetching session info:', error);
+                alert('Error connecting to server. Please try again.');
+                return false;
+            }
+        }
+
+        async function initializeQuiz() {
+            try {
+                // Initialize anti-cheating first
+                initializeAntiCheating();
+                
+                const sessionValid = await fetchSessionInfo();
+                if (!sessionValid) return;
+                
+                // NEW: Load questions from API
+                const questionsLoaded = await loadQuestions();
+                if (!questionsLoaded) return;
+                
+                currentUser = { username, email };
+                
+                // Initialize timing
+                initializeQuizTiming();
+                isQuizActive = true; // Enable anti-cheating monitoring
+                
+                // Hide loading screen and show quiz
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('quizContainer').style.display = 'block';
+                
+                // Obfuscate questions
+                obfuscateQuestions();
+                
+                renderCurrentQuestion();
+                updateProgress();
+                
+                // Full screen request (optional)
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        console.log('Fullscreen request failed:', err);
+                    });
+                }
+            } catch (error) {
+                console.error('Error initializing quiz:', error);
+                alert('Error starting quiz. Please try again.');
+            }
+        }
+
+        function renderCurrentQuestion() {
+    const container = document.getElementById('questionContainer');
+    const question = questions[currentQuestionIndex];
+    
+    console.log('Rendering question:', currentQuestionIndex + 1, question);
+    
+    container.innerHTML = '';
+
+    const questionDiv = document.createElement('div');
+    questionDiv.className = 'question-card';
+
+    let optionsHtml = '';
+    
+    if (question.type === 'multiple_choice' && question.options && question.options.length > 0) {
+        optionsHtml = question.options.map((option, optIndex) => {
+            const safeOption = String(option).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            return `
+                <div class="option" onclick="selectOption(${currentQuestionIndex}, '${safeOption}', 'radio', this)">
+                    <input type="radio" name="q${currentQuestionIndex}" value="${safeOption}" id="q${currentQuestionIndex}_${optIndex}">
+                    <label for="q${currentQuestionIndex}_${optIndex}">${option}</label>
+                </div>
+            `;
+        }).join('');
+    } else if (question.type === 'multiple_select' && question.options && question.options.length > 0) {
+        optionsHtml = question.options.map((option, optIndex) => {
+            const safeOption = String(option).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            return `
+                <div class="option" onclick="selectOption(${currentQuestionIndex}, '${safeOption}', 'checkbox', this)">
+                    <input type="checkbox" name="q${currentQuestionIndex}" value="${safeOption}" id="q${currentQuestionIndex}_${optIndex}">
+                    <label for="q${currentQuestionIndex}_${optIndex}">${option}</label>
+                </div>
+            `;
+        }).join('');
+    } else if (['numeric', 'interval_input', 'numeric_input', 'coordinate_input', 'equation_input', 'text_input'].includes(question.type)) {
+        // Use generic placeholders that don't reveal answers
+        let specificPlaceholder = "Enter your answer";
+        if (question.type === 'coordinate_input') {
+            specificPlaceholder = "Enter coordinates as (x, y)";
+        } else if (question.type === 'equation_input') {
+            specificPlaceholder = "Enter equation (e.g., y = mx + b)";
+        } else if (question.type === 'interval_input') {
+            specificPlaceholder = "Enter interval notation [a,b] or (a,b)";
+        } else if (question.type === 'numeric' || question.type === 'numeric_input') {
+            specificPlaceholder = "Enter a number";
+        }
+        
+        optionsHtml = `
+            <input type="text" 
+                   class="numeric-input" 
+                   placeholder="${specificPlaceholder}" 
+                   onchange="handleNumericInputWithValidation(${currentQuestionIndex}, this.value)"
+                   oninput="handleNumericInput(${currentQuestionIndex}, this.value)"
+                   autocomplete="off"
+                   spellcheck="false">
+            <div id="feedback-${currentQuestionIndex}" style="margin-top: 10px; min-height: 24px;"></div>
+        `;
+    } else {
+        console.warn('Unknown question type or missing options:', question.type, question);
+        optionsHtml = `
+            <div style="color: #dc3545; padding: 15px; background: #f8d7da; border-radius: 8px;">
+                <strong>Error:</strong> Unable to display question options. Please contact administrator.
+            </div>
+        `;
+    }
+
+    const difficultyColor = {
+        'easy': '#28a745',
+        'medium': '#ffc107', 
+        'hard': '#dc3545'
+    };
+    
+    const difficulty = question.difficulty || 'medium';
+    const difficultyText = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+
+    // Use question text exactly as stored in database - NO MATH PROCESSING
+    let processedQuestionText = question.question_text || 'Question text not available';
+
+        questionDiv.innerHTML = `
+            <div class="question-header">
+                <div class="question-number">${currentQuestionIndex + 1}</div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="background: ${difficultyColor[difficulty]}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; text-transform: uppercase;">
+                        ${difficultyText}
+                    </span>
+                </div>
+            </div>
+        <div class="question-text" id="question-text-${currentQuestionIndex}">${processedQuestionText}</div>
+        <div class="options">${optionsHtml}</div>
+    `;
+
+    container.appendChild(questionDiv);
+    
+    // Restore previous answer if exists
+    restoreAnswer();
+    updateAnswerStatus();
+}
+
+        function restoreAnswer() {
+            const question = questions[currentQuestionIndex];
+            const savedAnswer = userAnswers[currentQuestionIndex];
+            
+            if (!savedAnswer) return;
+
+            if (question.type === 'multiple_choice') {
+                const option = document.querySelector(`input[value="${savedAnswer}"]`);
+                if (option) {
+                    option.checked = true;
+                    option.closest('.option').classList.add('selected');
+                }
+            } else if (question.type === 'multiple_select' && Array.isArray(savedAnswer)) {
+                savedAnswer.forEach(answer => {
+                    const option = document.querySelector(`input[value="${answer}"]`);
+                    if (option) {
+                        option.checked = true;
+                        option.closest('.option').classList.add('selected');
+                    }
+                });
+            } else if (question.type === 'numeric' || question.type === 'interval_input' || question.type === 'numeric_input' || question.type === 'coordinate_input' || question.type === 'equation_input' || question.type === 'text_input') {
+                const input = document.querySelector('.numeric-input');
+                if (input) {
+                    input.value = savedAnswer;
+                }
+            }
+        }
+
+        function updateProgress() {
+            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+            document.getElementById('questionStatus').textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+            
+            // Update navigation buttons
+            document.getElementById('prevBtn').disabled = currentQuestionIndex === 0;
+            
+            const nextBtn = document.getElementById('nextBtn');
+            if (currentQuestionIndex === questions.length - 1) {
+                nextBtn.textContent = 'Finish';
+                nextBtn.onclick = () => {
+                    document.getElementById('quizContainer').scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'end' 
+                    });
+                };
+            } else {
+                nextBtn.textContent = 'Next';
+                nextBtn.onclick = nextQuestion;
+            }
+}
+
+        function updateAnswerStatus() {
+            const statusSpan = document.getElementById('answeredStatus');
+            const hasAnswer = userAnswers[currentQuestionIndex] !== undefined;
+            
+            if (hasAnswer) {
+                statusSpan.textContent = 'Answered';
+                statusSpan.className = 'status-answered';
+            } else {
+                statusSpan.textContent = 'Unanswered';
+                statusSpan.className = 'status-unanswered';
+            }
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < questions.length - 1) {
+                trackQuestionTime();
+                currentQuestionIndex++;
+                renderCurrentQuestion();
+                updateProgress();
+            }
+        }
+
+        function previousQuestion() {
+            if (currentQuestionIndex > 0) {
+                trackQuestionTime();
+                currentQuestionIndex--;
+                renderCurrentQuestion();
+                updateProgress();
+            }
+        }
+
+        function selectOption(questionIndex, value, type, element) {
+            if (type === 'radio') {
+                // Remove selection from all options in this question
+                const allOptions = document.querySelectorAll(`.question-card .option`);
+                allOptions.forEach(opt => {
+                    const input = opt.querySelector('input[type="radio"]');
+                    if (input && input.name === `q${questionIndex}`) {
+                        input.checked = false;
+                        opt.classList.remove('selected');
+                    }
+                });
+                
+                // Set current selection
+                const radioInput = element.querySelector('input[type="radio"]');
+                if (radioInput) {
+                    radioInput.checked = true;
+                }
+                element.classList.add('selected');
+                userAnswers[questionIndex] = value.trim();
+                        
+            } else if (type === 'checkbox') {
+                const checkbox = element.querySelector('input');
+                checkbox.checked = !checkbox.checked;
+                
+                if (!userAnswers[questionIndex]) userAnswers[questionIndex] = [];
+                
+                if (checkbox.checked) {
+                    if (!userAnswers[questionIndex].includes(value.trim())) {
+                        userAnswers[questionIndex].push(value.trim());
+                    }
+                    element.classList.add('selected');
+                } else {
+                    userAnswers[questionIndex] = userAnswers[questionIndex].filter(ans => ans !== value.trim());
+                    element.classList.remove('selected');
+                    
+                    if (userAnswers[questionIndex].length === 0) {
+                        delete userAnswers[questionIndex];
+                    }
+                }
+            }
+            
+            updateAnswerStatus();
+        }
+
+        function handleNumericInput(questionIndex, value) {
+            const question = questions[questionIndex];
+            const trimmedValue = value.trim();
+            
+            if (trimmedValue) {
+                userAnswers[questionIndex] = trimmedValue; // Stores EXACTLY what user typed
+            } else {
+                delete userAnswers[questionIndex];
+            }
+            
+            updateAnswerStatus();
+        }
+
+        function validateAnswerFormat(questionIndex, userAnswer) {
+            const question = questions[currentQuestionIndex];
+            let feedback = '';
+            let isValidFormat = true;
+            let suggestion = '';
+            
+            if (question.type === 'coordinate_input') {
+                // Remove strict validation, just provide guidance
+                feedback = '✓ Any format accepted';
+                suggestion = 'Examples: (3, 4), (2.5, -1.3), (x, y)';
+                isValidFormat = true;
+            } else if (question.type === 'equation_input') {
+                feedback = '✓ Any format accepted';
+                suggestion = 'Examples: y = log(x) + 2, f(x)=x^2, equation with = sign';
+                isValidFormat = true;
+            } else if (question.type === 'numeric' || question.type === 'numeric_input') {
+                feedback = '✓ Any number format accepted';
+                suggestion = 'Examples: 42, -3.14, 0.5, inf, -infinity, ∞';
+                isValidFormat = true;
+            } else if (question.type === 'interval_input') {
+                feedback = '✓ Any interval format accepted';
+                suggestion = 'Examples: (0, inf), [1, 10], (-∞, 5], (a, b)';
+                isValidFormat = true;
+            } else {
+                feedback = '✓ Any text format accepted';
+                suggestion = '';
+                isValidFormat = true;
+            }
+            
+            return { isValidFormat, feedback, suggestion };
+        }
+
+        function showValidationFeedback(questionIndex, feedback, suggestion) {
+            const feedbackDiv = document.getElementById(`feedback-${questionIndex}`);
+            if (!feedbackDiv) return;
+            
+            if (!feedback) {
+                feedbackDiv.innerHTML = '';
+                return;
+            }
+            
+            const isValid = feedback.includes('✓');
+            feedbackDiv.style.cssText = `
+                background: ${isValid ? '#d4edda' : '#fff3cd'};
+                border: 1px solid ${isValid ? '#c3e6cb' : '#ffeaa7'};
+                border-radius: 6px;
+                padding: 10px;
+                margin-top: 10px;
+                font-size: 14px;
+                line-height: 1.5;
+            `;
+            
+            feedbackDiv.innerHTML = `
+                <div style="color: ${isValid ? '#155724' : '#856404'}; font-weight: 600; margin-bottom: 4px;">
+                    ${feedback}
+                </div>
+                ${suggestion ? `<div style="color: #666; font-size: 13px;">${suggestion}</div>` : ''}
+            `;
+        }
+
+        function handleNumericInputWithValidation(questionIndex, value) {
+            handleNumericInput(questionIndex, value);
+            
+            if (value.trim()) {
+                const validation = validateAnswerFormat(questionIndex, value.trim());
+                showValidationFeedback(questionIndex, validation.feedback, validation.suggestion);
+            } else {
+                showValidationFeedback(questionIndex, '', '');
+            }
+        }
+
+        function getQuestionDifficulty(questionNumber) {
+            if (questionNumber <= 15) return 'easy';
+            if (questionNumber <= 30) return 'medium';
+            return 'hard';
+        }
+
+        async function submitQuiz() {
+            const confirmSubmit = confirm(`Ready to Submit?\n\nPlease make sure you have reviewed all your answers before submitting.\nOnce submitted, you won't be able to make changes.\n\nAre you ready to submit your Derivatives and Integrals Quiz?`);
+            
+            if (!confirmSubmit) {
+                return;
+            }
+        
+            if (!username || !email) {
+                alert("Error: User session data not found. Please log in.");
+                return;
+            }
+
+            trackQuestionTime();
+            isQuizActive = false;
+            const quizEndTime = new Date();
+            const totalTimeTaken = Math.floor((quizEndTime - quizStartTime) / 1000);
+
+            let score = 0;
+            let totalPossiblePoints = 0;
+            const questionResults = [];
+            const difficultyBreakdown = {
+                easy: { attempted: 0, correct: 0, points: 0 },
+                medium: { attempted: 0, correct: 0, points: 0 },
+                hard: { attempted: 0, correct: 0, points: 0 }
+            };
+            
+            // Enhanced answer comparison with flexible infinity support
+            questions.forEach((question, index) => {
+                const userAnswer = userAnswers[index];
+                
+                // Safely get question points - default to 1 if undefined
+                const questionPoints = question.points || 1;
+                totalPossiblePoints += questionPoints;
+                
+                let isCorrect = false;
+                
+                if (userAnswer !== undefined && userAnswer !== null) {
+                    // SAFELY get correct answer with fallback
+                    const correctAnswer = question.correct_answer;
+                    
+                    if (correctAnswer === undefined || correctAnswer === null) {
+                        console.warn(`Question ${index + 1} has undefined correct_answer`);
+                        questionResults.push({
+                            questionId: question._id || index,
+                            questionNumber: question.question_number || (index + 1),
+                            questionText: question.question_text || 'Question text not available',
+                            difficulty: question.difficulty || 'medium',
+                            points: questionPoints,
+                            userAnswer: userAnswer.toString(),
+                            correctAnswer: 'ERROR: No correct answer defined',
+                            explanation: question.explanation || '',
+                            isCorrect: false,
+                            timeTaken: questionTimes[index] || 0
+                        });
+                        return; // Skip to next question
+                    }
+                    
+                    const normalizedUser = answerNormalizer.normalizeAnswer(userAnswer, question.type);
+                    const normalizedCorrect = answerNormalizer.normalizeAnswer(correctAnswer, question.type);
+                    
+                    if (question.type === 'interval_input') {
+                        // For intervals, compare normalized strings
+                        isCorrect = normalizedUser === normalizedCorrect;
+                        
+                        // Check alternative answers
+                        if (!isCorrect && question.alternative_answers && Array.isArray(question.alternative_answers)) {
+                            isCorrect = question.alternative_answers.some(alt => {
+                                const normalizedAlt = answerNormalizer.normalizeAnswer(alt, question.type);
+                                return normalizedAlt === normalizedUser;
+                            });
+                        }
+                    } else if (question.type === 'multiple_choice') {
+                        isCorrect = normalizedUser === normalizedCorrect;
+                    } else if (question.type === 'multiple_select') {
+                        if (Array.isArray(userAnswer) && Array.isArray(question.correct_answer)) {
+                            const normalizeArray = (arr) => arr.map(item => 
+                                answerNormalizer.normalizeAnswer(item, question.type)).sort();
+                            const userNorm = normalizeArray(userAnswer);
+                            const correctNorm = normalizeArray(question.correct_answer);
+                            isCorrect = userNorm.length === correctNorm.length &&
+                                    userNorm.every((ans, idx) => ans === correctNorm[idx]);
+                        }
+                    } else if (question.type === 'numeric' || question.type === 'numeric_input') {
+                        // Handle numeric comparisons with tolerance for floating point
+                        const userNum = answerNormalizer.normalizeNumeric(userAnswer);
+                        const correctNum = answerNormalizer.normalizeNumeric(question.correct_answer);
+                        
+                        if (userNum === correctNum) {
+                            // Exact match (including Infinity/-Infinity)
+                            isCorrect = true;
+                        } else if (isFinite(userNum) && isFinite(correctNum)) {
+                            // Both are finite numbers - use tolerance
+                            const tolerance = Math.max(Math.abs(correctNum) * 0.01, 0.01);
+                            isCorrect = Math.abs(userNum - correctNum) <= tolerance;
+                        } else {
+                            // One is infinite, one is not
+                            isCorrect = false;
+                        }
+                        
+                        // Check alternative numeric answers
+                        if (!isCorrect && question.alternative_answers && Array.isArray(question.alternative_answers)) {
+                            isCorrect = question.alternative_answers.some(alt => {
+                                const altNum = answerNormalizer.normalizeNumeric(alt);
+                                if (userNum === altNum) return true;
+                                if (isFinite(userNum) && isFinite(altNum)) {
+                                    const tolerance = Math.max(Math.abs(altNum) * 0.01, 0.01);
+                                    return Math.abs(userNum - altNum) <= tolerance;
+                                }
+                                return false;
+                            });
+                        }
+                    } else if (question.type === 'coordinate_input') {
+                        isCorrect = normalizedUser === normalizedCorrect;
+                    } else if (question.type === 'equation_input') {
+                        isCorrect = normalizedUser === normalizedCorrect;
+                        
+                        if (!isCorrect && question.alternative_answers && Array.isArray(question.alternative_answers)) {
+                            isCorrect = question.alternative_answers.some(alt => {
+                                const normalizedAlt = answerNormalizer.normalizeAnswer(alt, question.type);
+                                return normalizedAlt === normalizedUser;
+                            });
+                        }
+                    } else {
+                        // For text input and other types
+                        isCorrect = normalizedUser === normalizedCorrect;
+                    }
+                }
+                
+                if (isCorrect) {
+                    score += questionPoints;
+                }
+                
+                // Safely get difficulty with fallback
+                const difficulty = question.difficulty || 'medium';
+                difficultyBreakdown[difficulty].attempted++;
+                if (isCorrect) {
+                    difficultyBreakdown[difficulty].correct++;
+                    difficultyBreakdown[difficulty].points += questionPoints;
+                }
+                
+                questionResults.push({
+                    questionId: question._id || index,
+                    questionNumber: question.question_number || (index + 1),
+                    questionText: question.question_text || 'Question text not available',
+                    difficulty: difficulty,
+                    points: questionPoints,
+                    userAnswer: userAnswer ? userAnswer.toString() : 'No answer provided',
+                    correctAnswer: question.correct_answer ? question.correct_answer.toString() : 'ERROR: No correct answer defined',
+                    explanation: question.explanation || '',
+                    isCorrect: isCorrect,
+                    timeTaken: questionTimes[index] || 0
+                });
+            });
+
+            const quizData = {
+                topic: 'Derivatives_Integrals',
+                quizType: 'practice',
+                score: score,
+                maxPossibleScore: totalPossiblePoints,
+                totalQuestions: questions.length,
+                correctAnswers: questionResults.filter(q => q.isCorrect).length,
+                percentage: Math.round((score / totalPossiblePoints) * 100),
+                difficultyBreakdown: difficultyBreakdown,
+                questionResults: questionResults,
+                startTime: quizStartTime,
+                endTime: quizEndTime,
+                totalTimeTaken: totalTimeTaken,
+                isCompleted: true,
+                adaptiveData: {
+                    startingDifficulty: 'easy',
+                    finalDifficulty: questions[questions.length - 1]?.difficulty || 'easy',
+                    difficultyProgression: questionResults.map((q, index) => ({
+                        questionNumber: q.questionNumber,
+                        difficulty: q.difficulty,
+                        wasCorrect: q.isCorrect
+                    }))
+                }
+            };
+
+            try {
+                document.getElementById('submitText').style.display = 'none';
+                document.getElementById('submitLoading').style.display = 'inline-block';
+                document.getElementById('submitBtn').disabled = true;
+
+                console.log('Submitting quiz data:', {
+                    email: email,
+                    username: username,
+                    quizData: quizData
+                });
+                
+                const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/iitmmath_scores', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        email: email,
+                        username: username,
+                        quizData: quizData
+                    })
+                });
+
+                if (response.ok) {
+                    console.log('Quiz submitted successfully');
+                    displayDetailedResults(quizData);
+                } else {
+                    const errorText = await response.text();
+                    console.error('Failed to submit quiz:', errorText);
+                    alert('Failed to submit quiz. Please try again.');
+                    
+                    document.getElementById('submitText').style.display = 'inline';
+                    document.getElementById('submitLoading').style.display = 'none';
+                    document.getElementById('submitBtn').disabled = false;
+                    return;
+                }
+            } catch (error) {
+                console.error('Error submitting quiz:', error);
+                alert('Error submitting quiz. Please check your connection and try again.');
+                document.getElementById('submitText').style.display = 'inline';
+                document.getElementById('submitLoading').style.display = 'none';
+                document.getElementById('submitBtn').disabled = false;
+                return;
+            }
+        }
+
+        function displayDetailedResults(quizData) {
+            document.getElementById('quizContainer').style.display = 'none';
+            
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.style.display = 'block';
+            
+            const scoreDisplay = document.querySelector('.score-display');
+            scoreDisplay.innerHTML = `
+                <h2>${quizData.score}/${quizData.maxPossibleScore} Points (${quizData.percentage}%)</h2>
+                <p>Quiz Completed Successfully!</p>
+                <div style="margin-top: 20px; display: flex; justify-content: space-around; text-align: center;">
+                    <div>
+                        <strong>Easy Questions</strong><br>
+                        ${quizData.difficultyBreakdown.easy.correct}/${quizData.difficultyBreakdown.easy.attempted}
+                    </div>
+                    <div>
+                        <strong>Medium Questions</strong><br>
+                        ${quizData.difficultyBreakdown.medium.correct}/${quizData.difficultyBreakdown.medium.attempted}
+                    </div>
+                    <div>
+                        <strong>Hard Questions</strong><br>
+                        ${quizData.difficultyBreakdown.hard.correct}/${quizData.difficultyBreakdown.hard.attempted}
+                    </div>
+                </div>
+                <p style="margin-top: 15px; font-size: 0.9em;">
+                    Time Taken: ${Math.floor(quizData.totalTimeTaken / 60)}m ${quizData.totalTimeTaken % 60}s
+                </p>
+            `;
+            
+            const reviewDiv = document.createElement('div');
+            reviewDiv.style.cssText = `
+                margin-top: 30px;
+                text-align: left;
+                background: white;
+                border-radius: 10px;
+                padding: 20px;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            `;
+            
+            reviewDiv.innerHTML = `
+                <h3 style="text-align: center; margin-bottom: 25px; color: #333;">Question Review</h3>
+                ${quizData.questionResults.map(result => `
+                    <div style="border: 2px solid ${result.isCorrect ? '#28a745' : '#dc3545'}; 
+                                border-radius: 8px; 
+                                padding: 15px; 
+                                margin-bottom: 15px; 
+                                background: ${result.isCorrect ? '#f8fff9' : '#fff8f8'};">
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <span style="background: ${result.isCorrect ? '#28a745' : '#dc3545'}; 
+                                        color: white; 
+                                        padding: 4px 8px; 
+                                        border-radius: 50%; 
+                                        margin-right: 10px; 
+                                        font-weight: bold;">
+                                ${result.questionNumber || (index + 1)}
+                            </span>
+                            <span style="font-weight: bold; color: ${result.isCorrect ? '#28a745' : '#dc3545'};">
+                                ${result.isCorrect ? '✓ Correct' : '✗ Incorrect'}
+                            </span>
+                        </div>
+                        <div style="margin-bottom: 10px; line-height: 1.4;">
+                            <strong>Question:</strong> ${result.questionText}
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <strong>Your Answer:</strong> 
+                            <span style="color: ${result.isCorrect ? '#28a745' : '#dc3545'}; font-weight: bold;">
+                                ${result.userAnswer || 'No answer provided'}
+                            </span>
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <strong>Correct Answer:</strong> 
+                            <span style="color: #28a745; font-weight: bold;">
+                                ${result.correctAnswer}
+                            </span>
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <strong>Explanation:</strong> 
+                            <span style="color: #28a745; font-weight: bold;">
+                                ${result.explanation}
+                            </span>
+                        </div>
+                        <div style="font-size: 0.9em; color: #666;">
+                            Time taken: ${result.timeTaken}s
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+            
+            resultsContainer.appendChild(reviewDiv);
+        }
+        
+
+        function getDifficultyColor(difficulty) {
+            switch(difficulty) {
+                case 'easy': return '#28a745';
+                case 'medium': return '#ffc107';
+                case 'hard': return '#dc3545';
+                default: return '#6c757d';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeQuiz();
+        });
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeQuiz);
+        } else {
+            initializeQuiz();
+        }
+
+        // NEW FUNCTION: Shuffle array for random question selection
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function shouldShowFormatHint(question) {
+            if (!question.format_hint) return false;
+            
+            const hint = question.format_hint.toLowerCase().trim();
+            const correctAnswer = (question.correct_answer || '').toString().toLowerCase().trim();
+            
+            // Don't show if hint contains the exact answer
+            if (hint.includes(correctAnswer)) return false;
+            
+            // Don't show if answer contains significant part of hint
+            if (correctAnswer.length > 3 && hint.includes(correctAnswer)) return false;
+            
+            // Check for numeric answers in hint
+            if (question.type === 'numeric' || question.type === 'numeric_input') {
+                const answerNum = parseFloat(correctAnswer.replace(/[^\d.-]/g, ''));
+                if (!isNaN(answerNum)) {
+                    const hintNums = hint.match(/-?\d+\.?\d*/g);
+                    if (hintNums && hintNums.some(hn => Math.abs(parseFloat(hn) - answerNum) < 0.01)) {
+                        return false;
+                    }
+                }
+            }
+            
+            return true;
+        }
+
+        async function loadQuestions() {
+            try {
+                if (!email) {
+                    alert('Please login to take the assessment');
+                    return false;
+                }
+                
+                // Step 1: Get user's answered question IDs from their quiz history
+                const answeredQuestionIds = await getAnsweredQuestionIds();
+                console.log('📝 Already answered question IDs:', answeredQuestionIds);
+                
+                // Step 2: Fetch ALL questions for this topic
+                const response = await fetch(`https://sanghamitra-learnworld.vercel.app/api/iitm-math-questions/Derivatives%20and%20Integrals?email=${encodeURIComponent(email)}&count=50`, {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                let allQuestions = data.questions || data;
+                
+                if (!allQuestions || allQuestions.length === 0) {
+                    throw new Error('No questions found in database');
+                }
+                
+                console.log('📚 Total questions in database:', allQuestions.length);
+                console.log('✅ Already answered:', answeredQuestionIds.length);
+                
+                // Step 3: Filter out already answered questions (FRONTEND FILTERING)
+                const unansweredQuestions = allQuestions.filter(q => {
+                    const questionId = q._id || q.id || q.question_number;
+                    return !answeredQuestionIds.includes(questionId?.toString());
+                });
+                
+                console.log('🆕 Unanswered questions available:', unansweredQuestions.length);
+                
+                // Step 4: Handle case where all questions are completed
+                if (unansweredQuestions.length === 0) {
+                    const resetConfirm = confirm(
+                        `🎉 Congratulations! You have completed all ${allQuestions.length} questions!\n\n` +
+                        `Questions completed: ${answeredQuestionIds.length}\n` +
+                        `Total questions in pool: ${allQuestions.length}\n\n` +
+                        `Would you like to reset your progress and start over?`
+                    );
+                    
+                    if (resetConfirm) {
+                        const resetSuccess = await resetUserProgress();
+                        if (resetSuccess) {
+                            return loadQuestions(); // Retry after reset
+                        } else {
+                            alert('Failed to reset progress. Please try again or contact support.');
+                            window.location.href = 'iitm_math.html';
+                            return false;
+                        }
+                    } else {
+                        alert('No new questions available. Returning to home page.');
+                        window.location.href = 'iitm_math.html';
+                        return false;
+                    }
+                }
+                
+                // Step 5: Select random subset (e.g., 50 questions) from unanswered pool
+                const questionsToShow = Math.min(50, unansweredQuestions.length);
+                questions = shuffleArray(unansweredQuestions).slice(0, questionsToShow);
+                
+                // Step 6: Validate and prepare questions with default values
+                questions = validateAndPrepareQuestions(questions);
+                
+                console.log(`✨ Loaded ${questions.length} NEW (never-seen) questions`);
+                
+              
+                
+                return true;
+            } catch (error) {
+                console.error('Error loading questions:', error);
+                alert('Failed to load quiz questions. Please refresh and try again.');
+                return false;
+            }
+        }
+        
+        // NEW FUNCTION: Get all question IDs user has already answered
+        async function getAnsweredQuestionIds() {
+            try {
+                const response = await fetch(`https://sanghamitra-learnworld.vercel.app/api/iitmmath_scores?email=${encodeURIComponent(email)}&topic=Derivatives_Integrals`, {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    console.log('No previous quiz history found');
+                    return [];
+                }
+                
+                const scores = await response.json();
+                const answeredIds = new Set();
+                
+                // Extract all question IDs from quiz history
+                if (Array.isArray(scores)) {
+                    scores.forEach(score => {
+                        if (score.quizData && score.quizData.questionResults) {
+                            score.quizData.questionResults.forEach(result => {
+                                if (result.questionId) {
+                                    answeredIds.add(result.questionId.toString());
+                                }
+                                // Also track by question number as fallback
+                                if (result.questionNumber) {
+                                    answeredIds.add(result.questionNumber.toString());
+                                }
+                            });
+                        }
+                    });
+                }
+                
+                return Array.from(answeredIds);
+            } catch (error) {
+                console.error('Error fetching answered questions:', error);
+                return []; // Return empty array if error (will show all questions)
+            }
+        }
+        
+        async function resetUserProgress() {
+            try {
+                const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/reset-user-progress', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ 
+                        email: email,
+                        topic: 'Derivatives_Integrals'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    console.log('Progress reset successfully:', data);
+                    alert(`✅ Progress reset successfully!\n\nYou can now retake all ${data.questionsAvailable || 'available'} questions.`);
+                    return true;
+                } else {
+                    throw new Error(data.message || 'Failed to reset progress');
+                }
+            } catch (error) {
+                console.error('Error resetting progress:', error);
+                alert('❌ Failed to reset progress. Please try again or contact support.');
+                return false;
+            }
+        }
+
+        function goback() {
+            userAnswers = {};
+            questionTimes = {};
+            window.location.href = 'iitm_math.html';
+        }
+            // ============================================
+    // CALCULATOR FUNCTIONS
+    // ============================================
+
+    // Initialize calculator
+    function initializeCalculator() {
+        const calculatorBtn = document.getElementById('calculatorBtn');
+        const calculatorModal = document.getElementById('calculatorModal');
+        const closeBtn = calculatorModal.querySelector('.calculator-close');
+        const minimizeBtn = calculatorModal.querySelector('.minimize-btn');
+        const helpBtn = calculatorModal.querySelector('.help-btn');
+        
+        // Set up calculator button click
+        calculatorBtn.addEventListener('click', toggleCalculator);
+        
+        // Set up close button
+        closeBtn.addEventListener('click', toggleCalculator);
+        
+        // Set up minimize button
+        if (minimizeBtn) {
+            minimizeBtn.addEventListener('click', function() {
+                calculatorModal.style.display = 'none';
+                calculatorBtn.style.display = 'flex';
+                calculatorOpen = false;
+            });
+        }
+        
+        // Set up help button
+        if (helpBtn) {
+            helpBtn.addEventListener('click', function() {
+                alert('Scientific Calculator Help:\n\n• Use Deg/Rad for angle modes\n• Click buttons or type directly\n• Drag the header to move calculator\n• Close with × or minimize with ―\n• Use log() for logarithms, ln() for natural log\n• Use sqrt() for square roots\n• Use ^ for exponents (e.g., 2^3 = 8)');
+            });
+        }
+        
+        // Initialize drag functionality
+        initializeDrag();
+        
+        // Initialize angle mode listeners
+        const degMode = document.getElementById('degMode');
+        const radMode = document.getElementById('radMode');
+        
+        degMode.addEventListener('change', () => {
+            angleMode = 'Deg';
+            console.log('Angle mode changed to:', angleMode);
+        });
+        
+        radMode.addEventListener('change', () => {
+            angleMode = 'Rad';
+            console.log('Angle mode changed to:', angleMode);
+        });
+        
+        console.log('Calculator initialized');
+    }
+
+    // Toggle calculator visibility
+    function toggleCalculator() {
+        const modal = document.getElementById('calculatorModal');
+        const btn = document.getElementById('calculatorBtn');
+        
+        calculatorOpen = !calculatorOpen;
+        
+        if (calculatorOpen) {
+            modal.style.display = 'flex';
+            btn.style.display = 'none';
+            
+            // Set initial position
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const modalWidth = modal.offsetWidth || 590;
+            const modalHeight = modal.offsetHeight || 400;
+            
+            modal.style.position = 'fixed';
+            modal.style.left = (viewportWidth - modalWidth - 20) + 'px';
+            modal.style.top = (viewportHeight - modalHeight - 100) + 'px';
+            
+            // Focus on display
+            setTimeout(() => {
+                document.getElementById('calcDisplay').focus();
+            }, 100);
+        } else {
+            modal.style.display = 'none';
+            btn.style.display = 'flex';
+        }
+    }
+
+    // Initialize drag functionality
+    function initializeDrag() {
+        const modal = document.getElementById('calculatorModal');
+        const header = modal.querySelector('.calculator-header');
+        
+        header.addEventListener('mousedown', startDrag);
+        header.addEventListener('touchstart', startDragTouch);
+        
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('touchmove', dragTouch);
+        document.addEventListener('mouseup', stopDrag);
+        document.addEventListener('touchend', stopDrag);
+        
+        // Prevent button drag
+        const buttons = modal.querySelectorAll('.calc-btn, .calculator-close, .help-btn, .minimize-btn');
+        buttons.forEach(btn => {
+            btn.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+            });
+            btn.addEventListener('touchstart', (e) => {
+                e.stopPropagation();
+            });
+        });
+    }
+
+    function startDrag(e) {
+        if (e.target.closest('.calculator-close') || 
+            e.target.closest('.calc-btn') || 
+            e.target.closest('.help-btn') || 
+            e.target.closest('.minimize-btn')) {
+            return;
+        }
+        
+        const modal = document.getElementById('calculatorModal');
+        isDragging = true;
+        
+        const rect = modal.getBoundingClientRect();
+        dragOffsetX = e.clientX - rect.left;
+        dragOffsetY = e.clientY - rect.top;
+        
+        modal.style.cursor = 'grabbing';
+        e.preventDefault();
+    }
+
+    function startDragTouch(e) {
+        if (e.target.closest('.calculator-close') || 
+            e.target.closest('.calc-btn') || 
+            e.target.closest('.help-btn') || 
+            e.target.closest('.minimize-btn')) {
+            return;
+        }
+        
+        const modal = document.getElementById('calculatorModal');
+        isDragging = true;
+        
+        const touch = e.touches[0];
+        const rect = modal.getBoundingClientRect();
+        dragOffsetX = touch.clientX - rect.left;
+        dragOffsetY = touch.clientY - rect.top;
+        
+        modal.style.cursor = 'grabbing';
+        e.preventDefault();
+    }
+
+    function drag(e) {
+        if (!isDragging) return;
+        
+        const modal = document.getElementById('calculatorModal');
+        const x = e.clientX - dragOffsetX;
+        const y = e.clientY - dragOffsetY;
+        
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const modalWidth = modal.offsetWidth;
+        const modalHeight = modal.offsetHeight;
+        
+        let finalX = Math.max(0, Math.min(x, viewportWidth - modalWidth));
+        let finalY = Math.max(0, Math.min(y, viewportHeight - modalHeight));
+        
+        modal.style.left = finalX + 'px';
+        modal.style.top = finalY + 'px';
+        
+        e.preventDefault();
+    }
+
+    function dragTouch(e) {
+        if (!isDragging) return;
+        
+        const modal = document.getElementById('calculatorModal');
+        const touch = e.touches[0];
+        const x = touch.clientX - dragOffsetX;
+        const y = touch.clientY - dragOffsetY;
+        
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const modalWidth = modal.offsetWidth;
+        const modalHeight = modal.offsetHeight;
+        
+        let finalX = Math.max(0, Math.min(x, viewportWidth - modalWidth));
+        let finalY = Math.max(0, Math.min(y, viewportHeight - modalHeight));
+        
+        modal.style.left = finalX + 'px';
+        modal.style.top = finalY + 'px';
+        
+        e.preventDefault();
+    }
+
+    function stopDrag() {
+        isDragging = false;
+        const modal = document.getElementById('calculatorModal');
+        modal.style.cursor = 'move';
+    }
+
+    // Calculator functions
+    function addToDisplay(value) {
+        const display = document.getElementById('calcDisplay');
+        const resultDisplay = document.getElementById('resultDisplay');
+        
+        if (resultDisplay.value !== '0' && display.value === '') {
+            resultDisplay.value = '0';
+        }
+        
+        display.value += value;
+        display.focus();
+    }
+
+    function clearCalculator() {
+        document.getElementById('calcDisplay').value = '';
+        document.getElementById('resultDisplay').value = '0';
+    }
+
+    function backspace() {
+        const display = document.getElementById('calcDisplay');
+        display.value = display.value.slice(0, -1);
+    }
+
+    function calculateResult() {
+        const display = document.getElementById('calcDisplay');
+        const resultDisplay = document.getElementById('resultDisplay');
+        
+        try {
+            let expression = display.value
+                .replace(/×/g, '*')
+                .replace(/÷/g, '/')
+                .replace(/\^/g, '**')
+                .replace(/√/g, 'Math.sqrt')
+                .replace(/π/g, 'Math.PI')
+                .replace(/e(?![a-zA-Z])/g, 'Math.E');
+            
+            const allowedChars = /^[0-9+\-*/().^MathsincostanasinacosatanlogexpsqrtPIElE, ]+$/;
+            
+            if (!allowedChars.test(expression)) {
+                throw new Error('Invalid characters');
+            }
+            
+            const safeEval = new Function('return ' + expression);
+            let result = safeEval();
+            
+            if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
+                result = Math.round(result * 100000000) / 100000000;
+            }
+            
+            resultDisplay.value = result;
+            
+        } catch (error) {
+            resultDisplay.value = 'Error';
+            setTimeout(() => {
+                resultDisplay.value = '0';
+            }, 1500);
+        }
+    }
+
+    function calcFunction(func) {
+        const display = document.getElementById('calcDisplay');
+        const value = parseFloat(display.value) || 0;
+        let result;
+        
+        switch(func) {
+            case 'sin':
+            case 'cos':
+            case 'tan':
+                result = angleMode === 'Deg' ? 
+                    Math[func](value * Math.PI / 180) : 
+                    Math[func](value);
+                break;
+            case 'sin⁻¹':
+                result = angleMode === 'Deg' ? 
+                    Math.asin(value) * 180 / Math.PI : 
+                    Math.asin(value);
+                break;
+            case 'cos⁻¹':
+                result = angleMode === 'Deg' ? 
+                    Math.acos(value) * 180 / Math.PI : 
+                    Math.acos(value);
+                break;
+            case 'tan⁻¹':
+                result = angleMode === 'Deg' ? 
+                    Math.atan(value) * 180 / Math.PI : 
+                    Math.atan(value);
+                break;
+            case 'sinh':
+                result = Math.sinh(value);
+                break;
+            case 'cosh':
+                result = Math.cosh(value);
+                break;
+            case 'tanh':
+                result = Math.tanh(value);
+                break;
+            case 'ln':
+                result = Math.log(value);
+                break;
+            case 'log':
+                result = Math.log10(value);
+                break;
+            case 'eˣ':
+                result = Math.exp(value);
+                break;
+            case '10ˣ':
+                result = Math.pow(10, value);
+                break;
+            case 'x²':
+                result = value * value;
+                break;
+            case 'x³':
+                result = value * value * value;
+                break;
+            case '1/x':
+                result = 1 / value;
+                break;
+            case 'n!':
+                result = factorial(value);
+                break;
+            case '|x|':
+                result = Math.abs(value);
+                break;
+            default:
+                return;
+        }
+        
+        document.getElementById('resultDisplay').value = result;
+        document.getElementById('calcDisplay').value = result;
+    }
+
+    function factorial(n) {
+        if (n < 0) return NaN;
+        if (n === 0 || n === 1) return 1;
+        let result = 1;
+        for (let i = 2; i <= n; i++) {
+            result *= i;
+        }
+        return result;
+    }
+
+    function memoryFunction(func) {
+        const value = parseFloat(document.getElementById('resultDisplay').value) || 0;
+        
+        switch(func) {
+            case 'MC':
+                memory = 0;
+                break;
+            case 'MR':
+                document.getElementById('calcDisplay').value = memory;
+                break;
+            case 'MS':
+                memory = value;
+                break;
+            case 'M+':
+                memory += value;
+                break;
+            case 'M-':
+                memory -= value;
+                break;
+        }
+    }
+
+    // Keyboard support for calculator
+    document.addEventListener('keydown', function(e) {
+        if (!calculatorOpen) return;
+        
+        const display = document.getElementById('calcDisplay');
+        if (!display) return;
+        
+        if (/[\d\+\-\*\/\(\)\.=%]/.test(e.key) && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            
+            if (e.key === 'Enter' || e.key === '=') {
+                calculateResult();
+            } else if (e.key === 'Escape') {
+                clearCalculator();
+            } else if (e.key === 'Backspace') {
+                backspace();
+            } else {
+                addToDisplay(e.key);
+            }
+        }
+    });
+    initializeCalculator();
+    </script>
+</body>
+</html>
+
+
+
+
+
+

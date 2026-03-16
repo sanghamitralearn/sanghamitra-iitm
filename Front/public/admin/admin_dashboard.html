@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - IITM</title>
+  <!-- Bootstrap CSS --> 
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #667eea;
+      --secondary-color: #764ba2;
+      --success-color: #28a745;
+      --warning-color: #ffc107;
+      --danger-color: #dc3545;
+      --dark-color: #343a40;
+      --light-color: #f8f9fa;
+    }
+    
+    body {
+      background-color: #f5f7fb;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .admin-header {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      color: white;
+      padding: 1rem 0;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    /* Notification Bell Styles */
+    .notification-container {
+      position: relative;
+      margin-right: 1.5rem;
+      cursor: pointer;
+    }
+    
+    .notification-bell {
+      font-size: 1.5rem;
+      color: white;
+      position: relative;
+      transition: transform 0.3s;
+    }
+    
+    .notification-bell:hover {
+      transform: scale(1.1);
+    }
+    
+    .notification-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background-color: var(--danger-color);
+      color: white;
+      border-radius: 50%;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.7rem;
+      min-width: 20px;
+      text-align: center;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.2);
+        background-color: #ff4444;
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+    
+    .notification-dropdown {
+      position: absolute;
+      top: 40px;
+      right: -10px;
+      width: 400px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      display: none;
+      z-index: 1000;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    
+    .notification-dropdown.show {
+      display: block;
+    }
+    
+    .notification-header {
+      padding: 1rem;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      color: white;
+      border-radius: 12px 12px 0 0;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    
+    .notification-header h6 {
+      margin: 0;
+      font-weight: 600;
+    }
+    
+    .notification-header .btn-link {
+      color: white;
+      text-decoration: none;
+      padding: 0;
+    }
+    
+    .notification-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .notification-item {
+      padding: 1rem;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      align-items: center;
+      transition: background-color 0.3s;
+      animation: slideIn 0.3s ease-out;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(-100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    .notification-item:hover {
+      background-color: #f8f9fa;
+    }
+    
+    .notification-item.unread {
+      background-color: #e8f4fd;
+    }
+    
+    .notification-icon {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 1rem;
+      font-size: 1.3rem;
+    }
+    
+    .notification-icon.ct { background: rgba(102, 126, 234, 0.1); color: var(--primary-color); }
+    .notification-icon.python { background: rgba(52, 152, 219, 0.1); color: #3498db; }
+    .notification-icon.dsa { background: rgba(155, 89, 182, 0.1); color: #9b59b6; }
+    .notification-icon.math { background: rgba(46, 204, 113, 0.1); color: #2ecc71; }
+    .notification-icon.stats { background: rgba(241, 196, 15, 0.1); color: #f1c40f; }
+    .notification-icon.math2 { background: rgba(230, 126, 34, 0.1); color: #e67e22; }
+    .notification-icon.stats2 { background: rgba(231, 76, 60, 0.1); color: #e74c3c; }
+    .notification-icon.programming { background: rgba(52, 152, 219, 0.1); color: #3498db; }
+    .notification-icon.interview { background: rgba(155, 89, 182, 0.1); color: #9b59b6; }
+    
+    .notification-content {
+      flex: 1;
+    }
+    
+    .notification-content strong {
+      display: block;
+      margin-bottom: 0.25rem;
+      color: var(--dark-color);
+      font-size: 0.95rem;
+    }
+    
+    .notification-content small {
+      color: #6c757d;
+      font-size: 0.8rem;
+      display: block;
+    }
+    
+    .notification-score {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-top: 0.25rem;
+    }
+    
+    .score-high { background: rgba(40, 167, 69, 0.1); color: #28a745; }
+    .score-medium { background: rgba(255, 193, 7, 0.1); color: #ffc107; }
+    .score-low { background: rgba(220, 53, 69, 0.1); color: #dc3545; }
+    
+    .notification-time {
+      font-size: 0.7rem;
+      color: #adb5bd;
+      margin-top: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    
+    .notification-footer {
+      padding: 0.75rem;
+      text-align: center;
+      border-top: 1px solid #e9ecef;
+      background: white;
+      position: sticky;
+      bottom: 0;
+    }
+    
+    .notification-footer a {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    
+    .notification-footer a:hover {
+      text-decoration: underline;
+    }
+    
+    .blink {
+      animation: blink 1s infinite;
+    }
+    
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    
+    .no-notifications {
+      padding: 3rem;
+      text-align: center;
+      color: #6c757d;
+    }
+    
+    .no-notifications i {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      color: #dee2e6;
+    }
+    
+    .sidebar {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      height: 100%;
+    }
+    
+    .sidebar-sticky {
+      position: sticky;
+      top: 20px;
+    }
+    
+    .sidebar .nav-link {
+      color: var(--dark-color);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      transition: all 0.3s;
+    }
+    
+    .sidebar .nav-link:hover, .sidebar .nav-link.active {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      color: white;
+    }
+    
+    .sidebar .nav-link i {
+      margin-right: 10px;
+      width: 20px;
+      text-align: center;
+    }
+    
+    .dashboard-card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      transition: transform 0.3s, box-shadow 0.3s;
+      height: 100%;
+    }
+    
+    .dashboard-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+    }
+    
+    .card-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+    }
+    
+    .icon-dsa { background: rgba(102, 126, 234, 0.1); color: var(--primary-color); }
+    .icon-python { background: rgba(52, 152, 219, 0.1); color: #3498db; }
+    .icon-ct { background: rgba(155, 89, 182, 0.1); color: #9b59b6; }
+    .icon-users { background: rgba(40, 167, 69, 0.1); color: var(--success-color); }
+    .icon-analytics { background: rgba(255, 193, 7, 0.1); color: var(--warning-color); }
+    .icon-settings { background: rgba(108, 117, 125, 0.1); color: #6c757d; }
+    
+    .welcome-card {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      color: white;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    
+    .user-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      color: var(--primary-color);
+      margin-right: 1.5rem;
+    }
+    
+    .quick-actions .btn {
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .loading-spinner {
+      text-align: center;
+      padding: 2rem;
+    }
+    
+    @media (max-width: 768px) {
+      .sidebar {
+        margin-bottom: 2rem;
+      }
+      
+      .notification-dropdown {
+        width: 300px;
+        right: -50px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="admin-header">
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+          <i class="bi bi-lock-fill me-2 fs-4"></i>
+          <h1 class="mb-0 fs-3">IITM Admin Dashboard</h1>
+        </div>
+        <div class="d-flex align-items-center">
+          <!-- Notification Bell -->
+          <div class="notification-container" id="notificationContainer">
+            <div class="notification-bell" id="notificationBell">
+              <i class="bi bi-bell-fill"></i>
+              <span class="notification-badge" id="notificationBadge">0</span>
+            </div>
+            
+            <!-- Notification Dropdown -->
+            <div class="notification-dropdown" id="notificationDropdown">
+              <div class="notification-header">
+                <h6>Recent Activity</h6>
+                <button class="btn btn-link btn-sm text-white" onclick="markAllAsRead()">
+                  <i class="bi bi-check-all"></i>
+                </button>
+              </div>
+              
+              <div id="notificationList" class="notification-list">
+                <!-- Notifications will be loaded here -->
+                <div class="loading-spinner">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                  <p class="mt-2 text-muted">Loading notifications...</p>
+                </div>
+              </div>
+              
+              <div class="notification-footer">
+                <a onclick="refreshNotifications()">Refresh Notifications</a>
+              </div>
+            </div>
+          </div>
+          
+          <!-- User Dropdown -->
+          <div class="dropdown">
+            <button class="btn btn-light dropdown-toggle d-flex align-items-center" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              <div class="user-avatar me-2">
+                <i class="bi bi-person-fill"></i>
+              </div>
+              <span>Admin User</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+              <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profile</a></li>
+              <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Settings</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="#"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container my-4">
+    <div class="row">
+      <!-- Sidebar -->
+      <div class="col-lg-3 mb-4">
+        <div class="sidebar">
+          <div class="sidebar-sticky">
+            <ul class="nav flex-column">
+              <li class="nav-item">
+                <a class="nav-link active" href="#" data-target="overview">
+                  <i class="bi bi-speedometer2"></i> Dashboard Overview
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="iitm_ct_dashboard.html">
+                  <i class="bi bi-cpu"></i> Computational Thinking
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="programming_dashboard.html">
+                  <i class="bi bi-code-slash"></i> Python Dashboard
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="iitm_DSA_dashboard.html">
+                  <i class="bi bi-diagram-3"></i> DSA Dashboard
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="IITM_math_dashboard.html">
+                  <i class="bi bi-diagram-3"></i> MATH Dashboard
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="iitm_maths2_admin_dashboard.html">
+                  <i class="bi bi-diagram-3"></i> Math-2 Dashboard
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="statistics_dashboard.html">
+                  <i class="bi bi-diagram-3"></i> Statistics Dashboard
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="iitm_stats_2_dashboard.html">
+                  <i class="bi bi-diagram-3"></i> Statistics-2 Dashboard
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="activity_dashboard.html">
+                  <i class="bi bi-diagram-3"></i> Activity Dashboard
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="content_dashboard.html">
+                  <i class="bi bi-diagram-3"></i> Content Dashboard
+                </a>
+              </li>
+            </ul>
+            
+            <div class="mt-4 pt-3 border-top">
+              <h6 class="text-muted mb-3">Quick Actions</h6>
+              <div class="quick-actions">
+                <button class="btn btn-outline-success btn-sm" onclick="exportData()">
+                  <i class="bi bi-download"></i> Export Data
+                </button>
+                <button class="btn btn-outline-primary btn-sm mt-2" onclick="refreshNotifications()">
+                  <i class="bi bi-arrow-repeat"></i> Refresh
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="col-lg-9">
+        <!-- Overview Section -->
+        <div id="overview" class="dashboard-section active">
+          <div class="welcome-card">
+            <div class="d-flex align-items-center">
+              <div class="user-avatar">
+                <i class="bi bi-person-fill"></i>
+              </div>
+              <div>
+                <h2 class="mb-1">Welcome back, Admin!</h2>
+                <p class="mb-0">Here's what's happening with your platform today.</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Dashboard Cards -->
+          <div class="row">
+            <div class="col-md-4 mb-4">
+              <div class="dashboard-card">
+                <div class="card-icon icon-ct">
+                  <i class="bi bi-cpu"></i>
+                </div>
+                <h4>Computational Thinking</h4>
+                <p class="text-muted">Monitor Computational Thinking assignments, logic exercises, and problem-solving tasks.</p>
+                <a href="iitm_ct_dashboard.html" class="btn btn-primary">Open Dashboard</a>
+              </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+              <div class="dashboard-card">
+                <div class="card-icon icon-python">
+                  <i class="bi bi-code-slash"></i>
+                </div>
+                <h4>Python Dashboard</h4>
+                <p class="text-muted">Monitor Python programming assignments, code submissions, and evaluation results.</p>
+                <a href="programming_dashboard.html" class="btn btn-primary">Open Dashboard</a>
+              </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+              <div class="dashboard-card">
+                <div class="card-icon icon-dsa">
+                  <i class="bi bi-diagram-3"></i>
+                </div>
+                <h4>DSA Dashboard</h4>
+                <p class="text-muted">View and manage Data Structures and Algorithms submissions, scores, and student performance.</p>
+                <a href="iitm_DSA_dashboard.html" class="btn btn-primary">Open Dashboard</a>
+              </div>
+            </div>
+          
+            <div class="col-md-4 mb-4">
+              <div class="dashboard-card">
+                <div class="card-icon icon-python">
+                  <i class="bi bi-calculator"></i>
+                </div>
+                <h4>Mathematics-1 Dashboard</h4>
+                <p class="text-muted">Track mathematics assignments, problem sets, and analytical reasoning exercises.</p>
+                <a href="IITM_math_dashboard.html" class="btn btn-primary">Open Dashboard</a>
+              </div>
+            </div>
+          
+            <div class="col-md-4 mb-4">
+              <div class="dashboard-card">
+                <div class="card-icon icon-python">
+                  <i class="bi bi-calculator"></i>
+                </div>
+                <h4>Mathematics-2 Dashboard</h4>
+                <p class="text-muted">Monitor advanced mathematics concepts, proofs, and mathematical modeling assignments.</p>
+                <a href="iitm_maths2_admin_dashboard.html" class="btn btn-primary">Open Dashboard</a>
+              </div>
+            </div>
+          
+            <div class="col-md-4 mb-4">
+              <div class="dashboard-card">
+                <div class="card-icon icon-python">
+                  <i class="bi bi-bar-chart"></i>
+                </div>
+                <h4>Statistics-1 Dashboard</h4>
+                <p class="text-muted">View statistical analysis assignments, data interpretation tasks, and probability exercises.</p>
+                <a href="statistics_dashboard.html" class="btn btn-primary">Open Dashboard</a>
+              </div>
+            </div>
+          
+            <div class="col-md-4 mb-4">
+              <div class="dashboard-card">
+                <div class="card-icon icon-python">
+                  <i class="bi bi-bar-chart"></i>
+                </div>
+                <h4>Statistics-2 Dashboard</h4>
+                <p class="text-muted">Monitor advanced statistical methods, inferential statistics, and data modeling assignments.</p>
+                <a href="iitm_stats_2_dashboard.html" class="btn btn-primary">Open Dashboard</a>
+              </div>
+            </div>
+                    
+            <div class="col-md-6 mb-4">
+              <div class="dashboard-card">
+                <div class="card-icon icon-users">
+                  <i class="bi bi-people-fill"></i>
+                </div>
+                <h4>User Management</h4>
+                <p class="text-muted">Manage student accounts, permissions, and access controls across the platform.</p>
+                <button class="btn btn-primary" onclick="showSection('users')">Manage Users</button>
+              </div>
+            </div>
+            <div class="col-md-6 mb-4">
+              <div class="dashboard-card">
+                <div class="card-icon icon-analytics">
+                  <i class="bi bi-bar-chart"></i>
+                </div>
+                <h4>Analytics</h4>
+                <p class="text-muted">Deep dive into platform analytics, performance metrics, and learning trends.</p>
+                <button class="btn btn-primary" onclick="showSection('analytics')">View Analytics</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // API Endpoints
+    const API_ENDPOINTS = {
+      coding: 'https://sanghamitra-learnworld.vercel.app/api/coding-submissions',
+      pdsa: 'https://sanghamitra-learnworld.vercel.app/api/pdsa-submissions',
+      interview: 'https://sanghamitra-learnworld.vercel.app/api/interview-submissions',
+      math1: 'https://sanghamitra-learnworld.vercel.app/api/iitmmath_scores',
+      math2: 'https://sanghamitra-learnworld.vercel.app/api/iitm_maths2_scores_databases',
+      ct: 'https://sanghamitra-learnworld.vercel.app/api/iitm_ct_scores',
+      stats1: 'https://sanghamitra-learnworld.vercel.app/api/statistics_scores',
+      stats2: 'https://sanghamitra-learnworld.vercel.app/api/iitm_stats2_scores'
+    };
+
+    // Notification System
+    let notifications = [];
+    let unreadCount = 0;
+    let refreshInterval;
+    let lastNotificationCount = 0;
+    let hasNewNotifications = false;
+
+    // Subject display mapping
+    const subjectDisplay = {
+      'coding': { name: 'Programming', icon: 'bi-code-slash', class: 'programming' },
+      'pdsa': { name: 'Quiz Test (PDSA)', icon: 'bi-pencil-square', class: 'dsa' },
+      'interview': { name: 'Interview', icon: 'bi-mic', class: 'interview' },
+      'math1': { name: 'Mathematics-1', icon: 'bi-calculator', class: 'math' },
+      'math2': { name: 'Mathematics-2', icon: 'bi-calculator', class: 'math2' },
+      'ct': { name: 'Computational Thinking', icon: 'bi-cpu', class: 'ct' },
+      'stats1': { name: 'Statistics-1', icon: 'bi-bar-chart', class: 'stats' },
+      'stats2': { name: 'Statistics-2', icon: 'bi-bar-chart', class: 'stats2' }
+    };
+
+    // Toggle notification dropdown
+    document.getElementById('notificationBell').addEventListener('click', function(e) {
+      e.stopPropagation();
+      const dropdown = document.getElementById('notificationDropdown');
+      
+      // If opening the dropdown, mark all as viewed
+      if (!dropdown.classList.contains('show')) {
+        markAllAsRead();
+      }
+      
+      dropdown.classList.toggle('show');
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+      const container = document.getElementById('notificationContainer');
+      const dropdown = document.getElementById('notificationDropdown');
+      
+      if (!container.contains(event.target) && dropdown.classList.contains('show')) {
+        dropdown.classList.remove('show');
+      }
+    });
+
+    // Load all notifications from APIs
+    async function loadAllNotifications() {
+      try {
+        // Store current notification count before loading new ones
+        const previousCount = notifications.length;
+        
+        document.getElementById('notificationList').innerHTML = `
+          <div class="loading-spinner">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading notifications...</p>
+          </div>
+        `;
+
+        // Fetch data from all APIs in parallel
+        const results = await Promise.allSettled([
+          fetchCodingSubmissions(),
+          fetchPDSASubmissions(),
+          fetchInterviewSubmissions(),
+          fetchMath1Scores(),
+          fetchMath2Scores(), // Fixed Math-2 function
+          fetchCTScores(),
+          fetchStats1Scores(),
+          fetchStats2Scores()
+        ]);
+
+        let allActivities = [];
+
+        // Process each result
+        results.forEach((result) => {
+          if (result.status === 'fulfilled' && result.value) {
+            allActivities = [...allActivities, ...result.value];
+          }
+        });
+
+        // Sort by timestamp (newest first)
+        allActivities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        // Take only the most recent 50 activities
+        const newNotifications = allActivities.slice(0, 50);
+        
+        // Check if there are new notifications
+        if (newNotifications.length > previousCount) {
+          hasNewNotifications = true;
+        }
+        
+        notifications = newNotifications.map(activity => ({
+          ...activity,
+          read: false // Initially all are unread
+        }));
+
+        // Update unread count based on new notifications only
+        unreadCount = hasNewNotifications ? notifications.length : 0;
+        
+        updateNotificationBadge();
+        renderNotifications();
+
+      } catch (error) {
+        console.error('Error loading notifications:', error);
+        document.getElementById('notificationList').innerHTML = `
+          <div class="no-notifications">
+            <i class="bi bi-exclamation-triangle"></i>
+            <p>Error loading notifications</p>
+            <small class="text-muted">Click refresh to try again</small>
+          </div>
+        `;
+      }
+    }
+
+    // Fetch Coding Submissions
+    async function fetchCodingSubmissions() {
+      try {
+        const response = await fetch(API_ENDPOINTS.coding);
+        const data = await response.json();
+        const submissions = Array.isArray(data) ? data : (data.submissions || data.data || []);
+        
+        return submissions
+          .filter(s => s.email && s.email.toLowerCase() !== 'test@example.com')
+          .map(s => ({
+            userName: s.username || s.name || s.email,
+            subject: 'Programming',
+            subjectKey: 'coding',
+            topic: s.topic || 'Coding Assignment',
+            score: s.percentage || ((s.score / (s.maxScore || 100)) * 100) || 0,
+            timestamp: s.timestamp || new Date().toISOString(),
+            icon: subjectDisplay.coding.icon,
+            iconClass: subjectDisplay.coding.class
+          }));
+      } catch (error) {
+        console.error('Error fetching coding submissions:', error);
+        return [];
+      }
+    }
+
+    // Fetch PDSA Submissions
+    async function fetchPDSASubmissions() {
+      try {
+        const response = await fetch(API_ENDPOINTS.pdsa);
+        const data = await response.json();
+        const submissions = Array.isArray(data) ? data : (data.submissions || data.data || []);
+        
+        return submissions
+          .filter(s => s.email && s.email.toLowerCase() !== 'test@example.com')
+          .map(s => ({
+            userName: s.username || s.name || s.email,
+            subject: 'Quiz Test (PDSA)',
+            subjectKey: 'pdsa',
+            topic: s.topic || 'Quiz Test',
+            score: s.percentage || ((s.score / (s.maxScore || 100)) * 100) || 0,
+            timestamp: s.timestamp || new Date().toISOString(),
+            icon: subjectDisplay.pdsa.icon,
+            iconClass: subjectDisplay.pdsa.class
+          }));
+      } catch (error) {
+        console.error('Error fetching PDSA submissions:', error);
+        return [];
+      }
+    }
+
+    // Fetch Interview Submissions
+    async function fetchInterviewSubmissions() {
+      try {
+        const response = await fetch(API_ENDPOINTS.interview);
+        const data = await response.json();
+        const submissions = Array.isArray(data) ? data : (data.submissions || data.data || []);
+        
+        return submissions
+          .filter(s => s.email && s.email.toLowerCase() !== 'test@example.com')
+          .map(s => ({
+            userName: s.username || s.name || s.email,
+            subject: 'Interview',
+            subjectKey: 'interview',
+            topic: s.topic || 'Interview Assessment',
+            score: s.percentage || ((s.score / (s.maxScore || 100)) * 100) || 0,
+            timestamp: s.timestamp || new Date().toISOString(),
+            icon: subjectDisplay.interview.icon,
+            iconClass: subjectDisplay.interview.class
+          }));
+      } catch (error) {
+        console.error('Error fetching interview submissions:', error);
+        return [];
+      }
+    }
+
+    // Fetch Mathematics-1 Scores
+    async function fetchMath1Scores() {
+      try {
+        const response = await fetch(API_ENDPOINTS.math1);
+        const result = await response.json();
+        
+        let activities = [];
+        let data = [];
+        
+        if (result.success && result.data) {
+          data = Array.isArray(result.data) ? result.data : [result.data];
+        } else if (Array.isArray(result)) {
+          data = result;
+        }
+        
+        data.forEach(student => {
+          if (student.quizScores && student.quizScores.length > 0) {
+            student.quizScores.forEach(quiz => {
+              activities.push({
+                userName: student.username || student.name || student.email,
+                subject: 'Mathematics-1',
+                subjectKey: 'math1',
+                topic: quiz.topic || 'Quiz',
+                score: quiz.percentage || ((quiz.correctAnswers / quiz.totalQuestions) * 100) || 0,
+                timestamp: quiz.timestamp || new Date().toISOString(),
+                icon: subjectDisplay.math1.icon,
+                iconClass: subjectDisplay.math1.class
+              });
+            });
+          }
+        });
+        
+        return activities;
+      } catch (error) {
+        console.error('Error fetching Math-1 scores:', error);
+        return [];
+      }
+    }
+
+    // FIXED: Fetch Mathematics-2 Scores - Updated to match the actual data structure
+    async function fetchMath2Scores() {
+      try {
+        const response = await fetch(API_ENDPOINTS.math2);
+        const result = await response.json();
+        
+        let activities = [];
+        
+        // Check if the response has success and data properties
+        if (result.success && Array.isArray(result.data)) {
+          // Process each student in the data array
+          result.data.forEach(student => {
+            // Check if the student has quizScores array
+            if (student.quizScores && Array.isArray(student.quizScores) && student.quizScores.length > 0) {
+              // Process each quiz attempt
+              student.quizScores.forEach(quiz => {
+                // Calculate percentage if not directly provided
+                const percentage = quiz.percentage || 
+                                  ((quiz.score / quiz.totalQuestions) * 100) || 
+                                  ((quiz.correctAnswers / quiz.totalQuestions) * 100) || 0;
+                
+                activities.push({
+                  userName: student.username || student.name || student.email || 'Unknown User',
+                  subject: 'Mathematics-2',
+                  subjectKey: 'math2',
+                  topic: quiz.topic || `Quiz Attempt ${quiz.attemptNumber || 1}`,
+                  score: Math.round(percentage * 100) / 100, // Round to 2 decimal places
+                  timestamp: quiz.timestamp || student.updatedAt || new Date().toISOString(),
+                  icon: subjectDisplay.math2.icon,
+                  iconClass: subjectDisplay.math2.class
+                });
+              });
+            }
+          });
+        }
+        
+        console.log(`Math-2: Found ${activities.length} quiz attempts`); // Debug log
+        return activities;
+      } catch (error) {
+        console.error('Error fetching Math-2 scores:', error);
+        return [];
+      }
+    }
+
+    // Fetch Computational Thinking Scores
+    async function fetchCTScores() {
+      try {
+        const response = await fetch(API_ENDPOINTS.ct);
+        const result = await response.json();
+        
+        let activities = [];
+        
+        if (result.success && result.data) {
+          const data = Array.isArray(result.data) ? result.data : [result.data];
+          data.forEach(student => {
+            if (student.scores && student.scores.length > 0) {
+              student.scores.forEach(score => {
+                activities.push({
+                  userName: student.username || student.name || student.email,
+                  subject: 'Computational Thinking',
+                  subjectKey: 'ct',
+                  topic: score.topic || 'CT Exercise',
+                  score: score.percentage || ((score.score / (score.totalQuestions || 1)) * 100) || 0,
+                  timestamp: score.timestamp || new Date().toISOString(),
+                  icon: subjectDisplay.ct.icon,
+                  iconClass: subjectDisplay.ct.class
+                });
+              });
+            }
+          });
+        }
+        
+        return activities;
+      } catch (error) {
+        console.error('Error fetching CT scores:', error);
+        return [];
+      }
+    }
+
+    // Fetch Statistics-1 Scores
+    async function fetchStats1Scores() {
+      try {
+        const response = await fetch(API_ENDPOINTS.stats1);
+        const result = await response.json();
+        
+        let activities = [];
+        
+        if (result.success && result.data) {
+          const data = Array.isArray(result.data) ? result.data : [result.data];
+          data.forEach(student => {
+            if (student.quizScores && student.quizScores.length > 0) {
+              student.quizScores.forEach(quiz => {
+                activities.push({
+                  userName: student.username || student.name || student.email,
+                  subject: 'Statistics-1',
+                  subjectKey: 'stats1',
+                  topic: quiz.topic || 'Statistics Quiz',
+                  score: quiz.percentage || ((quiz.correctAnswers / quiz.totalQuestions) * 100) || 0,
+                  timestamp: quiz.timestamp || new Date().toISOString(),
+                  icon: subjectDisplay.stats1.icon,
+                  iconClass: subjectDisplay.stats1.class
+                });
+              });
+            }
+          });
+        }
+        
+        return activities;
+      } catch (error) {
+        console.error('Error fetching Statistics-1 scores:', error);
+        return [];
+      }
+    }
+
+    // Fetch Statistics-2 Scores
+    async function fetchStats2Scores() {
+      try {
+        const response = await fetch(API_ENDPOINTS.stats2);
+        const result = await response.json();
+        
+        let activities = [];
+        
+        if (Array.isArray(result)) {
+          result.forEach(student => {
+            if (student.scores && student.scores.length > 0) {
+              student.scores.forEach(score => {
+                activities.push({
+                  userName: student.name || student.email,
+                  subject: 'Statistics-2',
+                  subjectKey: 'stats2',
+                  topic: score.subtopic || `Week ${score.week}`,
+                  score: ((score.score / (score.totalQuestions || 1)) * 100) || 0,
+                  timestamp: score.dateAttempted || new Date().toISOString(),
+                  icon: subjectDisplay.stats2.icon,
+                  iconClass: subjectDisplay.stats2.class
+                });
+              });
+            }
+          });
+        }
+        
+        return activities;
+      } catch (error) {
+        console.error('Error fetching Statistics-2 scores:', error);
+        return [];
+      }
+    }
+
+    // Update notification badge
+    function updateNotificationBadge() {
+      const badge = document.getElementById('notificationBadge');
+      badge.textContent = unreadCount;
+      
+      if (unreadCount > 0) {
+        badge.style.display = 'block';
+        document.getElementById('notificationBell').classList.add('blink');
+      } else {
+        badge.style.display = 'none';
+        document.getElementById('notificationBell').classList.remove('blink');
+      }
+    }
+
+    // Render notifications
+    function renderNotifications() {
+      const list = document.getElementById('notificationList');
+      
+      if (notifications.length === 0) {
+        list.innerHTML = `
+          <div class="no-notifications">
+            <i class="bi bi-bell-slash"></i>
+            <p>No recent activity</p>
+            <small class="text-muted">New submissions will appear here</small>
+          </div>
+        `;
+        return;
+      }
+      
+      let html = '';
+      notifications.slice(0, 20).forEach((notif) => {
+        const unreadClass = notif.read ? '' : 'unread';
+        const timeAgo = getTimeAgo(notif.timestamp);
+        const scoreClass = getScoreClass(notif.score);
+        
+        html += `
+          <li class="notification-item ${unreadClass}">
+            <div class="notification-icon ${notif.iconClass}">
+              <i class="bi ${notif.icon}"></i>
+            </div>
+            <div class="notification-content">
+              <strong>${escapeHtml(notif.userName || 'Unknown User')}</strong>
+              <small>${escapeHtml(notif.subject)} - ${escapeHtml(notif.topic || 'Exercise')}</small>
+              ${notif.score ? `<span class="notification-score ${scoreClass}">${Math.round(notif.score)}%</span>` : ''}
+              <div class="notification-time">
+                <i class="bi bi-clock"></i> ${timeAgo}
+              </div>
+            </div>
+          </li>
+        `;
+      });
+      
+      list.innerHTML = html;
+    }
+
+    // Get score class for styling
+    function getScoreClass(score) {
+      if (score >= 80) return 'score-high';
+      if (score >= 60) return 'score-medium';
+      return 'score-low';
+    }
+
+    // Get time ago string
+    function getTimeAgo(timestamp) {
+      if (!timestamp) return 'Unknown time';
+      
+      const now = new Date();
+      const time = new Date(timestamp);
+      const seconds = Math.floor((now - time) / 1000);
+      
+      if (seconds < 60) return 'just now';
+      if (seconds < 3600) return Math.floor(seconds / 60) + ' minutes ago';
+      if (seconds < 86400) return Math.floor(seconds / 3600) + ' hours ago';
+      if (seconds < 604800) return Math.floor(seconds / 86400) + ' days ago';
+      
+      return time.toLocaleDateString();
+    }
+
+    // Escape HTML to prevent XSS
+    function escapeHtml(unsafe) {
+      if (!unsafe) return '';
+      return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // Mark all as read (called when dropdown is opened)
+    function markAllAsRead() {
+      if (notifications.length > 0) {
+        notifications.forEach(n => n.read = true);
+        unreadCount = 0;
+        hasNewNotifications = false;
+        updateNotificationBadge();
+        renderNotifications();
+        
+        // Save to localStorage that notifications were viewed at this time
+        localStorage.setItem('lastNotificationView', new Date().toISOString());
+      }
+    }
+
+    // Refresh notifications
+    function refreshNotifications() {
+      loadAllNotifications();
+    }
+
+    // Export data (placeholder function)
+    function exportData() {
+      alert('Export functionality would be implemented here');
+    }
+
+    // Show section (for internal navigation)
+    function showSection(sectionId) {
+      // This is a placeholder for section navigation
+      console.log('Showing section:', sectionId);
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      // Load initial notifications
+      loadAllNotifications();
+      
+      // Set up auto-refresh every 30 seconds
+      refreshInterval = setInterval(loadAllNotifications, 30000);
+      
+      // Show overview section by default
+      showSection('overview');
+    });
+
+    // Clean up on page unload
+    window.addEventListener('beforeunload', function() {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    });
+  </script>
+</body>
+</html>

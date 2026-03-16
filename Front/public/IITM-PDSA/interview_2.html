@@ -1,0 +1,2320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSA Mock Interview</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Header Styles */
+        .interview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #2cc844, #667eea);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            font-size: 28px;
+            color: #4fc3f7;
+        }
+
+        .interview-badge {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff5252;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .live-dot {
+            color: #ff5252;
+            font-size: 10px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+
+        .header-center {
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .header-center h1 {
+            font-size: 22px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .meta-info {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-end-interview {
+            background: #ff5252;
+            color: white;
+        }
+
+        .btn-end-interview:hover {
+            background: #ff1744;
+            transform: translateY(-2px);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #4fc3f7, #2979ff);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .username {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-level {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        /* Main Container */
+        .interview-container {
+            display: grid;
+            grid-template-columns: 350px 1fr 300px;
+            gap: 20px;
+            padding: 20px;
+            min-height: calc(100vh - 140px);
+        }
+
+        .panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Interviewer Panel */
+        .interviewer-panel {
+            padding: 20px;
+        }
+
+        .chat-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+
+        .chat-header {
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h4 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #1a237e;
+        }
+
+        .chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            max-height: 400px;
+            padding-right: 10px;
+            margin-bottom: 15px;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #c5c5c5;
+            border-radius: 10px;
+        }
+
+        .msg-interviewer, .msg-user {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .msg-interviewer {
+            background: #f0f7ff;
+            border-left: 4px solid #2979ff;
+        }
+
+        .msg-user {
+            background: #f8f9ff;
+            border-left: 4px solid #7e57c2;
+            margin-left: 20px;
+        }
+
+        .msg-sender {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #1a237e;
+        }
+
+        .msg-content {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .msg-time {
+            font-size: 11px;
+            color: #888;
+            text-align: right;
+            margin-top: 5px;
+        }
+
+        .chat-input-area {
+            margin-top: 15px;
+        }
+
+        .chat-input-area textarea {
+            width: 100%;
+            height: 80px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            resize: none;
+            font-size: 14px;
+            margin-bottom: 10px;
+            transition: border 0.3s;
+        }
+
+        .chat-input-area textarea:focus {
+            outline: none;
+            border-color: #2979ff;
+        }
+
+        .chat-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-send {
+            background: #2979ff;
+            color: white;
+            flex-grow: 1;
+        }
+
+        .btn-voice {
+            background: #7e57c2;
+            color: white;
+        }
+
+        .interview-tips {
+            background: #fff8e1;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #ffecb3;
+        }
+
+        .interview-tips h4 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #ff8f00;
+            margin-bottom: 10px;
+        }
+
+        .interview-tips ul {
+            padding-left: 20px;
+            font-size: 13px;
+        }
+
+        .interview-tips li {
+            margin-bottom: 5px;
+        }
+
+        /* Center Panel */
+        .center-panel {
+            overflow: hidden;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f5f7fa;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab-btn.active {
+            color: #2979ff;
+            border-bottom-color: #2979ff;
+            background: white;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: #eef2f7;
+            color: #444;
+        }
+
+        .tab-content {
+            display: none;
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .problem-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .problem-header h2 {
+            color: #1a237e;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .problem-meta {
+            display: flex;
+            gap: 10px;
+        }
+
+        .tag {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .problem-content {
+            line-height: 1.7;
+        }
+
+        .problem-content p {
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        .problem-content code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            color: #d63384;
+        }
+
+        .example-box, .constraints-box, .follow-up-box {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2979ff;
+        }
+
+        .example-box h4, .constraints-box h4, .follow-up-box h4 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #1a237e;
+            margin-bottom: 10px;
+        }
+
+        .example-content {
+            font-size: 14px;
+        }
+
+        .example-content p {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .constraints-box ul {
+            padding-left: 20px;
+            font-size: 14px;
+        }
+
+        .constraints-box li {
+            margin-bottom: 5px;
+        }
+
+        .follow-up-box {
+            border-left-color: #ff9800;
+            background: #fff8e1;
+        }
+
+        /* Editor Tab */
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .language-selector select {
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            background: white;
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+        }
+
+        .editor-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-run {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-submit {
+            background: #2979ff;
+            color: white;
+        }
+
+        .btn-reset {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .code-editor {
+            background: #1e1e1e;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            display: flex;
+            min-height: 300px;
+        }
+
+        .editor-line-numbers {
+            background: #2d2d30;
+            color: #858585;
+            padding: 15px 10px;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            text-align: right;
+            user-select: none;
+            border-right: 1px solid #3e3e42;
+        }
+
+        .editor-line-numbers span {
+            display: block;
+        }
+
+        #codeEditor {
+            flex-grow: 1;
+            padding: 15px;
+            color: #d4d4d4;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre;
+            overflow-x: auto;
+            outline: none;
+            tab-size: 2;
+        }
+
+        .output-console {
+            background: #1e1e1e;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: #252526;
+            color: #cccccc;
+            border-bottom: 1px solid #3e3e42;
+        }
+
+        .console-output {
+            padding: 15px;
+            color: #d4d4d4;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            min-height: 100px;
+            white-space: pre-wrap;
+        }
+
+        .output-placeholder {
+            color: #858585;
+            font-style: italic;
+        }
+
+        /* Tests Tab */
+        .tests-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .btn-add-test {
+            background: #4caf50;
+            color: white;
+        }
+
+        .test-cases {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .test-case {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #ddd;
+        }
+
+        .test-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .test-status {
+            font-size: 12px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .test-status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .test-status.passed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .test-status.failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .test-content {
+            font-size: 14px;
+        }
+
+        .test-content p {
+            margin-bottom: 8px;
+        }
+
+        .custom-test-input, .custom-test-expected {
+            margin-bottom: 10px;
+        }
+
+        .custom-test-input label, .custom-test-expected label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .custom-test-input input, .custom-test-expected input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: 'Consolas', monospace;
+        }
+
+        .btn-run-custom {
+            background: #2979ff;
+            color: white;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        /* Tools Panel */
+        .tools-panel {
+            padding: 20px;
+        }
+
+        .tool-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .tool-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .tool-section h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #1a237e;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        /* Timer Section */
+        .timer-display {
+            font-size: 32px;
+            font-weight: bold;
+            text-align: center;
+            color: #1a237e;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .progress-container {
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #e0e0e0;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #2979ff);
+            width: 51%;
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        .time-breakdown {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .time-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .time-value {
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* Hints Section */
+        .hints-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .hint-item {
+            background: #fff8e1;
+            border-radius: 8px;
+            padding: 12px;
+            border-left: 4px solid #ffb300;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .hint-item:hover:not(.locked) {
+            transform: translateX(5px);
+            background: #ffecb3;
+        }
+
+        .hint-item.locked {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: #f5f5f5;
+            border-left-color: #bdbdbd;
+        }
+
+        .hint-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .hint-number {
+            font-weight: bold;
+            color: #ff8f00;
+        }
+
+        .hint-status {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .hint-status.available {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .hint-status.locked {
+            background: #f5f5f5;
+            color: #757575;
+        }
+
+        .hint-content {
+            font-size: 13px;
+            color: #666;
+        }
+
+        /* Question Navigation */
+        .question-navigation {
+            background: white;
+            padding: 15px 25px;
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .question-progress {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .question-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #757575;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+
+        .question-step.active .step-circle {
+            background: #2979ff;
+            color: white;
+            box-shadow: 0 4px 8px rgba(41, 121, 255, 0.3);
+        }
+
+        .step-label {
+            font-size: 12px;
+            margin-top: 5px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .question-step.active .step-label {
+            color: #2979ff;
+        }
+
+        .progress-line {
+            width: 50px;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-prev, .btn-next {
+            padding: 10px 25px;
+            background: #f5f5f5;
+            color: #333;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-next {
+            background: #2979ff;
+            color: white;
+        }
+
+        .btn-prev:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-next:hover {
+            background: #1565c0;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px 30px;
+            background: linear-gradient(135deg, #1a237e, #283593);
+            color: white;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .modal-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .score-summary {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+            align-items: center;
+        }
+
+        .overall-score {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            min-width: 150px;
+        }
+
+        .score-display {
+            font-size: 48px;
+            font-weight: bold;
+            color: #2979ff;
+            margin: 10px 0;
+        }
+
+        .score-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .score-breakdown {
+            flex-grow: 1;
+        }
+
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .breakdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .breakdown-value {
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* Custom Styles */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .loading i {
+            margin-right: 10px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px;
+            border-left: 4px solid #f44336;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pdsa-question {
+            background: #e3f2fd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .mcq-options {
+            margin-top: 10px;
+        }
+
+        .mcq-option {
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mcq-option:hover {
+            background: #f5f5f5;
+        }
+
+        .mcq-option.selected {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+
+        .mcq-option.correct {
+            background: #e8f5e9;
+            border-color: #4caf50;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .current-question-indicator {
+            background: #e3f2fd;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-size: 14px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .question-complete {
+            background: #e8f5e9;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border-left: 4px solid #4caf50;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="interview-header">
+        <div class="header-left">
+            <div class="logo">
+                <i class="fas fa-code"></i>
+                <h2>Sanghamitra</h2>
+            </div>
+            <span class="interview-badge">
+                <i class="fas fa-circle live-dot"></i> LIVE MOCK INTERVIEW
+            </span>
+        </div>
+        
+        <div class="header-center">
+            <h1 id="pageTitle">Loading Interview Session...</h1>
+            <div class="meta-info">
+                <span class="meta-item">
+                    <i class="fas fa-tag"></i> <span id="topicDisplay">Loading...</span>
+                </span>
+                <span class="meta-item">
+                    <i class="fas fa-clock"></i> <span id="timerDisplayHeader">45:00</span>
+                </span>
+                <span class="meta-item">
+                    <i class="fas fa-list-ol"></i> <span id="questionCount">0</span> Questions
+                </span>
+            </div>
+        </div>
+        
+        <div class="header-right">
+            <button class="btn btn-end-interview" onclick="endInterview()">
+                <i class="fas fa-stop-circle"></i> End Interview
+            </button>
+            <div class="user-profile">
+                <div class="avatar">U</div>
+                <div class="user-info">
+                    <span class="username">User</span>
+                    <span class="user-level">Intermediate</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN INTERVIEW CONTAINER -->
+    <main class="interview-container">
+        <!-- LEFT PANEL - INTERVIEWER -->
+        <section class="panel interviewer-panel">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <h4><i class="fas fa-comments"></i> Interview Questions (PDSA)</h4>
+                    <div class="current-question-indicator" id="pdsaProgress">
+                        Question 1 of 3
+                    </div>
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="loading" id="chatLoading">
+                        <i class="fas fa-spinner"></i> Loading interview questions...
+                    </div>
+                </div>
+                
+                <div class="chat-input-area">
+                    <textarea id="chatInput" placeholder="Type your answer to the current question..."></textarea>
+                    <div class="chat-controls">
+                        <button class="btn btn-send" id="sendBtn" onclick="sendPDSAAnswer()">
+                            <i class="fas fa-paper-plane"></i> Submit Answer
+                        </button>
+                        <button class="btn btn-voice" id="nextBtn" onclick="nextPDSAQuestion()" style="display:none;">
+                            <i class="fas fa-forward"></i> Next Question
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="interview-tips">
+                <h4><i class="fas fa-lightbulb"></i> Interview Tips</h4>
+                <ul>
+                    <li>Think out loud while solving problems</li>
+                    <li>Ask clarifying questions before starting</li>
+                    <li>Discuss time and space complexity</li>
+                    <li>Consider edge cases</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- CENTER PANEL - PROBLEM & EDITOR -->
+        <section class="panel center-panel">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="problem" onclick="switchTab('problem')">
+                    <i class="fas fa-file-alt"></i> Problem
+                </button>
+                <button class="tab-btn" data-tab="editor" onclick="switchTab('editor')">
+                    <i class="fas fa-code"></i> Code Editor
+                </button>
+                <button class="tab-btn" data-tab="tests" onclick="switchTab('tests')">
+                    <i class="fas fa-vial"></i> Test Cases
+                </button>
+            </div>
+            
+            <!-- PROBLEM TAB -->
+            <div class="tab-content active" id="problem-tab">
+                <div class="loading" id="problemLoading">
+                    <i class="fas fa-spinner"></i> Loading problem statement...
+                </div>
+                <div id="problemContent" style="display: none;">
+                    <div class="problem-header">
+                        <h2 id="problemTitle">Coding Question</h2>
+                        <div class="current-question-indicator" id="codingProgress">
+                            Coding Question 1 of 2
+                        </div>
+                        <div class="problem-meta">
+                            <span class="tag" id="problemDifficulty">Medium</span>
+                            <span class="tag" id="problemScore">10 points</span>
+                            <span class="tag" id="questionTime">Time: 15 min</span>
+                        </div>
+                    </div>
+                    
+                    <div class="problem-content" id="problemDescription">
+                        <!-- Problem content will be loaded here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- EDITOR TAB -->
+            <div class="tab-content" id="editor-tab">
+                <div class="editor-header">
+                    <div class="language-selector">
+                        <select id="languageSelect">
+                            <option value="python">Python</option>
+                            <option value="java">Java</option>
+                            <option value="javascript">JavaScript</option>
+                            <option value="cpp">C++</option>
+                        </select>
+                    </div>
+                    <div class="editor-actions">
+                        <button class="btn btn-run" onclick="runCode()">
+                            <i class="fas fa-play"></i> Run Code
+                        </button>
+                        <button class="btn btn-submit" onclick="submitCodingQuestion()">
+                            <i class="fas fa-paper-plane"></i> Submit Solution
+                        </button>
+                        <button class="btn btn-reset" onclick="resetCode()">
+                            <i class="fas fa-redo"></i> Reset
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="code-editor">
+                    <div class="editor-line-numbers" id="lineNumbers"></div>
+                    <pre id="codeEditor" contenteditable="true" onkeyup="updateLineNumbers()" oninput="updateLineNumbers()">// Write your solution here</pre>
+                </div>
+                
+                <div class="output-console">
+                    <div class="console-header">
+                        <h4><i class="fas fa-terminal"></i> Output</h4>
+                        <button class="btn btn-clear-output" onclick="clearOutput()">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                    </div>
+                    <div class="console-output" id="outputConsole">
+                        <div class="output-placeholder">Click "Run Code" to see output here...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- TESTS TAB -->
+            <div class="tab-content" id="tests-tab">
+                <div class="tests-header">
+                    <h3><i class="fas fa-vial"></i> Test Cases</h3>
+                    <button class="btn btn-add-test" onclick="addCustomTest()">
+                        <i class="fas fa-plus"></i> Add Custom Test
+                    </button>
+                </div>
+                
+                <div class="test-cases" id="testCasesContainer">
+                    <div class="loading">
+                        <i class="fas fa-spinner"></i> Loading test cases...
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- RIGHT PANEL - TOOLS & FEEDBACK -->
+        <section class="panel tools-panel">
+            <!-- TIMER SECTION -->
+            <div class="tool-section timer-section">
+                <h3><i class="fas fa-clock"></i> Interview Timer</h3>
+                <div class="timer-display" id="timerDisplay">45:00</div>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+                <div class="time-breakdown">
+                    <div class="time-item">
+                        <span>PDSA Questions:</span>
+                        <span class="time-value" id="pdsaTime">0/3 answered</span>
+                    </div>
+                    <div class="time-item">
+                        <span>Coding Questions:</span>
+                        <span class="time-value" id="codingTime">0/2 completed</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- HINTS SECTION -->
+            <div class="tool-section hints-section">
+                <h3><i class="fas fa-lightbulb"></i> Available Hints</h3>
+                <div class="hints-container" id="hintsContainer">
+                    <div class="hint-item" data-hint="1" onclick="revealHint(1)">
+                        <div class="hint-header">
+                            <span class="hint-number">Hint 1</span>
+                            <span class="hint-status available">Click to reveal</span>
+                        </div>
+                        <div class="hint-content">Think about edge cases</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PROGRESS SUMMARY -->
+            <div class="tool-section progress-section">
+                <h3><i class="fas fa-chart-line"></i> Progress</h3>
+                <div class="progress-summary">
+                    <div class="time-item">
+                        <span>PDSA Progress:</span>
+                        <span class="time-value" id="pdsaProgressText">0%</span>
+                    </div>
+                    <div class="time-item">
+                        <span>Coding Progress:</span>
+                        <span class="time-value" id="codingProgressText">0%</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- QUESTION NAVIGATION -->
+    <footer class="question-navigation">
+        <div class="nav-container">
+            <div class="question-progress" id="questionProgress">
+                <!-- Question progress will be loaded here -->
+            </div>
+            
+            <div class="nav-actions">
+                <button class="btn btn-prev" onclick="prevCodingQuestion()" disabled>
+                    <i class="fas fa-arrow-left"></i> Previous
+                </button>
+                <button class="btn btn-next" onclick="nextCodingQuestion()">
+                    Next Coding Question <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- COMPLETION MODAL -->
+    <div class="modal-overlay" id="completionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-trophy"></i> Interview Completed!</h2>
+                <button class="btn-close-modal" onclick="closeModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="score-summary">
+                    <div class="overall-score">
+                        <h3>Overall Score</h3>
+                        <div class="score-display" id="overallScore">0/100</div>
+                        <div class="score-label">Good Job!</div>
+                    </div>
+                    
+                    <div class="score-breakdown">
+                        <h4>Performance Breakdown</h4>
+                        <div class="breakdown-item">
+                            <span>PDSA Questions</span>
+                            <span class="breakdown-value" id="pdsaScore">0%</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span>Coding Questions</span>
+                            <span class="breakdown-value" id="codingScore">0%</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span>Communication</span>
+                            <span class="breakdown-value" id="communicationScore">0%</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span>Time Management</span>
+                            <span class="breakdown-value" id="timeManagementScore">0%</span>
+                        </div>
+                    </div>
+                </div>
+                        
+                <div class="recommended-practice">
+                    <h3><i class="fas fa-dumbbell"></i> Recommended Practice</h3>
+                    <div class="practice-links" id="practiceLinks">
+                        <!-- Practice links will be loaded here -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-review" onclick="reviewSession()">
+                    <i class="fas fa-chart-bar"></i> Review Session
+                </button>
+                <button class="btn btn-practice" onclick="practiceMore()">
+                    <i class="fas fa-dumbbell"></i> Practice More
+                </button>
+                <button class="btn btn-next-interview" onclick="nextInterview()">
+                    <i class="fas fa-forward"></i> Next Mock Interview
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentInterviewData = null;
+        let currentCodingQuestionIndex = 0;
+        let currentPDSAQuestionIndex = 0;
+        let pdsaAnswers = [];
+        let codingSubmissions = [];
+        let totalTime = 45 * 60; // 45 minutes in seconds
+        let elapsedTime = 0;
+        let timerInterval;
+        let apiBaseUrl = 'https://sanghamitra-learnworld.vercel.app/api';
+        
+        // DOM Elements
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const problemContent = document.getElementById('problemContent');
+        const problemLoading = document.getElementById('problemLoading');
+        const codeEditor = document.getElementById('codeEditor');
+        const outputConsole = document.getElementById('outputConsole');
+        const testCasesContainer = document.getElementById('testCasesContainer');
+        const questionProgress = document.getElementById('questionProgress');
+        const pdsaProgress = document.getElementById('pdsaProgress');
+        const codingProgress = document.getElementById('codingProgress');
+        
+        // Initialize the interview
+        async function initializeInterview() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const topic = urlParams.get('topic') || 'Sorting Algorithms';
+                const type = urlParams.get('type') || 'interview';
+                
+                document.getElementById('pageTitle').textContent = `${topic.charAt(0).toUpperCase() + topic.slice(1)} Practice Session`;
+                document.getElementById('topicDisplay').textContent = topic;
+                
+                // Fetch questions from API
+                console.log('Fetching questions from:', `${apiBaseUrl}/interview?topic=${encodeURIComponent(topic)}&type=${type}&codingCount=2&pdsaCount=3`);
+                const response = await fetch(`${apiBaseUrl}/interview?topic=${encodeURIComponent(topic)}&type=${type}&codingCount=2&pdsaCount=3`);
+                const data = await response.json();
+                
+                console.log('API Response:', data);
+                
+                if (data.success) {
+                    currentInterviewData = data;
+                    
+                    // Initialize arrays
+                    pdsaAnswers = new Array(data.pdsaQuestions.questions.length).fill(null);
+                    codingSubmissions = new Array(data.codingQuestions.questions.length).fill(null);
+                    
+                    // Update question count
+                    document.getElementById('questionCount').textContent = 
+                        data.pdsaQuestions.questions.length + data.codingQuestions.questions.length;
+                    
+                    // Load first PDSA question (sequential)
+                    loadCurrentPDSAQuestion();
+                    
+                    // Load first coding question
+                    loadCodingQuestion(0);
+                    
+                    // Initialize navigation
+                    initializeNavigation();
+                    
+                    // Start timer
+                    startTimer();
+                    
+                    // Update progress displays
+                    updateProgressDisplays();
+                } else {
+                    showError('Failed to load interview questions');
+                }
+            } catch (error) {
+                console.error('Error initializing interview:', error);
+                showError('Failed to connect to server. Please try again.');
+            }
+        }
+        
+        // Load current PDSA question (sequential, one at a time)
+        function loadCurrentPDSAQuestion() {
+            chatMessages.innerHTML = '';
+            
+            const pdsaQuestions = currentInterviewData?.pdsaQuestions?.questions || [];
+            
+            if (!pdsaQuestions || pdsaQuestions.length === 0) {
+                chatMessages.innerHTML = '<div class="error-message">No interview questions available</div>';
+                return;
+            }
+            
+            // Update progress indicator
+            pdsaProgress.textContent = `PDSA Question ${currentPDSAQuestionIndex + 1} of ${pdsaQuestions.length}`;
+            
+            const question = pdsaQuestions[currentPDSAQuestionIndex];
+            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            let questionHTML = '';
+            
+            if (question.type === 'mcq-single' || question.type === 'mcq-multiple') {
+                // MCQ question
+                questionHTML = `
+                    <div class="msg-sender">Interviewer</div>
+                    <div class="msg-content">
+                        <div class="pdsa-question">
+                            <strong>${question.title}</strong>
+                            <p>${question.description || ''}</p>
+                            <div class="mcq-options">
+                                ${question.options.map((option, optIndex) => `
+                                    <div class="mcq-option" onclick="selectPDSAAnswer(${optIndex})" id="option-${optIndex}">
+                                        ${String.fromCharCode(65 + optIndex)}. ${option}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="msg-time">${time}</div>
+                `;
+            } else {
+                // Interview/numerical question
+                questionHTML = `
+                    <div class="msg-sender">Interviewer</div>
+                    <div class="msg-content">
+                        <div class="pdsa-question">
+                            <strong>${question.title}</strong>
+                            <p>${question.description || ''}</p>
+                            <p><em>Please type your answer below and click "Submit Answer"</em></p>
+                        </div>
+                    </div>
+                    <div class="msg-time">${time}</div>
+                `;
+            }
+            
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'chat-message msg-interviewer';
+            questionDiv.innerHTML = questionHTML;
+            chatMessages.appendChild(questionDiv);
+            
+            // Clear chat input
+            chatInput.value = '';
+            
+            // Show/hide buttons based on question type
+            if (question.type === 'mcq-single' || question.type === 'mcq-multiple') {
+                chatInput.style.display = 'none';
+                sendBtn.style.display = 'none';
+                nextBtn.style.display = 'inline-flex';
+            } else {
+                chatInput.style.display = 'block';
+                sendBtn.style.display = 'inline-flex';
+                nextBtn.style.display = 'none';
+            }
+            
+            // Show previous answers if any
+            if (pdsaAnswers[currentPDSAQuestionIndex] !== null) {
+                showPDSAAnswerFeedback();
+            }
+            
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Select MCQ answer
+        function selectPDSAAnswer(optionIndex) {
+            const pdsaQuestions = currentInterviewData?.pdsaQuestions?.questions || [];
+            const question = pdsaQuestions[currentPDSAQuestionIndex];
+            
+            // Clear previous selections
+            document.querySelectorAll('.mcq-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // Select this option
+            document.getElementById(`option-${optionIndex}`).classList.add('selected');
+            
+            // Store answer
+            pdsaAnswers[currentPDSAQuestionIndex] = optionIndex;
+            
+            // Show next button
+            nextBtn.style.display = 'inline-flex';
+            
+            updateProgressDisplays();
+        }
+        
+        // Send PDSA answer (for non-MCQ questions)
+        function sendPDSAAnswer() {
+            const answer = chatInput.value.trim();
+            
+            if (!answer) {
+                alert('Please enter your answer');
+                return;
+            }
+            
+            // Store answer
+            pdsaAnswers[currentPDSAQuestionIndex] = answer;
+            
+            // Show answer in chat
+            addChatMessage(answer, 'user');
+            
+            // Show feedback
+            showPDSAAnswerFeedback();
+            
+            // Clear input
+            chatInput.value = '';
+            
+            // Show next button
+            nextBtn.style.display = 'inline-flex';
+            sendBtn.style.display = 'none';
+            
+            updateProgressDisplays();
+        }
+        
+        // Show PDSA answer feedback
+        function showPDSAAnswerFeedback() {
+            const pdsaQuestions = currentInterviewData?.pdsaQuestions?.questions || [];
+            const question = pdsaQuestions[currentPDSAQuestionIndex];
+            const answer = pdsaAnswers[currentPDSAQuestionIndex];
+            
+            let feedbackHTML = '';
+            
+            if (question.type === 'mcq-single' || question.type === 'mcq-multiple') {
+                feedbackHTML = `
+                    <div class="msg-sender">You</div>
+                    <div class="msg-content">
+                        <div class="question-complete">
+                            Selected: Option ${String.fromCharCode(65 + answer)}
+                        </div>
+                    </div>
+                    <div class="msg-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                `;
+            } else {
+                feedbackHTML = `
+                    <div class="msg-sender">You</div>
+                    <div class="msg-content">
+                        <div class="question-complete">
+                            Answer submitted successfully!
+                        </div>
+                    </div>
+                    <div class="msg-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                `;
+            }
+            
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.className = 'chat-message msg-user';
+            feedbackDiv.innerHTML = feedbackHTML;
+            chatMessages.appendChild(feedbackDiv);
+            
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Move to next PDSA question
+        function nextPDSAQuestion() {
+            const pdsaQuestions = currentInterviewData?.pdsaQuestions?.questions || [];
+            
+            if (currentPDSAQuestionIndex < pdsaQuestions.length - 1) {
+                currentPDSAQuestionIndex++;
+                loadCurrentPDSAQuestion();
+                
+                // Reset button states
+                nextBtn.style.display = 'none';
+                sendBtn.style.display = 'inline-flex';
+                chatInput.style.display = 'block';
+            } else {
+                // All PDSA questions completed
+                addChatMessage("All PDSA questions completed! You can now focus on coding questions.", 'interviewer');
+                document.getElementById('pdsaProgress').innerHTML = '<i class="fas fa-check-circle"></i> All PDSA Questions Completed';
+                nextBtn.style.display = 'none';
+                sendBtn.style.display = 'none';
+                chatInput.style.display = 'none';
+            }
+            
+            updateProgressDisplays();
+        }
+        
+        // Load coding question
+        function loadCodingQuestion(index) {
+            const codingQuestions = currentInterviewData?.codingQuestions?.questions || [];
+            
+            if (!codingQuestions || codingQuestions.length === 0) {
+                showError('No coding questions available');
+                return;
+            }
+            
+            if (index >= codingQuestions.length) {
+                index = 0;
+            }
+            
+            currentCodingQuestionIndex = index;
+            const question = codingQuestions[index];
+            
+            // Show loading
+            problemContent.style.display = 'none';
+            problemLoading.style.display = 'flex';
+            
+            // Update problem content
+            setTimeout(() => {
+                // Update title and metadata
+                document.getElementById('problemTitle').textContent = `${question.questionId || ''} ${question.title}`;
+                document.getElementById('problemDifficulty').textContent = question.difficulty || 'Medium';
+                document.getElementById('problemScore').textContent = `${question.maxScore || 10} points`;
+                document.getElementById('codingProgress').textContent = `Coding Question ${currentCodingQuestionIndex + 1} of ${codingQuestions.length}`;
+                
+                // Update problem description
+                const descriptionHTML = `
+                    ${question.description ? `<p>${question.description}</p>` : ''}
+                    ${question.prompt ? `<p><strong>Prompt:</strong> ${question.prompt}</p>` : ''}
+                    
+                    ${question.functionName ? `
+                        <div class="example-box">
+                            <h4><i class="fas fa-code"></i> Function Signature</h4>
+                            <div class="example-content">
+                                <p><code>${generateFunctionSignature(question)}</code></p>
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    ${question.testCases && question.testCases.length > 0 ? `
+                        <div class="example-box">
+                            <h4><i class="fas fa-list-ol"></i> Examples</h4>
+                            ${question.testCases.map((testCase, i) => `
+                                <div class="example-content">
+                                    <p><strong>Example ${i + 1}:</strong></p>
+                                    <p><strong>Input:</strong> <code>${JSON.stringify(testCase.input)}</code></p>
+                                    <p><strong>Expected Output:</strong> <code>${JSON.stringify(testCase.expected)}</code></p>
+                                    ${testCase.description ? `<p><em>${testCase.description}</em></p>` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                    
+                    <div class="constraints-box">
+                        <h4><i class="fas fa-exclamation-circle"></i> Constraints</h4>
+                        <ul>
+                            <li><code>Time Limit: ${question.timeLimit || 600} seconds</code></li>
+                            <li><code>Memory Limit: 256 MB</code></li>
+                        </ul>
+                    </div>
+                    
+                    ${question.starterCode ? `
+                        <div class="follow-up-box">
+                            <h4><i class="fas fa-code"></i> Starter Code</h4>
+                            <pre><code>${question.starterCode}</code></pre>
+                        </div>
+                    ` : ''}
+                `;
+                
+                document.getElementById('problemDescription').innerHTML = descriptionHTML;
+                
+                // Update code editor with starter code
+                if (question.starterCode) {
+                    codeEditor.textContent = question.starterCode;
+                } else {
+                    // Generate default starter code
+                    const defaultCode = generateDefaultStarterCode(question);
+                    codeEditor.textContent = defaultCode;
+                }
+                updateLineNumbers();
+                
+                // Update test cases
+                loadTestCases(question);
+                
+                // Hide loading, show content
+                problemLoading.style.display = 'none';
+                problemContent.style.display = 'block';
+                
+                // Update navigation
+                updateNavigation();
+                
+                // Update progress
+                updateProgressDisplays();
+                
+            }, 500);
+        }
+        
+        // Generate function signature
+        function generateFunctionSignature(question) {
+            if (question.functionName) {
+                return `def ${question.functionName}(...):`;
+            }
+            return 'def solution(...):';
+        }
+        
+        // Generate default starter code
+        function generateDefaultStarterCode(question) {
+            const language = document.getElementById('languageSelect').value;
+            
+            if (language === 'python') {
+                return `def ${question.functionName || 'solution'}(...):
+    # Implement your solution here
+    pass
+
+# Test cases
+if __name__ == "__main__":
+    # Add your test cases here
+    print(${question.functionName || 'solution'}(...))`;
+            } else if (language === 'javascript') {
+                return `function ${question.functionName || 'solution'}(...) {
+    // Implement your solution here
+    
+}
+
+// Test cases
+console.log(${question.functionName || 'solution'}(...));`;
+            } else if (language === 'java') {
+                return `class Solution {
+    public ... ${question.functionName || 'solution'}(...) {
+        // Implement your solution here
+        
+    }
+}`;
+            } else { // cpp
+                return `class Solution {
+public:
+    ... ${question.functionName || 'solution'}(...) {
+        // Implement your solution here
+        
+    }
+};`;
+            }
+        }
+        
+        // Load test cases
+        function loadTestCases(question) {
+            testCasesContainer.innerHTML = '';
+            
+            if (!question.testCases || question.testCases.length === 0) {
+                testCasesContainer.innerHTML = '<div class="error-message">No test cases available</div>';
+                return;
+            }
+            
+            question.testCases.forEach((testCase, index) => {
+                const testDiv = document.createElement('div');
+                testDiv.className = 'test-case';
+                testDiv.innerHTML = `
+                    <div class="test-header">
+                        <span class="test-name">Test Case ${index + 1}</span>
+                        <span class="test-status pending">Pending</span>
+                    </div>
+                    <div class="test-content">
+                        <p><strong>Input:</strong> <code>${JSON.stringify(testCase.input)}</code></p>
+                        <p><strong>Expected Output:</strong> <code>${JSON.stringify(testCase.expected)}</code></p>
+                        ${testCase.description ? `<p><em>${testCase.description}</em></p>` : ''}
+                    </div>
+                `;
+                testCasesContainer.appendChild(testDiv);
+            });
+            
+            // Add custom test case
+            const customTestDiv = document.createElement('div');
+            customTestDiv.className = 'test-case';
+            customTestDiv.innerHTML = `
+                <div class="test-header">
+                    <span class="test-name">Custom Test Case</span>
+                    <span class="test-status pending">Add your own</span>
+                </div>
+                <div class="test-content">
+                    <div class="custom-test-input">
+                        <label>Input:</label>
+                        <input type="text" id="customTestInput" placeholder="e.g., [1,2,3]">
+                    </div>
+                    <div class="custom-test-expected">
+                        <label>Expected Output:</label>
+                        <input type="text" id="customTestOutput" placeholder="e.g., 6">
+                    </div>
+                    <button class="btn btn-run-custom" onclick="runCustomTest()">Run This Test</button>
+                </div>
+            `;
+            testCasesContainer.appendChild(customTestDiv);
+        }
+        
+        // Initialize navigation
+        function initializeNavigation() {
+            if (!currentInterviewData) return;
+            
+            const codingQuestions = currentInterviewData.codingQuestions?.questions || [];
+            
+            // Update question progress
+            questionProgress.innerHTML = '';
+            
+            codingQuestions.forEach((question, index) => {
+                const stepDiv = document.createElement('div');
+                stepDiv.className = `question-step ${index === 0 ? 'active' : ''}`;
+                stepDiv.innerHTML = `
+                    <div class="step-circle">${index + 1}</div>
+                    <div class="step-label">Coding ${index + 1}</div>
+                `;
+                stepDiv.addEventListener('click', () => loadCodingQuestion(index));
+                questionProgress.appendChild(stepDiv);
+                
+                if (index < codingQuestions.length - 1) {
+                    const lineDiv = document.createElement('div');
+                    lineDiv.className = 'progress-line';
+                    questionProgress.appendChild(lineDiv);
+                }
+            });
+        }
+        
+        // Update navigation
+        function updateNavigation() {
+            // Update active question in progress
+            document.querySelectorAll('.question-step').forEach((step, index) => {
+                step.classList.toggle('active', index === currentCodingQuestionIndex);
+            });
+            
+            // Update navigation buttons
+            const prevBtn = document.querySelector('.btn-prev');
+            const nextBtnNav = document.querySelector('.btn-next');
+            const codingQuestions = currentInterviewData?.codingQuestions?.questions || [];
+            
+            prevBtn.disabled = currentCodingQuestionIndex === 0;
+            
+            if (currentCodingQuestionIndex === codingQuestions.length - 1) {
+                nextBtnNav.textContent = 'Submit Interview';
+                nextBtnNav.innerHTML = 'Submit Interview <i class="fas fa-flag-checkered"></i>';
+            } else {
+                nextBtnNav.textContent = 'Next Coding Question';
+                nextBtnNav.innerHTML = 'Next Coding Question <i class="fas fa-arrow-right"></i>';
+            }
+        }
+        
+        // Timer functions
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                elapsedTime++;
+                updateTimerDisplay();
+                
+                // End interview when time is up
+                if (elapsedTime >= totalTime) {
+                    endInterview();
+                }
+            }, 1000);
+        }
+        
+        function updateTimerDisplay() {
+            const remainingTime = totalTime - elapsedTime;
+            const minutes = Math.floor(remainingTime / 60);
+            const seconds = remainingTime % 60;
+            
+            const timeStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            document.getElementById('timerDisplay').textContent = timeStr;
+            document.getElementById('timerDisplayHeader').textContent = timeStr;
+            
+            const progressPercent = (elapsedTime / totalTime) * 100;
+            document.getElementById('progressFill').style.width = `${progressPercent}%`;
+            
+            // Change progress bar color based on time
+            if (progressPercent > 80) {
+                document.getElementById('progressFill').style.background = 'linear-gradient(90deg, #ff5252, #ff1744)';
+            } else if (progressPercent > 60) {
+                document.getElementById('progressFill').style.background = 'linear-gradient(90deg, #ff9800, #ff5722)';
+            }
+        }
+        
+        // Update progress displays
+        function updateProgressDisplays() {
+            const pdsaQuestions = currentInterviewData?.pdsaQuestions?.questions || [];
+            const codingQuestions = currentInterviewData?.codingQuestions?.questions || [];
+            
+            // Calculate PDSA progress
+            const answeredPDSA = pdsaAnswers.filter(a => a !== null).length;
+            const pdsaPercent = pdsaQuestions.length > 0 ? Math.round((answeredPDSA / pdsaQuestions.length) * 100) : 0;
+            document.getElementById('pdsaTime').textContent = `${answeredPDSA}/${pdsaQuestions.length} answered`;
+            document.getElementById('pdsaProgressText').textContent = `${pdsaPercent}%`;
+            
+            // Calculate coding progress
+            const completedCoding = codingSubmissions.filter(s => s !== null).length;
+            const codingPercent = codingQuestions.length > 0 ? Math.round((completedCoding / codingQuestions.length) * 100) : 0;
+            document.getElementById('codingTime').textContent = `${completedCoding}/${codingQuestions.length} completed`;
+            document.getElementById('codingProgressText').textContent = `${codingPercent}%`;
+        }
+        
+        // Code execution functions
+        function runCode() {
+            const code = codeEditor.textContent;
+            const language = document.getElementById('languageSelect').value;
+            
+            // Clear previous output
+            outputConsole.innerHTML = '';
+            
+            // Show loading
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'output-loading';
+            loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running code...';
+            outputConsole.appendChild(loadingDiv);
+            
+            // Simulate execution
+            setTimeout(() => {
+                outputConsole.innerHTML = '';
+                
+                const codingQuestions = currentInterviewData?.codingQuestions?.questions || [];
+                const question = codingQuestions[currentCodingQuestionIndex];
+                const testCases = question?.testCases || [];
+                
+                if (testCases.length > 0) {
+                    testCases.forEach((testCase, index) => {
+                        const passed = Math.random() > 0.3; // 70% chance of passing
+                        const testDiv = document.createElement('div');
+                        testDiv.className = `test-result ${passed ? 'passed' : 'failed'}`;
+                        
+                        const icon = passed ? '✓' : '✗';
+                        testDiv.innerHTML = `
+                            Test ${index + 1}: ${passed ? 'Passed' : 'Failed'}
+                            <span class="test-status-indicator">${icon}</span>
+                        `;
+                        
+                        outputConsole.appendChild(testDiv);
+                    });
+                    
+                    // Update test case status
+                    updateTestStatus(testCases);
+                }
+                
+                // Add execution summary
+                const summaryDiv = document.createElement('div');
+                summaryDiv.className = 'execution-summary';
+                summaryDiv.textContent = `\nExecution time: 15ms | Memory: 14.2MB`;
+                outputConsole.appendChild(summaryDiv);
+                
+            }, 800);
+        }
+        
+        // Submit coding question
+        function submitCodingQuestion() {
+            const code = codeEditor.textContent;
+            
+            // Store submission
+            codingSubmissions[currentCodingQuestionIndex] = {
+                code: code,
+                timestamp: new Date(),
+                passedTests: Math.floor(Math.random() * 10) + 1 // Simulate random test results
+            };
+            
+            // Show success message
+            addChatMessage(`Submitted solution for coding question ${currentCodingQuestionIndex + 1}`, 'user');
+            
+            // Update progress
+            updateProgressDisplays();
+            
+            // Check if all coding questions are done
+            const codingQuestions = currentInterviewData?.codingQuestions?.questions || [];
+            const completed = codingSubmissions.filter(s => s !== null).length;
+            
+            if (completed === codingQuestions.length) {
+                addChatMessage("All coding questions completed! Great job!", 'interviewer');
+            }
+            
+            alert('Solution submitted successfully!');
+        }
+        
+        function resetCode() {
+            const codingQuestions = currentInterviewData?.codingQuestions?.questions || [];
+            const question = codingQuestions[currentCodingQuestionIndex];
+            
+            if (question && question.starterCode) {
+                codeEditor.textContent = question.starterCode;
+            } else {
+                codeEditor.textContent = generateDefaultStarterCode(question);
+            }
+            updateLineNumbers();
+        }
+        
+        function clearOutput() {
+            outputConsole.innerHTML = '<div class="output-placeholder">Click "Run Code" to see output here...</div>';
+        }
+        
+        function runCustomTest() {
+            const input = document.getElementById('customTestInput').value;
+            const expected = document.getElementById('customTestOutput').value;
+            
+            if (!input || !expected) {
+                alert('Please enter both input and expected output');
+                return;
+            }
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'test-result';
+            resultDiv.innerHTML = `
+                Custom Test: Input ${input} → Expected ${expected} 
+                <span class="test-status-indicator">⚡</span>
+            `;
+            outputConsole.appendChild(resultDiv);
+            
+            showNotification("Custom test executed (simulated)");
+        }
+        
+        function updateTestStatus(testCases) {
+            const testStatusElements = document.querySelectorAll('.test-status');
+            testStatusElements.forEach((statusEl, index) => {
+                if (index < testCases.length) {
+                    const passed = Math.random() > 0.3; // Simulate test results
+                    statusEl.textContent = passed ? 'Passed' : 'Failed';
+                    statusEl.className = `test-status ${passed ? 'passed' : 'failed'}`;
+                }
+            });
+        }
+        
+        // Tab switching
+        function switchTab(tabName) {
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Add active class to clicked tab
+            document.querySelector(`.tab-btn[data-tab="${tabName}"]`).classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+        
+        // Line numbers for editor
+        function updateLineNumbers() {
+            const lines = codeEditor.textContent.split('\n').length;
+            let lineNumbersHTML = '';
+            for (let i = 1; i <= lines; i++) {
+                lineNumbersHTML += `<span>${i}</span>`;
+            }
+            document.getElementById('lineNumbers').innerHTML = lineNumbersHTML;
+        }
+        
+        // Navigation functions
+        function prevCodingQuestion() {
+            if (currentCodingQuestionIndex > 0) {
+                loadCodingQuestion(currentCodingQuestionIndex - 1);
+            }
+        }
+        
+        function nextCodingQuestion() {
+            const codingQuestions = currentInterviewData?.codingQuestions?.questions || [];
+            
+            if (currentCodingQuestionIndex < codingQuestions.length - 1) {
+                loadCodingQuestion(currentCodingQuestionIndex + 1);
+            } else {
+                // Submit the interview
+                endInterview();
+            }
+        }
+        
+        // Add chat message
+        function addChatMessage(content, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message msg-${sender}`;
+            
+            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            messageDiv.innerHTML = `
+                <div class="msg-sender">${sender === 'user' ? 'You' : 'Interviewer'}</div>
+                <div class="msg-content">${content}</div>
+                <div class="msg-time">${time}</div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Hint functions
+        function revealHint(hintNumber) {
+            const hints = {
+                1: "Think about edge cases: empty array, single element, all negative numbers.",
+                2: "Consider time and space complexity constraints.",
+                3: "Try to solve it with O(n) time complexity first."
+            };
+            
+            const hintItem = document.querySelector(`.hint-item[data-hint="${hintNumber}"]`);
+            const hintContentEl = hintItem.querySelector('.hint-content');
+            
+            hintContentEl.textContent = hints[hintNumber] || 'Hint content';
+            hintContentEl.style.animation = 'fadeIn 0.5s';
+            
+            const hintStatus = hintItem.querySelector('.hint-status');
+            hintStatus.textContent = 'Revealed';
+            hintStatus.className = 'hint-status revealed';
+        }
+        
+        // Modal functions
+        function endInterview() {
+            clearInterval(timerInterval);
+            
+            // Calculate scores
+            const pdsaQuestions = currentInterviewData?.pdsaQuestions?.questions || [];
+            const codingQuestions = currentInterviewData?.codingQuestions?.questions || [];
+            
+            const answeredPDSA = pdsaAnswers.filter(a => a !== null).length;
+            const completedCoding = codingSubmissions.filter(s => s !== null).length;
+            
+            const pdsaScore = pdsaQuestions.length > 0 ? Math.round((answeredPDSA / pdsaQuestions.length) * 100) : 0;
+            const codingScore = codingQuestions.length > 0 ? Math.round((completedCoding / codingQuestions.length) * 100) : 0;
+            const timeScore = Math.round((elapsedTime / totalTime) * 100);
+            
+            const overall = Math.round((pdsaScore + codingScore * 2 + timeScore) / 4); // Weighted average
+            
+            // Update modal scores
+            document.getElementById('overallScore').textContent = `${overall}/100`;
+            document.getElementById('pdsaScore').textContent = `${pdsaScore}%`;
+            document.getElementById('codingScore').textContent = `${codingScore}%`;
+            document.getElementById('communicationScore').textContent = `${Math.floor(Math.random() * 20) + 70}%`;
+            document.getElementById('timeManagementScore').textContent = `${100 - timeScore}%`;
+            
+            // Update practice links
+            const practiceLinks = document.getElementById('practiceLinks');
+            if (currentInterviewData) {
+                practiceLinks.innerHTML = `
+                    <a href="#" class="practice-link" onclick="practiceTopic('${currentInterviewData.topic}')">
+                        <i class="fas fa-book"></i> More ${currentInterviewData.topic} problems
+                    </a>
+                    <a href="#" class="practice-link" onclick="practiceType('${currentInterviewData.type}')">
+                        <i class="fas fa-microphone"></i> More ${currentInterviewData.type} questions
+                    </a>
+                `;
+            }
+            
+            // Show modal
+            document.getElementById('completionModal').style.display = 'flex';
+        }
+        
+        function closeModal() {
+            document.getElementById('completionModal').style.display = 'none';
+        }
+        
+        function reviewSession() {
+            alert('Review feature would show detailed analytics in a real application.');
+        }
+        
+        function practiceMore() {
+            const topic = currentInterviewData?.topic || 'algorithms';
+            window.location.href = `/practice?topic=${encodeURIComponent(topic)}`;
+        }
+        
+        function nextInterview() {
+            window.location.reload();
+        }
+        
+        function practiceTopic(topic) {
+            alert(`Redirecting to ${topic} practice problems...`);
+        }
+        
+        function practiceType(type) {
+            alert(`Redirecting to more ${type} questions...`);
+        }
+        
+        function addCustomTest() {
+            alert('Custom test functionality would be implemented here.');
+        }
+        
+        // Utility functions
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+            document.querySelector('.interview-container').prepend(errorDiv);
+        }
+        
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #4caf50;
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                z-index: 1000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                animation: slideIn 0.3s;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeInterview();
+            updateLineNumbers();
+            
+            // Add CSS animations
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes slideOut {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(100%); opacity: 0; }
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                .test-result {
+                    padding: 8px 0;
+                    font-family: 'Consolas', monospace;
+                    border-bottom: 1px solid #333;
+                }
+                .test-result.passed {
+                    color: #4caf50;
+                }
+                .test-result.failed {
+                    color: #f44336;
+                }
+                .test-status-indicator {
+                    float: right;
+                    font-weight: bold;
+                }
+                .execution-summary {
+                    margin-top: 10px;
+                    color: #858585;
+                    font-style: italic;
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
+</body>
+</html>

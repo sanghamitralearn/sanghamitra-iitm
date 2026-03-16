@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exponential Functions Quiz</title>
+
+    <!-- MathJax for LaTeX rendering -->
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .header p { font-size: 1.1rem; opacity: 0.9; }
+
+        /* Anti-cheating CSS */
+        * {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            -webkit-print-color-adjust: exact;
+            pointer-events: auto;
+        }
+
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+
+        body.blurred {
+            filter: blur(5px);
+            pointer-events: none;
+        }
+
+        .warning-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(220, 53, 69, 0.95);
+            color: white;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            font-size: 2rem;
+            text-align: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .progress-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .question-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .btn-nav {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-nav:hover:not(:disabled) {
+            background: #545b62;
+            transform: translateY(-1px);
+        }
+
+        .btn-nav:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-next:hover:not(:disabled) {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+        }
+
+        .question-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .status-answered {
+            background: #28a745;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .status-unanswered {
+            background: #dc3545;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .quiz-container { padding: 30px; display: none; }
+
+        .question-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #667eea;
+        }
+
+        .question-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .question-number {
+            background: #667eea;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 15px;
+        }
+
+        .question-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #333;
+            margin-bottom: 20px;
+            white-space: pre-line;
+        }
+
+        .options { display: flex; flex-direction: column; gap: 12px; }
+
+        .option {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .option input {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .option label {
+            cursor: pointer;
+            flex: 1;
+            font-size: 1rem;
+            line-height: 1.4;
+        }
+
+        .option:hover { border-color: #667eea; background: #f0f8ff; }
+        .option.selected { border-color: #667eea; background: #e3f2fd; }
+
+        .numeric-input {
+            width: 100%;
+            max-width: 400px;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            transition: border-color 0.2s ease;
+        }
+
+        .numeric-input:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .results-container {
+            display: none;
+            padding: 30px;
+            text-align: center;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .score-display {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .score-display h2 { font-size: 2.5rem; margin-bottom: 10px; }
+        .hidden { display: none; }
+
+        .difficulty-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+            text-transform: uppercase;
+        }
+
+        .difficulty-easy { background: #d4edda; color: #155724; }
+        .difficulty-medium { background: #fff3cd; color: #856404; }
+        .difficulty-hard { background: #f8d7da; color: #721c24; }
+
+        /* Information Bubble Styles */
+        .info-bubble {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            width: 350px;
+            max-width: 90vw;
+            z-index: 10001;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            display: none;
+        }
+
+        .info-bubble.expanded {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        .info-bubble.collapsed {
+            display: none;
+        }
+
+        .info-bubble h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-bubble h3 .info-icon { font-size: 1.5em; }
+
+        .info-content {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .info-content ul { padding-left: 20px; margin-bottom: 15px; }
+        .info-content li { margin-bottom: 8px; line-height: 1.4; }
+        .info-content code {
+            background: rgba(255,255,255,0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .info-content .math-example {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+
+        .info-bubble-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        .info-bubble-close:hover { background: rgba(255,255,255,0.2); }
+
+        .help-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        .help-button:hover { transform: scale(1.1); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+        .help-button .help-icon { font-size: 24px; font-weight: bold; }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to   { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Answer Preview Box */
+        .answer-preview {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+        }
+        .answer-preview.visible { display: block; animation: fadeIn 0.3s ease; }
+        .answer-preview h4 {
+            margin-top: 0; margin-bottom: 10px; color: #333;
+            font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .answer-preview-content { display: flex; flex-direction: column; gap: 10px; }
+        .preview-row { display: flex; align-items: center; gap: 10px; }
+        .preview-label { font-weight: 600; color: #666; min-width: 120px; font-size: 14px; }
+        .preview-value {
+            flex: 1; padding: 8px 12px; background: white; border-radius: 4px;
+            border: 1px solid #dee2e6; font-family: 'Courier New', monospace; min-height: 40px;
+            display: flex; align-items: center;
+        }
+        .preview-value.math { font-family: inherit; font-size: 16px; color: #2c3e50; }
+        .preview-hint { font-size: 12px; color: #6c757d; font-style: italic; margin-top: 5px; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .input-warning { color: #dc3545; font-size: 12px; margin-top: 5px; display: none; }
+        .input-warning.visible { display: block; }
+
+        /* Calculator Styles */
+        .calculator-btn {
+            position: fixed; bottom: 20px; right: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 12px 20px; border-radius: 50px;
+            display: none; align-items: center; gap: 10px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 9999;
+            transition: all 0.3s ease; border: none; font-weight: 600;
+        }
+        .calculator-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+
+        .calculator-modal {
+            position: fixed; width: 590px; background: white; border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 10000; display: none;
+            flex-direction: column; overflow: hidden; border: 1px solid #e0e0e0; cursor: move;
+            user-select: none;
+        }
+
+        .calculator-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 15px 20px; display: flex; justify-content: space-between;
+            align-items: center; cursor: move;
+        }
+        .calculator-header h3 { margin: 0; font-size: 1.1rem; }
+        .calculator-header .help-btn {
+            background: #4fc3f7; color: white; border: none; padding: 6px 15px;
+            border-radius: 5px; cursor: pointer; font-weight: 600; margin-left: auto; margin-right: 10px;
+        }
+        .calculator-header .minimize-btn {
+            background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0 8px;
+        }
+        .calculator-header .calculator-close {
+            background: none; border: none; color: white; font-size: 24px; cursor: pointer;
+            line-height: 1; width: 30px; height: 30px; display: flex; align-items: center;
+            justify-content: center; border-radius: 50%; transition: background 0.2s;
+        }
+        .calculator-header .calculator-close:hover { background: rgba(255,255,255,0.2); }
+
+        .mode-selector {
+            padding: 10px 15px; background: #f0f0f0; border-bottom: 1px solid #e0e0e0;
+            display: flex; gap: 15px; align-items: center;
+        }
+
+        .calculator-display {
+            padding: 15px; background: #f8f9fa; border-bottom: 1px solid #e0e0e0;
+        }
+        #calcDisplay {
+            width: 100%; padding: 12px; font-size: 1.5rem; text-align: right;
+            border: 2px solid #e0e0e0; border-radius: 8px; background: white;
+            font-family: 'Courier New', monospace; margin-bottom: 5px;
+        }
+        #resultDisplay {
+            width: 100%; padding: 8px 12px; font-size: 1.8rem; text-align: right;
+            border: none; background: transparent; font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+
+        .calculator-buttons { padding: 15px; display: flex; flex-direction: column; gap: 8px; background: #f8f9fa; }
+        .calc-row { display: flex; gap: 8px; }
+        .calc-btn {
+            flex: 1; padding: 12px 0; font-size: 1.1rem; border: none; border-radius: 6px;
+            cursor: pointer; background: white; border: 1px solid #e0e0e0; transition: all 0.2s;
+            font-weight: 500;
+        }
+        .calc-btn:hover { background: #f0f0f0; transform: translateY(-1px); }
+        .calc-btn.func { background: #e3e8ff; color: #667eea; font-weight: 600; }
+        .calc-btn.sci { font-size: 0.9rem; padding: 10px 0; background: #f0f0f0; }
+        .calc-btn.operator { background: #ff6b6b; color: white; font-weight: 600; }
+        .calc-btn.equals { background: #51cf66; color: white; font-weight: 600; }
+        .calc-btn.memory { background: #e3e8ff; color: #667eea; font-size: 0.85rem; }
+
+        @media (max-width: 768px) {
+            .results-container { padding: 15px; }
+            .score-display { padding: 20px; }
+            .score-display h2 { font-size: 2rem; }
+            .info-bubble { width: 300px; padding: 15px; }
+            .help-button { width: 40px; height: 40px; }
+            .help-button .help-icon { font-size: 20px; }
+            .numeric-input { width: 100%; }
+            .calculator-modal { width: 100%; left: 0 !important; right: 0 !important; top: auto !important; bottom: 0; border-radius: 15px 15px 0 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Exponential Functions Quiz</h1>
+            <p>Test your knowledge of exponential functions – 50 never‑seen questions</p>
+        </div>
+
+        <!-- Quiz Container -->
+        <div id="quizContainer" class="quiz-container" style="display: none;">
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+
+            <div id="questionContainer"></div>
+
+            <div class="question-navigation">
+                <button class="btn-nav" id="prevBtn" onclick="previousQuestion()" disabled>Previous</button>
+                <div class="question-status">
+                    <span id="questionStatus">Question 1 of 50</span>
+                    <span id="answeredStatus" class="status-unanswered">Unanswered</span>
+                </div>
+                <button class="btn-nav btn-next" id="nextBtn" onclick="nextQuestion()">Next</button>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 2px solid #667eea;">
+                <button class="btn" onclick="submitQuiz()" id="submitBtn">
+                    <span id="submitText">Submit Exponential Functions Quiz</span>
+                    <span id="submitLoading" class="loading" style="display: none;"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading Screen -->
+        <div id="loadingScreen" class="quiz-container" style="text-align: center; padding: 60px;">
+            <div class="loading" style="width: 40px; height: 40px; margin: 0 auto 20px;"></div>
+            <h3>Loading Exponential Functions Quiz...</h3>
+            <p>Verifying your session and preparing fresh questions</p>
+        </div>
+
+        <!-- Results -->
+        <div id="resultsContainer" class="results-container">
+            <div class="score-display">
+                <h2 id="finalScore">0/50</h2>
+                <p>Quiz Completed Successfully!</p>
+            </div>
+            <button class="btn" onclick="goback()">Home Page</button>
+        </div>
+    </div>
+
+    <!-- Information Bubble -->
+    <div id="infoBubble" class="info-bubble">
+        <button class="info-bubble-close" onclick="hideInfoBubble()">×</button>
+        <h3><span class="info-icon">ℹ️</span> Exponential Functions Formatting Guide</h3>
+        <div class="info-content">
+            <p><strong>How to format your answers:</strong></p>
+            <ul>
+                <li><strong>Exponential:</strong> <code>e^(2x)</code> = e^{2x}, <code>2^(x+1)</code>, <code>exp(x)</code></li>
+                <li><strong>Logarithms:</strong> <code>ln(x)</code>, <code>log_2(8)</code>, <code>log(x)</code></li>
+                <li><strong>Infinity:</strong> <code>inf</code> → ∞, <code>-inf</code> → -∞</li>
+                <li><strong>Fractions:</strong> <code>1/2</code> = ½, <code>(x+1)/(x-1)</code></li>
+                <li><strong>Multiple answers:</strong> separate with commas</li>
+            </ul>
+            <p><strong>Examples:</strong></p>
+            <div class="math-example"><code>e^(2x)</code> → e²ˣ</div>
+            <div class="math-example"><code>log_2(8)</code> → log₂(8)</div>
+            <div class="math-example"><code>domain: (-inf, inf)</code> → (-∞, ∞)</div>
+        </div>
+    </div>
+
+    <!-- Help Button -->
+    <div id="helpButton" class="help-button" onclick="showInfoBubble()">
+        <span class="help-icon">?</span>
+    </div>
+
+    <!-- Calculator Button -->
+    <div id="calculatorBtn" class="calculator-btn" onclick="toggleCalculator()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect>
+            <line x1="8" y1="6" x2="16" y2="6"></line>
+            <line x1="8" y1="10" x2="16" y2="10"></line>
+        </svg>
+        <span>Calculator</span>
+    </div>
+
+    <!-- Calculator Modal -->
+    <div id="calculatorModal" class="calculator-modal">
+        <div class="calculator-header">
+            <h3>Scientific Calculator</h3>
+            <button class="help-btn">Help</button>
+            <button class="minimize-btn">―</button>
+            <button class="calculator-close" onclick="toggleCalculator()">×</button>
+        </div>
+        <div class="mode-selector">
+            <label>mod</label>
+            <input type="radio" name="angleMode" value="Deg" id="degMode" checked>
+            <label for="degMode">Deg</label>
+            <input type="radio" name="angleMode" value="Rad" id="radMode">
+            <label for="radMode">Rad</label>
+        </div>
+        <div class="calculator-display">
+            <input type="text" id="calcDisplay" readonly>
+            <input type="text" id="resultDisplay" readonly value="0">
+        </div>
+        <div class="calculator-buttons">
+            <!-- Row 1 -->
+            <div class="calc-row">
+                <button class="calc-btn sci" onclick="calcFunction('sinh')">sinh</button>
+                <button class="calc-btn sci" onclick="calcFunction('cosh')">cosh</button>
+                <button class="calc-btn sci" onclick="calcFunction('tanh')">tanh</button>
+                <button class="calc-btn sci" onclick="calcFunction('Exp')">Exp</button>
+                <button class="calc-btn" onclick="addToDisplay('(')">(</button>
+                <button class="calc-btn" onclick="addToDisplay(')')">)</button>
+                <button class="calc-btn operator" onclick="backspace()">⌫</button>
+                <button class="calc-btn operator" onclick="clearCalculator()">C</button>
+                <button class="calc-btn operator" onclick="addToDisplay('+/-')">+/-</button>
+                <button class="calc-btn sci" onclick="addToDisplay('Math.sqrt(')">√</button>
+            </div>
+            <!-- Row 2 -->
+            <div class="calc-row">
+                <button class="calc-btn sci" onclick="calcFunction('sinh⁻¹')">sinh⁻¹</button>
+                <button class="calc-btn sci" onclick="calcFunction('cosh⁻¹')">cosh⁻¹</button>
+                <button class="calc-btn sci" onclick="calcFunction('tanh⁻¹')">tanh⁻¹</button>
+                <button class="calc-btn sci" onclick="calcFunction('logₓ')">log_x</button>
+                <button class="calc-btn sci" onclick="calcFunction('ln')">ln</button>
+                <button class="calc-btn sci" onclick="calcFunction('log')">log</button>
+                <button class="calc-btn" onclick="addToDisplay('7')">7</button>
+                <button class="calc-btn" onclick="addToDisplay('8')">8</button>
+                <button class="calc-btn" onclick="addToDisplay('9')">9</button>
+                <button class="calc-btn operator" onclick="addToDisplay('/')">/</button>
+                <button class="calc-btn operator" onclick="addToDisplay('%')">%</button>
+            </div>
+            <!-- Row 3 -->
+            <div class="calc-row">
+                <button class="calc-btn sci" onclick="addToDisplay('Math.PI')">π</button>
+                <button class="calc-btn sci" onclick="addToDisplay('Math.E')">e</button>
+                <button class="calc-btn sci" onclick="calcFunction('n!')">n!</button>
+                <button class="calc-btn sci" onclick="calcFunction('logₓ')">log_x</button>
+                <button class="calc-btn sci" onclick="calcFunction('eˣ')">eˣ</button>
+                <button class="calc-btn sci" onclick="calcFunction('10ˣ')">10ˣ</button>
+                <button class="calc-btn" onclick="addToDisplay('4')">4</button>
+                <button class="calc-btn" onclick="addToDisplay('5')">5</button>
+                <button class="calc-btn" onclick="addToDisplay('6')">6</button>
+                <button class="calc-btn operator" onclick="addToDisplay('*')">*</button>
+                <button class="calc-btn operator" onclick="calcFunction('1/x')">1/x</button>
+            </div>
+            <!-- Row 4 -->
+            <div class="calc-row">
+                <button class="calc-btn sci" onclick="calcFunction('sin')">sin</button>
+                <button class="calc-btn sci" onclick="calcFunction('cos')">cos</button>
+                <button class="calc-btn sci" onclick="calcFunction('tan')">tan</button>
+                <button class="calc-btn sci" onclick="calcFunction('xʸ')">xʸ</button>
+                <button class="calc-btn sci" onclick="calcFunction('x³')">x³</button>
+                <button class="calc-btn sci" onclick="calcFunction('x²')">x²</button>
+                <button class="calc-btn" onclick="addToDisplay('1')">1</button>
+                <button class="calc-btn" onclick="addToDisplay('2')">2</button>
+                <button class="calc-btn" onclick="addToDisplay('3')">3</button>
+                <button class="calc-btn operator" onclick="addToDisplay('-')">-</button>
+            </div>
+            <!-- Row 5 -->
+            <div class="calc-row">
+                <button class="calc-btn sci" onclick="calcFunction('sin⁻¹')">sin⁻¹</button>
+                <button class="calc-btn sci" onclick="calcFunction('cos⁻¹')">cos⁻¹</button>
+                <button class="calc-btn sci" onclick="calcFunction('tan⁻¹')">tan⁻¹</button>
+                <button class="calc-btn sci" onclick="calcFunction('ⁿ√x')">ⁿ√x</button>
+                <button class="calc-btn sci" onclick="calcFunction('³√')">³√</button>
+                <button class="calc-btn sci" onclick="calcFunction('|x|')">|x|</button>
+                <button class="calc-btn" onclick="addToDisplay('0')">0</button>
+                <button class="calc-btn" onclick="addToDisplay('.')">.</button>
+                <button class="calc-btn equals" onclick="calculateResult()">=</button>
+                <button class="calc-btn operator" onclick="addToDisplay('+')">+</button>
+            </div>
+            <!-- Row 6 -->
+            <div class="calc-row">
+                <button class="calc-btn memory" onclick="memoryFunction('MC')">MC</button>
+                <button class="calc-btn memory" onclick="memoryFunction('MR')">MR</button>
+                <button class="calc-btn memory" onclick="memoryFunction('MS')">MS</button>
+                <button class="calc-btn memory" onclick="memoryFunction('M+')">M+</button>
+                <button class="calc-btn memory" onclick="memoryFunction('M-')">M-</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="warningOverlay" class="warning-overlay">
+        <div>
+            <h2>⚠️ CHEATING ATTEMPT DETECTED</h2>
+            <p>Please return to the quiz window</p>
+            <p>Your activity is being monitored</p>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // ENHANCED EXPONENTIAL ANSWER FORMATTING & NORMALIZATION (like Polynomial)
+        // ============================================
+
+        let infoBubbleShown = false;
+        let infoBubbleTimer = null;
+
+        function initializeInfoBubble() {
+            setTimeout(() => {
+                showInfoBubble();
+                infoBubbleShown = true;
+                infoBubbleTimer = setTimeout(() => hideInfoBubble(), 20000);
+            }, 1000);
+            window.addEventListener('resize', positionInfoBubble);
+        }
+
+        function showInfoBubble() {
+            const infoBubble = document.getElementById('infoBubble');
+            const helpButton = document.getElementById('helpButton');
+            infoBubble.classList.remove('collapsed');
+            infoBubble.classList.add('expanded');
+            helpButton.style.display = 'none';
+            positionInfoBubble();
+            if (window.MathJax) MathJax.typesetPromise([infoBubble]).catch(()=>{});
+        }
+
+        function hideInfoBubble() {
+            const infoBubble = document.getElementById('infoBubble');
+            const helpButton = document.getElementById('helpButton');
+            infoBubble.classList.remove('expanded');
+            infoBubble.classList.add('collapsed');
+            helpButton.style.display = 'flex';
+            if (infoBubbleTimer) clearTimeout(infoBubbleTimer);
+        }
+
+        function positionInfoBubble() {
+            const infoBubble = document.getElementById('infoBubble');
+            const helpButton = document.getElementById('helpButton');
+            if (infoBubble.classList.contains('expanded')) {
+                let top = 20, right = 20;
+                infoBubble.style.top = top + 'px';
+                infoBubble.style.right = right + 'px';
+            } else {
+                helpButton.style.top = '20px';
+                helpButton.style.right = '20px';
+            }
+        }
+
+        // ----- Answer formatting utilities -----
+        const answerFormatter = {
+            formatForDisplay: (text) => {
+                if (!text) return '';
+                let formatted = text.toString().replace(/\s+/g, ' ').trim();
+                // e^2 → e² etc.
+                formatted = formatted.replace(/e\^(\d+)/g, (m, num) => {
+                    const sup = {0:'⁰',1:'¹',2:'²',3:'³',4:'⁴',5:'⁵',6:'⁶',7:'⁷',8:'⁸',9:'⁹'};
+                    return 'e' + num.split('').map(d=>sup[d]||d).join('');
+                });
+                formatted = formatted.replace(/e\^\((\d+)([a-zA-Z])\)/g, (m, num, letter) => {
+                    const sup = {0:'⁰',1:'¹',2:'²',3:'³',4:'⁴',5:'⁵',6:'⁶',7:'⁷',8:'⁸',9:'⁹'};
+                    return 'e' + num.split('').map(d=>sup[d]||d).join('') + letter;
+                });
+                formatted = formatted.replace(/exp\(([^)]+)\)/g, 'e^{$1}');
+                formatted = formatted.replace(/\binf\b/gi, '∞');
+                formatted = formatted.replace(/-∞/g, '-∞');
+                formatted = formatted.replace(/sqrt\(([^)]+)\)/g, '√$1');
+                formatted = formatted.replace(/(\d+)\^(\d+)/g, (m,base,exp)=>{
+                    const sup = {0:'⁰',1:'¹',2:'²',3:'³',4:'⁴',5:'⁵',6:'⁶',7:'⁷',8:'⁸',9:'⁹'};
+                    return base + exp.split('').map(d=>sup[d]||d).join('');
+                });
+                // Fractions for display (no LaTeX, just slash)
+                formatted = formatted.replace(/(\d+)\/(\d+)/g, '$1/$2');
+                formatted = formatted.replace(/ln\(/g, 'ln(');
+                formatted = formatted.replace(/log_(\d+)\(/g, 'log$1(');
+                formatted = formatted.replace(/!=/g, '≠');
+                formatted = formatted.replace(/<=/g, '≤').replace(/>=/g, '≥');
+                return formatted;
+            },
+            formatForMathJax: (text) => {
+                if (!text) return '';
+                let latex = text.toString().replace(/\s+/g, ' ').trim();
+                // exponential: e^(anything) → e^{anything}
+                latex = latex.replace(/e\^\(([^)]+)\)/g, 'e^{$1}');
+                latex = latex.replace(/e\^([a-zA-Z0-9+\-*/]+)/g, 'e^{$1}');
+                latex = latex.replace(/exp\(([^)]+)\)/g, 'e^{$1}');
+                // general powers
+                latex = latex.replace(/(\d+|\([^)]+\))\^\(([^)]+)\)/g, '$1^{$2}');
+                latex = latex.replace(/(\d+|[a-zA-Z])\^(\d+|[a-zA-Z])/g, '$1^{$2}');
+                // infinity
+                latex = latex.replace(/\binf\b/gi, '\\infty');
+                // sqrt
+                latex = latex.replace(/sqrt\(([^)]+)\)/g, '\\sqrt{$1}');
+                // fractions
+                latex = latex.replace(/(\d+)\/(\d+)/g, '\\frac{$1}{$2}');
+                latex = latex.replace(/\(([^)]+)\)\s*\/\s*\(([^)]+)\)/g, '\\frac{$1}{$2}');
+                // logs
+                latex = latex.replace(/ln\(([^)]+)\)/g, '\\ln($1)');
+                latex = latex.replace(/log_(\d+)\(([^)]+)\)/g, '\\log_{$1}($2)');
+                latex = latex.replace(/log\(([^)]+)\)/g, '\\log($1)');
+                // inequalities
+                latex = latex.replace(/!=/g, '\\neq');
+                latex = latex.replace(/<=/g, '\\le').replace(/>=/g, '\\ge');
+                return `\\(${latex}\\)`;
+            },
+            storeAnswerExactly: (text) => {
+                if (!text) return '';
+                let stored = text.toString().trim();
+                stored = stored.replace(/sqrt\(([^)]+)\)/g, '√$1');
+                stored = stored.replace(/\binf\b/gi, '∞');
+                stored = stored.replace(/-∞/g, '-∞');
+                return stored;
+            },
+            formatForNormalization: (text) => {
+                if (!text) return '';
+                return text.toString()
+                    .replace(/\s+/g, '')
+                    .replace(/infinity|Infinity|INFINITY|∞/gi, 'inf')
+                    .replace(/√(\d+)/g, 'sqrt($1)')
+                    .replace(/√\(([^)]+)\)/g, 'sqrt($1)')
+                    .replace(/≠/g, '!=')
+                    .replace(/≤/g, '<=')
+                    .replace(/≥/g, '>=')
+                    .replace(/exp\(/gi, 'e^')
+                    .toLowerCase();
+            },
+            createAnswerPreview: (answer, questionType) => {
+                if (!answer) return null;
+                return {
+                    original: answer,
+                    display: answerFormatter.formatForDisplay(answer),
+                    latex: answerFormatter.formatForMathJax(answer)
+                };
+            },
+            roundDecimals: (num, decimals = 3) => {
+                if (typeof num === 'number') return parseFloat(num.toFixed(decimals));
+                const str = num.toString();
+                const nums = str.match(/-?\d+\.\d+/g);
+                if (nums) {
+                    let res = str;
+                    nums.forEach(n => res = res.replace(n, parseFloat(n).toFixed(decimals)));
+                    return res;
+                }
+                return num;
+            }
+        };
+
+        // ----- Answer normalization (critical for comparison) -----
+        const answerNormalizer = {
+            normalizeInterval: (ans) => {
+                return (ans || '').toString().trim()
+                    .replace(/\s+/g, '')
+                    .replace(/infinity|∞/gi, 'inf')
+                    .replace(/\+inf/gi, 'inf')
+                    .replace(/-\s*inf/gi, '-inf')
+                    .replace(/\[/g, '[').replace(/\]/g, ']')
+                    .replace(/\(/g, '(').replace(/\)/g, ')')
+                    .replace(/union|\∪/gi, '∪')
+                    .toLowerCase();
+            },
+            normalizeCoordinate: (coord) => {
+                return (coord || '').toString().trim()
+                    .replace(/\s+/g, '')
+                    .replace(/[()]/g, '')
+                    .toLowerCase();
+            },
+            normalizeNumeric: (num) => {
+                const str = (num || '').toString().trim().toLowerCase();
+                if (/^[-+]?inf(inity)?$|^[-+]?∞$/.test(str)) return str.includes('-') ? -Infinity : Infinity;
+                const cleaned = str.replace(/[^\d.-]/g, '');
+                return cleaned ? parseFloat(cleaned) : NaN;
+            },
+            normalizeAnswer: (answer, questionType) => {
+                if (!answer) return '';
+                const str = answerFormatter.formatForNormalization(answer);
+                if (questionType === 'interval_input') return answerNormalizer.normalizeInterval(str);
+                if (questionType === 'numeric' || questionType === 'numeric_input') {
+                    const n = answerNormalizer.normalizeNumeric(str);
+                    if (n === Infinity) return 'inf';
+                    if (n === -Infinity) return '-inf';
+                    if (!isNaN(n)) return n.toString();
+                    return str;
+                }
+                if (questionType === 'coordinate_input') return answerNormalizer.normalizeCoordinate(str);
+                // default
+                return str.toLowerCase();
+            }
+        };
+
+        // ============================================
+        // GLOBAL STATE
+        // ============================================
+        let userAnswers = {};
+        let currentUser = {};
+        let username = null;
+        let email = null;
+        let currentQuestionIndex = 0;
+        let quizStartTime = null;
+        let questionStartTime = null;
+        let questionTimes = {};
+        let questions = [];
+        let cheatingAttempts = 0;
+        let isQuizActive = false;
+        let devToolsWarned = false;
+
+        // ----- Anti-cheating (same as polynomial) -----
+        function initializeAntiCheating() {
+            document.addEventListener('contextmenu', (e) => { e.preventDefault(); recordCheatingAttempt('right_click'); return false; });
+            document.addEventListener('keydown', (e) => {
+                if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && e.keyCode === 73) ||
+                    (e.ctrlKey && e.keyCode === 85) || (e.ctrlKey && e.keyCode === 83) || e.keyCode === 44) {
+                    e.preventDefault(); recordCheatingAttempt('keyboard_shortcut'); return false;
+                }
+                if (e.ctrlKey && (e.keyCode === 65 || e.keyCode === 67 || e.keyCode === 86)) {
+                    e.preventDefault(); recordCheatingAttempt('copy_attempt'); return false;
+                }
+            });
+            document.ondragstart = () => false;
+            document.addEventListener('keyup', (e) => { if (e.keyCode === 44) recordCheatingAttempt('screenshot_attempt'); });
+            let devtools = { open: false };
+            setInterval(() => {
+                if (window.outerHeight - window.innerHeight > 160 || window.outerWidth - window.innerWidth > 160) {
+                    if (!devtools.open) { devtools.open = true; recordCheatingAttempt('developer_tools'); }
+                } else devtools.open = false;
+            }, 500);
+            window.addEventListener('focus', () => { document.body.classList.remove('blurred'); document.getElementById('warningOverlay').style.display = 'none'; });
+            document.onselectstart = () => { recordCheatingAttempt('text_selection'); return false; };
+        }
+
+        function recordCheatingAttempt(type) {
+            cheatingAttempts++;
+            console.warn(`🚨 Cheating #${cheatingAttempts}: ${type}`);
+            if (username && email) {
+                fetch('https://sanghamitra-learnworld.vercel.app/api/log-cheating', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({ username, email, cheatingType: type, timestamp: new Date(), currentQuestion: currentQuestionIndex+1 })
+                }).catch(()=>{});
+            }
+            if (cheatingAttempts >= 5) { alert('Too many suspicious activities. Auto-submitting.'); submitQuiz(); }
+        }
+
+        // ----- Session & question loading with FRONTEND FILTERING (never-seen) -----
+        async function fetchSessionInfo() {
+            try {
+                const resp = await fetch('https://sanghamitra-learnworld.vercel.app/api/session-info', { credentials: 'include' });
+                if (resp.ok) { const d = await resp.json(); username = d.username; email = d.email; console.log("User:", username, email); return true; }
+                else { alert('Please login'); window.location.href = '/login.html'; return false; }
+            } catch(e) { console.error(e); return false; }
+        }
+
+        async function getAnsweredQuestionIds() {
+            try {
+                const resp = await fetch(`https://sanghamitra-learnworld.vercel.app/api/iitmmath_scores?email=${encodeURIComponent(email)}&topic=exponential_function`, { credentials: 'include' });
+                if (!resp.ok) return [];
+                const scores = await resp.json();
+                const ids = new Set();
+                if (Array.isArray(scores)) scores.forEach(s => {
+                    if (s.quizData?.questionResults) s.quizData.questionResults.forEach(r => {
+                        if (r.questionId) ids.add(r.questionId.toString());
+                        if (r.questionNumber) ids.add(r.questionNumber.toString());
+                    });
+                });
+                return Array.from(ids);
+            } catch(e) { console.error(e); return []; }
+        }
+
+        function validateAndPrepareQuestions(qs) {
+            return qs.map((q, idx) => ({
+                ...q,
+                _id: q._id || `q-${idx}`,
+                question_number: q.question_number || idx+1,
+                question_text: q.question_text || 'Question text missing',
+                correct_answer: q.correct_answer ?? '',
+                explanation: q.explanation || '',
+                difficulty: q.difficulty || 'medium',
+                points: q.points || 1,
+                type: q.type || 'multiple_choice',
+                alternative_answers: q.alternative_answers || []
+            }));
+        }
+
+        function shuffleArray(arr) { const a = [...arr]; for (let i=a.length-1; i>0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; }
+
+        async function resetUserProgress() {
+            try {
+                const resp = await fetch('https://sanghamitra-learnworld.vercel.app/api/reset-user-progress', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                    body: JSON.stringify({ email, topic: 'exponential_function' })
+                });
+                const data = await resp.json();
+                if (resp.ok) { alert(`✅ Progress reset! You can retake all ${data.questionsAvailable || 'available'} questions.`); return true; }
+                else throw new Error(data.message);
+            } catch(e) { alert('❌ Reset failed'); return false; }
+        }
+
+        async function loadQuestions() {
+            try {
+                if (!email) { alert('Please login'); return false; }
+                const answeredIds = await getAnsweredQuestionIds();
+                console.log('📝 Already answered:', answeredIds.length);
+                const resp = await fetch(`https://sanghamitra-learnworld.vercel.app/api/iitm-math-questions/exponential_function?email=${encodeURIComponent(email)}&count=100`, { credentials: 'include' });
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+                let allQs = data.questions || data;
+                if (!allQs || !allQs.length) throw new Error('No questions');
+                console.log('📚 Total in DB:', allQs.length);
+                const unanswered = allQs.filter(q => {
+                    const id = q._id || q.id || q.question_number;
+                    return !answeredIds.includes(id?.toString());
+                });
+                console.log('🆕 Unanswered:', unanswered.length);
+                if (unanswered.length === 0) {
+                    const resetConfirm = confirm(`🎉 You completed all ${allQs.length} exponential questions!\n\nReset progress and start over?`);
+                    if (resetConfirm) {
+                        const ok = await resetUserProgress();
+                        if (ok) return loadQuestions();
+                        else { alert('Returning home.'); window.location.href = 'iitm_math.html'; return false; }
+                    } else { window.location.href = 'iitm_math.html'; return false; }
+                }
+                const takeCount = Math.min(50, unanswered.length);
+                questions = shuffleArray(unanswered).slice(0, takeCount);
+                questions = validateAndPrepareQuestions(questions);
+                console.log(`✨ Loaded ${questions.length} new exponential questions`);
+                document.getElementById('calculatorBtn').style.display = 'flex';
+                return true;
+            } catch(e) { console.error(e); return false; }
+        }
+
+        // ----- Quiz flow -----
+        function initializeQuizTiming() { quizStartTime = new Date(); questionStartTime = new Date(); }
+        function trackQuestionTime() { if (questionStartTime) { questionTimes[currentQuestionIndex] = Math.floor((new Date() - questionStartTime)/1000); } questionStartTime = new Date(); }
+
+        function renderCurrentQuestion() {
+            const container = document.getElementById('questionContainer');
+            const q = questions[currentQuestionIndex];
+            container.innerHTML = '';
+            const div = document.createElement('div'); div.className = 'question-card';
+            let optsHtml = '', previewHtml = '';
+            let questionText = q.question_text || 'Question text missing';
+            if (questionText.includes('$') || questionText.includes('\\') || questionText.includes('^') || questionText.includes('sqrt')) {
+                questionText = answerFormatter.formatForMathJax(questionText);
+            }
+
+            if (q.type === 'multiple_choice' && q.options?.length) {
+                optsHtml = q.options.map((opt,i)=>{
+                    let displayOpt = opt;
+                    if (opt.includes('^')||opt.includes('exp')||opt.includes('log')||opt.includes('ln')) displayOpt = answerFormatter.formatForMathJax(opt);
+                    return `<div class="option" onclick="selectOption(${currentQuestionIndex}, '${opt.replace(/'/g,"\\'")}', 'radio', this)">
+                        <input type="radio" name="q${currentQuestionIndex}" value="${opt.replace(/"/g,'&quot;')}" id="q${currentQuestionIndex}_${i}">
+                        <label for="q${currentQuestionIndex}_${i}">${displayOpt}</label></div>`;
+                }).join('');
+            } else if (q.type === 'multiple_select' && q.options?.length) {
+                optsHtml = q.options.map((opt,i)=>{
+                    let displayOpt = opt;
+                    if (opt.includes('^')||opt.includes('exp')||opt.includes('log')||opt.includes('ln')) displayOpt = answerFormatter.formatForMathJax(opt);
+                    return `<div class="option" onclick="selectOption(${currentQuestionIndex}, '${opt.replace(/'/g,"\\'")}', 'checkbox', this)">
+                        <input type="checkbox" name="q${currentQuestionIndex}" value="${opt.replace(/"/g,'&quot;')}" id="q${currentQuestionIndex}_${i}">
+                        <label for="q${currentQuestionIndex}_${i}">${displayOpt}</label></div>`;
+                }).join('');
+            } else if (['numeric','interval_input','numeric_input','coordinate_input','equation_input','text_input'].includes(q.type)) {
+                let placeholder = "Enter your answer";
+                if (q.type === 'interval_input') placeholder = "e.g., (-∞,3], [1,5)∪(5,∞)";
+                else if (q.type === 'coordinate_input') placeholder = "e.g., (2,3), (-1/2, sqrt(2))";
+                else if (q.type === 'equation_input') placeholder = "e.g., e^(2x), log_2(8), 2^x";
+                else if (q.type === 'numeric') placeholder = "e.g., 3.1416, sqrt(2), 1/3";
+                optsHtml = `<input type="text" class="numeric-input" placeholder="${placeholder}" 
+                    onchange="handleNumericInputWithValidation(${currentQuestionIndex}, this.value)"
+                    oninput="handleNumericInputWithPreview(${currentQuestionIndex}, this.value)"
+                    autocomplete="off" spellcheck="false" id="answerInput-${currentQuestionIndex}">
+                    <div class="input-warning" id="inputWarning-${currentQuestionIndex}"></div>`;
+                previewHtml = `<div class="answer-preview" id="answerPreview-${currentQuestionIndex}">
+                    <h4>Answer Preview</h4><div class="answer-preview-content">
+                    <div class="preview-row"><span class="preview-label">Formatted view:</span>
+                    <div class="preview-value math" id="previewFormatted-${currentQuestionIndex}"></div></div></div>
+                    <div class="preview-hint" id="previewHint-${currentQuestionIndex}"></div></div>`;
+            }
+            const diffColor = { easy:'#28a745', medium:'#ffc107', hard:'#dc3545' };
+            const diff = q.difficulty || 'medium';
+            div.innerHTML = `<div class="question-header"><div class="question-number">${currentQuestionIndex+1}</div>
+                <div style="display:flex; align-items:center; gap:10px;"><span style="background:${diffColor[diff]}; color:white; padding:4px 8px; border-radius:12px; font-size:12px; text-transform:uppercase;">${diff}</span></div></div>
+                <div class="question-text" id="question-text-${currentQuestionIndex}">${questionText}</div>
+                <div class="options">${optsHtml}</div>${previewHtml}`;
+            container.appendChild(div);
+            if (window.MathJax) MathJax.typesetPromise([div]).catch(()=>{});
+            restoreAnswer();
+            updateAnswerStatus();
+            const inp = document.getElementById(`answerInput-${currentQuestionIndex}`);
+            if (inp) {
+                inp.addEventListener('focus', ()=>{
+                    const pv = document.getElementById(`answerPreview-${currentQuestionIndex}`);
+                    if(pv) pv.classList.add('visible');
+                });
+                inp.addEventListener('blur', ()=>{
+                    setTimeout(()=>{
+                        const pv = document.getElementById(`answerPreview-${currentQuestionIndex}`);
+                        if(pv && !pv.contains(document.activeElement)) pv.classList.remove('visible');
+                    },100);
+                });
+            }
+        }
+
+        function restoreAnswer() {
+            const q = questions[currentQuestionIndex];
+            const saved = userAnswers[currentQuestionIndex];
+            if (!saved) return;
+            if (q.type === 'multiple_choice') {
+                const opt = document.querySelector(`input[value="${saved}"]`);
+                if (opt) { opt.checked = true; opt.closest('.option').classList.add('selected'); }
+            } else if (q.type === 'multiple_select' && Array.isArray(saved)) {
+                saved.forEach(ans => {
+                    const opt = document.querySelector(`input[value="${ans}"]`);
+                    if (opt) { opt.checked = true; opt.closest('.option').classList.add('selected'); }
+                });
+            } else {
+                const inp = document.getElementById(`answerInput-${currentQuestionIndex}`);
+                if (inp) {
+                    inp.value = saved;
+                    if (saved.trim()) { updateAnswerPreview(currentQuestionIndex, saved); 
+                        document.getElementById(`answerPreview-${currentQuestionIndex}`)?.classList.add('visible'); }
+                }
+            }
+        }
+
+        function updateProgress() {
+            const p = ((currentQuestionIndex+1)/questions.length)*100;
+            document.getElementById('progressFill').style.width = p+'%';
+            document.getElementById('questionStatus').textContent = `Question ${currentQuestionIndex+1} of ${questions.length}`;
+            document.getElementById('prevBtn').disabled = currentQuestionIndex===0;
+            const nextBtn = document.getElementById('nextBtn');
+            if (currentQuestionIndex === questions.length-1) {
+                nextBtn.textContent = 'Finish';
+                nextBtn.onclick = ()=> document.getElementById('quizContainer').scrollIntoView({ behavior:'smooth', block:'end' });
+            } else { nextBtn.textContent = 'Next'; nextBtn.onclick = nextQuestion; }
+        }
+        function updateAnswerStatus() {
+            const s = document.getElementById('answeredStatus');
+            if (userAnswers[currentQuestionIndex] !== undefined) { s.textContent='Answered'; s.className='status-answered'; }
+            else { s.textContent='Unanswered'; s.className='status-unanswered'; }
+        }
+        function nextQuestion() { if (currentQuestionIndex < questions.length-1) { trackQuestionTime(); currentQuestionIndex++; renderCurrentQuestion(); updateProgress(); } }
+        function previousQuestion() { if (currentQuestionIndex > 0) { trackQuestionTime(); currentQuestionIndex--; renderCurrentQuestion(); updateProgress(); } }
+
+        function selectOption(idx, val, type, el) {
+            if (type === 'radio') {
+                document.querySelectorAll(`.question-card .option`).forEach(opt => {
+                    const inp = opt.querySelector('input[type="radio"]');
+                    if (inp && inp.name === `q${idx}`) { inp.checked = false; opt.classList.remove('selected'); }
+                });
+                el.querySelector('input').checked = true;
+                el.classList.add('selected');
+                userAnswers[idx] = val.trim();
+            } else if (type === 'checkbox') {
+                const chk = el.querySelector('input');
+                chk.checked = !chk.checked;
+                if (!userAnswers[idx]) userAnswers[idx] = [];
+                if (chk.checked) { if (!userAnswers[idx].includes(val.trim())) userAnswers[idx].push(val.trim()); el.classList.add('selected'); }
+                else { userAnswers[idx] = userAnswers[idx].filter(a=>a!==val.trim()); el.classList.remove('selected'); if(userAnswers[idx].length===0) delete userAnswers[idx]; }
+            }
+            updateAnswerStatus();
+        }
+
+        function handleNumericInputWithPreview(idx, val) {
+            handleNumericInput(idx, val);
+            updateAnswerPreview(idx, val);
+            if (val.trim()) {
+                const v = validateAnswerFormat(idx, val.trim());
+                showValidationFeedback(idx, v.feedback, v.suggestion);
+            } else showValidationFeedback(idx, '', '');
+        }
+        function handleNumericInput(idx, val) {
+            const t = val.trim();
+            if (t) userAnswers[idx] = answerFormatter.storeAnswerExactly(t);
+            else delete userAnswers[idx];
+            updateAnswerStatus();
+        }
+        function handleNumericInputWithValidation(idx, val) { handleNumericInputWithPreview(idx, val); }
+
+        function updateAnswerPreview(idx, answer) {
+            const preview = document.getElementById(`answerPreview-${idx}`);
+            const warn = document.getElementById(`inputWarning-${idx}`);
+            if (!preview || !answer.trim()) { if(preview) preview.classList.remove('visible'); if(warn) { warn.classList.remove('visible'); warn.textContent=''; } return; }
+            const previewData = answerFormatter.createAnswerPreview(answer, questions[idx]?.type);
+            if (!previewData) return;
+            const fmtEl = document.getElementById(`previewFormatted-${idx}`);
+            if (fmtEl) fmtEl.innerHTML = previewData.latex;
+            const hintEl = document.getElementById(`previewHint-${idx}`);
+            let hint = '';
+            if (answer.includes('inf')) hint = '"inf" → ∞';
+            else if (answer.includes('sqrt')) hint = '"sqrt(x)" → √x';
+            else if (answer.match(/\d+\/\d+/)) hint = 'Fractions displayed';
+            else if (answer.includes('e^')||answer.includes('exp')) hint = 'Exponential formatted';
+            hintEl.textContent = hint;
+            if (window.MathJax) MathJax.typesetPromise([fmtEl]).catch(()=>{});
+            if (warn) {
+                const inv = answer.match(/[^0-9a-zA-Z\s.,+\-*/^(){}|≠≤≥=∞√πθ\-\/\\\[\]\$\{\}\|]/);
+                if (inv) { warn.textContent = `Unusual character "${inv[0]}"`; warn.classList.add('visible'); }
+                else warn.classList.remove('visible');
+            }
+            preview.classList.add('visible');
+        }
+
+        function validateAnswerFormat(idx, userAnswer) {
+            const q = questions[currentQuestionIndex];
+            let feedback='', suggestion='';
+            if (q.type === 'interval_input') {
+                const norm = answerNormalizer.normalizeInterval(userAnswer);
+                if (/^[(\[](?:-?\d+|-inf|inf)[,\s]*(?:-?\d+|inf)[)\]]$/.test(norm) || norm.includes('∪')) feedback='✓ Valid interval';
+                else feedback='⚠ Check interval format';
+                suggestion='e.g. (-∞,5], [1,10)';
+            } else if (q.type === 'numeric'||q.type==='numeric_input') {
+                const n = answerNormalizer.normalizeNumeric(userAnswer);
+                if (!isNaN(n)||/^[-+]?inf$/.test(userAnswer.toLowerCase())||/∞/.test(userAnswer)) feedback='✓ Valid number';
+                else feedback='⚠ Enter a valid number';
+                suggestion='Examples: 3.14, -5, inf, sqrt(2)';
+            } else if (q.type === 'equation_input') { feedback='✓ Format accepted'; suggestion='e.g. e^(2x), log_2(8)'; }
+            else feedback='✓ Answer recorded';
+            return { isValidFormat: !feedback.includes('⚠'), feedback, suggestion };
+        }
+        function showValidationFeedback(idx, feedback, suggestion) {
+            let fb = document.getElementById(`feedback-${idx}`);
+            if (!fb) { fb = document.createElement('div'); fb.id = `feedback-${idx}`; document.querySelector('.question-card').appendChild(fb); }
+            if (!feedback) { fb.innerHTML = ''; return; }
+            const isValid = feedback.includes('✓');
+            fb.style.cssText = `background:${isValid?'#d4edda':'#fff3cd'}; border:1px solid ${isValid?'#c3e6cb':'#ffeaa7'}; border-radius:6px; padding:10px; margin-top:10px; font-size:14px;`;
+            fb.innerHTML = `<div style="color:${isValid?'#155724':'#856404'}; font-weight:600;">${feedback}</div>${suggestion?`<div style="color:#666; font-size:13px;">${suggestion}</div>`:''}`;
+        }
+
+        // ----- Submission & results -----
+        async function submitQuiz() {
+            if (!confirm(`Ready to submit? You won't be able to change answers.`)) return;
+            if (!username||!email) { alert("Session lost"); return; }
+            trackQuestionTime(); isQuizActive = false;
+            const quizEnd = new Date(), totalTime = Math.floor((quizEnd-quizStartTime)/1000);
+            let score = 0, totalPossible = 0;
+            const results = [], diffBreak = { easy:{attempted:0,correct:0,points:0}, medium:{attempted:0,correct:0,points:0}, hard:{attempted:0,correct:0,points:0} };
+            questions.forEach((q,idx)=>{
+                const userAns = userAnswers[idx];
+                totalPossible += q.points||1;
+                let correct = false;
+                const normUser = answerNormalizer.normalizeAnswer(userAns, q.type);
+                const normCorrect = answerNormalizer.normalizeAnswer(q.correct_answer, q.type);
+                if (q.type === 'multiple_select') {
+                    if (Array.isArray(userAns) && Array.isArray(q.correct_answer)) {
+                        const u = userAns.map(a=>answerNormalizer.normalizeAnswer(a,q.type)).sort();
+                        const c = q.correct_answer.map(a=>answerNormalizer.normalizeAnswer(a,q.type)).sort();
+                        correct = u.length===c.length && u.every((v,i)=>v===c[i]);
+                    }
+                } else if (q.type === 'numeric' || q.type === 'numeric_input') {
+                    const uNum = answerNormalizer.normalizeNumeric(userAns);
+                    const cNum = answerNormalizer.normalizeNumeric(q.correct_answer);
+                    if (uNum === cNum) correct = true;
+                    else if (isFinite(uNum) && isFinite(cNum)) correct = Math.abs(uNum-cNum) <= Math.max(Math.abs(cNum)*0.01,0.01);
+                    if (!correct && q.alternative_answers) correct = q.alternative_answers.some(alt=> {
+                        const aNum = answerNormalizer.normalizeNumeric(alt);
+                        if (uNum === aNum) return true;
+                        if (isFinite(uNum)&&isFinite(aNum)) return Math.abs(uNum-aNum) <= Math.max(Math.abs(aNum)*0.01,0.01);
+                        return false;
+                    });
+                } else {
+                    correct = normUser === normCorrect;
+                    if (!correct && q.alternative_answers) correct = q.alternative_answers.some(alt => answerNormalizer.normalizeAnswer(alt,q.type) === normUser);
+                }
+                if (correct) score += q.points||1;
+                const d = q.difficulty || 'medium';
+                diffBreak[d].attempted++;
+                if (correct) { diffBreak[d].correct++; diffBreak[d].points += q.points||1; }
+                results.push({
+                    questionId: q._id, questionNumber: idx+1, questionText: q.question_text,
+                    difficulty: d, points: q.points||1, userAnswer: userAns?.toString()||'No answer',
+                    correctAnswer: q.correct_answer?.toString()||'', explanation: q.explanation||'',
+                    isCorrect: correct, timeTaken: questionTimes[idx]||0
+                });
+            });
+            const quizData = {
+                topic: 'exponential_function', quizType: 'practice', score, maxPossibleScore: totalPossible,
+                totalQuestions: questions.length, correctAnswers: results.filter(r=>r.isCorrect).length,
+                percentage: Math.round((score/totalPossible)*100), difficultyBreakdown: diffBreak,
+                questionResults: results, startTime: quizStartTime, endTime: quizEnd, totalTimeTaken: totalTime,
+                isCompleted: true
+            };
+            try {
+                document.getElementById('submitText').style.display='none';
+                document.getElementById('submitLoading').style.display='inline-block';
+                document.getElementById('submitBtn').disabled=true;
+                const resp = await fetch('https://sanghamitra-learnworld.vercel.app/api/iitmmath_scores', {
+                    method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+                    body: JSON.stringify({ email, username, quizData })
+                });
+                if (resp.ok) displayDetailedResults(quizData);
+                else throw new Error('Submit failed');
+            } catch(e) { alert('Submission error'); console.error(e);
+                document.getElementById('submitText').style.display='inline';
+                document.getElementById('submitLoading').style.display='none';
+                document.getElementById('submitBtn').disabled=false;
+            }
+        }
+
+        function displayDetailedResults(qd) {
+            document.getElementById('quizContainer').style.display='none';
+            const rc = document.getElementById('resultsContainer');
+            rc.style.display='block';
+            const sd = document.querySelector('.score-display');
+            sd.innerHTML = `<h2>${qd.score}/${qd.maxPossibleScore} (${qd.percentage}%)</h2><p>Exponential Functions Quiz Completed</p>
+                <div style="margin-top:20px; display:flex; justify-content:space-around;">
+                <div><strong>Easy</strong><br>${qd.difficultyBreakdown.easy.correct}/${qd.difficultyBreakdown.easy.attempted}</div>
+                <div><strong>Medium</strong><br>${qd.difficultyBreakdown.medium.correct}/${qd.difficultyBreakdown.medium.attempted}</div>
+                <div><strong>Hard</strong><br>${qd.difficultyBreakdown.hard.correct}/${qd.difficultyBreakdown.hard.attempted}</div></div>
+                <p style="margin-top:15px;">Time: ${Math.floor(qd.totalTimeTaken/60)}m ${qd.totalTimeTaken%60}s</p>`;
+            const rev = document.createElement('div');
+            rev.style.cssText = 'margin-top:30px; text-align:left; background:white; border-radius:10px; padding:20px;';
+            rev.innerHTML = `<h3 style="text-align:center;">Exponential Questions Review</h3>` +
+                qd.questionResults.map((r,i)=>`
+                <div style="border:2px solid ${r.isCorrect?'#28a745':'#dc3545'}; border-radius:8px; padding:15px; margin-bottom:15px; background:${r.isCorrect?'#f8fff9':'#fff8f8'};">
+                    <div style="display:flex; align-items:center; margin-bottom:10px;">
+                        <span style="background:${r.isCorrect?'#28a745':'#dc3545'}; color:white; padding:4px 8px; border-radius:50%; margin-right:10px;">${r.questionNumber||i+1}</span>
+                        <span style="font-weight:bold; color:${r.isCorrect?'#28a745':'#dc3545'};">${r.isCorrect?'✓ Correct':'✗ Incorrect'}</span>
+                        <span style="margin-left:auto; background:#6c757d; color:white; padding:2px 8px; border-radius:12px; font-size:12px;">${r.difficulty}</span>
+                    </div>
+                    <div style="margin-bottom:8px;"><strong>Q:</strong> ${r.questionText}</div>
+                    <div><strong>Your answer:</strong> <span style="color:${r.isCorrect?'#28a745':'#dc3545'};">${r.userAnswer}</span></div>
+                    <div><strong>Correct answer:</strong> <span style="color:#28a745;">${r.correctAnswer}</span></div>
+                    <div><strong>Explanation:</strong> ${r.explanation}</div>
+                    <div style="font-size:0.9em; color:#666;">Time: ${r.timeTaken}s | Points: ${r.points}</div>
+                </div>`).join('');
+            rc.appendChild(rev);
+        }
+
+        function goback() { window.location.href = 'iitm_math.html'; }
+
+        // ----- Calculator functions -----
+        let calculatorOpen = false, isDragging = false, dragX=0,dragY=0, angleMode='Deg', memory=0;
+        function toggleCalculator() {
+            const m = document.getElementById('calculatorModal'), b = document.getElementById('calculatorBtn');
+            calculatorOpen = !calculatorOpen;
+            if (calculatorOpen) { m.style.display='flex'; b.style.display='none'; 
+                if (!m.style.left) { const vw=window.innerWidth, vh=window.innerHeight; m.style.left = (vw-590-20)+'px'; m.style.top = (vh-400-100)+'px'; } 
+                setTimeout(()=>document.getElementById('calcDisplay').focus(),100); 
+            } else { m.style.display='none'; b.style.display='flex'; }
+        }
+        function initializeDrag() {
+            const m = document.getElementById('calculatorModal'), h = m.querySelector('.calculator-header');
+            h.addEventListener('mousedown', startDrag); document.addEventListener('mousemove', drag); document.addEventListener('mouseup', stopDrag);
+        }
+        function startDrag(e) { if (e.target.closest('.calculator-close')||e.target.closest('.calc-btn')||e.target.closest('.help-btn')||e.target.closest('.minimize-btn')) return;
+            isDragging = true; const rect = document.getElementById('calculatorModal').getBoundingClientRect();
+            dragX = e.clientX - rect.left; dragY = e.clientY - rect.top; e.preventDefault(); }
+        function drag(e) { if (!isDragging) return; const m = document.getElementById('calculatorModal');
+            let x = e.clientX - dragX, y = e.clientY - dragY;
+            x = Math.max(0, Math.min(x, window.innerWidth - m.offsetWidth));
+            y = Math.max(0, Math.min(y, window.innerHeight - m.offsetHeight));
+            m.style.left = x+'px'; m.style.top = y+'px'; e.preventDefault(); }
+        function stopDrag() { isDragging = false; document.getElementById('calculatorModal').style.cursor='move'; }
+        function addToDisplay(v) { const d=document.getElementById('calcDisplay'), r=document.getElementById('resultDisplay'); if(r.value!=='0' && d.value==='') r.value='0'; d.value+=v; d.focus(); }
+        function clearCalculator() { document.getElementById('calcDisplay').value=''; document.getElementById('resultDisplay').value='0'; }
+        function backspace() { const d=document.getElementById('calcDisplay'); d.value = d.value.slice(0,-1); }
+        function calculateResult() {
+            const d=document.getElementById('calcDisplay'), r=document.getElementById('resultDisplay');
+            try { let expr = d.value.replace(/×/g,'*').replace(/÷/g,'/').replace(/\^/g,'**').replace(/√/g,'Math.sqrt').replace(/π/g,'Math.PI').replace(/e(?![a-zA-Z])/g,'Math.E');
+                if (!/^[0-9+\-*/().^MathsincostanasinacosatanlogexpsqrtPIElE, ]+$/.test(expr)) throw Error();
+                const res = new Function('return '+expr)();
+                r.value = (typeof res==='number'&&!isNaN(res)&&isFinite(res)) ? Math.round(res*1e8)/1e8 : res;
+            } catch { r.value='Error'; setTimeout(()=>r.value='0',1500); }
+        }
+        function calcFunction(f) {
+            const d = document.getElementById('calcDisplay'); let val = parseFloat(d.value) || 0, res;
+            const toDeg = (v) => v * 180 / Math.PI, toRad = (v) => v * Math.PI / 180;
+            if (f === 'sin'||f==='cos'||f==='tan') res = angleMode==='Deg' ? Math[f](val*Math.PI/180) : Math[f](val);
+            else if (f === 'sin⁻¹') res = angleMode==='Deg' ? toDeg(Math.asin(val)) : Math.asin(val);
+            else if (f === 'cos⁻¹') res = angleMode==='Deg' ? toDeg(Math.acos(val)) : Math.acos(val);
+            else if (f === 'tan⁻¹') res = angleMode==='Deg' ? toDeg(Math.atan(val)) : Math.atan(val);
+            else if (f === 'sinh') res = Math.sinh(val);
+            else if (f === 'cosh') res = Math.cosh(val);
+            else if (f === 'tanh') res = Math.tanh(val);
+            else if (f === 'ln') res = Math.log(val);
+            else if (f === 'log') res = Math.log10(val);
+            else if (f === 'eˣ') res = Math.exp(val);
+            else if (f === '10ˣ') res = Math.pow(10,val);
+            else if (f === 'x²') res = val*val;
+            else if (f === 'x³') res = val*val*val;
+            else if (f === '1/x') res = 1/val;
+            else if (f === 'n!') { res = 1; for(let i=2;i<=val;i++) res*=i; }
+            else if (f === '|x|') res = Math.abs(val);
+            else return;
+            document.getElementById('resultDisplay').value = res;
+            document.getElementById('calcDisplay').value = res;
+        }
+        function memoryFunction(f) { 
+            const v = parseFloat(document.getElementById('resultDisplay').value)||0;
+            if (f==='MC') memory=0; else if (f==='MR') document.getElementById('calcDisplay').value = memory;
+            else if (f==='MS') memory = v; else if (f==='M+') memory += v; else if (f==='M-') memory -= v;
+        }
+
+        // ----- Init -----
+        document.addEventListener('DOMContentLoaded', async function() {
+            initializeAntiCheating();
+            initializeInfoBubble();
+            initializeDrag();
+            document.getElementById('degMode').addEventListener('change',()=>angleMode='Deg');
+            document.getElementById('radMode').addEventListener('change',()=>angleMode='Rad');
+            const sessOk = await fetchSessionInfo();
+            if (sessOk) {
+                const qsOk = await loadQuestions();
+                if (qsOk) {
+                    initializeQuizTiming(); isQuizActive = true;
+                    document.getElementById('loadingScreen').style.display = 'none';
+                    document.getElementById('quizContainer').style.display = 'block';
+                    renderCurrentQuestion();
+                    updateProgress();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+

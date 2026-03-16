@@ -1,0 +1,2004 @@
+<!DOCTYPE html>      
+<html lang="en">    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>Exponential Functions Quiz</title>
+   
+    <style>
+    * { 
+        margin: 0; 
+        padding: 0; 
+        box-sizing: border-box; 
+    }
+    
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+        min-height: 100vh;
+        padding: 20px;
+    }
+
+    .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+
+    .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+
+    .header h1 { 
+        font-size: 2.5rem; 
+        margin-bottom: 10px; 
+    }
+    .header p { 
+        font-size: 1.1rem; 
+        opacity: 0.9; 
+    }
+
+    /* Anti-cheating styles */
+    * {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    body.blurred {
+        filter: blur(5px);
+        pointer-events: none;
+    }
+
+    body.blurred .warning-overlay {
+        filter: none;
+    }
+
+    .warning-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(220, 53, 69, 0.95);
+        color: white;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        font-size: 2rem;
+        text-align: center;
+    }
+
+    .btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+
+    .btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+    }
+
+    .btn:disabled { 
+        background: #6c757d; 
+        cursor: not-allowed; 
+        transform: none; 
+    }
+
+    .loading {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-left: 8px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .progress-container {
+        background: #f8f9fa;
+        padding: 20px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        border-radius: 4px;
+        transition: width 0.3s ease;
+        width: 0%;
+    }
+
+    .progress-text {
+        text-align: center;
+        color: #666;
+        font-weight: 600;
+    }
+
+    .question-navigation {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .btn-nav {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-nav:hover:not(:disabled) {
+        background: #545b62;
+        transform: translateY(-1px);
+    }
+
+    .btn-nav:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .btn-next {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .btn-next:hover:not(:disabled) {
+        background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+    }
+
+    .question-status {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        color: #666;
+    }
+
+    .status-answered {
+        background: #28a745;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+    }
+
+    .status-unanswered {
+        background: #dc3545;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+    }
+
+    .quiz-container { 
+        padding: 30px; 
+        display: none; 
+    }
+
+    .question-card {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        border-left: 5px solid #667eea;
+    }
+
+    .question-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .question-number {
+        background: #667eea;
+        color: white;
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        margin-right: 15px;
+    }
+
+    .question-text {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    .options { 
+        display: flex; 
+        flex-direction: column; 
+        gap: 12px; 
+    }
+
+    .option {
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 15px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+    }
+
+    .option input {
+        margin-right: 10px;
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+
+    .option label {
+        cursor: pointer;
+        flex: 1;
+        font-size: 1rem;
+        line-height: 1.4;
+    }
+
+    .option:hover { 
+        border-color: #667eea; 
+        background: #f0f8ff; 
+    }
+    .option.selected { 
+        border-color: #667eea; 
+        background: #e3f2fd; 
+    }
+
+    .numeric-input {
+        width: 200px;
+        padding: 12px 16px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 16px;
+    }
+
+    .results-container {
+        display: none;
+        padding: 30px;
+        text-align: center;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .score-display {
+        background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+        color: white;
+        padding: 40px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+    }
+
+    .score-display h2 { 
+        font-size: 2.5rem; 
+        margin-bottom: 10px; 
+    }
+    
+    .hidden { 
+        display: none; 
+    }
+
+    /* Calculator Styles - FIXED */
+    .calculator-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 50px;
+        display: flex; /* CHANGED FROM none to flex */
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        z-index: 9999;
+        transition: all 0.3s ease;
+        border: none;
+        font-weight: 600;
+    }
+
+    .calculator-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+
+    .calculator-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .calculator-modal {
+        position: fixed;
+        width: 590px;
+        min-height: 400px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        z-index: 10000;
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
+        cursor: move;
+        user-select: none;
+    }
+
+    .calculator-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: move;
+    }
+
+    .calculator-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+
+    .calculator-header .help-btn {
+        background: #4fc3f7;
+        color: white;
+        border: none;
+        padding: 6px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 600;
+        margin-left: auto;
+        margin-right: 10px;
+    }
+
+    .calculator-header .minimize-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 0 8px;
+    }
+
+    .calculator-header .calculator-close {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: background 0.2s;
+    }
+
+    .calculator-header .calculator-close:hover {
+        background: rgba(255,255,255,0.2);
+    }
+
+    .mode-selector {
+        padding: 10px 15px;
+        background: #f0f0f0;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .mode-selector label {
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .calculator-display {
+        padding: 15px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    #calcDisplay {
+        width: 100%;
+        padding: 12px;
+        font-size: 1.5rem;
+        text-align: right;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        background: white;
+        font-family: 'Courier New', monospace;
+        margin-bottom: 5px;
+    }
+
+    #resultDisplay {
+        width: 100%;
+        padding: 8px 12px;
+        font-size: 1.8rem;
+        text-align: right;
+        border: none;
+        background: transparent;
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+    }
+
+    .calculator-buttons {
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background: #f8f9fa;
+    }
+
+    .calc-row {
+        display: flex;
+        gap: 8px;
+    }
+
+    .calc-btn {
+        flex: 1;
+        padding: 12px 0;
+        font-size: 1.1rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        background: white;
+        border: 1px solid #e0e0e0;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+
+    .calc-btn:hover {
+        background: #f0f0f0;
+        transform: translateY(-1px);
+    }
+
+    .calc-btn.func {
+        background: #e3e8ff;
+        color: #667eea;
+        font-weight: 600;
+    }
+
+    .calc-btn.sci {
+        font-size: 0.9rem;
+        padding: 10px 0;
+        background: #f0f0f0;
+    }
+
+    .calc-btn.operator {
+        background: #ff6b6b;
+        color: white;
+        font-weight: 600;
+    }
+
+    .calc-btn.equals {
+        background: #51cf66;
+        color: white;
+        font-weight: 600;
+    }
+
+    .calc-btn.memory {
+        background: #e3e8ff;
+        color: #667eea;
+        font-size: 0.85rem;
+    }
+
+    @media (max-width: 768px) {
+        .results-container {
+            padding: 15px;
+        }
+        
+        .score-display {
+            padding: 20px;
+        }
+        
+        .score-display h2 {
+            font-size: 2rem;
+        }
+        
+        .question-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .numeric-input {
+            width: 100%;
+        }
+        
+        .calculator-modal {
+            width: 320px;
+            min-height: 500px;
+        }
+        
+        .calc-btn {
+            padding: 10px 0;
+            font-size: 1rem;
+        }
+        
+        .calc-btn.sci {
+            font-size: 0.85rem;
+        }
+        
+        .calculator-btn {
+            bottom: 15px;
+            right: 15px;
+            padding: 10px 15px;
+            font-size: 14px;
+        }
+    }
+</style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Exponential Functions Quiz</h1>
+            <p>Test your knowledge of function concepts with 50 comprehensive questions</p>
+        </div>
+
+        <!-- Quiz Container -->
+        <div id="quizContainer" class="quiz-container" style="display: none;">
+             <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+        
+            </div>
+           
+            
+            <div id="questionContainer"></div>
+            
+            <div class="question-navigation">
+                <button class="btn-nav" id="prevBtn" onclick="previousQuestion()" disabled>Previous</button>
+                <div class="question-status">
+                    <span id="questionStatus">Question 1 of 50</span>
+                    
+                    <span id="answeredStatus" class="status-unanswered">Unanswered</span>
+                </div>
+                <button class="btn-nav btn-next" id="nextBtn" onclick="nextQuestion()">Next</button>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 2px solid #667eea;">
+                <button class="btn" onclick="submitQuiz()" id="submitBtn">
+                    <span id="submitText">Submit Function Concepts Quiz</span>
+                    <span id="submitLoading" class="loading" style="display: none;"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading Screen -->
+        <div id="loadingScreen" class="quiz-container" style="text-align: center; padding: 60px;">
+            <div class="loading" style="width: 40px; height: 40px; margin: 0 auto 20px;"></div>
+            <h3>Loading Function Concepts Quiz...</h3>
+            <p>Verifying your session and preparing questions</p>
+        </div>
+
+        <!-- Results -->
+        <div id="resultsContainer" class="results-container">
+            <div class="score-display">
+                <h2 id="finalScore">0/50</h2>
+                <p>Quiz Completed Successfully!</p>
+            </div>
+            <button class="btn" onclick="goback()">Home Page</button>
+        </div>
+        
+        <!-- ========== CALCULATOR ========== -->
+        <div id="calculatorBtn" class="calculator-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect>
+                <line x1="8" y1="6" x2="16" y2="6"></line>
+                <line x1="8" y1="10" x2="16" y2="10"></line>
+                <line x1="8" y1="14" x2="10" y2="14"></line>
+                <line x1="14" y1="14" x2="16" y2="14"></line>
+                <line x1="8" y1="18" x2="10" y2="18"></line>
+                <line x1="14" y1="18" x2="16" y2="18"></line>
+            </svg>
+            <span>Calculator</span>
+        </div>
+
+        <div id="calculatorModal" class="calculator-modal">
+            <div class="calculator-header">
+                <h3>Scientific Calculator</h3>
+                <button class="help-btn">Help</button>
+                <button class="minimize-btn">―</button>
+                <button class="calculator-close">×</button>
+            </div>
+            <div class="mode-selector">
+                <label>mod</label>
+                <input type="radio" name="angleMode" value="Deg" id="degMode" checked>
+                <label for="degMode">Deg</label>
+                <input type="radio" name="angleMode" value="Rad" id="radMode">
+                <label for="radMode">Rad</label>
+            </div>
+            <div class="calculator-display">
+                <input type="text" id="calcDisplay" readonly>
+                <input type="text" id="resultDisplay" readonly value="0">
+            </div>
+            <div class="calculator-buttons">
+                <!-- Row 1 - Hyperbolic and Advanced Functions -->
+                <div class="calc-row">
+                    <button class="calc-btn sci" onclick="calcFunction('sinh')">sinh</button>
+                    <button class="calc-btn sci" onclick="calcFunction('cosh')">cosh</button>
+                    <button class="calc-btn sci" onclick="calcFunction('tanh')">tanh</button>
+                    <button class="calc-btn sci" onclick="calcFunction('Exp')">Exp</button>
+                    <button class="calc-btn" onclick="addToDisplay('(')">(</button>
+                    <button class="calc-btn" onclick="addToDisplay(')')">)</button>
+                    <button class="calc-btn operator" onclick="backspace()">⌫</button>
+                    <button class="calc-btn operator" onclick="clearCalculator()">C</button>
+                    <button class="calc-btn operator" onclick="addToDisplay('+/-')">+/-</button>
+                    <button class="calc-btn sci" onclick="addToDisplay('Math.sqrt(')">√</button>
+                </div>
+                
+                <!-- Row 2 - Inverse Hyperbolic -->
+                <div class="calc-row">
+                    <button class="calc-btn sci" onclick="calcFunction('sinh⁻¹')">sinh⁻¹</button>
+                    <button class="calc-btn sci" onclick="calcFunction('cosh⁻¹')">cosh⁻¹</button>
+                    <button class="calc-btn sci" onclick="calcFunction('tanh⁻¹')">tanh⁻¹</button>
+                    <button class="calc-btn sci" onclick="calcFunction('logₓ')">log_x</button>
+                    <button class="calc-btn sci" onclick="calcFunction('ln')">ln</button>
+                    <button class="calc-btn sci" onclick="calcFunction('log')">log</button>
+                    <button class="calc-btn" onclick="addToDisplay('7')">7</button>
+                    <button class="calc-btn" onclick="addToDisplay('8')">8</button>
+                    <button class="calc-btn" onclick="addToDisplay('9')">9</button>
+                    <button class="calc-btn operator" onclick="addToDisplay('/')">/</button>
+                    <button class="calc-btn operator" onclick="addToDisplay('%')">%</button>
+                </div>
+                
+                <!-- Row 3 - Constants and Trig -->
+                <div class="calc-row">
+                    <button class="calc-btn sci" onclick="addToDisplay('Math.PI')">π</button>
+                    <button class="calc-btn sci" onclick="addToDisplay('Math.E')">e</button>
+                    <button class="calc-btn sci" onclick="calcFunction('n!')">n!</button>
+                    <button class="calc-btn sci" onclick="calcFunction('logₓ')">log_x</button>
+                    <button class="calc-btn sci" onclick="calcFunction('eˣ')">eˣ</button>
+                    <button class="calc-btn sci" onclick="calcFunction('10ˣ')">10ˣ</button>
+                    <button class="calc-btn" onclick="addToDisplay('4')">4</button>
+                    <button class="calc-btn" onclick="addToDisplay('5')">5</button>
+                    <button class="calc-btn" onclick="addToDisplay('6')">6</button>
+                    <button class="calc-btn operator" onclick="addToDisplay('*')">*</button>
+                    <button class="calc-btn operator" onclick="calcFunction('1/x')">1/x</button>
+                </div>
+                
+                <!-- Row 4 - Trig Functions -->
+                <div class="calc-row">
+                    <button class="calc-btn sci" onclick="calcFunction('sin')">sin</button>
+                    <button class="calc-btn sci" onclick="calcFunction('cos')">cos</button>
+                    <button class="calc-btn sci" onclick="calcFunction('tan')">tan</button>
+                    <button class="calc-btn sci" onclick="calcFunction('xʸ')">xʸ</button>
+                    <button class="calc-btn sci" onclick="calcFunction('x³')">x³</button>
+                    <button class="calc-btn sci" onclick="calcFunction('x²')">x²</button>
+                    <button class="calc-btn" onclick="addToDisplay('1')">1</button>
+                    <button class="calc-btn" onclick="addToDisplay('2')">2</button>
+                    <button class="calc-btn" onclick="addToDisplay('3')">3</button>
+                    <button class="calc-btn operator" onclick="addToDisplay('-')">-</button>
+                </div>
+                
+                <!-- Row 5 - Inverse Trig and Numbers -->
+                <div class="calc-row">
+                    <button class="calc-btn sci" onclick="calcFunction('sin⁻¹')">sin⁻¹</button>
+                    <button class="calc-btn sci" onclick="calcFunction('cos⁻¹')">cos⁻¹</button>
+                    <button class="calc-btn sci" onclick="calcFunction('tan⁻¹')">tan⁻¹</button>
+                    <button class="calc-btn sci" onclick="calcFunction('ⁿ√x')">ⁿ√x</button>
+                    <button class="calc-btn sci" onclick="calcFunction('³√')">³√</button>
+                    <button class="calc-btn sci" onclick="calcFunction('|x|')">|x|</button>
+                    <button class="calc-btn" onclick="addToDisplay('0')">0</button>
+                    <button class="calc-btn" onclick="addToDisplay('.')">.</button>
+                    <button class="calc-btn equals" onclick="calculateResult()">=</button>
+                    <button class="calc-btn operator" onclick="addToDisplay('+')">+</button>
+                </div>
+                
+                <!-- Row 6 - Memory Functions -->
+                <div class="calc-row">
+                    <button class="calc-btn memory" onclick="memoryFunction('MC')">MC</button>
+                    <button class="calc-btn memory" onclick="memoryFunction('MR')">MR</button>
+                    <button class="calc-btn memory" onclick="memoryFunction('MS')">MS</button>
+                    <button class="calc-btn memory" onclick="memoryFunction('M+')">M+</button>
+                    <button class="calc-btn memory" onclick="memoryFunction('M-')">M-</button>
+                </div>
+            </div>
+        </div>
+        <!-- ========== CALCULATOR ENDS ========== -->
+        
+    </div>
+  <div id="warningOverlay" class="warning-overlay">
+    <div>
+        <h2>⚠️ CHEATING ATTEMPT DETECTED</h2>
+        <p>Please return to the quiz window</p>
+        <p>Your activity is being monitored</p>
+    </div>
+</div>
+    <script>
+        // Answer validation utility
+        const answerNormalizer = {
+            normalizeAnswer(answer, type) {
+                if (!answer) return '';
+                
+                let normalized = answer.toString().trim();
+                
+                switch(type) {
+                    case 'interval_input':
+                        return this.normalizeInterval(normalized);
+                    case 'coordinate_input':
+                        return this.normalizeCoordinate(normalized);
+                    case 'equation_input':
+                        return this.normalizeEquation(normalized);
+                    case 'numeric':
+                    case 'numeric_input':
+                        return this.normalizeNumeric(normalized);
+                    case 'multiple_choice':
+                    case 'text_input':
+                        return this.normalizeText(normalized);
+                    default:
+                        return this.normalizeText(normalized);
+                }
+            },
+            
+            normalizeInterval(answer) {
+                return answer
+                    .toLowerCase()
+                    .replace(/\s+/g, '')
+                    .replace(/infinity|inf/g, '∞')
+                    .replace(/−/g, '-')
+                    .replace(/\bunion\b|∪|U/gi, '∪')
+                    .replace(/\{|\}/g, '')
+                    .replace(/,∪/g, '∪')
+                    .replace(/∪,/g, '∪');
+            },
+            
+            normalizeCoordinate(answer) {
+                return answer
+                    .toLowerCase()
+                    .replace(/\s+/g, '')
+                    .replace(/[()]/g, '')
+                    .replace(/−/g, '-');
+            },
+            
+            normalizeEquation(answer) {
+                let normalized = answer
+                    .toLowerCase()
+                    .replace(/\s+/g, '')
+                    .replace(/\+\-/g, '-')
+                    .replace(/\-\+/g, '-')
+                    .replace(/−/g, '-')
+                    .replace(/\*\*/g, '^')
+                    .replace(/\^/g, '**');
+                
+                const rootMatches = normalized.match(/x=[-+]?\d+\.?\d*/g);
+                if (rootMatches && rootMatches.length > 1) {
+                    const roots = rootMatches.map(r => {
+                        const num = parseFloat(r.replace('x=', ''));
+                        return num;
+                    }).sort((a, b) => a - b);
+                    
+                    normalized = roots.map(r => `x=${r}`).join(',');
+                }
+                
+                return normalized;
+            },
+            
+            normalizeNumeric(answer) {
+                const cleaned = answer.replace(/[^\d.-]/g, '').trim();
+                const num = parseFloat(cleaned);
+                return isNaN(num) ? '' : num.toString();
+            },
+            
+            normalizeText(answer) {
+                let normalized = answer
+                    .toLowerCase()
+                    .trim()
+                    .replace(/\s+/g, ' ')
+                    .replace(/all real numbers/i, 'allrealnumbers')
+                    .replace(/no solution/i, 'nosolution')
+                    .replace(/does not exist|dne/i, 'dne');
+                
+                if (normalized.includes('x=') && normalized.includes(',')) {
+                    const parts = normalized.split(',').map(p => p.trim());
+                    const roots = parts.map(p => {
+                        const match = p.match(/x=([-+]?\d+\.?\d*)/);
+                        return match ? parseFloat(match[1]) : null;
+                    }).filter(r => r !== null).sort((a, b) => a - b);
+                    
+                    if (roots.length > 0) {
+                        normalized = roots.map(r => `x=${r}`).join(',');
+                    }
+                }
+                
+                return normalized;
+            }
+        };
+       
+        let userAnswers = {};
+        let currentUser = {};
+        let username = null;
+        let email = null;
+        let currentQuestionIndex = 0;
+        let quizStartTime = null;
+        let questionStartTime = null;
+        let questionTimes = {};
+        let questions = [];
+
+        // Calculator variables
+        let calculatorOpen = false;
+        let isDragging = false;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+        let angleMode = 'Deg';
+        let memory = 0;
+        // Anti-cheating variables
+        let cheatingAttempts = 0;
+        let isQuizActive = false;
+        let devToolsWarned = false;
+
+
+        // ============================================
+        // ENHANCED ANTI-CHEATING SYSTEM
+        // ============================================
+        
+        function initializeAntiCheating() {
+            // Disable right-click
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                recordCheatingAttempt('right_click');
+                return false;
+            });
+            
+            // Disable common keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                // Disable F12, Ctrl+Shift+I, Ctrl+U, Ctrl+S, Print Screen
+                if (e.keyCode === 123 ||
+                    (e.ctrlKey && e.shiftKey && e.keyCode === 73) ||
+                    (e.ctrlKey && e.keyCode === 85) ||
+                    (e.ctrlKey && e.keyCode === 83) ||
+                    e.keyCode === 44) {
+                    e.preventDefault();
+                    recordCheatingAttempt('keyboard_shortcut');
+                    return false;
+                }
+                
+                // Disable Ctrl+A, Ctrl+C, Ctrl+V
+                if (e.ctrlKey && (e.keyCode === 65 || e.keyCode === 67 || e.keyCode === 86)) {
+                    e.preventDefault();
+                    recordCheatingAttempt('copy_attempt');
+                    return false;
+                }
+            });
+            
+            // Detect developer tools
+            let devtools = {open: false, orientation: null};
+            const threshold = 160;
+            
+            setInterval(function() {
+                if (window.outerHeight - window.innerHeight > threshold ||
+                    window.outerWidth - window.innerWidth > threshold) {
+                    if (!devtools.open) {
+                        devtools.open = true;
+                        recordCheatingAttempt('developer_tools');
+                        if (!devToolsWarned) {
+                            alert('Developer tools detected! This attempt has been logged.');
+                            devToolsWarned = true;
+                        }
+                    }
+                } else {
+                    devtools.open = false;
+                }
+            }, 500);
+            
+            // Screenshot detection
+            document.addEventListener('keyup', function(e) {
+                // Windows: PrtScn, Alt+PrtScn, Win+Shift+S
+                // Mac: Cmd+Shift+3, Cmd+Shift+4, Cmd+Shift+5
+                if (e.key === 'PrintScreen' || 
+                    (e.keyCode === 44) ||
+                    (e.metaKey && e.shiftKey && ['3', '4', '5'].includes(e.key)) ||
+                    (e.metaKey && e.shiftKey && e.keyCode === 83)) {
+                    recordCheatingAttempt('screenshot_attempt');
+                    alert('Screenshot detected! This activity has been logged.');
+                }
+            });
+            
+            // Clipboard screenshot detection (Windows Snipping Tool)
+            document.addEventListener('copy', function(e) {
+                if (isQuizActive) {
+                    recordCheatingAttempt('clipboard_copy');
+                }
+            });
+            
+            // Detect if window loses focus (potential screenshot tool usage)
+            let lastBlurTime = 0;
+            window.addEventListener('blur', function() {
+                lastBlurTime = Date.now();
+                if (isQuizActive) {
+                    recordCheatingAttempt('window_focus_lost');
+                    document.body.classList.add('blurred');
+                    document.getElementById('warningOverlay').style.display = 'flex';
+                }
+            });
+            
+            // Page visibility detection (tab switching, minimizing)
+            document.addEventListener('visibilitychange', function() {
+                if (document.hidden && isQuizActive) {
+                    recordCheatingAttempt('tab_switched');
+                    document.getElementById('warningOverlay').style.display = 'flex';
+                }
+            });
+            
+            // Window focus restoration
+            window.addEventListener('focus', function() {
+                document.body.classList.remove('blurred');
+                if (isQuizActive) {
+                    setTimeout(() => {
+                        document.getElementById('warningOverlay').style.display = 'none';
+                    }, 1000); // Show warning for 1 second after returning
+                }
+            });
+            
+            // Detect mouse leaving the quiz area
+            document.addEventListener('mouseleave', function() {
+                if (isQuizActive) {
+                    recordCheatingAttempt('mouse_left_page');
+                }
+            });
+            
+            // Detect if user tries to open new tabs/windows
+            window.addEventListener('beforeunload', function(e) {
+                if (isQuizActive) {
+                    recordCheatingAttempt('attempted_page_leave');
+                    e.preventDefault();
+                    return 'Are you sure you want to leave? Your progress may be lost.';
+                }
+            });
+            
+            // Prevent text selection
+            document.onselectstart = function() {
+                if (isQuizActive) {
+                    recordCheatingAttempt('text_selection');
+                    return false;
+                }
+            };
+            
+            // Disable drag
+            document.ondragstart = function() {
+                return false;
+            };
+            
+            console.log('✅ Anti-cheating initialized');
+        }
+        
+        // Enhanced record cheating attempts
+        function recordCheatingAttempt(type) {
+            cheatingAttempts++;
+            const timestamp = new Date().toISOString();
+            console.warn(`🚨 Cheating attempt #${cheatingAttempts}: ${type} at ${timestamp}`);
+            
+            // Visual warning for specific actions
+            const highRiskActions = ['screenshot_attempt', 'tab_switched', 'window_focus_lost', 'attempted_page_leave'];
+            if (highRiskActions.includes(type)) {
+                const overlay = document.getElementById('warningOverlay');
+                if (overlay) {
+                    overlay.style.display = 'flex';
+                    setTimeout(() => {
+                        if (document.hasFocus()) {
+                            overlay.style.display = 'none';
+                        }
+                    }, 2000);
+                }
+            }
+            
+            if (username && email) {
+                fetch('https://sanghamitra-learnworld.vercel.app/api/log-cheating', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        username: username,
+                        email: email,
+                        cheatingType: type,
+                        timestamp: timestamp,
+                        currentQuestion: currentQuestionIndex + 1,
+                        totalAttempts: cheatingAttempts,
+                        userAgent: navigator.userAgent,
+                        screenResolution: `${window.screen.width}x${window.screen.height}`
+                    })
+                }).catch(err => console.error('Failed to log cheating attempt:', err));
+            }
+            
+            // Progressive warnings
+            if (cheatingAttempts === 3) {
+                alert('⚠️ WARNING: Suspicious activity detected!\nFurther violations will result in automatic submission.');
+            } else if (cheatingAttempts >= 5) {
+                alert('🚫 Too many suspicious activities detected.\nQuiz will be auto-submitted for review.');
+                submitQuiz();
+            }
+        }
+
+        async function loadQuestions() {
+            try {
+                if (!email) {
+                    alert('Please login to take the assessment');
+                    return false;
+                }
+                
+                const response = await fetch(`https://sanghamitra-learnworld.vercel.app/api/iitm-math-questions/exponential_function?email=${encodeURIComponent(email)}&count=50&random=true`, {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.allQuestionsCompleted || (data.questions && data.questions.length === 0)) {
+                    const resetConfirm = confirm(
+                        `🎉 Congratulations! You have completed all available questions!\n\n` +
+                        `Total questions in pool: ${data.totalQuestionsInPool || 'All'}\n` +
+                        `Questions completed: ${data.totalCompleted || data.totalQuestionsInPool}\n\n` +
+                        `Would you like to reset your progress and start over?`
+                    );
+                    
+                    if (resetConfirm) {
+                        const resetSuccess = await resetUserProgress();
+                        if (resetSuccess) {
+                            return loadQuestions();
+                        } else {
+                            window.location.href = 'iitm_math.html';
+                            return false;
+                        }
+                    } else {
+                        window.location.href = 'iitm_math.html';
+                        return false;
+                    }
+                }
+                
+                questions = data.questions || data;
+                
+                if (!questions || questions.length === 0) {
+                    throw new Error('No questions found');
+                }
+                
+                console.log(`Loaded ${questions.length} new questions successfully`);
+                return true;
+            } catch (error) {
+                console.error('Error loading questions:', error);
+                return false;
+            }
+        }
+        
+        // Initialize quiz timing
+        function initializeQuizTiming() {
+            quizStartTime = new Date();
+            questionStartTime = new Date();
+        }
+
+        // Track question time
+        function trackQuestionTime() {
+            if (questionStartTime) {
+                const timeSpent = Math.floor((new Date() - questionStartTime) / 1000);
+                questionTimes[currentQuestionIndex] = timeSpent;
+            }
+            questionStartTime = new Date();
+        }
+
+        // Fetch user session
+        async function fetchSessionInfo() {
+            try {
+                const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/session-info', {
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    username = data.username;
+                    email = data.email;
+                    console.log("User:", username, "Email:", email);
+                    return true;
+                } else {
+                    console.error('Failed to fetch session info');
+                    alert('Please login to take the assessment');
+                    window.location.href = '/login.html';
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error fetching session info:', error);
+                return false;
+            }
+        }
+
+        // Render current question
+        function renderCurrentQuestion() {
+            const container = document.getElementById('questionContainer');
+            const question = questions[currentQuestionIndex];
+            
+            console.log('Rendering question:', question);
+            
+            container.innerHTML = '';
+
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'question-card';
+
+            let optionsHtml = '';
+            
+            if (question.type === 'multiple_choice') {
+                optionsHtml = question.options.map((option, optIndex) => {
+                    const safeOption = option.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                    return `
+                        <div class="option" onclick="selectOption(${currentQuestionIndex}, '${safeOption}', 'radio', this)">
+                            <input type="radio" name="q${currentQuestionIndex}" value="${safeOption}" id="q${currentQuestionIndex}_${optIndex}">
+                            <label for="q${currentQuestionIndex}_${optIndex}">${option}</label>
+                        </div>
+                    `;
+                }).join('');
+                
+            } else if (question.type === 'multiple_select') {
+                optionsHtml = question.options.map((option, optIndex) => {
+                    const safeOption = option.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                    return `
+                        <div class="option" onclick="selectOption(${currentQuestionIndex}, '${safeOption}', 'checkbox', this)">
+                            <input type="checkbox" name="q${currentQuestionIndex}" value="${safeOption}" id="q${currentQuestionIndex}_${optIndex}">
+                            <label for="q${currentQuestionIndex}_${optIndex}">${option}</label>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                let placeholder, formatExample, formatHint;
+                
+                if (question.type === 'coordinate_input') {
+                    placeholder = "e.g., (3, 4) or (3,4)";
+                    formatExample = "(x, y)";
+                    formatHint = "✓ Accepted: (3,4) or (3, 4) | ✗ Avoid: 3,4 or [3,4]";
+                } else if (question.type === 'equation_input') {
+                    placeholder = "e.g., y = 2x + 3";
+                    formatExample = "equation with =";
+                    formatHint = "✓ Accepted: y=2x+3 or y = 2x + 3 | Use ^ for powers: x^2";
+                } else if (question.type === 'interval_input') {
+                    placeholder = "e.g., [0, 5] or (-2, 3]";
+                    formatExample = "[a,b] or (a,b)";
+                    formatHint = "✓ Use [ ] for inclusive, ( ) for exclusive | e.g., [0,5) means 0 ≤ x < 5";
+                } else if (question.type === 'numeric' || question.type === 'numeric_input') {
+                    placeholder = "e.g., 42 or -3.14";
+                    formatExample = "number";
+                    formatHint = "✓ Accepted: 42, -3.14, 0.5 | Decimals are fine";
+                } else {
+                    placeholder = question.format_hint || "Enter your answer";
+                    formatExample = "text";
+                    formatHint = question.format_hint || "";
+                }
+                
+                optionsHtml = `
+                <input type="text" 
+                       class="numeric-input" 
+                       placeholder="${placeholder}" 
+                       onchange="handleNumericInputWithValidation(${currentQuestionIndex}, this.value)"
+                       oninput="handleNumericInput(${currentQuestionIndex}, this.value)"
+                       autocomplete="off"
+                       spellcheck="false"
+                       style="font-size: 16px; font-family: 'Courier New', monospace;">
+            `;
+            }
+
+            const difficultyColor = {
+                'easy': '#28a745',
+                'medium': '#ffc107', 
+                'hard': '#dc3545'
+            };
+
+            const difficulty = question.difficulty || 'medium';
+            const difficultyText = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+            
+            questionDiv.innerHTML = `
+            <div class="question-header">
+                <div class="question-number">${currentQuestionIndex + 1}</div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="background: ${difficultyColor[difficulty]}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; text-transform: uppercase;">
+                        ${difficultyText}
+                    </span>
+                </div>
+            </div>
+            <div class="question-text">${question.question_text}</div>
+            <div class="options">${optionsHtml}</div>
+        `;
+
+            container.appendChild(questionDiv);
+            
+            // Restore previous answer if exists
+            restoreAnswer();
+            updateAnswerStatus();
+        }
+
+        function restoreAnswer() {
+            const question = questions[currentQuestionIndex];
+            const savedAnswer = userAnswers[currentQuestionIndex];
+            
+            if (!savedAnswer) return;
+
+            if (question.type === 'multiple_choice') {
+                const options = document.querySelectorAll(`.option input[name="q${currentQuestionIndex}"]`);
+                options.forEach(option => {
+                    if (option.value === savedAnswer) {
+                        option.checked = true;
+                        option.closest('.option').classList.add('selected');
+                    }
+                });
+            } else if (question.type === 'multiple_select' && Array.isArray(savedAnswer)) {
+                savedAnswer.forEach(answer => {
+                    const option = document.querySelector(`input[value="${answer}"]`);
+                    if (option) {
+                        option.checked = true;
+                        option.closest('.option').classList.add('selected');
+                    }
+                });
+            } else if (question.type === 'numeric' || question.type === 'interval_input' || question.type === 'numeric_input' || question.type === 'coordinate_input' || question.type === 'equation_input' || question.type === 'text_input') {
+                const input = document.querySelector('.numeric-input');
+                if (input) {
+                    input.value = savedAnswer;
+                }
+            }
+        }
+
+        function updateProgress() {
+            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+            document.getElementById('questionStatus').textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+            
+            document.getElementById('prevBtn').disabled = currentQuestionIndex === 0;
+            
+            const nextBtn = document.getElementById('nextBtn');
+            if (currentQuestionIndex === questions.length - 1) {
+                nextBtn.textContent = 'Finish';
+                nextBtn.onclick = () => {
+                    document.getElementById('quizContainer').scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'end' 
+                    });
+                };
+            } else {
+                nextBtn.textContent = 'Next';
+                nextBtn.onclick = nextQuestion;
+            }
+        }
+
+        function updateAnswerStatus() {
+            const statusSpan = document.getElementById('answeredStatus');
+            const hasAnswer = userAnswers[currentQuestionIndex] !== undefined;
+            
+            if (hasAnswer) {
+                statusSpan.textContent = 'Answered';
+                statusSpan.className = 'status-answered';
+            } else {
+                statusSpan.textContent = 'Unanswered';
+                statusSpan.className = 'status-unanswered';
+            }
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < questions.length - 1) {
+                trackQuestionTime();
+                currentQuestionIndex++;
+                renderCurrentQuestion();
+                updateProgress();
+            }
+        }
+
+        function previousQuestion() {
+            if (currentQuestionIndex > 0) {
+                trackQuestionTime();
+                currentQuestionIndex--;
+                renderCurrentQuestion();
+                updateProgress();
+            }
+        }
+
+        function selectOption(questionIndex, value, type, element) {
+            if (type === 'radio') {
+                const allOptions = document.querySelectorAll(`.question-card .option`);
+                allOptions.forEach(opt => {
+                    const input = opt.querySelector('input[type="radio"]');
+                    if (input && input.name === `q${questionIndex}`) {
+                        input.checked = false;
+                        opt.classList.remove('selected');
+                    }
+                });
+                
+                const radioInput = element.querySelector('input[type="radio"]');
+                if (radioInput) {
+                    radioInput.checked = true;
+                }
+                element.classList.add('selected');
+                userAnswers[questionIndex] = value.trim();
+                        
+            } else if (type === 'checkbox') {
+                const checkbox = element.querySelector('input');
+                checkbox.checked = !checkbox.checked;
+                
+                if (!userAnswers[questionIndex]) userAnswers[questionIndex] = [];
+                
+                if (checkbox.checked) {
+                    if (!userAnswers[questionIndex].includes(value.trim())) {
+                        userAnswers[questionIndex].push(value.trim());
+                    }
+                    element.classList.add('selected');
+                } else {
+                    userAnswers[questionIndex] = userAnswers[questionIndex].filter(ans => ans !== value.trim());
+                    element.classList.remove('selected');
+                    
+                    if (userAnswers[questionIndex].length === 0) {
+                        delete userAnswers[questionIndex];
+                    }
+                }
+            }
+            
+            updateAnswerStatus();
+        }
+
+        function handleNumericInput(questionIndex, value) {
+            const question = questions[questionIndex];
+            const trimmedValue = value.trim();
+            
+            if (!trimmedValue) {
+                delete userAnswers[questionIndex];
+                updateAnswerStatus();
+                return;
+            }
+            
+            userAnswers[questionIndex] = trimmedValue;
+            updateAnswerStatus();
+        }
+
+        function handleNumericInputWithValidation(questionIndex, value) {
+            handleNumericInput(questionIndex, value);
+        }
+
+        // Initialize quiz
+        async function initializeQuiz() {
+            try {
+
+                initializeAntiCheating();
+                const sessionValid = await fetchSessionInfo();
+                if (!sessionValid) return;
+                
+                const questionsLoaded = await loadQuestions();
+                if (!questionsLoaded) return;
+                
+                currentUser = { username, email };
+                
+                initializeQuizTiming();
+                isQuizActive = true
+                
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('quizContainer').style.display = 'block';
+                
+                renderCurrentQuestion();
+                updateProgress();
+                
+            } catch (error) {
+                console.error('Error initializing quiz:', error);
+            }
+        }
+
+        // ============================================
+        // CALCULATOR FUNCTIONS - FIXED
+        // ============================================
+
+        // Initialize calculator
+        function initializeCalculator() {
+            const calculatorBtn = document.getElementById('calculatorBtn');
+            const calculatorModal = document.getElementById('calculatorModal');
+            const closeBtn = calculatorModal.querySelector('.calculator-close');
+            const minimizeBtn = calculatorModal.querySelector('.minimize-btn');
+            const helpBtn = calculatorModal.querySelector('.help-btn');
+            
+            // Set up calculator button click
+            calculatorBtn.addEventListener('click', toggleCalculator);
+            
+            // Set up close button
+            closeBtn.addEventListener('click', toggleCalculator);
+            
+            // Set up minimize button
+            if (minimizeBtn) {
+                minimizeBtn.addEventListener('click', function() {
+                    calculatorModal.style.display = 'none';
+                    calculatorBtn.style.display = 'flex';
+                    calculatorOpen = false;
+                });
+            }
+            
+            // Set up help button
+            if (helpBtn) {
+                helpBtn.addEventListener('click', function() {
+                    alert('Scientific Calculator Help:\n\n• Use Deg/Rad for angle modes\n• Click buttons or type directly\n• Drag the header to move calculator\n• Close with × or minimize with ―');
+                });
+            }
+            
+            // Initialize drag functionality
+            initializeDrag();
+            
+            // Initialize angle mode listeners
+            const degMode = document.getElementById('degMode');
+            const radMode = document.getElementById('radMode');
+            
+            degMode.addEventListener('change', () => {
+                angleMode = 'Deg';
+                console.log('Angle mode changed to:', angleMode);
+            });
+            
+            radMode.addEventListener('change', () => {
+                angleMode = 'Rad';
+                console.log('Angle mode changed to:', angleMode);
+            });
+            
+            console.log('Calculator initialized');
+        }
+
+        // Toggle calculator visibility
+        function toggleCalculator() {
+            const modal = document.getElementById('calculatorModal');
+            const btn = document.getElementById('calculatorBtn');
+            
+            calculatorOpen = !calculatorOpen;
+            
+            if (calculatorOpen) {
+                modal.style.display = 'flex';
+                btn.style.display = 'none';
+                
+                // Set initial position
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+                const modalWidth = modal.offsetWidth || 590;
+                const modalHeight = modal.offsetHeight || 400;
+                
+                modal.style.position = 'fixed';
+                modal.style.left = (viewportWidth - modalWidth - 20) + 'px';
+                modal.style.top = (viewportHeight - modalHeight - 100) + 'px';
+                
+                // Focus on display
+                setTimeout(() => {
+                    document.getElementById('calcDisplay').focus();
+                }, 100);
+            } else {
+                modal.style.display = 'none';
+                btn.style.display = 'flex';
+            }
+            
+            console.log('Calculator toggled. Open:', calculatorOpen);
+        }
+
+        // Initialize drag functionality
+        function initializeDrag() {
+            const modal = document.getElementById('calculatorModal');
+            const header = modal.querySelector('.calculator-header');
+            
+            header.addEventListener('mousedown', startDrag);
+            header.addEventListener('touchstart', startDragTouch);
+            
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('touchmove', dragTouch);
+            document.addEventListener('mouseup', stopDrag);
+            document.addEventListener('touchend', stopDrag);
+            
+            // Prevent button drag
+            const buttons = modal.querySelectorAll('.calc-btn, .calculator-close, .help-btn, .minimize-btn');
+            buttons.forEach(btn => {
+                btn.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                });
+                btn.addEventListener('touchstart', (e) => {
+                    e.stopPropagation();
+                });
+            });
+        }
+
+        function startDrag(e) {
+            if (e.target.closest('.calculator-close') || 
+                e.target.closest('.calc-btn') || 
+                e.target.closest('.help-btn') || 
+                e.target.closest('.minimize-btn')) {
+                return;
+            }
+            
+            const modal = document.getElementById('calculatorModal');
+            isDragging = true;
+            
+            const rect = modal.getBoundingClientRect();
+            dragOffsetX = e.clientX - rect.left;
+            dragOffsetY = e.clientY - rect.top;
+            
+            modal.style.cursor = 'grabbing';
+            e.preventDefault();
+        }
+
+        function startDragTouch(e) {
+            if (e.target.closest('.calculator-close') || 
+                e.target.closest('.calc-btn') || 
+                e.target.closest('.help-btn') || 
+                e.target.closest('.minimize-btn')) {
+                return;
+            }
+            
+            const modal = document.getElementById('calculatorModal');
+            isDragging = true;
+            
+            const touch = e.touches[0];
+            const rect = modal.getBoundingClientRect();
+            dragOffsetX = touch.clientX - rect.left;
+            dragOffsetY = touch.clientY - rect.top;
+            
+            modal.style.cursor = 'grabbing';
+            e.preventDefault();
+        }
+
+        function drag(e) {
+            if (!isDragging) return;
+            
+            const modal = document.getElementById('calculatorModal');
+            const x = e.clientX - dragOffsetX;
+            const y = e.clientY - dragOffsetY;
+            
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const modalWidth = modal.offsetWidth;
+            const modalHeight = modal.offsetHeight;
+            
+            let finalX = Math.max(0, Math.min(x, viewportWidth - modalWidth));
+            let finalY = Math.max(0, Math.min(y, viewportHeight - modalHeight));
+            
+            modal.style.left = finalX + 'px';
+            modal.style.top = finalY + 'px';
+            
+            e.preventDefault();
+        }
+
+        function dragTouch(e) {
+            if (!isDragging) return;
+            
+            const modal = document.getElementById('calculatorModal');
+            const touch = e.touches[0];
+            const x = touch.clientX - dragOffsetX;
+            const y = touch.clientY - dragOffsetY;
+            
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const modalWidth = modal.offsetWidth;
+            const modalHeight = modal.offsetHeight;
+            
+            let finalX = Math.max(0, Math.min(x, viewportWidth - modalWidth));
+            let finalY = Math.max(0, Math.min(y, viewportHeight - modalHeight));
+            
+            modal.style.left = finalX + 'px';
+            modal.style.top = finalY + 'px';
+            
+            e.preventDefault();
+        }
+
+        function stopDrag() {
+            isDragging = false;
+            const modal = document.getElementById('calculatorModal');
+            modal.style.cursor = 'move';
+        }
+
+        // Calculator functions
+        function addToDisplay(value) {
+            const display = document.getElementById('calcDisplay');
+            const resultDisplay = document.getElementById('resultDisplay');
+            
+            if (resultDisplay.value !== '0' && display.value === '') {
+                resultDisplay.value = '0';
+            }
+            
+            display.value += value;
+            display.focus();
+        }
+
+        function clearCalculator() {
+            document.getElementById('calcDisplay').value = '';
+            document.getElementById('resultDisplay').value = '0';
+        }
+
+        function backspace() {
+            const display = document.getElementById('calcDisplay');
+            display.value = display.value.slice(0, -1);
+        }
+
+        function calculateResult() {
+            const display = document.getElementById('calcDisplay');
+            const resultDisplay = document.getElementById('resultDisplay');
+            
+            try {
+                let expression = display.value
+                    .replace(/×/g, '*')
+                    .replace(/÷/g, '/')
+                    .replace(/\^/g, '**')
+                    .replace(/√/g, 'Math.sqrt')
+                    .replace(/π/g, 'Math.PI')
+                    .replace(/e(?![a-zA-Z])/g, 'Math.E');
+                
+                const allowedChars = /^[0-9+\-*/().^MathsincostanasinacosatanlogexpsqrtPIElE, ]+$/;
+                
+                if (!allowedChars.test(expression)) {
+                    throw new Error('Invalid characters');
+                }
+                
+                const safeEval = new Function('return ' + expression);
+                let result = safeEval();
+                
+                if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
+                    result = Math.round(result * 100000000) / 100000000;
+                }
+                
+                resultDisplay.value = result;
+                
+            } catch (error) {
+                resultDisplay.value = 'Error';
+                setTimeout(() => {
+                    resultDisplay.value = '0';
+                }, 1500);
+            }
+        }
+
+        function calcFunction(func) {
+            const display = document.getElementById('calcDisplay');
+            const value = parseFloat(display.value) || 0;
+            let result;
+            
+            switch(func) {
+                case 'sin':
+                case 'cos':
+                case 'tan':
+                    result = angleMode === 'Deg' ? 
+                        Math[func](value * Math.PI / 180) : 
+                        Math[func](value);
+                    break;
+                case 'sin⁻¹':
+                    result = angleMode === 'Deg' ? 
+                        Math.asin(value) * 180 / Math.PI : 
+                        Math.asin(value);
+                    break;
+                case 'cos⁻¹':
+                    result = angleMode === 'Deg' ? 
+                        Math.acos(value) * 180 / Math.PI : 
+                        Math.acos(value);
+                    break;
+                case 'tan⁻¹':
+                    result = angleMode === 'Deg' ? 
+                        Math.atan(value) * 180 / Math.PI : 
+                        Math.atan(value);
+                    break;
+                case 'sinh':
+                    result = Math.sinh(value);
+                    break;
+                case 'cosh':
+                    result = Math.cosh(value);
+                    break;
+                case 'tanh':
+                    result = Math.tanh(value);
+                    break;
+                case 'ln':
+                    result = Math.log(value);
+                    break;
+                case 'log':
+                    result = Math.log10(value);
+                    break;
+                case 'eˣ':
+                    result = Math.exp(value);
+                    break;
+                case '10ˣ':
+                    result = Math.pow(10, value);
+                    break;
+                case 'x²':
+                    result = value * value;
+                    break;
+                case 'x³':
+                    result = value * value * value;
+                    break;
+                case '1/x':
+                    result = 1 / value;
+                    break;
+                case 'n!':
+                    result = factorial(value);
+                    break;
+                case '|x|':
+                    result = Math.abs(value);
+                    break;
+                default:
+                    return;
+            }
+            
+            document.getElementById('resultDisplay').value = result;
+            document.getElementById('calcDisplay').value = result;
+        }
+
+        function factorial(n) {
+            if (n < 0) return NaN;
+            if (n === 0 || n === 1) return 1;
+            let result = 1;
+            for (let i = 2; i <= n; i++) {
+                result *= i;
+            }
+            return result;
+        }
+
+        function memoryFunction(func) {
+            const value = parseFloat(document.getElementById('resultDisplay').value) || 0;
+            
+            switch(func) {
+                case 'MC':
+                    memory = 0;
+                    break;
+                case 'MR':
+                    document.getElementById('calcDisplay').value = memory;
+                    break;
+                case 'MS':
+                    memory = value;
+                    break;
+                case 'M+':
+                    memory += value;
+                    break;
+                case 'M-':
+                    memory -= value;
+                    break;
+            }
+        }
+
+        // Keyboard support for calculator
+        document.addEventListener('keydown', function(e) {
+            if (!calculatorOpen) return;
+            
+            const display = document.getElementById('calcDisplay');
+            if (!display) return;
+            
+            if (/[\d\+\-\*\/\(\)\.=%]/.test(e.key) && !e.ctrlKey && !e.metaKey) {
+                e.preventDefault();
+                
+                if (e.key === 'Enter' || e.key === '=') {
+                    calculateResult();
+                } else if (e.key === 'Escape') {
+                    clearCalculator();
+                } else if (e.key === 'Backspace') {
+                    backspace();
+                } else {
+                    addToDisplay(e.key);
+                }
+            }
+        });
+
+        // Close calculator when clicking outside (optional)
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('calculatorModal');
+            const btn = document.getElementById('calculatorBtn');
+            
+            if (calculatorOpen && 
+                !modal.contains(e.target) && 
+                !btn.contains(e.target) &&
+                !e.target.closest('.calculator-btn')) {
+                // Optional: Uncomment to close when clicking outside
+                // toggleCalculator();
+            }
+        });
+
+        // Submit quiz function (simplified for demo)
+        async function submitQuiz() {
+            const confirmSubmit = confirm(`Ready to Submit?\n\nAre you ready to submit your Function Concepts Quiz?`);
+            
+            if (!confirmSubmit) {
+                return;
+            }
+
+            isQuizActive = false; 
+
+            if (!username || !email) {
+                alert("Error: User session data not found. Please log in.");
+                return;
+            }
+
+            trackQuestionTime();
+            const quizEndTime = new Date();
+            const totalTimeTaken = Math.floor((quizEndTime - quizStartTime) / 1000);
+
+            let score = 0;
+            let totalPossiblePoints = 0;
+            const questionResults = [];
+            const difficultyBreakdown = {
+                easy: { attempted: 0, correct: 0, points: 0 },
+                medium: { attempted: 0, correct: 0, points: 0 },
+                hard: { attempted: 0, correct: 0, points: 0 }
+            };
+            
+            questions.forEach((question, index) => {
+                const userAnswer = userAnswers[index];
+                totalPossiblePoints += question.points || 1;
+                
+                let isCorrect = false;
+                
+                if (question.type === 'multiple_select') {
+                    if (Array.isArray(userAnswer) && Array.isArray(question.correct_answer)) {
+                        const userNorm = userAnswer.map(ans => 
+                            answerNormalizer.normalizeAnswer(ans, 'text_input')
+                        ).sort();
+                        const correctNorm = question.correct_answer.map(ans => 
+                            answerNormalizer.normalizeAnswer(ans, 'text_input')
+                        ).sort();
+                        isCorrect = userNorm.length === correctNorm.length &&
+                                   userNorm.every((ans, idx) => ans === correctNorm[idx]);
+                    }
+                } else if (question.type === 'multiple_choice') {
+                    const normalizeAnswer = (answer) => (answer || '').toString().trim().toLowerCase();
+                    isCorrect = normalizeAnswer(userAnswer) === normalizeAnswer(question.correct_answer);
+                } else {
+                    const userNorm = answerNormalizer.normalizeAnswer(userAnswer, question.type);
+                    const correctNorm = answerNormalizer.normalizeAnswer(question.correct_answer, question.type);
+                    isCorrect = userNorm === correctNorm;
+                }
+
+                if (isCorrect) {
+                    score += question.points || 1;
+                }
+
+                difficultyBreakdown[question.difficulty].attempted++;
+                if (isCorrect) {
+                    difficultyBreakdown[question.difficulty].correct++;
+                    difficultyBreakdown[question.difficulty].points += question.points || 1;
+                }
+                
+                questionResults.push({
+                    questionNumber: index + 1,
+                    questionText: question.question_text,
+                    difficulty: question.difficulty,
+                    points: question.points || 1,
+                    userAnswer: userAnswer ? userAnswer.toString() : 'No answer provided',
+                    correctAnswer: question.correct_answer.toString(),
+                    explanation: question.explanation || '',
+                    isCorrect: isCorrect,
+                    timeTaken: questionTimes[index] || 0
+                });
+            });
+
+            const quizData = {
+                topic: 'exponential_function',
+                quizType: 'practice',
+                score: score,
+                maxPossibleScore: totalPossiblePoints,
+                totalQuestions: questions.length,
+                correctAnswers: questionResults.filter(q => q.isCorrect).length,
+                percentage: Math.round((score / totalPossiblePoints) * 100),
+                difficultyBreakdown: difficultyBreakdown,
+                questionResults: questionResults,
+                startTime: quizStartTime,
+                endTime: quizEndTime,
+                totalTimeTaken: totalTimeTaken,
+                isCompleted: true
+            };
+
+            try {
+                document.getElementById('submitText').style.display = 'none';
+                document.getElementById('submitLoading').style.display = 'inline-block';
+                document.getElementById('submitBtn').disabled = true;
+
+                console.log('Submitting quiz data...');
+                
+                const response = await fetch('https://sanghamitra-learnworld.vercel.app/api/iitmmath_scores', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        email: email,
+                        username: username,
+                        quizData: quizData
+                    })
+                });
+
+                if (response.ok) {
+                    console.log('Quiz submitted successfully');
+                    displayDetailedResults(quizData);
+                } else {
+                    const errorText = await response.text();
+                    console.error('Failed to submit quiz:', errorText);
+                    alert('Failed to submit quiz. Please try again.');
+                    
+                    document.getElementById('submitText').style.display = 'inline';
+                    document.getElementById('submitLoading').style.display = 'none';
+                    document.getElementById('submitBtn').disabled = false;
+                    return;
+                }
+            } catch (error) {
+                console.error('Error submitting quiz:', error);
+                alert('Error submitting quiz. Please check your connection and try again.');
+                document.getElementById('submitText').style.display = 'inline';
+                document.getElementById('submitLoading').style.display = 'none';
+                document.getElementById('submitBtn').disabled = false;
+                return;
+            }
+        }
+
+        function displayDetailedResults(quizData) {
+            document.getElementById('quizContainer').style.display = 'none';
+            
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.style.display = 'block';
+            
+            const scoreDisplay = document.querySelector('.score-display');
+            scoreDisplay.innerHTML = `
+                <h2>${quizData.score}/${quizData.maxPossibleScore} Points (${quizData.percentage}%)</h2>
+                <p>Quiz Completed Successfully!</p>
+                <div style="margin-top: 20px; display: flex; justify-content: space-around; text-align: center;">
+                    <div>
+                        <strong>Easy Questions</strong><br>
+                        ${quizData.difficultyBreakdown.easy.correct}/${quizData.difficultyBreakdown.easy.attempted}
+                    </div>
+                    <div>
+                        <strong>Medium Questions</strong><br>
+                        ${quizData.difficultyBreakdown.medium.correct}/${quizData.difficultyBreakdown.medium.attempted}
+                    </div>
+                    <div>
+                        <strong>Hard Questions</strong><br>
+                        ${quizData.difficultyBreakdown.hard.correct}/${quizData.difficultyBreakdown.hard.attempted}
+                    </div>
+                </div>
+                <p style="margin-top: 15px; font-size: 0.9em;">
+                    Time Taken: ${Math.floor(quizData.totalTimeTaken / 60)}m ${quizData.totalTimeTaken % 60}s
+                </p>
+            `;
+        }
+
+        function goback() {
+            window.location.href = 'iitm_math.html';
+        }
+
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing...');
+            
+            // Initialize calculator first (so it's always available)
+            initializeCalculator();
+            
+            // Then initialize quiz
+            setTimeout(() => {
+                initializeQuiz();
+            }, 100);
+        });
+
+    </script>
+</body>
+</html>
+
+
