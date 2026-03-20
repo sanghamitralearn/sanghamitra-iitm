@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "React frontend for Sanghamitra Learning platform",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
+    "dev": "npx vite",
+    "build": "npx vite build",
+    "preview": "npx vite preview",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": ["react", "education", "learning"],
