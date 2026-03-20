@@ -14,11 +14,6 @@ const app = express();
 // Load environment variables
 dotenv.config({ path: './.env' });
 
-// Ensure environment variables are loaded
-console.log('DATABASE:', process.env.DATABASE);
-console.log('SECRET_KEY:', process.env.SECRET_KEY);
-console.log('PORT:', process.env.PORT);
-
 // If environment variables are still undefined, try loading from parent directory
 if (!process.env.DATABASE || !process.env.SECRET_KEY) {
     console.log('Environment variables not found, trying to load from parent directory...');
@@ -30,7 +25,7 @@ if (!process.env.DATABASE || !process.env.SECRET_KEY) {
 
 // Middleware setup
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: ['http://localhost:3000', 'https://sanghamitra-iitm.vercel.app'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
