@@ -35,6 +35,8 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+app.set('trust proxy', 1); // Required for Vercel / reverse proxies
+
 app.use(session({
     name: 'sessionId',
     secret: process.env.SECRET_KEY,
@@ -45,7 +47,10 @@ app.use(session({
         collectionName: 'sessions'
     }),
     cookie: {
-        maxAge: 1000 * 60 * 60 * 24 // 1 day, you can customize this
+        maxAge: 1000 * 60 * 60 * 24, // 1 day
+        secure: true,      // required for cross-site cookies
+        sameSite: 'none',  // allow cross-domain (frontend ↔ backend on different Vercel URLs)
+        httpOnly: true
     }
 }));
 
