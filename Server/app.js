@@ -5,6 +5,7 @@ const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
 const User = require('./model/userSchema');
 const authRouter = require('./router/auth');
+const analysisRouter = require('./router/analysis');
 const dotenv = require('dotenv');
 const cors = require('cors');
 
@@ -66,6 +67,7 @@ mongoose.connect(process.env.DATABASE, {
 
 // Routes
 app.use('/api', authRouter);
+app.use('/api', analysisRouter);
 
 app.get('/', (req, res) => {
     res.send('Hello World');

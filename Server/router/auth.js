@@ -2160,6 +2160,7 @@ router.post('/log-cheating', async (req, res) => {
 
 router.get('/iitmmath_scores', async (req, res) => {
   try {
+    console.log('Fetching math scores...');
     const { email } = req.query;
 
     if (email) {
@@ -2172,6 +2173,112 @@ router.get('/iitmmath_scores', async (req, res) => {
       const users = await iitm_math_score.find({});
       res.json({ success: true, data: users });
     }
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Deep exam analysis: single quiz attempt enriched with question metadata
+router.get('/iitmmath_exam_detail', async (req, res) => {
+  try {
+    const { email, topic, attemptNumber } = req.query;
+    if (!email || !topic || !attemptNumber) {
+      return res.status(400).json({ success: false, message: 'email, topic, and attemptNumber are required' });
+    }
+
+    const user = await iitm_math_score.findOne({ email });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    // Find the exact attempt
+    const attempt = user.quizScores.find(
+      q => q.topic === topic && String(q.attemptNumber) === String(attemptNumber)
+    );
+    if (!attempt) return res.status(404).json({ success: false, message: 'Exam attempt not found' });
+
+    // Collect questionIds from this attempt
+    const questionIds = (attempt.questionResults || [])
+      .map(r => r.questionId)
+      .filter(Boolean);
+
+    // Fetch metadata for all those questions in one query
+    const questionMeta = await IITMathQuestion.find({ _id: { $in: questionIds } }).lean();
+    const metaMap = {};
+    questionMeta.forEach(q => { metaMap[String(q._id)] = q; });
+
+    // Enrich each question result
+    const enrichedResults = (attempt.questionResults || []).map(r => {
+      const meta = metaMap[String(r.questionId)] || {};
+      return {
+        questionId:     r.questionId,
+        questionNumber: r.questionNumber,
+        questionText:   r.questionText || meta.question_text || '',
+        userAnswer:     r.userAnswer,
+        correctAnswer:  r.correctAnswer || meta.correct_answer,
+        isCorrect:      r.isCorrect,
+        timeTaken:      r.timeTaken || 0,
+        // from question metadata
+        difficulty:     meta.difficulty || null,
+        type:           meta.type || null,
+        options:        meta.options || [],
+        explanation:    meta.explanation || null,
+        points:         meta.points || 1,
+        format_hint:    meta.format_hint || null,
+      };
+    });
+
+    // Compute difficulty breakdown
+    const difficultyStats = { easy: { total: 0, correct: 0 }, medium: { total: 0, correct: 0 }, hard: { total: 0, correct: 0 }, unknown: { total: 0, correct: 0 } };
+    enrichedResults.forEach(r => {
+      const d = r.difficulty || 'unknown';
+      difficultyStats[d].total++;
+      if (r.isCorrect) difficultyStats[d].correct++;
+    });
+
+    // Compute type breakdown
+    const typeStats = {};
+    enrichedResults.forEach(r => {
+      const t = r.type || 'unknown';
+      if (!typeStats[t]) typeStats[t] = { total: 0, correct: 0 };
+      typeStats[t].total++;
+      if (r.isCorrect) typeStats[t].correct++;
+    });
+
+    // Time stats
+    const times = enrichedResults.map(r => r.timeTaken).filter(t => t > 0);
+    const avgTime = times.length ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : 0;
+    const maxTime = times.length ? Math.max(...times) : 0;
+    const totalTime = times.reduce((a, b) => a + b, 0);
+
+    res.json({
+      success: true,
+      data: {
+        student: { username: user.username, email: user.email },
+        attempt: {
+          topic:          attempt.topic,
+          attemptNumber:  attempt.attemptNumber,
+          timestamp:      attempt.timestamp,
+          score:          attempt.score,
+          totalQuestions: attempt.totalQuestions,
+          correctAnswers: attempt.correctAnswers,
+          percentage:     attempt.percentage,
+        },
+        enrichedResults,
+        insights: {
+          difficultyStats,
+          typeStats,
+          avgTimeSec: avgTime,
+          maxTimeSec: maxTime,
+          totalTimeSec: totalTime,
+          hardestQuestions: enrichedResults
+            .filter(r => !r.isCorrect && r.difficulty === 'hard')
+            .map(r => ({ questionNumber: r.questionNumber, questionText: r.questionText, explanation: r.explanation })),
+          slowestQuestions: [...enrichedResults]
+            .sort((a, b) => b.timeTaken - a.timeTaken)
+            .slice(0, 3)
+            .map(r => ({ questionNumber: r.questionNumber, questionText: r.questionText, timeTaken: r.timeTaken, isCorrect: r.isCorrect })),
+        }
+      }
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

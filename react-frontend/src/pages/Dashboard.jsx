@@ -5,6 +5,8 @@ import { Chart, ArcElement, Tooltip, Legend } from 'chart.js'
 
 Chart.register(ArcElement, Tooltip, Legend)
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+
 const Dashboard = () => {
   const [user, setUser] = useState(null)
   const [vocabScores, setVocabScores] = useState([])
@@ -28,7 +30,7 @@ const Dashboard = () => {
       setLoading(true)
 
       // Check auth first — redirect immediately if not logged in
-      const authCheck = await axios.get(`${import.meta.env.VITE_API_URL}/api/check-auth`, {
+      const authCheck = await axios.get(`${API_URL}/api/check-auth`, {
         withCredentials: true,
       })
       if (!authCheck.data.authenticated) {
@@ -38,7 +40,7 @@ const Dashboard = () => {
       }
 
       // Fetch user dashboard data
-      const dashboardResponse = await axios.get(`${import.meta.env.VITE_API_URL}/api/dashboard`, {
+      const dashboardResponse = await axios.get(`${API_URL}/api/dashboard`, {
         withCredentials: true
       })
       
@@ -54,18 +56,18 @@ const Dashboard = () => {
         programmingFingerResponse, 
         streakResponse
       ] = await Promise.allSettled([
-        axios.get(`${import.meta.env.VITE_API_URL}/api/vocabscores?email=${dashboardResponse.data.email}`, { withCredentials: true }),
-        axios.get(`${import.meta.env.VITE_API_URL}/api/algebra_scores?email=${dashboardResponse.data.email}`, { withCredentials: true }),
-        axios.get(`${import.meta.env.VITE_API_URL}/api/readingcomprehensionscore?email=${dashboardResponse.data.email}`, { withCredentials: true }),
-        axios.get(`${import.meta.env.VITE_API_URL}/api/programming?email=${dashboardResponse.data.email}`, { withCredentials: true }),
-        axios.get(`${import.meta.env.VITE_API_URL}/api/CT_finger_scores/${dashboardResponse.data.email}`, { withCredentials: true }),
-        axios.get(`${import.meta.env.VITE_API_URL}/api/finger-exercise?email=${dashboardResponse.data.email}`, { withCredentials: true }),
-        axios.get(`${import.meta.env.VITE_API_URL}/api/login-history?email=${dashboardResponse.data.email}`, { withCredentials: true })
+        axios.get(`${API_URL}/api/vocabscores?email=${dashboardResponse.data.email}`, { withCredentials: true }),
+        axios.get(`${API_URL}/api/algebra_scores?email=${dashboardResponse.data.email}`, { withCredentials: true }),
+        axios.get(`${API_URL}/api/readingcomprehensionscore?email=${dashboardResponse.data.email}`, { withCredentials: true }),
+        axios.get(`${API_URL}/api/programming?email=${dashboardResponse.data.email}`, { withCredentials: true }),
+        axios.get(`${API_URL}/api/CT_finger_scores/${dashboardResponse.data.email}`, { withCredentials: true }),
+        axios.get(`${API_URL}/api/finger-exercise?email=${dashboardResponse.data.email}`, { withCredentials: true }),
+        axios.get(`${API_URL}/api/login-history?email=${dashboardResponse.data.email}`, { withCredentials: true })
       ])
       
       // Handle each response individually
       setVocabScores(vocabResponse.status === 'fulfilled' ? (vocabResponse.value?.data?.assessments || []) : [])
-      setMathTopics(mathResponse.status === 'fulfilled' ? (mathResponse.value?.data || []) : [])
+      setMathTopics(mathResponse.status === 'fulfilled' ? (mathResponse.value?.data?.[0]?.topics || []) : [])
       setRcScores(rcResponse.status === 'fulfilled' ? (rcResponse.value?.data || {}) : {})
       setProgrammingScores(programmingResponse.status === 'fulfilled' ? (programmingResponse.value?.data?.quizzes || []) : [])
       setCtFingerScores(ctFingerResponse.status === 'fulfilled' ? (ctFingerResponse.value?.data?.quizzes || []) : [])

@@ -20,6 +20,9 @@ import Writing from './pages/Writing'
 import DiagnosticTest from './pages/DiagnosticTest'
 import Assessment from './pages/Assessment'
 import AdminDashboard from './pages/AdminDashboard'
+import SubjectAnalysis from './pages/SubjectAnalysis'
+import MathDashboard from './pages/MathDashboard'
+import MathExamAnalysis from './pages/MathExamAnalysis'
 import Algebra from './pages/Algebra'
 import IIITMMath from './pages/courses/IIITM-math'
 import AlgebraSubject from './pages/courses/algebra'
@@ -81,6 +84,9 @@ function App() {
             <Route path="/diagnostic-test" element={<DiagnosticTest />} />
             <Route path="/assessment" element={<Assessment />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/math" element={<MathDashboard />} />
+            <Route path="/admin/analysis/:subject/:userId" element={<SubjectAnalysis />} />
+            <Route path="/admin/math/exam/:email/:topic/:attemptNumber" element={<MathExamAnalysis />} />
             <Route path="/algebra" element={<Algebra />} />
             <Route path="/math2" element={<Math2 />} />
             <Route path="/statistics2" element={<Statistics2 />} />

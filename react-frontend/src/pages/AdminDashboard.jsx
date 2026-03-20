@@ -2,8 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
-const VITE_API_URL = import.meta.env.VITE_API_URL
-
+const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
 function getTimeAgo(timestamp) {
   if (!timestamp) return 'Unknown time'
@@ -249,17 +248,13 @@ const dashboardCards = [
   { key: 'ct',    icon: 'bi-cpu',         iconStyle: { background: 'rgba(155,89,182,0.1)', color: '#9b59b6' }, title: 'Computational Thinking', desc: 'Monitor Computational Thinking assignments, logic exercises, and problem-solving tasks.', to: '/admin/iitm-ct' },
   { key: 'py',    icon: 'bi-code-slash',  iconStyle: { background: 'rgba(52,152,219,0.1)', color: '#3498db' }, title: 'Python Dashboard',         desc: 'Monitor Python programming assignments, code submissions, and evaluation results.',     to: '/admin/python' },
   { key: 'dsa',   icon: 'bi-diagram-3',   iconStyle: { background: 'rgba(102,126,234,0.1)', color: '#667eea' }, title: 'DSA Dashboard',          desc: 'View and manage Data Structures and Algorithms submissions, scores, and student performance.', to: '/admin/dsa' },
-  { key: 'm1',    icon: 'bi-calculator',  iconStyle: { background: 'rgba(52,152,219,0.1)', color: '#3498db' }, title: 'Mathematics-1 Dashboard', desc: 'Track mathematics assignments, problem sets, and analytical reasoning exercises.',          to: '/admin/iitm-math' },
+  { key: 'm1',    icon: 'bi-calculator',  iconStyle: { background: 'rgba(52,152,219,0.1)', color: '#3498db' }, title: 'Mathematics Dashboard', desc: 'Track mathematics assignments, problem sets, and analytical reasoning exercises.',          to: '/admin/math' },
   { key: 'm2',    icon: 'bi-calculator',  iconStyle: { background: 'rgba(52,152,219,0.1)', color: '#3498db' }, title: 'Mathematics-2 Dashboard', desc: 'Monitor advanced mathematics concepts, proofs, and mathematical modeling assignments.',     to: '/admin/iitm-math2' },
   { key: 's1',    icon: 'bi-bar-chart',   iconStyle: { background: 'rgba(52,152,219,0.1)', color: '#3498db' }, title: 'Statistics-1 Dashboard',  desc: 'View statistical analysis assignments, data interpretation tasks, and probability exercises.', to: '/admin/stats1' },
   { key: 's2',    icon: 'bi-bar-chart',   iconStyle: { background: 'rgba(52,152,219,0.1)', color: '#3498db' }, title: 'Statistics-2 Dashboard',  desc: 'Monitor advanced statistical methods, inferential statistics, and data modeling assignments.', to: '/admin/stats2' },
 ]
 
 const AdminDashboard = () => {
-  const navigate = useNavigate()
-  const [user, setUser] = useState(null)
-  const [authLoading, setAuthLoading] = useState(true)
-
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [notifLoading, setNotifLoading] = useState(true)
@@ -268,17 +263,6 @@ const AdminDashboard = () => {
 
   const dropdownRef = useRef(null)
   const refreshTimer = useRef(null)
-
-  // Auth check
-  useEffect(() => {
-    axios.get(`${VITE_API_URL}/api/session-info`, { withCredentials: true })
-      .then(res => {
-        if (res.data && res.data.email) setUser(res.data)
-        else navigate('/login', { state: { from: { pathname: '/admin' } }, replace: true })
-      })
-      .catch(() => navigate('/login', { state: { from: { pathname: '/admin' } }, replace: true }))
-      .finally(() => setAuthLoading(false))
-  }, [navigate])
 
   const loadNotifications = useCallback(async (prevCount = 0) => {
     setNotifLoading(true)
@@ -304,14 +288,12 @@ const AdminDashboard = () => {
   }, [])
 
   useEffect(() => {
-    if (!authLoading && user) {
-      loadNotifications(0)
-      refreshTimer.current = setInterval(() => {
-        setNotifications(prev => { loadNotifications(prev.length); return prev })
-      }, 30000)
-    }
+    loadNotifications(0)
+    refreshTimer.current = setInterval(() => {
+      setNotifications(prev => { loadNotifications(prev.length); return prev })
+    }, 30000)
     return () => clearInterval(refreshTimer.current)
-  }, [authLoading, user, loadNotifications])
+  }, [loadNotifications])
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -335,25 +317,14 @@ const AdminDashboard = () => {
     setHasNewNotifs(false)
   }
 
-  const handleLogout = async () => {
-    try { await axios.post(`${VITE_API_URL}/api/signout`, {}, { withCredentials: true }) } catch {}
-    navigate('/login', { replace: true })
-  }
 
-  if (authLoading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-        <div className="spinner-border text-primary" role="status"><span className="visually-hidden">Loading...</span></div>
-      </div>
-    )
-  }
 
   const navItems = [
     { to: '/admin',          icon: 'bi-speedometer2', label: 'Dashboard Overview', exact: true },
     { to: '/admin/iitm-ct',  icon: 'bi-cpu',          label: 'Computational Thinking' },
     { to: '/admin/python',   icon: 'bi-code-slash',   label: 'Python Dashboard' },
     { to: '/admin/dsa',      icon: 'bi-diagram-3',    label: 'DSA Dashboard' },
-    { to: '/admin/iitm-math',icon: 'bi-diagram-3',    label: 'MATH Dashboard' },
+    { to: '/admin/math',     icon: 'bi-calculator',   label: 'MATH Dashboard' },
     { to: '/admin/iitm-math2',icon:'bi-diagram-3',    label: 'Math-2 Dashboard' },
     { to: '/admin/stats1',   icon: 'bi-diagram-3',    label: 'Statistics Dashboard' },
     { to: '/admin/stats2',   icon: 'bi-diagram-3',    label: 'Statistics-2 Dashboard' },
@@ -483,29 +454,6 @@ const AdminDashboard = () => {
                   )}
                 </div>
 
-                {/* User Dropdown */}
-                <div className="dropdown">
-                  <button
-                    className="btn btn-light dropdown-toggle d-flex align-items-center"
-                    type="button"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false"
-                  >
-                    <div style={{ ...s.userAvatarSm, background: '#e9ecef', color: '#343a40' }}>
-                      <i className="bi bi-person-fill"></i>
-                    </div>
-                    <span>{user?.username || user?.email || 'Admin'}</span>
-                  </button>
-                  <ul className="dropdown-menu dropdown-menu-end">
-                    <li><Link className="dropdown-item" to="/dashboard"><i className="bi bi-speedometer2 me-2"></i>User Dashboard</Link></li>
-                    <li><hr className="dropdown-divider" /></li>
-                    <li>
-                      <button className="dropdown-item" onClick={handleLogout}>
-                        <i className="bi bi-box-arrow-right me-2"></i>Logout
-                      </button>
-                    </li>
-                  </ul>
-                </div>
               </div>
             </div>
           </div>
@@ -563,13 +511,13 @@ const AdminDashboard = () => {
                     <i className="bi bi-person-fill"></i>
                   </div>
                   <div>
-                    <h2 className="mb-1">Welcome back, {user?.username || 'Admin'}!</h2>
+                    <h2 className="mb-1">Welcome to Admin Dashboard!</h2>
                     <p className="mb-0">Here's what's happening with your platform today.</p>
                   </div>
                 </div>
               </div>
 
-              {/* Dashboard Cards */}
+        {/* Dashboard Cards */}
               <div className="row">
                 {dashboardCards.map((card) => (
                   <div className="col-md-4 mb-4" key={card.key}>
@@ -579,7 +527,9 @@ const AdminDashboard = () => {
                       </div>
                       <h4>{card.title}</h4>
                       <p className="text-muted">{card.desc}</p>
-                      <Link to={card.to} className="btn btn-primary">Open Dashboard</Link>
+                      <div className="d-flex gap-2">
+                        <Link to={card.to} className="btn btn-primary">Open Dashboard</Link>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -605,6 +555,53 @@ const AdminDashboard = () => {
                     <h4>Analytics</h4>
                     <p className="text-muted">Deep dive into platform analytics, performance metrics, and learning trends.</p>
                     <Link to="/admin/analytics" className="btn btn-primary">View Analytics</Link>
+                  </div>
+                </div>
+
+                {/* AI-Powered Analysis */}
+                <div className="col-12 mb-4">
+                  <div style={s.dashCard} className="admin-dash-card">
+                    <div style={{ ...s.cardIcon, background: 'rgba(102,126,234,0.1)', color: '#667eea' }}>
+                      <i className="bi bi-magic"></i>
+                    </div>
+                    <h4>AI-Powered Subject Analysis</h4>
+                    <p className="text-muted">Generate intelligent performance analysis for students across all subjects. Get detailed insights, identify knowledge gaps, and receive personalized recommendations for improvement.</p>
+                    <p className="text-muted mb-3" style={{ fontSize: '0.9rem' }}>
+                      <i className="bi bi-info-circle me-1"></i>
+                      Open a subject dashboard, select a student, then click <strong>AI Analysis</strong> to view insights.
+                    </p>
+                    <div className="row">
+                      <div className="col-md-3 mb-2">
+                        <Link to="/admin/math" className="btn btn-primary w-100">
+                          <i className="bi bi-calculator me-2"></i>Math
+                        </Link>
+                      </div>
+                      <div className="col-md-3 mb-2">
+                        <Link to="/admin/stats1" className="btn btn-success w-100">
+                          <i className="bi bi-bar-chart me-2"></i>Statistics-1
+                        </Link>
+                      </div>
+                      <div className="col-md-3 mb-2">
+                        <Link to="/admin/stats2" className="btn btn-success w-100">
+                          <i className="bi bi-bar-chart me-2"></i>Statistics-2
+                        </Link>
+                      </div>
+                      <div className="col-md-3 mb-2">
+                        <Link to="/admin/python" className="btn btn-info w-100 text-white">
+                          <i className="bi bi-code-slash me-2"></i>Python
+                        </Link>
+                      </div>
+                      <div className="col-md-3 mb-2">
+                        <Link to="/admin/dsa" className="btn btn-danger w-100">
+                          <i className="bi bi-diagram-3 me-2"></i>DSA
+                        </Link>
+                      </div>
+                      <div className="col-md-3 mb-2">
+                        <Link to="/admin/iitm-ct" className="btn btn-secondary w-100">
+                          <i className="bi bi-cpu me-2"></i>Comp. Thinking
+                        </Link>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
