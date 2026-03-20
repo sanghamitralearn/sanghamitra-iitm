@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
-const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 function getTimeAgo(timestamp) {
   if (!timestamp) return 'Unknown time'
