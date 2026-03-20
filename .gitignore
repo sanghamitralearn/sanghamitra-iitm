@@ -1,3 +1,9 @@
+# Ignore everything at root except Server and react-frontend
+/*
+!/Server/
+!/react-frontend/
+!.gitignore
+
 # Dependencies
 node_modules/
 **/node_modules/
