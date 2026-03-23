@@ -158,16 +158,25 @@ const IIITMMath = () => {
     }
   }
 
-  // topic = exact DB topic name used in /api/iitm-math-questions/:topic
+  // topic = exact DB topic name (endpoint) from /api/iitm-math-questions/:topic
+  // linkState is passed to the quiz page via React Router state
+  const QUIZ1_MIDTERM_TOPICS = [
+    { name: 'Domain and Range',   endpoint: 'Domain and Range' },
+    { name: 'Quadratic Functions', endpoint: 'quadratic_functions' },
+    { name: 'Linear Functions',   endpoint: 'linear_functions' },
+    { name: 'Sets and Relations', endpoint: 'sets_and_relations' },
+    { name: 'Polynomials',        endpoint: 'Polynomials' }
+  ]
+
   const availableTopics = [
     {
       id: 'quiz1_midterm',
       name: 'Quiz 1 Midterm',
       displayName: 'Quiz 1 Midterm',
-      description: 'Assessment on IITM Math 1 - Quiz 1 Midterm',
+      description: '50 questions across 5 topics: Domain & Range, Quadratics, Linear, Sets, Polynomials',
       icon: 'bi-cpu',
-      topic: 'Domain_and_Range',
-      url: '/courses/IIITM-math/quiz/Domain_and_Range'
+      url: '/courses/IIITM-math/quiz/Quiz1_Midterm',
+      linkState: { quizName: 'Quiz 1 Midterm', topics: QUIZ1_MIDTERM_TOPICS, countPerTopic: 10 }
     },
     {
       id: 'quiz18_midterm2',
@@ -175,8 +184,8 @@ const IIITMMath = () => {
       displayName: 'Quiz 1 Midterm - 2',
       description: 'Assessment on IITM Math 1 - Quiz 1 Midterm - 2',
       icon: 'bi-cpu',
-      topic: 'Quiz1_Midterm_2',
-      url: '/courses/IIITM-math/quiz/Quiz1_Midterm_2'
+      url: '/courses/IIITM-math/quiz/Quiz1_midterm',
+      linkState: { quizName: 'Quiz 1 Midterm - 2' }
     },
     {
       id: 'sets_relations',
@@ -184,35 +193,26 @@ const IIITMMath = () => {
       displayName: 'Week 1 - Sets and Relations',
       description: 'Assessment on IITM Math 1 - Sets and Relations',
       icon: 'bi-cpu',
-      topic: 'sets_and_relations',
-      url: '/courses/IIITM-math/quiz/sets_and_relations'
+      url: '/courses/IIITM-math/quiz/sets_and_relations',
+      linkState: { quizName: 'Week 1 - Sets and Relations' }
     },
     {
-      id: 'domain_range_quiz2',
+      id: 'domain_range',
       name: 'Domain and Range (Week 1)',
       displayName: 'Week 1 - Domain and Range',
       description: 'Assessment on IITM Math 1 - Domain and Range',
       icon: 'bi-cpu',
-      topic: 'Domain_and_Range-2',
-      url: '/courses/IIITM-math/quiz/Domain_and_Range-2'
+      url: '/courses/IIITM-math/quiz/Domain and Range',
+      linkState: { quizName: 'Week 1 - Domain and Range' }
     },
     {
       id: 'linear_functions',
-      name: 'Linear function',
+      name: 'Linear Functions (Quiz 5)',
       displayName: 'Week 2 - Linear Functions',
       description: 'Assessment on IITM Math 1 - Linear Functions',
       icon: 'bi-cpu',
-      topic: 'Linear_functions',
-      url: '/courses/IIITM-math/quiz/Linear_functions'
-    },
-    {
-      id: 'linear_functions_2',
-      name: 'Linear function (Week 2)',
-      displayName: 'Week 2 - Linear Functions (Part 2)',
-      description: 'Assessment on IITM Math 1 - Linear Functions',
-      icon: 'bi-cpu',
-      topic: 'Linear_functions-2',
-      url: '/courses/IIITM-math/quiz/Linear_functions-2'
+      url: '/courses/IIITM-math/quiz/linear_functions',
+      linkState: { quizName: 'Week 2 - Linear Functions' }
     },
     {
       id: 'quadratic_functions',
@@ -220,17 +220,17 @@ const IIITMMath = () => {
       displayName: 'Week 3 - Quadratic Functions',
       description: 'Assessment on IITM Math 1 - Quadratic Functions',
       icon: 'bi-cpu',
-      topic: 'Quadratic_functions',
-      url: '/courses/IIITM-math/quiz/Quadratic_functions'
+      url: '/courses/IIITM-math/quiz/quadratic_functions',
+      linkState: { quizName: 'Week 3 - Quadratic Functions' }
     },
     {
       id: 'polynomial_zeros',
-      name: 'Polynomial - 1: Zeros and Multiplicity',
+      name: 'Polynomial Zeros (Quiz 15)',
       displayName: 'Week 4 - Polynomial Zeros & Multiplicity',
-      description: 'Assessment on IITM Math 1 - Polynomial Zeros',
+      description: 'Assessment on polynomial zeros and multiplicity',
       icon: 'bi-cpu',
-      topic: 'Polynomial_Zeros',
-      url: '/courses/IIITM-math/quiz/Polynomial_Zeros'
+      url: '/courses/IIITM-math/quiz/polynomial_zeros_and_multiplicity',
+      linkState: { quizName: 'Week 4 - Polynomial Zeros & Multiplicity' }
     },
     {
       id: 'polynomials',
@@ -238,17 +238,17 @@ const IIITMMath = () => {
       displayName: 'Week 4 - Polynomial Functions',
       description: 'Assessment on IITM Math 1 - Polynomial Functions',
       icon: 'bi-cpu',
-      topic: 'Polynomial_Function',
-      url: '/courses/IIITM-math/quiz/Polynomial_Function'
+      url: '/courses/IIITM-math/quiz/Polynomials',
+      linkState: { quizName: 'Week 4 - Polynomial Functions' }
     },
     {
       id: 'exponential_functions',
-      name: 'Exponential Functions (Week 5)',
+      name: 'Exponential Functions (Quiz 8)',
       displayName: 'Week 5 - Exponential Functions',
       description: 'Assessment on IITM Math 1 - Exponential Functions',
       icon: 'bi-cpu',
-      topic: 'Function_Concepts',
-      url: '/courses/IIITM-math/quiz/Function_Concepts'
+      url: '/courses/IIITM-math/quiz/exponential_function',
+      linkState: { quizName: 'Week 5 - Exponential Functions' }
     },
     {
       id: 'composite_function',
@@ -256,17 +256,17 @@ const IIITMMath = () => {
       displayName: 'Week 5 - Composite Function',
       description: 'Assessment on IITM Math 1 - Composite Function',
       icon: 'bi-cpu',
-      topic: 'Composite_Function',
-      url: '/courses/IIITM-math/quiz/Composite_Function'
+      url: '/courses/IIITM-math/quiz/composite_function',
+      linkState: { quizName: 'Week 5 - Composite Function' }
     },
     {
       id: 'inverse_function',
-      name: 'Inverse function',
+      name: 'Inverse Function (Quiz 17)',
       displayName: 'Week 5 - Inverse Function',
       description: 'Assessment on IITM Math 1 - Inverse Function',
       icon: 'bi-cpu',
-      topic: 'Inverse_function',
-      url: '/courses/IIITM-math/quiz/Inverse_function'
+      url: '/courses/IIITM-math/quiz/inverse_function',
+      linkState: { quizName: 'Week 5 - Inverse Function' }
     },
     {
       id: 'logarithmic_functions',
@@ -274,26 +274,26 @@ const IIITMMath = () => {
       displayName: 'Week 6 - Logarithmic Functions',
       description: 'Assessment on IITM Math 1 - Logarithmic Functions',
       icon: 'bi-cpu',
-      topic: 'Logarithmic_Functions',
-      url: '/courses/IIITM-math/quiz/Logarithmic_Functions'
+      url: '/courses/IIITM-math/quiz/logarithmic_functions',
+      linkState: { quizName: 'Week 6 - Logarithmic Functions' }
     },
     {
       id: 'sequence',
-      name: 'Sequence (Week 7)',
+      name: 'Sequence (Quiz 19)',
       displayName: 'Week 7 - Sequence',
       description: 'Assessment on Sequence',
       icon: 'bi-cpu',
-      topic: 'Sequence',
-      url: '/courses/IIITM-math/quiz/Sequence'
+      url: '/courses/IIITM-math/quiz/sequences',
+      linkState: { quizName: 'Week 7 - Sequence' }
     },
     {
       id: 'sequence_limits',
-      name: 'Sequence and limit week 7',
-      displayName: 'Week 7 - Sequence, Limits and Continuity',
+      name: 'Sequence and Limits (Quiz 10)',
+      displayName: 'Week 7 - Sequence and Limits',
       description: 'Assessment on Sequence, Limits and Continuity',
       icon: 'bi-cpu',
-      topic: 'Function_Limits',
-      url: '/courses/IIITM-math/quiz/Function_Limits'
+      url: '/courses/IIITM-math/quiz/Function_Limits',
+      linkState: { quizName: 'Week 7 - Sequence and Limits' }
     },
     {
       id: 'limits_continuity',
@@ -301,17 +301,17 @@ const IIITMMath = () => {
       displayName: 'Week 8 - Limits, Continuity and Differentiation',
       description: 'Assessment on Limits, Continuity and Differentiation',
       icon: 'bi-cpu',
-      topic: 'Limit_Concepts',
-      url: '/courses/IIITM-math/quiz/Limit_Concepts'
+      url: '/courses/IIITM-math/quiz/Limit Concepts',
+      linkState: { quizName: 'Week 8 - Limits, Continuity & Differentiation' }
     },
     {
       id: 'derivatives_integrals',
-      name: 'Week 9 - Derivatives and Integrals',
+      name: 'Derivatives and Integrals (Quiz 12)',
       displayName: 'Week 9 - Derivatives and Integrals',
       description: 'Assessment on Derivatives and Integrals',
       icon: 'bi-cpu',
-      topic: 'Derivatives_Integrals',
-      url: '/courses/IIITM-math/quiz/Derivatives_Integrals'
+      url: '/courses/IIITM-math/quiz/Derivatives and Integrals',
+      linkState: { quizName: 'Week 9 - Derivatives and Integrals' }
     },
     {
       id: 'graph_theory',
@@ -319,8 +319,8 @@ const IIITMMath = () => {
       displayName: 'Week 10 - Graph Theory',
       description: 'Assessment on Graph Theory',
       icon: 'bi-cpu',
-      topic: 'Graph_Theory',
-      url: '/courses/IIITM-math/quiz/Graph_Theory'
+      url: '/courses/IIITM-math/quiz/graph_theory',
+      linkState: { quizName: 'Week 10 - Graph Theory' }
     },
     {
       id: 'graph_properties',
@@ -328,26 +328,30 @@ const IIITMMath = () => {
       displayName: 'Week 11 - Graph Properties',
       description: 'Assessment on Graph Properties',
       icon: 'bi-cpu',
-      topic: 'Graph_Properties',
-      url: '/courses/IIITM-math/quiz/Graph_Properties'
+      url: '/courses/IIITM-math/quiz/graph_properties',
+      linkState: { quizName: 'Week 11 - Graph Properties' }
     }
   ]
 
   const topicGroups = {
-    'Week 1 and 2 (Quiz 1)': ['Domain_and_Range', 'Quiz1', 'Week 1 and 2', 'Week1_and_Week2'],
-    'Domain and Range (Week 1)': ['Domain_and_Range-2', 'Quiz2', 'Quiz2_Domain_Range', 'Domain and Range-2', 'Domain_and_Range_2'],
-    'Linear Functions (Week 2)': ['Quiz3', 'Quiz3_Linear_functions', 'Linear_functions', 'Linear_Functions'],
-    'Quadratic Functions (Week 3)': ['Quiz4', 'quadratic', 'Quadratic_functions', 'Quadratic_Functions'],
-    'Linear function (Week 2)': ['Quiz5', 'Linear', 'Linear_functions - 2', 'Linear_functions-2'],
-    'Sets and Relations (Week 1)': ['Quiz6', 'Sets', 'Relations', 'sets_and_relations', 'Sets And Relations', 'Sets_and_Relations'],
-    'Polynomials (Week 4)': ['Quiz7', 'Polynomials', 'Polynomial Function', 'Polynomial_Function'],
-    'Exponential Functions (Week-5)': ['Quiz8', 'function_concepts', 'Exponential', 'Function Concepts', 'Function_Concepts'],
-    'Logarithmic Functions (Week 6)': ['Quiz9', 'Logarithmic', 'logarithmic_functions', 'Logarithmic Functions', 'Logarithmic_Functions'],
-    'Sequence and limit (Week 7)': ['Quiz10', 'Function_Limits', 'Function Limits'],
-    'Limits, Continuity and Differentiation (Week 8)': ['Quiz11', 'Limit_Concepts', 'Differentiation'],
-    'Derivatives and Integrals (Week 9)': ['Quiz12', 'Derivatives_Integrals', 'Derivatives and Integrals', 'Derivatives', 'Integrals'],
-    'Graph Theory (Week 10)': ['Quiz13', 'graph_theory', 'Graph Theory', 'Graph_Theory'],
-    'Graph Properties (Week 11)': ['Quiz14', 'graph_properties', 'Graph Properties', 'Graph_Properties']
+    'Quiz 1 Midterm': ['Quiz1_Midterm', 'Domain_and_Range', 'Quiz1', 'Week 1 and 2', 'Week1_and_Week2', 'Domain and Range', 'quadratic_functions', 'linear_functions', 'sets_and_relations', 'Polynomials'],
+    'Quiz 1 Midterm - 2': ['Quiz1_midterm', 'Quiz1_Midterm_2'],
+    'Week 1 - Sets and Relations': ['sets_and_relations', 'Quiz6', 'Sets', 'Relations', 'Sets And Relations', 'Sets_and_Relations'],
+    'Week 1 - Domain and Range': ['Domain and Range', 'Domain_and_Range', 'Domain_and_Range-2', 'Quiz2', 'Domain and Range-2'],
+    'Week 2 - Linear Functions': ['linear_functions', 'Linear_functions', 'Quiz3', 'Quiz5', 'Linear_functions-2'],
+    'Week 3 - Quadratic Functions': ['quadratic_functions', 'Quadratic_functions', 'Quiz4', 'quadratic'],
+    'Week 4 - Polynomial Zeros & Multiplicity': ['polynomial_zeros_and_multiplicity', 'Polynomial_Zeros', 'Quiz15'],
+    'Week 4 - Polynomial Functions': ['Polynomials', 'Polynomial_Function', 'Polynomial Function', 'Quiz7'],
+    'Week 5 - Exponential Functions': ['exponential_function', 'Function_Concepts', 'function_concepts', 'Exponential', 'Quiz8'],
+    'Week 5 - Composite Function': ['composite_function', 'Composite_Function', 'Quiz16'],
+    'Week 5 - Inverse Function': ['inverse_function', 'Inverse_function', 'Quiz17'],
+    'Week 6 - Logarithmic Functions': ['logarithmic_functions', 'Logarithmic_Functions', 'Logarithmic', 'Quiz9'],
+    'Week 7 - Sequence': ['sequences', 'Sequence', 'Quiz19'],
+    'Week 7 - Sequence and Limits': ['Function_Limits', 'Function Limits', 'Quiz10'],
+    'Week 8 - Limits, Continuity and Differentiation': ['Limit Concepts', 'Limit_Concepts', 'Differentiation', 'Quiz11'],
+    'Week 9 - Derivatives and Integrals': ['Derivatives and Integrals', 'Derivatives_Integrals', 'Derivatives', 'Integrals', 'Quiz12'],
+    'Week 10 - Graph Theory': ['graph_theory', 'Graph_Theory', 'Graph Theory', 'Quiz13'],
+    'Week 11 - Graph Properties': ['graph_properties', 'Graph_Properties', 'Graph Properties', 'Quiz14']
   }
 
   if (loading) {
@@ -462,11 +466,11 @@ const IIITMMath = () => {
                       </div>
                       <div className="col-lg-3 col-md-3 text-end">
                         {isCompleted
-                          ? <Link to={topic.url} state={{ quizName: topic.displayName }} className="btn btn-primary btn-sm" style={{ minWidth: '120px', padding: '0.4rem 1rem', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          ? <Link to={topic.url} state={topic.linkState} className="btn btn-primary btn-sm" style={{ minWidth: '120px', padding: '0.4rem 1rem', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'space-between' }}>
                               <span>Retest</span>
                               <i className="bi bi-arrow-clockwise ms-2"></i>
                             </Link>
-                          : <Link to={topic.url} state={{ quizName: topic.displayName }} className="btn btn-primary btn-sm" style={{ minWidth: '120px', padding: '0.4rem 1rem', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          : <Link to={topic.url} state={topic.linkState} className="btn btn-primary btn-sm" style={{ minWidth: '120px', padding: '0.4rem 1rem', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'space-between' }}>
                               <span>Start Assessment</span>
                               <i className="bi bi-arrow-right ms-2"></i>
                             </Link>
