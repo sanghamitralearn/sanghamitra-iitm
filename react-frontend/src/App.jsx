@@ -35,6 +35,7 @@ import Statistics2 from './pages/courses/Statistics2'
 import Python from './pages/courses/Python'
 import AdminSubject from './pages/courses/Admin'
 import IITMMathQuiz from './pages/courses/IITMMathQuiz'
+import StatisticsQuiz from './pages/courses/StatisticsQuiz'
 
 // PDSA quiz type imports
 import PdsaTestQuiz from './pages/courses/PDSA/PdsaTestQuiz'
@@ -89,6 +90,9 @@ function App() {
             
             {/* IIITM Math Quiz — dynamic, DB-driven */}
             <Route path="/courses/IIITM-math/quiz/:topic" element={<IITMMathQuiz />} />
+
+            {/* Statistics Quiz — dynamic, DB-driven */}
+            <Route path="/courses/statistics/quiz/:topic" element={<StatisticsQuiz />} />
 
             {/* PDSA quiz routes – parameterized */}
             <Route path="/courses/pdsa/test/:weekId" element={<PdsaTestQuiz />} />
