@@ -34,25 +34,7 @@ import StatisticsSubject from './pages/courses/Statistics'
 import Statistics2 from './pages/courses/Statistics2'
 import Python from './pages/courses/Python'
 import AdminSubject from './pages/courses/Admin'
-import Quiz1 from './pages/courses/IIITM-math/quizzes/quiz1'
-import Quiz2 from './pages/courses/IIITM-math/quizzes/quiz2'
-import Quiz3 from './pages/courses/IIITM-math/quizzes/quiz3'
-import Quiz4 from './pages/courses/IIITM-math/quizzes/quiz4'
-import Quiz5 from './pages/courses/IIITM-math/quizzes/quiz5'
-import Quiz6 from './pages/courses/IIITM-math/quizzes/quiz6'
-import Quiz7 from './pages/courses/IIITM-math/quizzes/quiz7'
-import Quiz8 from './pages/courses/IIITM-math/quizzes/quiz8'
-import Quiz9 from './pages/courses/IIITM-math/quizzes/quiz9'
-import Quiz10 from './pages/courses/IIITM-math/quizzes/quiz10'
-import Quiz11 from './pages/courses/IIITM-math/quizzes/quiz11'
-import Quiz12 from './pages/courses/IIITM-math/quizzes/quiz12'
-import Quiz13 from './pages/courses/IIITM-math/quizzes/quiz13'
-import Quiz14 from './pages/courses/IIITM-math/quizzes/quiz14'
-import Quiz15 from './pages/courses/IIITM-math/quizzes/quiz15'
-import Quiz16 from './pages/courses/IIITM-math/quizzes/quiz16'
-import Quiz17 from './pages/courses/IIITM-math/quizzes/quiz17'
-import Quiz18 from './pages/courses/IIITM-math/quizzes/quiz18'
-import Quiz19 from './pages/courses/IIITM-math/quizzes/quiz19'
+import IITMMathQuiz from './pages/courses/IITMMathQuiz'
 
 // PDSA quiz type imports
 import PdsaTestQuiz from './pages/courses/PDSA/PdsaTestQuiz'
@@ -105,26 +87,8 @@ function App() {
             <Route path="/courses/python" element={<Python />} />
             <Route path="/courses/admin" element={<AdminSubject />} />
             
-            {/* IIITM Math Quiz routes */}
-            <Route path="/courses/IIITM-math/quizzes/quiz1" element={<Quiz1 />} />
-            <Route path="/courses/IIITM-math/quizzes/quiz2" element={<Quiz2 />} />
-            <Route path="/courses/IIITM-math/quizzes/quiz3" element={<Quiz3 />} />
-            <Route path="/courses/IIITM-math/quizzes/quiz4" element={<Quiz4 />} />
-            <Route path="/courses/IIITM-math/quizzes/quiz5" element={<Quiz5 />} />
-            <Route path="/courses/IIITM-math/quizzes/quiz6" element={<Quiz6 />} />
-            <Route path="/courses/IIITM-math/quizzes/quiz7" element={<Quiz7 />} />
-            <Route path="/courses/IIITM-math/quizzes/quiz8" element={<Quiz8 />} />
-            <Route path="/courses/IIITM-math/quizzes/quiz9" element={<Quiz9 />} />
-            <Route path="/courses/IIITM-math/quizzes/quiz10" element={<Quiz10 />} />
-            <Route path="/courses/IIITM-math/quizzes/quiz11" element={<Quiz11 />} />
-            <Route path="/courses/IIITM-math/quizzes/quiz12" element={<Quiz12 />} />
-            <Route path="/courses/IIITM-math/quizzes/quiz13" element={<Quiz13 />} />
-            <Route path="/courses/IIITM-math/quizzes/quiz14" element={<Quiz14 />} />
-            <Route path="/courses/IIITM-math/quizzes/quiz15" element={<Quiz15 />} />
-            <Route path="/courses/IIITM-math/quizzes/quiz16" element={<Quiz16 />} />
-            <Route path="/courses/IIITM-math/quizzes/quiz17" element={<Quiz17 />} />
-            <Route path="/courses/IIITM-math/quizzes/quiz18" element={<Quiz18 />} />
-            <Route path="/courses/IIITM-math/quizzes/quiz19" element={<Quiz19 />} />
+            {/* IIITM Math Quiz — dynamic, DB-driven */}
+            <Route path="/courses/IIITM-math/quiz/:topic" element={<IITMMathQuiz />} />
 
             {/* PDSA quiz routes – parameterized */}
             <Route path="/courses/pdsa/test/:weekId" element={<PdsaTestQuiz />} />
