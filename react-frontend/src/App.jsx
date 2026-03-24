@@ -41,6 +41,7 @@ import StatisticsQuiz from './pages/courses/StatisticsQuiz'
 import PdsaTestQuiz from './pages/courses/PDSA/PdsaTestQuiz'
 import PdsaCodingQuiz from './pages/courses/PDSA/PdsaCodingQuiz'
 import PdsaInterviewQuiz from './pages/courses/PDSA/PdsaInterviewQuiz'
+import Math2Quiz from './pages/courses/Math2Quiz'
 
 function App() {
   return (
@@ -98,6 +99,9 @@ function App() {
             <Route path="/courses/pdsa/test/:weekId" element={<PdsaTestQuiz />} />
             <Route path="/courses/pdsa/coding/:weekId" element={<PdsaCodingQuiz />} />
             <Route path="/courses/pdsa/interview/:weekId" element={<PdsaInterviewQuiz />} />
+
+            {/* Math 2 Quiz — week-based, DB-driven */}
+            <Route path="/courses/math2/quiz/:week" element={<Math2Quiz />} />
           </Routes>
         </main>
         <Footer />

@@ -1,42 +1,85 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
-const Math2 = () => {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [scores, setScores] = useState([])
-  const [error, setError] = useState(null)
-  const navigate = useNavigate()
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
+const availableWeeks = [
+  {
+    id: 'week5',
+    week: 5,
+    displayName: 'Week 5 - Linear Algebra',
+    description: 'Null space, nullity, rank of matrices, and linear transformations',
+    icon: 'bi-calculator',
+    url: '/courses/math2/quiz/5',
+    linkState: { quizName: 'Week 5 - Linear Algebra' }
+  },
+  {
+    id: 'week6',
+    week: 6,
+    displayName: 'Week 6 - Vector Spaces',
+    description: 'Vector spaces, basis, and dimension',
+    icon: 'bi-arrows-angle-expand',
+    url: '/courses/math2/quiz/6',
+    linkState: { quizName: 'Week 6 - Vector Spaces' }
+  },
+  {
+    id: 'week7',
+    week: 7,
+    displayName: 'Week 7 - Equivalence',
+    description: 'Equivalence, similarity, and inner products',
+    icon: 'bi-diagram-3',
+    url: '/courses/math2/quiz/7',
+    linkState: { quizName: 'Week 7 - Equivalence' }
+  },
+  {
+    id: 'week8',
+    week: 8,
+    displayName: 'Week 8 - Orthonormal',
+    description: 'Orthonormal bases and linear independence',
+    icon: 'bi-grid-3x3',
+    url: '/courses/math2/quiz/8',
+    linkState: { quizName: 'Week 8 - Orthonormal' }
+  },
+  {
+    id: 'week9',
+    week: 9,
+    displayName: 'Week 9 - Multivariable Calculus',
+    description: 'Partial derivatives, gradients, and multivariable calculus',
+    icon: 'bi-graph-up',
+    url: '/courses/math2/quiz/9',
+    linkState: { quizName: 'Week 9 - Multivariable Calculus' }
+  },
+  {
+    id: 'week10',
+    week: 10,
+    displayName: 'Week 10 - Calculus Continued',
+    description: 'Advanced multivariable calculus and applications',
+    icon: 'bi-graph-up-arrow',
+    url: '/courses/math2/quiz/10',
+    linkState: { quizName: 'Week 10 - Calculus Continued' }
+  }
+]
+
+const Math2 = () => {
+  const navigate = useNavigate()
+  const [user, setUser]     = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [scoreData, setScoreData] = useState(null)
+
+  useEffect(() => { checkAuth() }, [])
 
   const checkAuth = async () => {
     try {
-      setLoading(true)
-      
-      // Check auth first — redirect immediately if not logged in
-      const authCheck = await axios.get(`${import.meta.env.VITE_API_URL}/api/check-auth`, {
-        withCredentials: true,
-      })
-      if (!authCheck.data.authenticated) {
-        navigate('/login', { state: { from: { pathname: '/courses/math2' } }, replace: true })
-        return
+      const res = await axios.get(`${API_URL}/api/session-info`, { withCredentials: true })
+      if (res.data?.email) {
+        setUser(res.data)
+        fetchScores(res.data.email)
+      } else {
+        navigate('/login', { replace: true })
       }
-
-      // Fetch user session info
-      const sessionResponse = await axios.get(`${import.meta.env.VITE_API_URL}/api/session-info`, {
-        withCredentials: true
-      })
-      
-      setUser(sessionResponse.data)
-      fetchScores(sessionResponse.data.email)
-      
-    } catch (error) {
-      console.error('Error checking authentication:', error)
-      navigate('/login', { state: { from: { pathname: '/courses/math2' } }, replace: true })
+    } catch {
+      navigate('/login', { replace: true })
     } finally {
       setLoading(false)
     }
@@ -44,310 +87,137 @@ const Math2 = () => {
 
   const fetchScores = async (email) => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/iitm_math2_scores?email=${encodeURIComponent(email)}`, {
-        withCredentials: true
-      })
-      
-      if (response.data.success && response.data.data && response.data.data.quizScores) {
-        setScores(response.data.data.quizScores)
-      }
+      const res = await axios.get(`${API_URL}/api/iitm_math2_scores?email=${encodeURIComponent(email)}`, { withCredentials: true })
+      if (res.data) setScoreData(res.data)
     } catch (err) {
       console.error('Error fetching scores:', err)
-      setError('Failed to load assessment data')
     }
   }
 
-  const getDisplayTopic = (topicName) => {
-    if (!topicName) return null
-    
-    const searchName = topicName.toLowerCase().trim()
-    
-    const topicGroups = {
-      'Advanced Algebra': ['advanced_algebra', 'linear_algebra', 'matrix_algebra', 'vector_spaces'],
-      'Calculus II': ['calculus_ii', 'integration', 'differential_equations', 'multivariable_calculus'],
-      'Discrete Mathematics': ['discrete_math', 'combinatorics', 'graph_theory', 'number_theory'],
-      'Probability & Statistics': ['probability', 'statistics', 'statistical_analysis', 'probability_theory'],
-      'Numerical Methods': ['numerical_methods', 'computational_math', 'approximation', 'algorithms'],
-      'Mathematical Modeling': ['mathematical_modeling', 'optimization', 'simulation', 'analysis']
-    }
-
-    for (const [displayTopic, variations] of Object.entries(topicGroups)) {
-      for (const variation of variations) {
-        const variationLower = variation.toLowerCase()
-        if (variationLower === searchName ||
-            searchName.includes(variationLower) ||
-            variationLower.includes(searchName) ||
-            searchName.replace(/_/g, ' ') === variationLower.replace(/_/g, ' ')) {
-          return displayTopic
-        }
-      }
-    }
-    return topicName
-  }
-
-  const findTopicAssessment = (topicName) => {
-    if (!scores || !Array.isArray(scores)) return null
-
-    const displayTopic = getDisplayTopic(topicName)
-    const variations = topicGroups[displayTopic] || [topicName]
-    
-    let allTopicScores = []
-    
-    scores.forEach(score => {
-      if (!score || !score.topic) return
-      
-      const scoreTopic = score.topic.trim()
-      const scoreTopicLower = scoreTopic.toLowerCase()
-      
-      for (const variation of variations) {
-        const variationLower = variation.toLowerCase()
-        
-        if (scoreTopicLower === variationLower ||
-            scoreTopicLower.includes(variationLower) ||
-            variationLower.includes(scoreTopicLower)) {
-          
-          if (score.percentage !== undefined && score.percentage !== null) {
-            allTopicScores.push({
-              ...score,
-              displayTopic: displayTopic,
-              matchedVariation: variation
-            })
-          }
-          break
-        }
-      }
-    })
-
-    if (allTopicScores.length === 0) return null
-
-    const latestScore = allTopicScores.sort((a, b) => {
-      const dateA = new Date(a.timestamp || 0)
-      const dateB = new Date(b.timestamp || 0)
-      return dateB - dateA
-    })[0]
-    
-    if (!latestScore) return null
-    
-    let percentage = 0
-    if (latestScore.percentage !== undefined && latestScore.percentage !== null) {
-      percentage = Math.round(parseFloat(latestScore.percentage))
-    } else if (latestScore.score !== undefined && latestScore.totalQuestions) {
-      percentage = Math.round((latestScore.score / latestScore.totalQuestions) * 100)
-    }
-    
+  // Find the latest score entry for a given week number
+  const findWeekAssessment = (weekNumber) => {
+    if (!scoreData?.scores || !Array.isArray(scoreData.scores)) return null
+    // Filter all entries for this week, sort by date desc, pick latest
+    const weekEntries = scoreData.scores
+      .filter(s => s.week === weekNumber)
+      .sort((a,b) => new Date(b.dateAttempted||0) - new Date(a.dateAttempted||0))
+    if (!weekEntries.length) return null
+    const latest = weekEntries[0]
+    const percentage = latest.totalQuestions > 0
+      ? Math.round((latest.correctAnswers / latest.totalQuestions) * 100)
+      : 0
     return {
-      displayName: displayTopic,
-      score: percentage,
-      percentage: percentage,
-      timeTaken: null,
-      timestamp: latestScore.timestamp,
-      totalQuestions: latestScore.totalQuestions || 15,
-      actualScore: latestScore.score || 0,
-      answers: latestScore.answers,
-      attemptCount: allTopicScores.length,
-      originalTopic: latestScore.topic
+      percentage,
+      totalQuestions: latest.totalQuestions || 0,
+      correctAnswers: latest.correctAnswers || 0,
+      score: latest.score || 0,
+      timestamp: latest.dateAttempted,
+      attemptCount: weekEntries.length
     }
   }
 
-  const availableTopics = [
-    {
-      id: 'advanced_algebra',
-      name: 'Advanced Algebra',
-      displayName: 'Advanced Algebra',
-      description: 'Linear Algebra, Matrix Operations, and Vector Spaces',
-      icon: 'bi-matrix',
-      url: '/subjects/math2/advanced-algebra'
-    },
-    {
-      id: 'calculus_ii',
-      name: 'Calculus II',
-      displayName: 'Calculus II',
-      description: 'Integration, Differential Equations, and Multivariable Calculus',
-      icon: 'bi-graph-up',
-      url: '/subjects/math2/calculus-ii'
-    },
-    {
-      id: 'discrete_mathematics',
-      name: 'Discrete Mathematics',
-      displayName: 'Discrete Mathematics',
-      description: 'Combinatorics, Graph Theory, and Number Theory',
-      icon: 'bi-diagram-3',
-      url: '/subjects/math2/discrete-math'
-    },
-    {
-      id: 'probability_statistics',
-      name: 'Probability & Statistics',
-      displayName: 'Probability & Statistics',
-      description: 'Statistical Analysis and Probability Theory',
-      icon: 'bi-bar-chart',
-      url: '/subjects/math2/probability-statistics'
-    },
-    {
-      id: 'numerical_methods',
-      name: 'Numerical Methods',
-      displayName: 'Numerical Methods',
-      description: 'Computational Mathematics and Approximation Algorithms',
-      icon: 'bi-calculator',
-      url: '/subjects/math2/numerical-methods'
-    },
-    {
-      id: 'mathematical_modeling',
-      name: 'Mathematical Modeling',
-      displayName: 'Mathematical Modeling',
-      description: 'Optimization, Simulation, and Mathematical Analysis',
-      icon: 'bi-gear',
-      url: '/subjects/math2/mathematical-modeling'
-    }
-  ]
+  if (loading) return (
+    <div className="d-flex justify-content-center align-items-center" style={{height:'50vh'}}>
+      <div className="spinner-border" role="status"><span className="visually-hidden">Loading...</span></div>
+    </div>
+  )
 
-  const topicGroups = {
-    'Advanced Algebra': ['advanced_algebra', 'linear_algebra', 'matrix_algebra', 'vector_spaces'],
-    'Calculus II': ['calculus_ii', 'integration', 'differential_equations', 'multivariable_calculus'],
-    'Discrete Mathematics': ['discrete_math', 'combinatorics', 'graph_theory', 'number_theory'],
-    'Probability & Statistics': ['probability', 'statistics', 'statistical_analysis', 'probability_theory'],
-    'Numerical Methods': ['numerical_methods', 'computational_math', 'approximation', 'algorithms'],
-    'Mathematical Modeling': ['mathematical_modeling', 'optimization', 'simulation', 'analysis']
-  }
-
-  if (loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
-        <div className="spinner-border" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
-    )
-  }
-
-  if (!user) {
-    navigate('/login', { state: { from: { pathname: '/courses/math2' } }, replace: true })
-    return (
-      <div className="container text-center" style={{ height: '50vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-        <div className="spinner-border" role="status">
-          <span className="visually-hidden">Redirecting to login...</span>
-        </div>
-        <p className="lead mt-3">Redirecting to login...</p>
-      </div>
-    )
-  }
+  if (!user) { navigate('/login', { replace: true }); return null }
 
   return (
     <main className="main">
-      {/* Hero Section */}
-      <section id="hero" className="hero section">
-        <img src="/img/math2.png" alt="Math2" data-aos="fade-in" />
-        
-        <div className="container">
-          <h2 data-aos="fade-up" data-aos-delay="100">
-            Advanced Mathematics (Math2) Assessments
-          </h2>
-          <p data-aos="fade-up" data-aos-delay="200">
-            Comprehensive advanced mathematics assessments covering higher-level mathematical concepts and applications.
-          </p>
-          <div className="d-flex mt-4" data-aos="fade-up" data-aos-delay="300">
-            <Link to="/math" className="btn-get-started">Back to Math</Link>
+      <div className="page-title" data-aos="fade" style={{marginBottom:'2rem'}}>
+        <div className="heading">
+          <div className="container">
+            <div className="row d-flex justify-content-center text-center">
+              <div className="col-lg-8">
+                <h1>IITM Mathematics II</h1>
+                <p className="mb-0">Linear algebra, vector spaces, and multivariable calculus — weekly assessments for IITM Math 2.</p>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
+        <nav className="breadcrumbs">
+          <div className="container">
+            <ol>
+              <li><Link to="/">Home</Link></li>
+              <li className="current">IITM Math 2</li>
+            </ol>
+          </div>
+        </nav>
+      </div>
 
-      {/* Math2 Sections */}
-      <section id="math2-content" className="math2-content section">
-        <div className="container section-title" data-aos="fade-up">
-          <h2>Advanced Math Topics</h2>
-          <p className="">Higher-Level Mathematical Concepts</p>
-        </div>
+      <div className="container">
+        <div className="course-list" style={{maxWidth:'900px',margin:'0 auto',padding:'0 15px'}}>
+          {availableWeeks.map((week) => {
+            const assessment = findWeekAssessment(week.week)
+            const isCompleted = assessment != null
+            const score = assessment?.percentage || 0
+            const correctAnswers = assessment?.correctAnswers || 0
+            const totalQuestions = assessment?.totalQuestions || 0
+            const lastAttempted = assessment?.timestamp || null
+            const attemptCount = assessment?.attemptCount || 0
 
-        <div className="container">
-          <div className="row">
-            {availableTopics.map((topic, index) => {
-              const topicAssessment = findTopicAssessment(topic.name)
-              const isCompleted = topicAssessment && topicAssessment.score !== undefined && topicAssessment.score !== null
-              const score = topicAssessment ? Math.round(topicAssessment.score || 0) : 0
-              const actualScore = topicAssessment ? topicAssessment.actualScore : 0
-              const totalQuestions = topicAssessment ? topicAssessment.totalQuestions : 15
-              const lastAttempted = topicAssessment ? topicAssessment.timestamp : null
-              const attemptCount = topicAssessment ? topicAssessment.attemptCount : 0
-              
-              const displayName = topicAssessment?.displayName || topic.displayName || topic.name
-              
-              let progressBarClass = 'bg-primary'
-              let badgeStyle = 'background: linear-gradient(45deg, #007bff, #0056b3);'
-              
-              if (score >= 80) {
-                progressBarClass = 'bg-success'
-                badgeStyle = 'background: linear-gradient(45deg, #28a745, #20c997);'
-              } else if (score >= 60) {
-                progressBarClass = 'bg-info'
-                badgeStyle = 'background: linear-gradient(45deg, #17a2b8, #138496);'
-              } else if (score >= 40) {
-                progressBarClass = 'bg-warning'
-                badgeStyle = 'background: linear-gradient(45deg, #ffc107, #fd7e14);'
-              } else if (score > 0) {
-                progressBarClass = 'bg-danger'
-                badgeStyle = 'background: linear-gradient(45deg, #dc3545, #c82333);'
-              }
+            let progressBarClass = 'bg-primary'
+            let badgeStyle = { background: 'linear-gradient(45deg,#007bff,#0056b3)' }
+            if (score >= 80)      { progressBarClass='bg-success'; badgeStyle={background:'linear-gradient(45deg,#28a745,#20c997)'} }
+            else if (score >= 60) { progressBarClass='bg-info';    badgeStyle={background:'linear-gradient(45deg,#17a2b8,#138496)'} }
+            else if (score >= 40) { progressBarClass='bg-warning'; badgeStyle={background:'linear-gradient(45deg,#ffc107,#fd7e14)'} }
+            else if (score > 0)   { progressBarClass='bg-danger';  badgeStyle={background:'linear-gradient(45deg,#dc3545,#c82333)'} }
 
-              const progressWidth = isCompleted ? score : 0
-
-              return (
-                <div className="col-lg-6 col-md-12 d-flex align-items-stretch" data-aos="zoom-in" data-aos-delay={index * 100} key={topic.id}>
-                  <div className="course-item">
-                    <div className="course-content">
-                      <div className="row align-items-center">
-                        <div className="col-lg-1 col-md-2 text-center">
-                          <div className={`icon-box ${isCompleted ? 'bg-success' : 'bg-primary'} text-white rounded-circle p-2`} style={{width: '40px', height: '40px'}}>
-                            <i className={`bi ${isCompleted ? 'bi-check-circle' : topic.icon} fs-5`}></i>
+            return (
+              <div className="course-item mb-3" key={week.id}>
+                <div className="card course-card h-100 border-0 shadow-sm" style={{borderRadius:'12px',transition:'all 0.3s ease'}}>
+                  <div className="card-body p-3">
+                    <div className="row align-items-center">
+                      <div className="col-lg-1 col-md-2 text-center">
+                        <div className={`icon-box ${isCompleted?'bg-success':'bg-primary'} text-white rounded-circle p-2`}
+                          style={{width:'40px',height:'40px',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                          <i className={`bi ${isCompleted?'bi-check-circle':week.icon} fs-5`}></i>
+                        </div>
+                      </div>
+                      <div className="col-lg-6 col-md-5">
+                        <h4 className="mb-1 fs-5">{week.displayName}</h4>
+                        <p className="text-muted mb-2 fs-6">{week.description}</p>
+                        <div className="progress" style={{height:'6px',backgroundColor:'#f0f0f0'}}>
+                          <div className={`progress-bar ${progressBarClass}`} role="progressbar"
+                            style={{width:`${isCompleted?score:0}%`}} aria-valuenow={score} aria-valuemin="0" aria-valuemax="100"/>
+                        </div>
+                        {lastAttempted
+                          ? <small className="text-muted">Last attempt: {new Date(lastAttempted).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</small>
+                          : <small className="text-muted">Not attempted yet</small>}
+                      </div>
+                      <div className="col-lg-2 col-md-2 text-center">
+                        <span className="percentage-badge" style={{display:'inline-block',padding:'0.3rem 0.8rem',borderRadius:'20px',fontWeight:'600',fontSize:'0.9rem',color:'white',boxShadow:'0 2px 4px rgba(0,123,255,0.3)',...badgeStyle}}>
+                          {score}%
+                        </span>
+                      </div>
+                      <div className="col-lg-3 col-md-3 text-end">
+                        {isCompleted
+                          ? <Link to={week.url} state={week.linkState} className="btn btn-primary btn-sm"
+                              style={{minWidth:'120px',padding:'0.4rem 1rem',borderRadius:'8px',display:'inline-flex',alignItems:'center',justifyContent:'space-between'}}>
+                              <span>Retest</span><i className="bi bi-arrow-clockwise ms-2"></i>
+                            </Link>
+                          : <Link to={week.url} state={week.linkState} className="btn btn-primary btn-sm"
+                              style={{minWidth:'120px',padding:'0.4rem 1rem',borderRadius:'8px',display:'inline-flex',alignItems:'center',justifyContent:'space-between'}}>
+                              <span>Start Assessment</span><i className="bi bi-arrow-right ms-2"></i>
+                            </Link>
+                        }
+                        {isCompleted && (
+                          <div className="mt-2">
+                            <small className="text-muted d-block">Correct: {correctAnswers}/{totalQuestions}</small>
+                            {attemptCount > 1 && <small className="text-muted d-block">{attemptCount} attempts</small>}
                           </div>
-                        </div>
-                        <div className="col-lg-6 col-md-5">
-                          <h4 className="mb-1 fs-5">{displayName}</h4>
-                          <p className="text-muted mb-2 fs-6">{topic.description}</p>
-                          <div className="progress" style={{height: '6px'}}>
-                            <div className={`progress-bar ${progressBarClass}`} role="progressbar" 
-                                style={{width: `${progressWidth}%`}}
-                                aria-valuenow={score} aria-valuemin="0" aria-valuemax="100">
-                            </div>
-                          </div>
-                          {lastAttempted ? 
-                            <small className="text-muted">Last attempt: {new Date(lastAttempted).toLocaleDateString('en-US', { 
-                              year: 'numeric', 
-                              month: 'short', 
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}</small>
-                            : <small className="text-muted">Not attempted yet</small>}
-                        </div>
-                        <div className="col-lg-2 col-md-2 text-center">
-                          <span className="percentage-badge" style={{...{display: 'inline-block'}, ...{padding: '0.3rem 0.8rem'}, ...{borderRadius: '20px'}, ...{fontWeight: '600'}, ...{fontSize: '0.9rem'}, ...{color: 'white'}, ...{boxShadow: '0 2px 4px rgba(0,123,255,0.3)'}, ...badgeStyle}}>{score}%</span>
-                        </div>
-                        <div className="col-lg-3 col-md-3 text-end">
-                          {isCompleted 
-                            ? <Link to={topic.url} className="btn btn-primary btn-sm">
-                                <span>Retest</span>
-                                <i className="bi bi-arrow-clockwise ms-2"></i>
-                              </Link>
-                            : <Link to={topic.url} className="btn btn-primary btn-sm">
-                                <span>Start Assessment</span>
-                                <i className="bi bi-arrow-right ms-2"></i>
-                              </Link>
-                          }
-                          {isCompleted && (
-                            <div className="mt-2">
-                              <small className="text-muted d-block">Score: {actualScore}/{totalQuestions}</small>
-                              {attemptCount > 1 && <small className="text-muted d-block">{attemptCount} attempts</small>}
-                            </div>
-                          )}
-                        </div>
+                        )}
                       </div>
                     </div>
                   </div>
                 </div>
-              )
-            })}
-          </div>
+              </div>
+            )
+          })}
         </div>
-      </section>
+      </div>
     </main>
   )
 }
