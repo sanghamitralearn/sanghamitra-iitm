@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const Groq = require('groq-sdk');
 const SubjectAnalysis = require('../model/subjectAnalysis');
 const User = require('../model/userSchema');
 const MathData = require('../model/MathData');
@@ -10,8 +10,7 @@ const PDSA_Submission = require('../model/pdsa_Submission');
 const AlgebraScoreAdd = require('../model/algebraScoreAdd');
 
 // Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const groq = new Groq({ apiKey: process.env.GEMINI_API_KEY });
 
 // Helper function to get user scores by subject
 async function getUserScores(userId, subject) {
@@ -222,9 +221,11 @@ async function generateAnalysis(userData) {
       throw new Error('Gemini API key not configured');
     }
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const completion = await groq.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'llama-3.3-70b-versatile',
+    });
+    const text = completion.choices[0]?.message?.content || '';
     
     // Extract JSON from the response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -490,8 +491,11 @@ Be specific and data-driven. Reference actual question numbers or topics. Do NOT
       return res.status(503).json({ success: false, message: 'AI service not configured (GEMINI_API_KEY missing)' });
     }
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const completion = await groq.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'llama-3.3-70b-versatile',
+    });
+    const text = completion.choices[0]?.message?.content || '';
 
     // Extract JSON block
     const jsonMatch = text.match(/\{[\s\S]*\}/);
