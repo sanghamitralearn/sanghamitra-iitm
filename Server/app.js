@@ -54,16 +54,31 @@ app.use(session({
     }
 }));
 
-// Connect to MongoDB
-mongoose.connect(process.env.DATABASE, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useCreateIndex: true,
-    useFindAndModify: false
-}).then(() => {
-    console.log("Connected to MongoDB");
-}).catch(err => console.error("MongoDB connection error:", err));
+// Connect to MongoDB — cache connection across serverless invocations
+let isConnected = false;
+async function connectDB() {
+    if (isConnected && mongoose.connection.readyState === 1) return;
+    try {
+        await mongoose.connect(process.env.DATABASE, {
+            maxPoolSize: 10,
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+        });
+        isConnected = true;
+        console.log("Connected to MongoDB");
+    } catch (err) {
+        console.error("MongoDB connection error:", err);
+        throw err;
+    }
+}
+connectDB();
 
+
+// Ensure DB is connected on every request (handles serverless cold starts)
+app.use(async (req, res, next) => {
+    try { await connectDB(); next(); }
+    catch (err) { res.status(503).json({ error: 'Database unavailable' }); }
+});
 
 // Routes
 app.use('/api', authRouter);
