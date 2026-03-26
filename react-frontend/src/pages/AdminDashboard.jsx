@@ -254,6 +254,8 @@ const dashboardCards = [
   { key: 's2',    icon: 'bi-bar-chart',   iconStyle: { background: 'rgba(52,152,219,0.1)', color: '#3498db' }, title: 'Statistics-2 Dashboard',  desc: 'Monitor advanced statistical methods, inferential statistics, and data modeling assignments.', to: '/admin/stats2' },
 ]
 
+const LAST_SEEN_KEY = 'admin_notif_last_seen'
+
 const AdminDashboard = () => {
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -264,7 +266,10 @@ const AdminDashboard = () => {
   const dropdownRef = useRef(null)
   const refreshTimer = useRef(null)
 
-  const loadNotifications = useCallback(async (prevCount = 0) => {
+  // Returns the timestamp (ms) of the last time admin opened the dropdown
+  const getLastSeen = () => parseInt(localStorage.getItem(LAST_SEEN_KEY) || '0', 10)
+
+  const loadNotifications = useCallback(async () => {
     setNotifLoading(true)
     try {
       const results = await Promise.allSettled([
@@ -275,11 +280,18 @@ const AdminDashboard = () => {
       let all = []
       results.forEach(r => { if (r.status === 'fulfilled') all = [...all, ...r.value] })
       all.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-      const top50 = all.slice(0, 50).map(n => ({ ...n, read: false }))
-      const isNew = top50.length > prevCount
+
+      const lastSeen = getLastSeen()
+      const top50 = all.slice(0, 50).map(n => ({
+        ...n,
+        read: new Date(n.timestamp).getTime() <= lastSeen
+      }))
+
+      // Count only genuinely new entries since last seen
+      const newCount = top50.filter(n => !n.read).length
       setNotifications(top50)
-      setHasNewNotifs(isNew)
-      setUnreadCount(isNew ? top50.length : 0)
+      setUnreadCount(newCount)
+      setHasNewNotifs(newCount > 0)
     } catch {
       // keep existing
     } finally {
@@ -288,10 +300,8 @@ const AdminDashboard = () => {
   }, [])
 
   useEffect(() => {
-    loadNotifications(0)
-    refreshTimer.current = setInterval(() => {
-      setNotifications(prev => { loadNotifications(prev.length); return prev })
-    }, 30000)
+    loadNotifications()
+    refreshTimer.current = setInterval(loadNotifications, 30000)
     return () => clearInterval(refreshTimer.current)
   }, [loadNotifications])
 
@@ -312,6 +322,8 @@ const AdminDashboard = () => {
   }
 
   const markAllRead = () => {
+    // Save current time so future loads know what was already seen
+    localStorage.setItem(LAST_SEEN_KEY, Date.now().toString())
     setNotifications(prev => prev.map(n => ({ ...n, read: true })))
     setUnreadCount(0)
     setHasNewNotifs(false)
