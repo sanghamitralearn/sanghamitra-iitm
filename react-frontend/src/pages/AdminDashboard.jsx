@@ -245,16 +245,26 @@ const iconColors = {
 }
 
 const dashboardCards = [
-  { key: 'ct',    icon: 'bi-cpu',         iconStyle: { background: 'rgba(155,89,182,0.1)', color: '#9b59b6' }, title: 'Computational Thinking', desc: 'Monitor Computational Thinking assignments, logic exercises, and problem-solving tasks.', to: '/admin/iitm-ct' },
-  { key: 'py',    icon: 'bi-code-slash',  iconStyle: { background: 'rgba(52,152,219,0.1)', color: '#3498db' }, title: 'Python Dashboard',         desc: 'Monitor Python programming assignments, code submissions, and evaluation results.',     to: '/admin/python' },
-  { key: 'dsa',   icon: 'bi-diagram-3',   iconStyle: { background: 'rgba(102,126,234,0.1)', color: '#667eea' }, title: 'DSA Dashboard',          desc: 'View and manage Data Structures and Algorithms submissions, scores, and student performance.', to: '/admin/dsa' },
-  { key: 'm1',    icon: 'bi-calculator',  iconStyle: { background: 'rgba(52,152,219,0.1)', color: '#3498db' }, title: 'Mathematics Dashboard', desc: 'Track mathematics assignments, problem sets, and analytical reasoning exercises.',          to: '/admin/math' },
-  { key: 'm2',    icon: 'bi-calculator',  iconStyle: { background: 'rgba(52,152,219,0.1)', color: '#3498db' }, title: 'Mathematics-2 Dashboard', desc: 'Monitor advanced mathematics concepts, proofs, and mathematical modeling assignments.',     to: '/admin/iitm-math2' },
-  { key: 's1',    icon: 'bi-bar-chart',   iconStyle: { background: 'rgba(52,152,219,0.1)', color: '#3498db' }, title: 'Statistics-1 Dashboard',  desc: 'View statistical analysis assignments, data interpretation tasks, and probability exercises.', to: '/admin/stats1' },
-  { key: 's2',    icon: 'bi-bar-chart',   iconStyle: { background: 'rgba(52,152,219,0.1)', color: '#3498db' }, title: 'Statistics-2 Dashboard',  desc: 'Monitor advanced statistical methods, inferential statistics, and data modeling assignments.', to: '/admin/stats2' },
+  { key: 'm1',   icon: 'bi-calculator',  iconStyle: { background: 'rgba(52,152,219,0.1)',   color: '#3498db' }, title: 'Mathematics 1',           to: '/admin/math' },
+  { key: 'm2',   icon: 'bi-calculator',  iconStyle: { background: 'rgba(230,126,34,0.1)',   color: '#e67e22' }, title: 'Mathematics 2',           to: '/admin/iitm-math2' },
+  { key: 's1',   icon: 'bi-bar-chart',   iconStyle: { background: 'rgba(241,196,15,0.1)',   color: '#f1c40f' }, title: 'Statistics 1',            to: '/admin/stats1' },
+  { key: 's2',   icon: 'bi-bar-chart',   iconStyle: { background: 'rgba(231,76,60,0.1)',    color: '#e74c3c' }, title: 'Statistics 2',            to: '/admin/stats2' },
+  { key: 'py',   icon: 'bi-filetype-py', iconStyle: { background: 'rgba(46,204,113,0.1)',   color: '#2ecc71' }, title: 'Python',                  to: '/admin/python' },
+  { key: 'ct',   icon: 'bi-cpu',         iconStyle: { background: 'rgba(155,89,182,0.1)',   color: '#9b59b6' }, title: 'Computational Thinking',  to: '/admin/iitm-ct' },
+  { key: 'pdsa', icon: 'bi-diagram-3',   iconStyle: { background: 'rgba(102,126,234,0.1)',  color: '#667eea' }, title: 'PDSA',                    to: '/admin/dsa' },
 ]
 
 const LAST_SEEN_KEY = 'admin_notif_last_seen'
+
+const subjectApis = [
+  { key: 'm1',   url: '/api/iitmmath_scores',                 countFn: d => (d.data || d || []).length },
+  { key: 'm2',   url: '/api/iitm_math2_scores',               countFn: d => (d.data || d || []).length },
+  { key: 's1',   url: '/api/statistics_scores',               countFn: d => (d.data || d || []).length },
+  { key: 's2',   url: '/api/iitm_stats2_scores',              countFn: d => (Array.isArray(d) ? d : (d.data || [])).length },
+  { key: 'py',   url: '/api/coding-submissions',              countFn: d => (Array.isArray(d) ? d : (d.submissions || d.data || [])).length },
+  { key: 'ct',   url: '/api/iitm_ct_scores',                  countFn: d => (d.data || d || []).length },
+  { key: 'pdsa', url: '/api/pdsa-submissions',                countFn: d => (Array.isArray(d) ? d : (d.submissions || d.data || [])).length },
+]
 
 const AdminDashboard = () => {
   const [notifications, setNotifications] = useState([])
@@ -262,6 +272,7 @@ const AdminDashboard = () => {
   const [notifLoading, setNotifLoading] = useState(true)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [hasNewNotifs, setHasNewNotifs] = useState(false)
+  const [subjectCounts, setSubjectCounts] = useState({})
 
   const dropdownRef = useRef(null)
   const refreshTimer = useRef(null)
@@ -298,6 +309,15 @@ const AdminDashboard = () => {
     return () => clearInterval(refreshTimer.current)
   }, [loadNotifications])
 
+  useEffect(() => {
+    subjectApis.forEach(async ({ key, url, countFn }) => {
+      try {
+        const data = await fetchFromAPI(`${VITE_API_URL}${url}`)
+        setSubjectCounts(prev => ({ ...prev, [key]: countFn(data) }))
+      } catch { /* leave as undefined */ }
+    })
+  }, [])
+
   // Close dropdown on outside click
   useEffect(() => {
     const handler = (e) => {
@@ -325,16 +345,14 @@ const AdminDashboard = () => {
 
 
   const navItems = [
-    { to: '/admin',          icon: 'bi-speedometer2', label: 'Dashboard Overview', exact: true },
-    { to: '/admin/iitm-ct',  icon: 'bi-cpu',          label: 'Computational Thinking' },
-    { to: '/admin/python',   icon: 'bi-code-slash',   label: 'Python Dashboard' },
-    { to: '/admin/dsa',      icon: 'bi-diagram-3',    label: 'DSA Dashboard' },
-    { to: '/admin/math',     icon: 'bi-calculator',   label: 'MATH Dashboard' },
-    { to: '/admin/iitm-math2',icon:'bi-diagram-3',    label: 'Math-2 Dashboard' },
-    { to: '/admin/stats1',   icon: 'bi-diagram-3',    label: 'Statistics Dashboard' },
-    { to: '/admin/stats2',   icon: 'bi-diagram-3',    label: 'Statistics-2 Dashboard' },
-    { to: '/admin/activity', icon: 'bi-diagram-3',    label: 'Activity Dashboard' },
-    { to: '/admin/content',  icon: 'bi-diagram-3',    label: 'Content Dashboard' },
+    { to: '/admin',            icon: 'bi-speedometer2', label: 'Dashboard Overview' },
+    { to: '/admin/math',       icon: 'bi-calculator',   label: 'Mathematics 1' },
+    { to: '/admin/iitm-math2', icon: 'bi-calculator',   label: 'Mathematics 2' },
+    { to: '/admin/stats1',     icon: 'bi-bar-chart',    label: 'Statistics 1' },
+    { to: '/admin/stats2',     icon: 'bi-bar-chart',    label: 'Statistics 2' },
+    { to: '/admin/python',     icon: 'bi-filetype-py',  label: 'Python' },
+    { to: '/admin/iitm-ct',    icon: 'bi-cpu',          label: 'Computational Thinking' },
+    { to: '/admin/dsa',        icon: 'bi-diagram-3',    label: 'PDSA' },
   ]
 
   return (
@@ -527,14 +545,18 @@ const AdminDashboard = () => {
                 {dashboardCards.map((card) => (
                   <div className="col-md-4 mb-4" key={card.key}>
                     <div style={s.dashCard} className="admin-dash-card">
-                      <div style={{ ...s.cardIcon, ...card.iconStyle }}>
-                        <i className={`bi ${card.icon}`}></i>
+                      <div className="d-flex align-items-center justify-content-between mb-3">
+                        <div style={{ ...s.cardIcon, marginBottom: 0, ...card.iconStyle }}>
+                          <i className={`bi ${card.icon}`}></i>
+                        </div>
+                        {subjectCounts[card.key] != null && (
+                          <span className="badge rounded-pill" style={{ background: card.iconStyle.color, color: '#fff', fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}>
+                            {subjectCounts[card.key]} students
+                          </span>
+                        )}
                       </div>
-                      <h4>{card.title}</h4>
-                      <p className="text-muted">{card.desc}</p>
-                      <div className="d-flex gap-2">
-                        <Link to={card.to} className="btn btn-primary">Open Dashboard</Link>
-                      </div>
+                      <h5 className="mb-3">{card.title}</h5>
+                      <Link to={card.to} className="btn btn-primary btn-sm">Open Dashboard</Link>
                     </div>
                   </div>
                 ))}
