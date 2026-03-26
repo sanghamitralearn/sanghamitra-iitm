@@ -140,12 +140,11 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
   const getCorrectDisplay = (q) => {
     const ca = q.correct_answer
     if (q.type === 'multiple_choice') {
-      const idx = typeof ca === 'string' ? parseInt(ca) : ca
-      return q.options?.[idx] ?? String(ca)
+      return resolveOptionText(q, ca)
     }
     if (q.type === 'multiple_select') {
       const arr = Array.isArray(ca) ? ca : [ca]
-      return arr.map(i => q.options?.[i] ?? String(i)).join(', ')
+      return arr.map(i => resolveOptionText(q, i)).join(', ')
     }
     return String(ca)
   }
@@ -242,7 +241,7 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
                           const norm = t => String(t??'').replace(/\s+/g,'').replace(/infinity|∞/gi,'inf').replace(/≤/g,'<=').replace(/≥/g,'>=').toLowerCase()
                           const caArr = q.type==='multiple_select' ? (Array.isArray(q.correct_answer)?q.correct_answer:[q.correct_answer]) : []
                           const isCorrectOpt = q.type==='multiple_choice'
-                            ? norm(opt) === norm(q.correct_answer)
+                            ? norm(opt) === norm(resolveOptionText(q, q.correct_answer))
                             : caArr.some(ca => norm(resolveOptionText(q, ca)) === norm(opt))
                           const userPicked = q.type==='multiple_choice'
                             ? answers[q._id] === oi
@@ -488,8 +487,8 @@ const IITMMathQuiz = () => {
     if (question.type === 'multiple_choice') {
       if (userAnswer === undefined || userAnswer === null) return false
       const selectedText = resolveOptionText(question, userAnswer)
-      console.log('[MCQ CHECK]', { userAnswer, selectedText, ca, normSelected: norm(selectedText), normCA: norm(ca), match: norm(selectedText) === norm(ca) })
-      if (norm(selectedText) === norm(ca)) return true
+      const correctText = resolveOptionText(question, ca)
+      if (norm(selectedText) === norm(correctText)) return true
       return alts.some(a => norm(resolveOptionText(question, a)) === norm(selectedText) || norm(a) === norm(selectedText))
     }
 
