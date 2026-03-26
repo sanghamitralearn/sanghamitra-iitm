@@ -488,6 +488,7 @@ const IITMMathQuiz = () => {
     if (question.type === 'multiple_choice') {
       if (userAnswer === undefined || userAnswer === null) return false
       const selectedText = resolveOptionText(question, userAnswer)
+      console.log('[MCQ CHECK]', { userAnswer, selectedText, ca, normSelected: norm(selectedText), normCA: norm(ca), match: norm(selectedText) === norm(ca) })
       if (norm(selectedText) === norm(ca)) return true
       return alts.some(a => norm(resolveOptionText(question, a)) === norm(selectedText) || norm(a) === norm(selectedText))
     }
