@@ -6,6 +6,15 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 const DIFF_COLORS = { easy: 'success', medium: 'warning', hard: 'danger' }
 const TOPIC_PALETTE = ['#4e73df','#1cc88a','#36b9cc','#f6c23e','#e74a3b','#6f42c1','#fd7e14','#858796']
 
+// Resolve option index → option text (or return value as-is if already text)
+function resolveOptionText(question, idxOrText) {
+  if (idxOrText === undefined || idxOrText === null) return ''
+  const opts = question.options || []
+  const idx = typeof idxOrText === 'number' ? idxOrText : parseInt(idxOrText)
+  if (!isNaN(idx) && idx >= 0 && idx < opts.length) return opts[idx]
+  return String(idxOrText)
+}
+
 // ─── MathJax helpers ──────────────────────────────────────────────────────────
 function loadMathJax() {
   if (window.MathJax) return
@@ -230,11 +239,13 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
                     {(q.type==='multiple_choice'||q.type==='multiple_select') && q.options && (
                       <div className="mb-3">
                         {q.options.map((opt,oi)=>{
-                          const caIdx = q.type==='multiple_choice' ? (typeof q.correct_answer==='string'?parseInt(q.correct_answer):q.correct_answer) : null
+                          const norm = t => String(t??'').replace(/\s+/g,'').replace(/infinity|∞/gi,'inf').replace(/≤/g,'<=').replace(/≥/g,'>=').toLowerCase()
                           const caArr = q.type==='multiple_select' ? (Array.isArray(q.correct_answer)?q.correct_answer:[q.correct_answer]) : []
-                          const isCorrectOpt = q.type==='multiple_choice' ? oi===caIdx : caArr.includes(oi)
+                          const isCorrectOpt = q.type==='multiple_choice'
+                            ? norm(opt) === norm(q.correct_answer)
+                            : caArr.some(ca => norm(resolveOptionText(q, ca)) === norm(opt))
                           const userPicked = q.type==='multiple_choice'
-                            ? (typeof answers[q._id]==='string'?parseInt(answers[q._id]):answers[q._id])===oi
+                            ? answers[q._id] === oi
                             : (Array.isArray(answers[q._id]) ? answers[q._id].includes(oi) : false)
                           const bg = isCorrectOpt ? '#d4edda' : userPicked ? '#f8d7da' : 'transparent'
                           return (
@@ -462,26 +473,45 @@ const IITMMathQuiz = () => {
   const checkCorrect = (question, userAnswer) => {
     const ca = question.correct_answer
     const alts = question.alternative_answers || []
+
+    // Normalize like the HTML version: remove all whitespace, convert symbols, lowercase
+    const norm = t => String(t ?? '')
+      .replace(/\s+/g, '')
+      .replace(/infinity|∞/gi, 'inf')
+      .replace(/√(\d+)/g, 'sqrt($1)')
+      .replace(/√\(([^)]+)\)/g, 'sqrt($1)')
+      .replace(/≠/g, '!=')
+      .replace(/≤/g, '<=')
+      .replace(/≥/g, '>=')
+      .toLowerCase()
+
     if (question.type === 'multiple_choice') {
-      const caIdx = typeof ca === 'string' ? parseInt(ca) : ca
-      const uaIdx = typeof userAnswer === 'string' ? parseInt(userAnswer) : userAnswer
-      return uaIdx === caIdx
+      if (userAnswer === undefined || userAnswer === null) return false
+      const selectedText = resolveOptionText(question, userAnswer)
+      if (norm(selectedText) === norm(ca)) return true
+      return alts.some(a => norm(resolveOptionText(question, a)) === norm(selectedText) || norm(a) === norm(selectedText))
     }
+
     if (question.type === 'multiple_select') {
-      if (!Array.isArray(userAnswer)) return false
-      const ua = [...userAnswer].map(Number).sort((a,b)=>a-b)
-      const exp = (Array.isArray(ca)?ca:[ca]).map(Number).sort((a,b)=>a-b)
-      return JSON.stringify(ua) === JSON.stringify(exp)
+      if (!Array.isArray(userAnswer) || userAnswer.length === 0) return false
+      const caArr = Array.isArray(ca) ? ca : [ca]
+      const selectedTexts = userAnswer.map(i => norm(resolveOptionText(question, i))).sort()
+      const correctTexts = caArr.map(a => norm(resolveOptionText(question, a))).sort()
+      return JSON.stringify(selectedTexts) === JSON.stringify(correctTexts)
     }
+
     if (question.type === 'numeric' || question.type === 'numeric_input') {
       const uNum = parseFloat(userAnswer), cNum = parseFloat(ca)
-      if (isNaN(uNum)||isNaN(cNum)) return false
-      if (Math.abs(uNum-cNum) <= 0.001) return true
-      return alts.some(a => Math.abs(uNum-parseFloat(a)) <= 0.001)
+      if (isNaN(uNum) || isNaN(cNum)) return false
+      const tol = Math.max(Math.abs(cNum) * 0.01, 0.001)
+      if (Math.abs(uNum - cNum) <= tol) return true
+      return alts.some(a => { const an = parseFloat(a); return !isNaN(an) && Math.abs(uNum - an) <= Math.max(Math.abs(an) * 0.01, 0.001) })
     }
-    const ua = String(userAnswer||'').trim().toLowerCase()
-    const cStr = String(ca||'').trim().toLowerCase()
-    return ua===cStr || alts.some(a => String(a).trim().toLowerCase()===ua)
+
+    // interval_input, coordinate_input, text_input, equation_input etc.
+    const ua = norm(userAnswer)
+    if (ua === norm(ca)) return true
+    return alts.some(a => norm(a) === ua)
   }
 
   const doSubmit = async () => {
