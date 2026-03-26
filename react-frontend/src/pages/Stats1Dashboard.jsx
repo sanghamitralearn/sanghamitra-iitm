@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
+
 const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 const Stats1Dashboard = () => {
@@ -176,7 +177,12 @@ const Stats1Dashboard = () => {
         <div className="card">
           <div className="card-header bg-info text-white d-flex justify-content-between align-items-center">
             <h5 className="mb-0">Student: {selectedStudent.username || selectedStudent.name || selectedStudent.email}</h5>
-            <button className="btn btn-light btn-sm" onClick={() => setSelectedStudent(null)}>← Back to List</button>
+            <div className="d-flex gap-2">
+              <button className="btn btn-warning btn-sm" onClick={() => navigate(`/admin/analysis/stats1/${selectedStudent.email}`, { state: { student: selectedStudent } })}>
+                <i className="bi bi-magic me-1"></i>AI Analysis
+              </button>
+              <button className="btn btn-light btn-sm" onClick={() => setSelectedStudent(null)}>← Back to List</button>
+            </div>
           </div>
           <div className="card-body">
             <div className="row mb-3">

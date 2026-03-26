@@ -1223,6 +1223,30 @@ router.post('/pdsa-submission', async (req, res) => {
         });
     }
 });
+// GET all coding submissions (admin)
+router.get('/coding-submissions', async (req, res) => {
+  try {
+    const { email } = req.query
+    const filter = email ? { email } : {}
+    const submissions = await CodingSubmission.find(filter).sort({ timestamp: -1 }).lean()
+    res.json({ success: true, data: submissions })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// GET all PDSA submissions (admin)
+router.get('/pdsa-submissions', async (req, res) => {
+  try {
+    const { email } = req.query
+    const filter = email ? { email } : {}
+    const submissions = await PDSA_Submission.find(filter).sort({ timestamp: -1 }).lean()
+    res.json({ success: true, data: submissions })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
 //pdsa questions fetching route
 
 function shuffleArray(array) {

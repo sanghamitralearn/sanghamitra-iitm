@@ -176,7 +176,12 @@ const Stats2Dashboard = () => {
         <div className="card">
           <div className="card-header bg-info text-white d-flex justify-content-between align-items-center">
             <h5 className="mb-0">Student: {selectedStudent.name || selectedStudent.email}</h5>
-            <button className="btn btn-light btn-sm" onClick={() => setSelectedStudent(null)}>← Back to List</button>
+            <div className="d-flex gap-2">
+              <button className="btn btn-warning btn-sm" onClick={() => navigate(`/admin/analysis/stats2/${selectedStudent.email}`, { state: { student: { ...selectedStudent, quizScores: (selectedStudent.scores || []).map(s => ({ topic: s.subtopic || `Week ${s.week}`, correctAnswers: s.correctAnswers, totalQuestions: s.totalQuestions, percentage: s.totalQuestions ? Math.round((s.correctAnswers/s.totalQuestions)*100) : 0, timestamp: s.dateAttempted })) } } })}>
+                <i className="bi bi-magic me-1"></i>AI Analysis
+              </button>
+              <button className="btn btn-light btn-sm" onClick={() => setSelectedStudent(null)}>← Back to List</button>
+            </div>
           </div>
           <div className="card-body">
             <div className="row mb-3">

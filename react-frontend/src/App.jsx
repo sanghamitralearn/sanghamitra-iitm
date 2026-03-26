@@ -26,6 +26,9 @@ import MathExamAnalysis from './pages/MathExamAnalysis'
 import Math2Dashboard from './pages/Math2Dashboard'
 import Stats1Dashboard from './pages/Stats1Dashboard'
 import Stats2Dashboard from './pages/Stats2Dashboard'
+import CTDashboard from './pages/CTDashboard'
+import PythonDashboard from './pages/PythonDashboard'
+import PDSADashboard from './pages/PDSADashboard'
 import Algebra from './pages/Algebra'
 import IIITMMath from './pages/courses/IIITM-math'
 import AlgebraSubject from './pages/courses/algebra'
@@ -77,6 +80,9 @@ function App() {
             <Route path="/admin/iitm-math2" element={<Math2Dashboard />} />
             <Route path="/admin/stats1" element={<Stats1Dashboard />} />
             <Route path="/admin/stats2" element={<Stats2Dashboard />} />
+            <Route path="/admin/iitm-ct" element={<CTDashboard />} />
+            <Route path="/admin/python" element={<PythonDashboard />} />
+            <Route path="/admin/dsa" element={<PDSADashboard />} />
             <Route path="/algebra" element={<Algebra />} />
             <Route path="/math2" element={<Math2 />} />
             <Route path="/statistics2" element={<Statistics2 />} />

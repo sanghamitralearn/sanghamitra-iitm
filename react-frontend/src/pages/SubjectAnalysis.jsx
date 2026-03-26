@@ -14,10 +14,16 @@ const SubjectAnalysis = () => {
   const [generating, setGenerating] = useState(false);
 
   const subjectDisplayNames = {
-    math: 'Mathematics',
-    statistics: 'Statistics',
-    programming: 'Programming',
-    dsa: 'Data Structures & Algorithms',
+    math: 'Mathematics 1',
+    math2: 'Mathematics 2',
+    statistics: 'Statistics 1',
+    stats1: 'Statistics 1',
+    stats2: 'Statistics 2',
+    programming: 'Python Programming',
+    python: 'Python Programming',
+    dsa: 'PDSA',
+    pdsa: 'PDSA',
+    ct: 'Computational Thinking',
     algebra: 'Algebra'
   };
 

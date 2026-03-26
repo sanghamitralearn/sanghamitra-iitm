@@ -112,21 +112,27 @@ async function getUserScores(userId, subject) {
         break;
 
       case 'statistics':
-        console.log('Fetching statistics data for email:', user.email);
+      case 'stats1':
         const statsData = await StatisticsSchema.find({ email: user.email });
-        console.log('Statistics data found:', statsData.length);
-        scores = statsData.map(item => ({
-          topic: item.topic || 'Unknown Topic',
-          score: item.score || 0,
-          maxScore: item.maxScore || 100,
-          percentage: item.percentage || 0
-        }));
+        const statsRecord = statsData[0];
+        scores = statsRecord?.quizScores
+          ? statsRecord.quizScores.map(q => ({
+              topic: q.topic || 'Unknown Topic',
+              score: q.correctAnswers || q.score || 0,
+              maxScore: q.totalQuestions || 100,
+              percentage: q.percentage || 0
+            }))
+          : statsData.map(item => ({
+              topic: item.topic || 'Unknown Topic',
+              score: item.score || 0,
+              maxScore: item.maxScore || 100,
+              percentage: item.percentage || 0
+            }));
         break;
 
       case 'programming':
-        console.log('Fetching programming data for email:', user.email);
+      case 'python':
         const codingData = await CodingSubmission.find({ email: user.email });
-        console.log('Programming data found:', codingData.length);
         scores = codingData.map(item => ({
           topic: item.topic || 'Unknown Topic',
           score: item.score || 0,
@@ -136,9 +142,8 @@ async function getUserScores(userId, subject) {
         break;
 
       case 'dsa':
-        console.log('Fetching DSA data for email:', user.email);
+      case 'pdsa':
         const pdsaData = await PDSA_Submission.find({ email: user.email });
-        console.log('DSA data found:', pdsaData.length);
         scores = pdsaData.map(item => ({
           topic: item.topic || 'Unknown Topic',
           score: item.score || 0,
@@ -148,14 +153,42 @@ async function getUserScores(userId, subject) {
         break;
 
       case 'algebra':
-        console.log('Fetching algebra data for email:', user.email);
         const algebraData = await AlgebraScoreAdd.find({ email: user.email });
-        console.log('Algebra data found:', algebraData.length);
         scores = algebraData.map(item => ({
           topic: item.topic || 'Unknown Topic',
           score: item.score || 0,
           maxScore: item.maxScore || 100,
           percentage: item.percentage || 0
+        }));
+        break;
+
+      case 'math2':
+        const math2Record = await IITM_Maths_2_Score.findOne({ email: user.email });
+        scores = (math2Record?.scores || []).map(q => ({
+          topic: q.subtopic || `Week ${q.week}`,
+          score: q.correctAnswers || 0,
+          maxScore: q.totalQuestions || 0,
+          percentage: q.totalQuestions > 0 ? Math.round((q.correctAnswers / q.totalQuestions) * 100) : 0
+        }));
+        break;
+
+      case 'stats2':
+        const stats2Record = await IITM_Stats_2_Score.findOne({ email: user.email });
+        scores = (stats2Record?.scores || []).map(q => ({
+          topic: q.subtopic || `Week ${q.week}`,
+          score: q.correctAnswers || 0,
+          maxScore: q.totalQuestions || 0,
+          percentage: q.totalQuestions > 0 ? Math.round((q.correctAnswers / q.totalQuestions) * 100) : 0
+        }));
+        break;
+
+      case 'ct':
+        const ctRecord = await require('../model/iitm_ct_scores').findOne({ email: user.email });
+        scores = (ctRecord?.quizScores || []).map(q => ({
+          topic: q.topic || 'CT Exercise',
+          score: q.correctAnswers || q.score || 0,
+          maxScore: q.totalQuestions || 0,
+          percentage: q.percentage || 0
         }));
         break;
 

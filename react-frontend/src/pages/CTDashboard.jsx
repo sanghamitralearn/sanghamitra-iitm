@@ -4,7 +4,7 @@ import axios from 'axios'
 
 const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
-const Math2Dashboard = () => {
+const CTDashboard = () => {
   const navigate = useNavigate()
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
@@ -15,11 +15,13 @@ const Math2Dashboard = () => {
     setLoading(true)
     setError(null)
     try {
-      const res = await axios.get(`${VITE_API_URL}/api/iitm_math2_scores`, { withCredentials: true })
-      const arr = Array.isArray(res.data) ? res.data : (res.data?.data ? (Array.isArray(res.data.data) ? res.data.data : [res.data.data]) : [])
+      const res = await axios.get(`${VITE_API_URL}/api/iitm_ct_scores`, { withCredentials: true })
+      const arr = res.data?.success && res.data?.data
+        ? (Array.isArray(res.data.data) ? res.data.data : [res.data.data])
+        : []
       setData(arr)
-    } catch (err) {
-      setError('Failed to load Math 2 data')
+    } catch {
+      setError('Failed to load Computational Thinking data')
     } finally {
       setLoading(false)
     }
@@ -33,28 +35,23 @@ const Math2Dashboard = () => {
     return '#dc3545'
   }
 
-  // Compute stats
   const stats = (() => {
-    let totalStudents = data.length
-    let totalSubmissions = 0
-    let totalScore = 0
-    let totalMax = 0
-    data.forEach(s => {
-      const scores = s.scores || []
-      scores.forEach(q => {
-        totalSubmissions++
-        totalScore += q.correctAnswers || 0
-        totalMax += q.totalQuestions || 0
-      })
-    })
-    const avgScore = totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : 0
-    return { totalStudents, totalSubmissions, avgScore }
+    let totalSubmissions = 0, totalCorrect = 0, totalQ = 0
+    data.forEach(s => (s.quizScores || []).forEach(q => {
+      totalSubmissions++
+      totalCorrect += q.correctAnswers || 0
+      totalQ += q.totalQuestions || 0
+    }))
+    return {
+      totalStudents: data.length,
+      totalSubmissions,
+      avgScore: totalQ > 0 ? Math.round((totalCorrect / totalQ) * 100) : 0
+    }
   })()
 
-  // Sort students by most recent attempt
   const sortedData = [...data].sort((a, b) => {
-    const aLatest = (a.scores || []).reduce((max, s) => Math.max(max, new Date(s.dateAttempted || 0)), 0)
-    const bLatest = (b.scores || []).reduce((max, s) => Math.max(max, new Date(s.dateAttempted || 0)), 0)
+    const aLatest = (a.quizScores || []).reduce((max, q) => Math.max(max, new Date(q.timestamp || 0)), 0)
+    const bLatest = (b.quizScores || []).reduce((max, q) => Math.max(max, new Date(q.timestamp || 0)), 0)
     return bLatest - aLatest
   })
 
@@ -68,8 +65,8 @@ const Math2Dashboard = () => {
     <div className="container my-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h2 className="mb-0">Mathematics 2 Dashboard</h2>
-          <p className="text-muted mb-0">Weekly assessments — Linear Algebra, Vector Spaces, Multivariable Calculus</p>
+          <h2 className="mb-0">Computational Thinking Dashboard</h2>
+          <p className="text-muted mb-0">Logic, algorithms, and problem-solving assessments</p>
         </div>
         <div className="d-flex gap-2">
           <button className="btn btn-primary" onClick={() => navigate('/admin')}>← Back to Admin</button>
@@ -81,7 +78,6 @@ const Math2Dashboard = () => {
 
       {!selectedStudent ? (
         <>
-          {/* Stats cards */}
           <div className="row mb-4">
             <div className="col-md-4 mb-3">
               <div className="card h-100 text-center">
@@ -95,7 +91,7 @@ const Math2Dashboard = () => {
             <div className="col-md-4 mb-3">
               <div className="card h-100 text-center">
                 <div className="card-body">
-                  <i className="bi bi-bar-chart text-info" style={{ fontSize: '2rem' }}></i>
+                  <i className="bi bi-cpu text-info" style={{ fontSize: '2rem' }}></i>
                   <h4 className="mt-2" style={{ color: getScoreColor(stats.avgScore) }}>{stats.avgScore}%</h4>
                   <p className="text-muted">Average Score</p>
                 </div>
@@ -112,14 +108,13 @@ const Math2Dashboard = () => {
             </div>
           </div>
 
-          {/* Student list */}
           <div className="card">
-            <div className="card-header bg-primary text-white">
-              <h5 className="mb-0">Recent Activity</h5>
+            <div className="card-header bg-purple text-white" style={{ background: 'linear-gradient(135deg,#9b59b6,#8e44ad)' }}>
+              <h5 className="mb-0 text-white">Student Activity</h5>
             </div>
             <div className="card-body">
               {sortedData.length === 0 ? (
-                <div className="text-center text-muted py-4">No Math 2 data available yet.</div>
+                <div className="text-center text-muted py-4">No Computational Thinking data available yet.</div>
               ) : (
                 <div className="table-responsive">
                   <table className="table table-hover">
@@ -127,28 +122,29 @@ const Math2Dashboard = () => {
                       <tr>
                         <th>Student Name</th>
                         <th>Email</th>
-                        <th>Recent Week</th>
+                        <th>Recent Topic</th>
                         <th>Score</th>
+                        <th>Attempts</th>
                         <th>Date</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {sortedData.map((student, i) => {
-                        const scores = student.scores || []
+                        const scores = student.quizScores || []
                         const recent = scores.length > 0
-                          ? scores.reduce((a, b) => new Date(a.dateAttempted || 0) > new Date(b.dateAttempted || 0) ? a : b)
+                          ? scores.reduce((a, b) => new Date(a.timestamp || 0) > new Date(b.timestamp || 0) ? a : b)
                           : null
                         const pct = recent
-                          ? Math.round((recent.correctAnswers / (recent.totalQuestions || 1)) * 100)
+                          ? Math.round(recent.percentage || ((recent.correctAnswers / (recent.totalQuestions || 1)) * 100))
                           : 0
                         return (
                           <tr key={i} style={{ cursor: 'pointer' }} onClick={() => setSelectedStudent(student)}>
-                            <td><strong>{student.name || student.email}</strong></td>
-                            <td>{student.email}</td>
+                            <td><strong>{student.username || student.name || student.email}</strong></td>
+                            <td className="text-muted">{student.email}</td>
                             <td>
                               {recent
-                                ? <span className="badge bg-primary">Week {recent.week} — {recent.subtopic || ''}</span>
+                                ? <span className="badge" style={{ background: '#9b59b6' }}>{recent.topic || 'Unknown'}</span>
                                 : <span className="text-muted">No attempts</span>}
                             </td>
                             <td>
@@ -158,10 +154,11 @@ const Math2Dashboard = () => {
                                   </span>
                                 : <span className="text-muted">—</span>}
                             </td>
-                            <td>{recent?.dateAttempted ? new Date(recent.dateAttempted).toLocaleDateString() : '—'}</td>
+                            <td><span className="badge bg-secondary">{scores.length}</span></td>
+                            <td>{recent?.timestamp ? new Date(recent.timestamp).toLocaleDateString() : '—'}</td>
                             <td>
                               <button
-                                className="btn btn-outline-primary btn-sm"
+                                className="btn btn-outline-secondary btn-sm"
                                 onClick={e => { e.stopPropagation(); setSelectedStudent(student) }}
                               >
                                 View Details
@@ -178,12 +175,11 @@ const Math2Dashboard = () => {
           </div>
         </>
       ) : (
-        /* Student detail */
         <div className="card">
-          <div className="card-header bg-info text-white d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">Student Details: {selectedStudent.name || selectedStudent.email}</h5>
+          <div className="card-header text-white d-flex justify-content-between align-items-center" style={{ background: 'linear-gradient(135deg,#9b59b6,#8e44ad)' }}>
+            <h5 className="mb-0">{selectedStudent.username || selectedStudent.name || selectedStudent.email}</h5>
             <div className="d-flex gap-2">
-              <button className="btn btn-warning btn-sm" onClick={() => navigate(`/admin/analysis/math2/${selectedStudent.email}`, { state: { student: { ...selectedStudent, quizScores: (selectedStudent.scores || []).map(s => ({ topic: s.subtopic || `Week ${s.week}`, correctAnswers: s.correctAnswers, totalQuestions: s.totalQuestions, percentage: s.totalQuestions ? Math.round((s.correctAnswers/s.totalQuestions)*100) : 0, timestamp: s.dateAttempted })) } } })}>
+              <button className="btn btn-warning btn-sm" onClick={() => navigate(`/admin/analysis/ct/${selectedStudent.email}`, { state: { student: selectedStudent } })}>
                 <i className="bi bi-magic me-1"></i>AI Analysis
               </button>
               <button className="btn btn-light btn-sm" onClick={() => setSelectedStudent(null)}>← Back to List</button>
@@ -193,40 +189,38 @@ const Math2Dashboard = () => {
             <div className="row mb-3">
               <div className="col-md-6">
                 <p><strong>Email:</strong> {selectedStudent.email}</p>
-                <p><strong>Name:</strong> {selectedStudent.name || '—'}</p>
+                <p><strong>Username:</strong> {selectedStudent.username || '—'}</p>
               </div>
               <div className="col-md-6">
-                <p><strong>Total Attempts:</strong> {(selectedStudent.scores || []).length}</p>
-                <p><strong>Weeks Attempted:</strong> {[...new Set((selectedStudent.scores || []).map(s => s.week))].sort().join(', ') || '—'}</p>
+                <p><strong>Total Attempts:</strong> {(selectedStudent.quizScores || []).length}</p>
+                <p><strong>Topics Attempted:</strong> {[...new Set((selectedStudent.quizScores || []).map(q => q.topic))].length}</p>
               </div>
             </div>
 
-            {selectedStudent.scores?.length > 0 && (
+            {(selectedStudent.quizScores || []).length === 0 ? (
+              <div className="text-muted text-center py-3">No quiz attempts yet.</div>
+            ) : (
               <div className="table-responsive">
                 <table className="table table-striped">
                   <thead>
                     <tr>
-                      <th>Week</th>
-                      <th>Subtopic</th>
+                      <th>Topic</th>
                       <th>Score</th>
-                      <th>Marks</th>
                       <th>Percentage</th>
                       <th>Date</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {[...selectedStudent.scores]
-                      .sort((a, b) => new Date(b.dateAttempted || 0) - new Date(a.dateAttempted || 0))
-                      .map((s, i) => {
-                        const pct = Math.round((s.correctAnswers / (s.totalQuestions || 1)) * 100)
+                    {[...selectedStudent.quizScores]
+                      .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
+                      .map((q, i) => {
+                        const pct = Math.round(q.percentage || ((q.correctAnswers / (q.totalQuestions || 1)) * 100))
                         return (
                           <tr key={i}>
-                            <td><strong>Week {s.week}</strong></td>
-                            <td>{s.subtopic || '—'}</td>
-                            <td>{s.correctAnswers}/{s.totalQuestions}</td>
-                            <td>{s.score ?? '—'}</td>
+                            <td><strong>{q.topic || 'Unknown'}</strong></td>
+                            <td>{q.correctAnswers}/{q.totalQuestions}</td>
                             <td><span style={{ color: getScoreColor(pct), fontWeight: 'bold' }}>{pct}%</span></td>
-                            <td>{s.dateAttempted ? new Date(s.dateAttempted).toLocaleDateString() : '—'}</td>
+                            <td>{q.timestamp ? new Date(q.timestamp).toLocaleDateString() : '—'}</td>
                           </tr>
                         )
                       })}
@@ -241,4 +235,4 @@ const Math2Dashboard = () => {
   )
 }
 
-export default Math2Dashboard
+export default CTDashboard

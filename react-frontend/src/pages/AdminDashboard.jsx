@@ -306,7 +306,12 @@ const AdminDashboard = () => {
   useEffect(() => {
     loadNotifications()
     refreshTimer.current = setInterval(loadNotifications, 30000)
-    return () => clearInterval(refreshTimer.current)
+    const onVisible = () => { if (document.visibilityState === 'visible') loadNotifications() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearInterval(refreshTimer.current)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [loadNotifications])
 
   useEffect(() => {
@@ -330,7 +335,10 @@ const AdminDashboard = () => {
   }, [])
 
   const handleBellClick = () => {
-    if (!dropdownOpen) markAllRead()
+    if (!dropdownOpen) {
+      loadNotifications()
+      markAllRead()
+    }
     setDropdownOpen(v => !v)
   }
 
