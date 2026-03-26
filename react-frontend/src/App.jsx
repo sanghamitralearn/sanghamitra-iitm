@@ -24,6 +24,8 @@ import SubjectAnalysis from './pages/SubjectAnalysis'
 import MathDashboard from './pages/MathDashboard'
 import MathExamAnalysis from './pages/MathExamAnalysis'
 import Math2Dashboard from './pages/Math2Dashboard'
+import Stats1Dashboard from './pages/Stats1Dashboard'
+import Stats2Dashboard from './pages/Stats2Dashboard'
 import Algebra from './pages/Algebra'
 import IIITMMath from './pages/courses/IIITM-math'
 import AlgebraSubject from './pages/courses/algebra'
@@ -73,6 +75,8 @@ function App() {
             <Route path="/admin/analysis/:subject/:userId" element={<SubjectAnalysis />} />
             <Route path="/admin/math/exam/:email/:topic/:attemptNumber" element={<MathExamAnalysis />} />
             <Route path="/admin/iitm-math2" element={<Math2Dashboard />} />
+            <Route path="/admin/stats1" element={<Stats1Dashboard />} />
+            <Route path="/admin/stats2" element={<Stats2Dashboard />} />
             <Route path="/algebra" element={<Algebra />} />
             <Route path="/math2" element={<Math2 />} />
             <Route path="/statistics2" element={<Statistics2 />} />
