@@ -272,22 +272,15 @@ const AdminDashboard = () => {
   const loadNotifications = useCallback(async () => {
     setNotifLoading(true)
     try {
-      const results = await Promise.allSettled([
-        loadCoding(), loadPDSA(), loadInterview(),
-        loadMath1(), loadMath2(), loadCT(),
-        loadStats1(), loadStats2(),
-      ])
-      let all = []
-      results.forEach(r => { if (r.status === 'fulfilled') all = [...all, ...r.value] })
-      all.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+      const res = await fetchFromAPI(`${VITE_API_URL}/api/admin-notifications`)
+      const all = res.success ? res.data : []
 
       const lastSeen = getLastSeen()
       const top50 = all.slice(0, 50).map(n => ({
         ...n,
-        read: new Date(n.timestamp).getTime() <= lastSeen
+        read: new Date(n.timestamp || 0).getTime() <= lastSeen
       }))
 
-      // Count only genuinely new entries since last seen
       const newCount = top50.filter(n => !n.read).length
       setNotifications(top50)
       setUnreadCount(newCount)
