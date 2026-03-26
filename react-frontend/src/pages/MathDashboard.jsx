@@ -238,9 +238,13 @@ const MathDashboard = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {mathData.map((student, index) => {
+                          {[...mathData].sort((a, b) => {
+                            const aLatest = (a.quizScores || []).reduce((max, q) => Math.max(max, new Date(q.timestamp||0)), 0)
+                            const bLatest = (b.quizScores || []).reduce((max, q) => Math.max(max, new Date(q.timestamp||0)), 0)
+                            return bLatest - aLatest
+                          }).map((student, index) => {
                             const scores = student.quizScores || [];
-                            const recentExam = scores.length > 0 
+                            const recentExam = scores.length > 0
                               ? scores.reduce((latest, current) => {
                                   return new Date(current.timestamp) > new Date(latest.timestamp) ? current : latest;
                                 })
@@ -356,7 +360,7 @@ const MathDashboard = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {selectedStudent.quizScores.map((quiz, index) => (
+                          {[...selectedStudent.quizScores].sort((a, b) => new Date(b.timestamp||0) - new Date(a.timestamp||0)).map((quiz, index) => (
                             <tr key={index}>
                               <td><strong>{quiz.topic || 'Unknown Topic'}</strong></td>
                               <td>#{quiz.attemptNumber || index + 1}</td>
