@@ -2170,7 +2170,8 @@ router.get('/iitmmath_scores', async (req, res) => {
       }
       res.json({ success: true, data: user });
     } else {
-      const users = await iitm_math_score.find({});
+      // Exclude heavy questionResults array from list view — only load summary fields
+      const users = await iitm_math_score.find({}, { 'quizScores.questionResults': 0 }).lean();
       res.json({ success: true, data: users });
     }
   } catch (error) {
@@ -2956,7 +2957,7 @@ router.get("/iitm_math2_scores", async (req, res) => {
 
     // Case 1: No filters — return all user scores
     if (!email && !week) {
-      const allScores = await IITM_Maths_2_Score.find();
+      const allScores = await IITM_Maths_2_Score.find().lean();
       if (!allScores.length)
         return res.status(404).json({ message: "No scores found" });
       return res.status(200).json(allScores);
