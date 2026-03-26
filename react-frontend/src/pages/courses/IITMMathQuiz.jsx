@@ -764,20 +764,13 @@ const IITMMathQuiz = () => {
                     Next<i className="bi bi-chevron-right ms-1"/>
                   </button>
                 : <button className="btn btn-success" onClick={doSubmit}
-                    disabled={answeredCount < questions.length || saving}>
+                    disabled={saving}>
                     {saving
                       ? <><span className="spinner-border spinner-border-sm me-1"/>Saving…</>
                       : <><i className="bi bi-check-circle me-1"/>Submit</>}
                   </button>
               }
             </div>
-
-            {answeredCount < questions.length && currentIndex===questions.length-1 && (
-              <div className="alert alert-warning py-2" style={{fontSize:'0.88rem'}}>
-                <i className="bi bi-exclamation-triangle me-2"/>
-                {questions.length - answeredCount} question{questions.length-answeredCount>1?'s':''} unanswered — use the number buttons to go back.
-              </div>
-            )}
           </div>
         </div>
       </div>
