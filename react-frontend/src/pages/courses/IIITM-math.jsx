@@ -286,6 +286,17 @@ const IIITMMath = () => {
       url: '/courses/IIITM-math/quiz/sequences',
       linkState: { quizName: 'Week 7 - Sequence' }
     },
+
+    {
+      id: 'limit',
+      name: 'Limit (Quiz 20)',
+      displayName: 'Week 7 - Limit',
+      description: 'Assessment on Sequence',
+      icon: 'bi-cpu',
+      url: '/courses/IIITM-math/quiz/limit',
+      linkState: { quizName: 'Week 7 - Limit' }
+    },
+    
     {
       id: 'sequence_limits',
       name: 'Sequence and Limits (Quiz 10)',
