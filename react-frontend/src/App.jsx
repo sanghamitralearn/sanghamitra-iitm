@@ -48,6 +48,9 @@ import PdsaTestQuiz from './pages/courses/PDSA/PdsaTestQuiz'
 import PdsaCodingQuiz from './pages/courses/PDSA/PdsaCodingQuiz'
 import PdsaInterviewQuiz from './pages/courses/PDSA/PdsaInterviewQuiz'
 import Math2Quiz from './pages/courses/Math2Quiz'
+import Stats2Quiz from './pages/courses/Stats2Quiz'
+import PythonCodingQuiz from './pages/courses/PythonCodingQuiz'
+import DBMS from './pages/courses/DBMS'
 
 function App() {
   return (
@@ -87,7 +90,7 @@ function App() {
             <Route path="/math2" element={<Math2 />} />
             <Route path="/statistics2" element={<Statistics2 />} />
             <Route path="/computational-thinking" element={<IIITMMath />} />
-            <Route path="/dbms" element={<AdminSubject />} />
+            <Route path="/dbms" element={<DBMS />} />
             
             {/* Course-specific routes */}
             <Route path="/courses/IIITM-math" element={<IIITMMath />} />
@@ -114,6 +117,15 @@ function App() {
 
             {/* Math 2 Quiz — week-based, DB-driven */}
             <Route path="/courses/math2/quiz/:week" element={<Math2Quiz />} />
+
+            {/* Statistics 2 Quiz — week-based, DB-driven */}
+            <Route path="/courses/statistics2/quiz/:week" element={<Stats2Quiz />} />
+
+            {/* Python Coding Quiz — topic-based */}
+            <Route path="/courses/python/coding/:topicId" element={<PythonCodingQuiz />} />
+
+            {/* DBMS */}
+            <Route path="/courses/dbms" element={<DBMS />} />
           </Routes>
         </main>
         <Footer />
