@@ -52,6 +52,11 @@ import Stats2Quiz from './pages/courses/Stats2Quiz'
 import PythonCodingQuiz from './pages/courses/PythonCodingQuiz'
 import DBMS from './pages/courses/DBMS'
 import MathReview from './pages/courses/MathReview'
+import StatisticsReview from './pages/courses/StatisticsReview'
+import Math2Review from './pages/courses/Math2Review'
+import Stats2Review from './pages/courses/Stats2Review'
+import PythonReview from './pages/courses/PythonReview'
+import PDSAReview from './pages/courses/PDSAReview'
 
 function App() {
   return (
@@ -108,8 +113,13 @@ function App() {
             {/* IIITM Math Quiz — dynamic, DB-driven */}
             <Route path="/courses/IIITM-math/quiz/:topic" element={<IITMMathQuiz />} />
 
-            {/* IIITM Math Review */}
+            {/* Review routes */}
             <Route path="/courses/IIITM-math/review" element={<MathReview />} />
+            <Route path="/courses/statistics/review" element={<StatisticsReview />} />
+            <Route path="/courses/math2/review" element={<Math2Review />} />
+            <Route path="/courses/statistics2/review" element={<Stats2Review />} />
+            <Route path="/courses/python/review" element={<PythonReview />} />
+            <Route path="/courses/pdsa/review" element={<PDSAReview />} />
 
             {/* Statistics Quiz — dynamic, DB-driven */}
             <Route path="/courses/statistics/quiz/:topic" element={<StatisticsQuiz />} />

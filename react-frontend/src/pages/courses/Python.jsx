@@ -136,6 +136,11 @@ const Python = () => {
         </div>
 
         <div className="container">
+          <div style={{ padding: '0 0 12px' }} className="d-flex justify-content-end">
+            <Link to="/courses/python/review" className="btn btn-outline-secondary btn-sm">
+              <i className="bi bi-clock-history me-1"></i> Review Past Submissions
+            </Link>
+          </div>
           <div className="row">
             {availableTopics.map((topic, index) => {
               const assessment = findTopicBest(topic.topicKey)
