@@ -199,9 +199,8 @@ const s = {
   bell: { fontSize: '1.5rem', color: 'white', position: 'relative', transition: 'transform 0.3s', display: 'inline-block' },
   badge: {
     position: 'absolute', top: '-8px', right: '-8px',
-    backgroundColor: '#dc3545', color: 'white', borderRadius: '50%',
+    color: 'white', borderRadius: '50%',
     padding: '0.25rem 0.5rem', fontSize: '0.7rem', minWidth: '20px', textAlign: 'center',
-    animation: 'pulse 2s infinite',
   },
   dropdown: {
     position: 'absolute', top: '40px', right: '-10px', width: '400px',
@@ -420,8 +419,8 @@ const AdminDashboard = () => {
                     onClick={handleBellClick}
                   >
                     <i className="bi bi-bell-fill"></i>
-                    {unreadCount > 0 && (
-                      <span style={s.badge}>{unreadCount}</span>
+                    {!notifLoading && (
+                      <span style={{ ...s.badge, backgroundColor: unreadCount > 0 ? '#dc3545' : '#6c757d', animation: unreadCount > 0 ? 'pulse 2s infinite' : 'none' }}>{unreadCount}</span>
                     )}
                   </div>
 
