@@ -93,6 +93,15 @@ const MathDashboard = () => {
     return '#dc3545';
   };
 
+  const getTotalTime = (quiz) => {
+    const results = quiz.questionResults || []
+    const secs = results.reduce((sum, q) => sum + (q.timeTaken || 0), 0)
+    if (!secs) return '—'
+    const m = Math.floor(secs / 60)
+    const s = secs % 60
+    return m > 0 ? `${m}m ${s}s` : `${s}s`
+  };
+
   const handleStudentClick = (student) => {
     setSelectedStudent(student);
   };
@@ -233,6 +242,7 @@ const MathDashboard = () => {
                             <th>Email</th>
                             <th>Recent Exam</th>
                             <th>Score</th>
+                            <th>Time Taken</th>
                             <th>Date</th>
                             <th>Actions</th>
                           </tr>
@@ -268,11 +278,14 @@ const MathDashboard = () => {
                                 <td>
                                   {recentExam ? (
                                     <span style={{ color: getScoreColor(recentExam.percentage || 0), fontWeight: 'bold' }}>
-                                      {recentExam.score || 0}/{recentExam.maxScore || 100} ({Math.round(recentExam.percentage || 0)}%)
+                                      {recentExam.score || 0}/{recentExam.totalQuestions || recentExam.maxScore || '?'} ({Math.round(recentExam.percentage || 0)}%)
                                     </span>
                                   ) : (
                                     <span className="text-muted">-</span>
                                   )}
+                                </td>
+                                <td>
+                                  <span className="text-muted">{recentExam ? getTotalTime(recentExam) : '—'}</span>
                                 </td>
                                 <td>
                                   {recentExam ? (
@@ -355,6 +368,7 @@ const MathDashboard = () => {
                             <th>Attempt</th>
                             <th>Score</th>
                             <th>Percentage</th>
+                            <th>Time Taken</th>
                             <th>Date</th>
                             <th>Action</th>
                           </tr>
@@ -364,12 +378,13 @@ const MathDashboard = () => {
                             <tr key={index}>
                               <td><strong>{quiz.topic || 'Unknown Topic'}</strong></td>
                               <td>#{quiz.attemptNumber || index + 1}</td>
-                              <td>{quiz.score || 0}/{quiz.totalQuestions || quiz.maxScore || 100}</td>
+                              <td>{quiz.score || 0}/{quiz.totalQuestions || quiz.maxScore || '?'}</td>
                               <td>
                                 <span style={{ color: getScoreColor(quiz.percentage || 0), fontWeight: 'bold' }}>
                                   {Math.round(quiz.percentage || 0)}%
                                 </span>
                               </td>
+                              <td className="text-muted">{getTotalTime(quiz)}</td>
                               <td>{quiz.timestamp ? new Date(quiz.timestamp).toLocaleDateString() : 'N/A'}</td>
                               <td>
                                 <button
