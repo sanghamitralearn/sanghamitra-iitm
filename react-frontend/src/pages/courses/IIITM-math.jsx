@@ -412,6 +412,11 @@ const IIITMMath = () => {
       </div>
 
       <div className="container">
+        <div style={{ maxWidth: '900px', margin: '0 auto', padding: '0 15px 12px' }} className="d-flex justify-content-end">
+          <Link to="/courses/IIITM-math/review" className="btn btn-outline-secondary btn-sm">
+            <i className="bi bi-clock-history me-1"></i> Review Past Quizzes
+          </Link>
+        </div>
         <div className="course-list" style={{ maxWidth: '900px', margin: '0 auto', padding: '0 15px' }}>
           {availableTopics.map((topic) => {
             const topicAssessment = findTopicAssessment(topic.name)

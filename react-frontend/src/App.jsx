@@ -51,6 +51,7 @@ import Math2Quiz from './pages/courses/Math2Quiz'
 import Stats2Quiz from './pages/courses/Stats2Quiz'
 import PythonCodingQuiz from './pages/courses/PythonCodingQuiz'
 import DBMS from './pages/courses/DBMS'
+import MathReview from './pages/courses/MathReview'
 
 function App() {
   return (
@@ -106,6 +107,9 @@ function App() {
             
             {/* IIITM Math Quiz — dynamic, DB-driven */}
             <Route path="/courses/IIITM-math/quiz/:topic" element={<IITMMathQuiz />} />
+
+            {/* IIITM Math Review */}
+            <Route path="/courses/IIITM-math/review" element={<MathReview />} />
 
             {/* Statistics Quiz — dynamic, DB-driven */}
             <Route path="/courses/statistics/quiz/:topic" element={<StatisticsQuiz />} />
