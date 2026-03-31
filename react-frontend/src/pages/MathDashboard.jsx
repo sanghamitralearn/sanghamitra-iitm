@@ -94,8 +94,7 @@ const MathDashboard = () => {
   };
 
   const getTotalTime = (quiz) => {
-    const secs = quiz.totalTime ||
-      (quiz.questionResults || []).reduce((sum, q) => sum + (q.timeTaken || 0), 0)
+    const secs = quiz.totalTime || 0
     if (!secs) return '—'
     const m = Math.floor(secs / 60)
     const s = secs % 60

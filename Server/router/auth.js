@@ -2194,8 +2194,33 @@ router.get('/iitmmath_scores', async (req, res) => {
       }
       res.json({ success: true, data: user });
     } else {
-      // Exclude heavy questionResults array from list view — only load summary fields
-      const users = await iitm_math_score.find({}, { 'quizScores.questionResults': 0 }).lean();
+      // Compute totalTime from questionResults but don't return the heavy array
+      const users = await iitm_math_score.aggregate([
+        { $addFields: {
+          quizScores: {
+            $map: {
+              input: '$quizScores',
+              as: 'quiz',
+              in: {
+                topic:          '$$quiz.topic',
+                percentage:     '$$quiz.percentage',
+                score:          '$$quiz.score',
+                totalQuestions: '$$quiz.totalQuestions',
+                correctAnswers: '$$quiz.correctAnswers',
+                attemptNumber:  '$$quiz.attemptNumber',
+                timestamp:      '$$quiz.timestamp',
+                totalTime: {
+                  $cond: [
+                    { $gt: [{ $ifNull: ['$$quiz.totalTime', 0] }, 0] },
+                    '$$quiz.totalTime',
+                    { $sum: '$$quiz.questionResults.timeTaken' }
+                  ]
+                }
+              }
+            }
+          }
+        }}
+      ]);
       res.json({ success: true, data: users });
     }
   } catch (error) {
