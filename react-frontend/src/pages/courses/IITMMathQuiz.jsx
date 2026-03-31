@@ -542,7 +542,7 @@ const IITMMathQuiz = () => {
       await axios.post(`${API_URL}/api/iitmmath_scores`, {
         email: u.email,
         username: u.username || u.name || u.email,
-        quizData: { topic, score, totalQuestions: questions.length, percentage, timestamp: new Date(), questionResults }
+        quizData: { topic, score, totalQuestions: questions.length, percentage, totalTime, timestamp: new Date(), questionResults }
       }, { withCredentials: true })
     } catch (err) {
       console.error('Score save failed:', err)
