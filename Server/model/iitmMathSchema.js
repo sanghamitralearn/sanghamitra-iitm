@@ -20,6 +20,7 @@ const topicScoreSchema = new mongoose.Schema({
   totalQuestions: { type: Number, required: true },
   correctAnswers: { type: Number, required: false },
   attemptNumber: { type: Number, default: 1 },
+  totalTime: { type: Number, default: 0 }, // total seconds for the quiz
   timestamp: { type: Date, default: Date.now },
   questionResults: [questionResultSchema] // Store per-question answers
 });

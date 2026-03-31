@@ -2408,12 +2408,17 @@ router.post('/iitmmath_scores', async (req, res) => {
     if (!email || !username || !quizData) {
       return res.status(400).json({ error: 'Email, username and quizData are required' });
     }
-    
+
+    // Compute totalTime from questionResults if not already set
+    if (!quizData.totalTime && quizData.questionResults) {
+      quizData.totalTime = quizData.questionResults.reduce((sum, r) => sum + (r.timeTaken || 0), 0)
+    }
+
     // Extract question IDs from the quiz results
     const completedQuestionIds = quizData.questionResults
       ? quizData.questionResults.map(result => result.questionId).filter(Boolean)
       : [];
-    
+
     console.log(`Quiz completed with ${completedQuestionIds.length} question IDs:`, completedQuestionIds);
     
     // FIXED: Use iitm_math_score instead of Statistics_score
