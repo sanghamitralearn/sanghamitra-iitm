@@ -94,15 +94,21 @@ const MathDashboard = () => {
   };
 
   const getTotalTime = (quiz) => {
-    const secs = quiz.totalTime || 0
+    const secs = quiz.totalTime ||
+      (quiz.questionResults || []).reduce((sum, q) => sum + (q.timeTaken || 0), 0)
     if (!secs) return '—'
     const m = Math.floor(secs / 60)
     const s = secs % 60
     return m > 0 ? `${m}m ${s}s` : `${s}s`
   };
 
-  const handleStudentClick = (student) => {
+  const handleStudentClick = async (student) => {
     setSelectedStudent(student);
+    // Fetch full record (includes questionResults for time calculation)
+    try {
+      const res = await axios.get(`${VITE_API_URL}/api/iitmmath_scores?email=${encodeURIComponent(student.email)}`, { withCredentials: true });
+      if (res.data?.success && res.data?.data) setSelectedStudent(res.data.data);
+    } catch {}
   };
 
   const handleBackToDashboard = () => {
