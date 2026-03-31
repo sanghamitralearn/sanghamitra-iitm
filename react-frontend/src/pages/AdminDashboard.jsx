@@ -286,7 +286,16 @@ const AdminDashboard = () => {
       const res = await fetchFromAPI(`${VITE_API_URL}/api/admin-notifications`)
       const all = res.success ? res.data : []
 
-      const lastSeen = getLastSeen()
+      let lastSeen = getLastSeen()
+
+      // First visit ever — initialize lastSeen to the latest notification's timestamp
+      // so we don't flood the badge with all historical data
+      if (!lastSeen && all.length > 0) {
+        const latestTs = new Date(all[0].timestamp || 0).getTime()
+        localStorage.setItem(LAST_SEEN_KEY, latestTs.toString())
+        lastSeen = latestTs
+      }
+
       const top50 = all.slice(0, 50).map(n => ({
         ...n,
         read: new Date(n.timestamp || 0).getTime() <= lastSeen
