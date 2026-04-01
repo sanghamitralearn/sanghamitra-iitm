@@ -13,7 +13,7 @@ const WEEK_CONFIG = {
   '6':  { topic: 'Advanced Data Structures',      name: 'Advanced Data Structures Quiz' },
   '7':  { topic: 'Advanced Algorithms',           name: 'Advanced Algorithms Quiz' },
   '8':  { topic: 'Divide and Conquer Algorithms', name: 'Divide and Conquer Algorithms Quiz' },
-  '9':  { topic: 'Dynamic programming',           name: 'Dynamic Programming Quiz' },
+  '9':  { topic: 'Dynamic Programming',           name: 'Dynamic Programming Quiz' },
   '10': { topic: 'Linear Programming',            name: 'Linear Programming Quiz' },
   'midterm1': { topic: 'Midterm-1', name: 'Midterm 1 Exam' },
   'midterm2': { topic: 'Midterm-2', name: 'Midterm 2 Exam' },
