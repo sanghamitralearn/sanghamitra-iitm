@@ -13,7 +13,7 @@ const WEEK_CONFIG = {
   '6':  { topic: 'Advanced Data Structures',      name: 'Advanced Data Structures' },
   '7':  { topic: 'Advanced Algorithms',           name: 'Advanced Algorithms' },
   '8':  { topic: 'Divide and Conquer Algorithms', name: 'Divide and Conquer Algorithms' },
-  '9':  { topic: 'Dynamic programming',           name: 'Dynamic Programming' },
+  '9':  { topic: 'Dynamic Programming',           name: 'Dynamic Programming' },
   '10': { topic: 'Linear Programming',            name: 'Linear Programming' },
 }
 
