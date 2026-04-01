@@ -994,8 +994,215 @@ router.get('/algorithm-submissions', async (req, res) => {
       }
   });
 
+
+
 //This are PDSA routes:
 
+
+// GET coding submissions
+router.get('/coding-submissions', async (req, res) => {
+  try {
+    const { username, email, topic, date } = req.query;
+
+    // Build dynamic filter object
+    const filter = {};
+    if (username) filter.username = username;
+    if (email) filter.email = email;
+    if (topic) filter.topic = topic;
+    
+    // Date filtering
+    if (date) {
+      const startDate = new Date(date);
+      const endDate = new Date(date);
+      endDate.setDate(endDate.getDate() + 1);
+      
+      filter.timestamp = {
+        $gte: startDate,
+        $lt: endDate
+      };
+    }
+
+    // Fetch based on filter
+    const submissions = await CodingSubmission.find(filter)
+      .sort({ timestamp: -1 });
+
+    // Handle empty results
+    if (!submissions.length) {
+      return res.status(404).json({
+        message: 'No coding submissions found for provided parameters.',
+        filterUsed: filter
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      count: submissions.length,
+      submissions
+    });
+  } catch (error) {
+    console.error('Error fetching coding submissions:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server Error', 
+      error: error.message 
+    });
+  }
+});
+
+// GET PDSA submissions - FIXED model name
+
+router.get('/pdsa-submissions', async (req, res) => {
+  try {
+    const { username, email, topic, date, limit = 20 } = req.query;
+    
+    const filter = {};
+    if (username) filter.username = username;
+    if (email) filter.email = email;
+    if (topic) filter.topic = topic;
+    
+    if (date) {
+      const startDate = new Date(date);
+      const endDate = new Date(date);
+      endDate.setDate(endDate.getDate() + 1);
+      filter.timestamp = { $gte: startDate, $lt: endDate };
+    }
+    
+    // Most aggressive optimization - just get what you need
+    const submissions = await pdsaSubmission
+      .find(filter)
+      .sort({ timestamp: -1 })
+      .limit(parseInt(limit)) // Hard limit to prevent large responses
+      .select('-__v') // Exclude version field if not needed
+      .lean()
+      .maxTimeMS(5000);
+    
+    res.status(200).json({
+      success: true,
+      count: submissions.length,
+      submissions
+    });
+    
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server Error',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal error'
+    });
+  }
+});
+
+
+// GET interview submissions - ADDED date filter
+router.get('/interview-submissions', async (req, res) => { // Changed to plural
+    try {
+        const { username, email, topic, type, date } = req.query; // Added date
+        
+        const filter = {};
+        if (username) filter.username = username;
+        if (email) filter.email = email;
+        if (topic) filter.topic = topic;
+        if (type) filter.type = type;
+        
+        // Date filtering (same as other routes)
+        if (date) {
+          const startDate = new Date(date);
+          const endDate = new Date(date);
+          endDate.setDate(endDate.getDate() + 1);
+          
+          filter.timestamp = {
+            $gte: startDate,
+            $lt: endDate
+          };
+        }
+        
+        const submissions = await InterviewSubmission.find(filter)
+            .sort({ timestamp: -1 })
+            .limit(10)
+            .select('-__v -questions.testResults');
+        
+        if (!submissions.length) {
+          return res.status(404).json({
+            success: false,
+            message: 'No interview submissions found for provided parameters.',
+            filterUsed: filter
+          });
+        }
+        
+        res.json({
+            success: true,
+            count: submissions.length,
+            submissions
+        });
+    } catch (error) {
+        console.error('Error fetching interview submissions:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch interview submissions',
+            error: error.message
+        });
+    }
+});
+
+// routes/interview.js
+router.post('/interview-submission', async (req, res) => {
+    try {
+        const submissionData = req.body;
+        
+        console.log('📝 Received interview submission:', {
+            username: submissionData.username,
+            topic: submissionData.topic,
+            type: submissionData.type,
+            score: submissionData.score
+        });
+
+        // Validate required fields
+        if (!submissionData.username || !submissionData.email || !submissionData.topic) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required fields'
+            });
+        }
+
+        // Calculate breakdown scores
+        if (submissionData.questions) {
+            const codingQuestions = submissionData.questions.filter(q => q.type === 'coding');
+            const mcqQuestions = submissionData.questions.filter(q => q.type !== 'coding');
+            
+            submissionData.codingScore = codingQuestions.reduce((sum, q) => sum + (q.score || 0), 0);
+            submissionData.codingMaxScore = codingQuestions.reduce((sum, q) => sum + (q.maxScore || 0), 0);
+            submissionData.mcqScore = mcqQuestions.reduce((sum, q) => sum + (q.score || 0), 0);
+            submissionData.mcqMaxScore = mcqQuestions.reduce((sum, q) => sum + (q.maxScore || 0), 0);
+        }
+
+        const submission = new InterviewSubmission(submissionData);
+        await submission.save();
+        
+        console.log('✅ Interview submission saved:', submission._id);
+        
+        res.status(201).json({
+            success: true,
+            message: 'Interview results saved',
+            submissionId: submission._id,
+            breakdown: {
+                coding: `${submission.codingScore}/${submission.codingMaxScore}`,
+                mcq: `${submission.mcqScore}/${submission.mcqMaxScore}`,
+                overall: `${submission.percentage}%`
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Error saving interview submission:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to save interview results',
+            error: error.message
+        });
+    }
+});
+
+
+//fetching questions with type interview from collection. 
 router.get('/interview', async (req, res) => {
     try {
         const { topic, type, codingCount = 3, pdsaCount = 2 } = req.query;
@@ -1201,7 +1408,7 @@ router.post('/pdsa-submission', async (req, res) => {
         });
 
         // Create submission document
-        const submission = new PDSA_Submission(submissionData);
+        const submission = new pdsaSubmission(submissionData);
         
         // Save to database
         await submission.save();
@@ -1223,30 +1430,6 @@ router.post('/pdsa-submission', async (req, res) => {
         });
     }
 });
-// GET all coding submissions (admin)
-router.get('/coding-submissions', async (req, res) => {
-  try {
-    const { email } = req.query
-    const filter = email ? { email } : {}
-    const submissions = await CodingSubmission.find(filter).sort({ timestamp: -1 }).lean()
-    res.json({ success: true, data: submissions })
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message })
-  }
-})
-
-// GET all PDSA submissions (admin)
-router.get('/pdsa-submissions', async (req, res) => {
-  try {
-    const { email } = req.query
-    const filter = email ? { email } : {}
-    const submissions = await PDSA_Submission.find(filter).sort({ timestamp: -1 }).lean()
-    res.json({ success: true, data: submissions })
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message })
-  }
-})
-
 //pdsa questions fetching route
 
 function shuffleArray(array) {
@@ -1354,8 +1537,7 @@ router.get('/questions/:topic', async (req, res) => {
             error: error.message
         });
     }
-});
-
+})
   router.post('/programming/submit', async (req, res) => {
     try {
       console.log("Received submission request:", req.body);
