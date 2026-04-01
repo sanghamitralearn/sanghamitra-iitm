@@ -204,7 +204,7 @@ for _k in list(globals().keys()):
       questions, duration: Math.round(elapsed / 60), timestamp: new Date(),
     }
     try {
-      await fetch(`${API}/api/interview-submissions`, {
+      await fetch(`${API}/api/interview-submission`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         credentials: 'include', body: JSON.stringify(payload),
       })
