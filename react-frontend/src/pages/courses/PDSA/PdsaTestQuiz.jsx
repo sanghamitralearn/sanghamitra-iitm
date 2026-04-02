@@ -82,11 +82,11 @@ const PdsaTestQuiz = () => {
   }
 
   const calculateScore = () => {
-    let score = 0, totalPossible = 0
+    let score = 0, maxScore = 0
     const breakdown = []
     questions.forEach(q => {
       const max = q.maxScore || 1
-      totalPossible += max
+      maxScore += max
       const ua = answers[q.questionId]
       let earned = 0
       if (q.type === 'mcq-single') {
@@ -101,23 +101,23 @@ const PdsaTestQuiz = () => {
       score += earned
       breakdown.push({ questionId: q.questionId, title: q.title, type: q.type, userAnswer: ua, correctAnswer: q.correctAnswer, score: earned, maxScore: max })
     })
-    return { score, totalPossible, breakdown }
+    return { score, maxScore, breakdown }
   }
 
   const handleSubmit = async () => {
     if (!user) return
     setSubmitting(true)
-    const { score, totalPossible, breakdown } = calculateScore()
-    const percentage = totalPossible > 0 ? Math.round((score / totalPossible) * 100) : 0
+    const { score, maxScore, breakdown } = calculateScore()
+    const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0
     try {
       await fetch(`${API}/api/pdsa-submission`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email: user.email, username: user.username, topic, quizName, score, totalPossible, percentage, timestamp: new Date().toISOString(), answers: breakdown }),
+        body: JSON.stringify({ email: user.email, username: user.username, topic, quizName, score, maxScore, percentage, timestamp: new Date().toISOString(), answers: breakdown }),
       })
     } catch {}
-    setResult({ score, totalPossible, percentage, breakdown })
+    setResult({ score, maxScore, percentage, breakdown })
     setSubmitted(true)
     setSubmitting(false)
   }
@@ -175,7 +175,7 @@ const PdsaTestQuiz = () => {
             <div className="card-body p-5" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', borderRadius: 16 }}>
               <h2 className="text-white mb-1">Quiz Complete!</h2>
               <div style={{ fontSize: '4rem', fontWeight: 800, color: 'white' }}>{pct}%</div>
-              <p className="text-white mb-2">{result.score} / {result.totalPossible} points</p>
+              <p className="text-white mb-2">{result.score} / {result.maxScore} points</p>
               <span className={`badge mt-1 px-3 py-2 fs-6 ${grade.cls}`}>{grade.label}</span>
             </div>
           </div>
