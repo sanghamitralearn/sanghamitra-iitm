@@ -3372,7 +3372,7 @@ router.get('/admin-notifications', async (req, res) => {
         'scores.correctAnswers':1, 'scores.totalQuestions':1, 'scores.dateAttempted':1
       }).lean(),
       CodingSubmission.find({}, { email:1, username:1, name:1, topic:1, percentage:1, score:1, maxScore:1, timestamp:1 }).lean(),
-      PDSA_Submission.find({}, { email:1, username:1, name:1, topic:1, percentage:1, score:1, maxScore:1, timestamp:1 }).lean(),
+      pdsaSubmission.find({}, { email:1, username:1, name:1, topic:1, percentage:1, score:1, maxScore:1, timestamp:1 }).lean(),
     ])
 
     const all = []
