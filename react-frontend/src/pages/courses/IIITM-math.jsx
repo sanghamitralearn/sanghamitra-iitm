@@ -286,44 +286,39 @@ const IIITMMath = () => {
       url: '/courses/IIITM-math/quiz/sequences',
       linkState: { quizName: 'Week 7 - Sequence' }
     },
-
-    {
+    
+   {
       id: 'limit',
       name: 'Limit (Quiz 20)',
       displayName: 'Week 7 - Limit',
       description: 'Assessment on Sequence',
       icon: 'bi-cpu',
-      url: '/courses/IIITM-math/quiz/limit',
+      url: '/courses/IIITM-math/quiz/Limit',
       linkState: { quizName: 'Week 7 - Limit' }
     },
-    
+
     {
-      id: 'sequence_limits',
-      name: 'Sequence and Limits (Quiz 10)',
-      displayName: 'Week 7 - Sequence and Limits',
-      description: 'Assessment on Sequence, Limits and Continuity',
+      id: 'Continuity',
+      name: 'Week 7 - Continuity',
+      displayName: 'Week 7 - Continuity',
+      description: 'Assessment on Continuity',
       icon: 'bi-cpu',
-      url: '/courses/IIITM-math/quiz/Function_Limits',
-      linkState: { quizName: 'Week 7 - Sequence and Limits' }
+      url: '/courses/IIITM-math/quiz/Continuity',
+      linkState: { quizName: 'Week 7 - Continuity' }
     },
+
     {
-      id: 'limits_continuity',
-      name: 'Limits, Continuity and Differentiation (Quiz 11)',
-      displayName: 'Week 8 - Limits, Continuity and Differentiation',
-      description: 'Assessment on Limits, Continuity and Differentiation',
+      id: 'Differentiation',
+      name: 'Differentiation (Quiz 20)',
+      displayName: 'Week 8 - Differentiation',
+      description: 'Assessment on Differentiation',
       icon: 'bi-cpu',
-      url: '/courses/IIITM-math/quiz/Limit Concepts',
-      linkState: { quizName: 'Week 8 - Limits, Continuity & Differentiation' }
+      url: '/courses/IIITM-math/quiz/differentiability',
+      linkState: { quizName: 'Week 7 - Differentiation' }
     },
-    {
-      id: 'derivatives_integrals',
-      name: 'Derivatives and Integrals (Quiz 12)',
-      displayName: 'Week 9 - Derivatives and Integrals',
-      description: 'Assessment on Derivatives and Integrals',
-      icon: 'bi-cpu',
-      url: '/courses/IIITM-math/quiz/Derivatives and Integrals',
-      linkState: { quizName: 'Week 9 - Derivatives and Integrals' }
-    },
+
+   
+   
     {
       id: 'graph_theory',
       name: 'Graph Theory (Quiz 13)',
@@ -412,11 +407,6 @@ const IIITMMath = () => {
       </div>
 
       <div className="container">
-        <div style={{ maxWidth: '900px', margin: '0 auto', padding: '0 15px 12px' }} className="d-flex justify-content-end">
-          <Link to="/courses/IIITM-math/review" className="btn btn-outline-secondary btn-sm">
-            <i className="bi bi-clock-history me-1"></i> Review Past Quizzes
-          </Link>
-        </div>
         <div className="course-list" style={{ maxWidth: '900px', margin: '0 auto', padding: '0 15px' }}>
           {availableTopics.map((topic) => {
             const topicAssessment = findTopicAssessment(topic.name)
