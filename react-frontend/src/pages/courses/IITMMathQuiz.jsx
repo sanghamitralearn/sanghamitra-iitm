@@ -6,7 +6,6 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 const DIFF_COLORS = { easy: 'success', medium: 'warning', hard: 'danger' }
 const TOPIC_PALETTE = ['#4e73df','#1cc88a','#36b9cc','#f6c23e','#e74a3b','#6f42c1','#fd7e14','#858796']
 
-// Resolve option index → option text (or return value as-is if already text)
 function resolveOptionText(question, idxOrText) {
   if (idxOrText === undefined || idxOrText === null) return ''
   const opts = question.options || []
@@ -15,7 +14,6 @@ function resolveOptionText(question, idxOrText) {
   return String(idxOrText)
 }
 
-// ─── MathJax helpers ──────────────────────────────────────────────────────────
 function loadMathJax() {
   if (window.MathJax) return
   window.MathJax = {
@@ -37,11 +35,215 @@ function typesetEl(el) {
   if (window.MathJax?.typesetPromise) {
     window.MathJax.typesetPromise([el]).catch(() => {})
   } else {
-    // MathJax not ready yet — retry shortly
     setTimeout(() => {
       if (window.MathJax?.typesetPromise) window.MathJax.typesetPromise([el]).catch(() => {})
     }, 800)
   }
+}
+
+// ─── Inline styles ─────────────────────────────────────────────────────────────
+const S = {
+  // Question card
+  qCard: {
+    background: '#E6F1FB',
+    borderRadius: 16,
+    border: '0.5px solid #85B7EB',
+    overflow: 'hidden',
+  },
+  badgeStrip: {
+    background: '#B5D4F4',
+    borderBottom: '0.5px solid #85B7EB',
+    padding: '8px 18px',
+    display: 'flex',
+    gap: 8,
+    flexWrap: 'wrap',
+    alignItems: 'center',
+  },
+  qNumBadge: {
+    background: '#E6F1FB',
+    color: '#0C447C',
+    border: '1.5px solid #85B7EB',
+    borderRadius: 99,
+    fontSize: '0.72rem',
+    fontWeight: 700,
+    padding: '3px 12px',
+    whiteSpace: 'nowrap',
+    marginLeft: 'auto',
+    letterSpacing: '0.02em',
+  },
+  qBody: { padding: '1.2rem 1.4rem' },
+  qText: {
+    fontSize: '1rem',
+    fontWeight: 600,
+    color: '#042C53',
+    lineHeight: 1.75,
+    marginBottom: '1rem',
+  },
+  // Option (unselected)
+  optBase: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    padding: '10px 14px',
+    borderRadius: 10,
+    border: '1.5px solid #85B7EB',
+    background: '#E6F1FB',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+    marginBottom: 0,
+  },
+  optSelected: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    padding: '10px 14px',
+    borderRadius: 10,
+    border: '2px solid #378ADD',
+    background: '#B5D4F4',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+    marginBottom: 0,
+  },
+  optHovered: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    padding: '10px 14px',
+    borderRadius: 10,
+    border: '1.5px solid #378ADD',
+    background: '#d0e7f8',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+    marginBottom: 0,
+  },
+  optLabel: (selected) => ({
+    fontSize: '0.94rem',
+    fontWeight: selected ? 600 : 400,
+    color: selected ? '#042C53' : '#185FA5',
+    lineHeight: 1.5,
+    cursor: 'pointer',
+    margin: 0,
+  }),
+  // Sidebar
+  sidebar: {
+    background: '#EEEDFE',
+    borderRadius: 14,
+    border: '0.5px solid #CECBF6',
+    padding: 14,
+    position: 'sticky',
+    top: 20,
+  },
+  sbHead: {
+    fontSize: '0.72rem',
+    fontWeight: 700,
+    color: '#3C3489',
+    marginBottom: 10,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+  },
+  navGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(5, 1fr)',
+    gap: 5,
+    marginBottom: 12,
+  },
+  navBtn: (state) => {
+    const base = {
+      width: 32, height: 32, padding: 0,
+      fontSize: '0.75rem', fontWeight: 600,
+      border: 'none', borderRadius: 6, cursor: 'pointer',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      transition: 'transform 0.1s',
+    }
+    if (state === 'current') return { ...base, background: '#7F77DD', color: '#EEEDFE' }
+    if (state === 'answered') return { ...base, background: '#1D9E75', color: '#E1F5EE' }
+    return { ...base, background: '#D3D1C7', color: '#444441' }
+  },
+  legend: {
+    borderTop: '0.5px solid #CECBF6',
+    paddingTop: 10,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 5,
+  },
+  legendRow: {
+    display: 'flex', alignItems: 'center', gap: 6,
+    fontSize: '0.7rem', color: '#5F5E5A',
+  },
+  legendDot: (color) => ({
+    width: 10, height: 10, borderRadius: 3,
+    background: color, flexShrink: 0,
+  }),
+  infoPill: {
+    background: '#CECBF6',
+    borderRadius: 8,
+    padding: '7px 12px',
+    marginTop: 12,
+    fontSize: '0.72rem',
+    color: '#3C3489',
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontWeight: 500,
+  },
+  // Progress
+  progBar: { height: 5, background: '#D3D1C7', borderRadius: 3, marginBottom: 16 },
+  progFill: (pct) => ({ height: '100%', width: `${pct}%`, background: '#7F77DD', borderRadius: 3, transition: 'width 0.3s' }),
+  // Prev/Next
+  navPrev: {
+    padding: '7px 18px', borderRadius: 8,
+    border: '1.5px solid #AFA9EC', background: 'transparent',
+    color: '#534AB7', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 500,
+  },
+  navNext: {
+    padding: '7px 18px', borderRadius: 8,
+    border: '1.5px solid #AFA9EC', background: 'transparent',
+    color: '#534AB7', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 500,
+  },
+  navSubmit: {
+    padding: '7px 18px', borderRadius: 8,
+    border: 'none', background: '#1D9E75',
+    color: '#E1F5EE', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600,
+  },
+}
+
+// ─── Graph Image ──────────────────────────────────────────────────────────────
+const GraphImage = ({ imageFile }) => {
+  const [src, setSrc] = useState(null)
+
+  useEffect(() => {
+    if (!imageFile) { setSrc(null); return }
+    const lower = `/img/Graph_questions/${imageFile.replace(/\.[^.]+$/, '.png')}`
+    const upper = `/img/Graph_questions/${imageFile.replace(/\.[^.]+$/, '.PNG')}`
+    const img = new Image()
+    img.onload = () => setSrc(lower)
+    img.onerror = () => {
+      const img2 = new Image()
+      img2.onload = () => setSrc(upper)
+      img2.onerror = () => setSrc(null)
+      img2.src = upper
+    }
+    img.src = lower
+  }, [imageFile])
+
+  if (!src) return null
+
+  return (
+    <div style={{ marginBottom: '1.2rem' }}>
+      <img
+        src={src}
+        alt="Question graph"
+        style={{
+          maxWidth: '100%',
+          maxHeight: 300,
+          borderRadius: 10,
+          border: '1.5px solid #85B7EB',
+          background: '#fff',
+          display: 'block',
+          objectFit: 'contain',
+        }}
+      />
+    </div>
+  )
 }
 
 // ─── Calculator ───────────────────────────────────────────────────────────────
@@ -117,6 +319,44 @@ const Calculator = ({ onClose }) => {
   )
 }
 
+// ─── Question Navigator Sidebar ────────────────────────────────────────────────
+const QuestionNav = ({ questions, answers, currentIndex, goTo }) => {
+  const answeredCount = Object.keys(answers).filter(k => {
+    const a = answers[k]
+    return a !== undefined && a !== '' && !(Array.isArray(a) && a.length === 0)
+  }).length
+
+  return (
+    <div style={S.sidebar}>
+      <div style={S.sbHead}>Navigator</div>
+      <div style={S.navGrid}>
+        {questions.map((qItem, i) => {
+          const ans = answers[qItem._id]
+          const answered = ans !== undefined && ans !== '' && !(Array.isArray(ans) && ans.length === 0)
+          const state = i === currentIndex ? 'current' : answered ? 'answered' : 'default'
+          return (
+            <button key={qItem._id} onClick={() => goTo(i)} style={S.navBtn(state)}>
+              {i + 1}
+            </button>
+          )
+        })}
+      </div>
+      <div style={S.legend}>
+        {[['#7F77DD','Current'],['#1D9E75','Answered'],['#D3D1C7','Unanswered']].map(([c,l]) => (
+          <div key={l} style={S.legendRow}>
+            <div style={S.legendDot(c)}/>
+            {l}
+          </div>
+        ))}
+      </div>
+      <div style={S.infoPill}>
+        <span>Answered</span>
+        <strong>{answeredCount} / {questions.length}</strong>
+      </div>
+    </div>
+  )
+}
+
 // ─── Review Page ──────────────────────────────────────────────────────────────
 const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColorMap }) => {
   const [expanded, setExpanded] = useState(null)
@@ -134,17 +374,23 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
       const arr = Array.isArray(answer) ? answer : [answer]
       return arr.map(i => q.options?.[i] ?? String(i)).join(', ')
     }
+    if ((q.type === 'numeric' || q.type === 'numeric_input') && !isNaN(parseFloat(answer))) {
+      const num = parseFloat(answer)
+      return num % 1 === 0 ? num.toString() : num.toFixed(4).replace(/\.?0+$/, '')
+    }
     return String(answer)
   }
 
   const getCorrectDisplay = (q) => {
     const ca = q.correct_answer
-    if (q.type === 'multiple_choice') {
-      return resolveOptionText(q, ca)
-    }
+    if (q.type === 'multiple_choice') return resolveOptionText(q, ca)
     if (q.type === 'multiple_select') {
       const arr = Array.isArray(ca) ? ca : [ca]
       return arr.map(i => resolveOptionText(q, i)).join(', ')
+    }
+    if ((q.type === 'numeric' || q.type === 'numeric_input') && !isNaN(parseFloat(ca))) {
+      const num = parseFloat(ca)
+      return num % 1 === 0 ? num.toString() : num.toFixed(4).replace(/\.?0+$/, '')
     }
     return String(ca)
   }
@@ -167,7 +413,6 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
       </div>
 
       <div className="container mb-5">
-        {/* Score card */}
         <div className="card border-0 shadow-sm mb-4 text-center" style={{borderRadius:16}}>
           <div className="card-body py-4">
             <div className="row justify-content-center g-4">
@@ -201,7 +446,6 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
           </div>
         </div>
 
-        {/* Per-question */}
         {questions.map((q, idx) => {
           const res = results.questionResults[idx]
           const isOpen = expanded === idx
@@ -218,11 +462,18 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
                     <i className={`bi ${res?.isCorrect?'bi-check-lg':'bi-x-lg'} text-white`} style={{fontSize:13}}/>
                   </div>
                   <div className="flex-grow-1">
-                    <div className="d-flex justify-content-between">
-                      <p className="mb-1 fw-semibold" style={{fontSize:'0.95rem'}}>
-                        Q{idx+1}. {!isOpen && q.question_text.length>100 ? q.question_text.slice(0,100)+'…' : q.question_text}
+                    <div className="d-flex justify-content-between align-items-start gap-2">
+                      <p className="mb-1 fw-semibold" style={{fontSize:'0.95rem', flex:1}}>
+                        {!isOpen && q.question_text.length>100 ? q.question_text.slice(0,100)+'…' : q.question_text}
                       </p>
-                      <i className={`bi bi-chevron-${isOpen?'up':'down'} ms-2 text-muted`} style={{flexShrink:0}}/>
+                      <div className="d-flex align-items-center gap-2" style={{flexShrink:0}}>
+                        <span style={{
+                          fontSize:'0.72rem', fontWeight:600, color:'#0C447C',
+                          background:'#E6F1FB', border:'1.5px solid #85B7EB',
+                          borderRadius:99, padding:'2px 10px', whiteSpace:'nowrap'
+                        }}>Q{idx+1}</span>
+                        <i className={`bi bi-chevron-${isOpen?'up':'down'} text-muted`}/>
+                      </div>
                     </div>
                     <div className="d-flex gap-2 flex-wrap mt-1">
                       <span className={`badge bg-${DIFF_COLORS[q.difficulty]||'secondary'}`}>{q.difficulty}</span>
@@ -234,19 +485,21 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
 
                 {isOpen && (
                   <div className="mt-3 ms-5 ps-2">
-                    {/* MCQ options */}
-                    {(q.type==='multiple_choice'||q.type==='multiple_select') && q.options && (
+                    <GraphImage imageFile={q.image_file} />
+                    {(q.type === 'multiple_choice' || q.type === 'multiple_select') && q.options && (
                       <div className="mb-3">
-                        {q.options.map((opt,oi)=>{
-                          const norm = t => String(t??'').replace(/\s+/g,'').replace(/infinity|∞/gi,'inf').replace(/≤/g,'<=').replace(/≥/g,'>=').toLowerCase()
-                          const caArr = q.type==='multiple_select' ? (Array.isArray(q.correct_answer)?q.correct_answer:[q.correct_answer]) : []
-                          const isCorrectOpt = q.type==='multiple_choice'
-                            ? norm(opt) === norm(resolveOptionText(q, q.correct_answer))
-                            : caArr.some(ca => norm(resolveOptionText(q, ca)) === norm(opt))
-                          const userPicked = q.type==='multiple_choice'
+                        {q.options.map((opt, oi) => {
+                          const caArr = q.type === 'multiple_select'
+                            ? (Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer]) : []
+                          const isCorrectOpt = q.type === 'multiple_choice'
+                            ? oi === (typeof q.correct_answer === 'string' ? parseInt(q.correct_answer) : q.correct_answer)
+                            : caArr.includes(oi)
+                          const userPicked = q.type === 'multiple_choice'
                             ? answers[q._id] === oi
                             : (Array.isArray(answers[q._id]) ? answers[q._id].includes(oi) : false)
-                          const bg = isCorrectOpt ? '#d4edda' : userPicked ? '#f8d7da' : 'transparent'
+                          let bg = 'transparent'
+                          if (isCorrectOpt) bg = '#d4edda'
+                          else if (userPicked) bg = '#f8d7da'
                           return (
                             <div key={oi} className="d-flex align-items-center gap-2 mb-1 px-2 py-1 rounded" style={{background:bg}}>
                               {isCorrectOpt && <i className="bi bi-check-circle-fill text-success"/>}
@@ -258,16 +511,20 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
                         })}
                       </div>
                     )}
-                    {/* Text types */}
-                    {q.type!=='multiple_choice' && q.type!=='multiple_select' && (
+                    {q.type !== 'multiple_choice' && q.type !== 'multiple_select' && (
                       <div className="d-flex gap-2 flex-wrap mb-3">
-                        <span className="badge bg-light text-dark border">Your answer: <strong>{getDisplayAnswer(q,answers[q._id])}</strong></span>
-                        <span className="badge bg-success">Correct: <strong>{getCorrectDisplay(q)}</strong></span>
+                        <span className="badge bg-light text-dark border">
+                          Your answer: <strong>{getDisplayAnswer(q, answers[q._id])}</strong>
+                        </span>
+                        <span className="badge bg-success">
+                          Correct: <strong>{getCorrectDisplay(q)}</strong>
+                        </span>
                       </div>
                     )}
                     {q.explanation && (
                       <div className="alert alert-info py-2 mb-0" style={{fontSize:'0.88rem'}}>
-                        <i className="bi bi-lightbulb me-2"/><strong>Explanation:</strong> {q.explanation}
+                        <i className="bi bi-lightbulb me-2"/>
+                        <strong>Explanation:</strong> {q.explanation}
                       </div>
                     )}
                   </div>
@@ -289,7 +546,6 @@ const IITMMathQuiz = () => {
   const { quizName, topics: multiTopics, countPerTopic = 10 } = location.state || {}
   const displayName = quizName || topic?.replace(/_/g,' ').replace(/-/g,' ')
 
-  // State
   const [user, setUser]           = useState(null)
   const [loading, setLoading]     = useState(true)
   const [questions, setQuestions] = useState([])
@@ -301,98 +557,75 @@ const IITMMathQuiz = () => {
   const [saving, setSaving]       = useState(false)
   const [showCalc, setShowCalc]   = useState(false)
   const [topicColorMap, setTopicColorMap] = useState({})
+  const [hoveredOpt, setHoveredOpt] = useState(null)
+  const [warningOverlay, setWarningOverlay] = useState(false)
+  const [showMobileNav, setShowMobileNav] = useState(false)
 
-  // Refs
-  const questionStartRef = useRef(Date.now())
-  const timesRef         = useRef({})
-  const cheatingRef      = useRef(0)
-  const devToolsWarnedRef = useRef(false)
-  const userRef          = useRef(null)
-  const questionRef      = useRef(null)
+  const questionStartRef    = useRef(Date.now())
+  const timesRef            = useRef({})
+  const cheatingRef         = useRef(0)
+  const devToolsWarnedRef   = useRef(false)
+  const userRef             = useRef(null)
+  const questionRef         = useRef(null)
   const devToolsIntervalRef = useRef(null)
 
-  // ── MathJax ──
   useEffect(() => { loadMathJax() }, [])
   useEffect(() => {
     if (questionRef.current) typesetEl(questionRef.current)
   }, [currentIndex, questions])
 
-  // ── Auth + fetch ──
   useEffect(() => { checkAuth() }, [])
 
   const checkAuth = async () => {
     try {
       const res = await axios.get(`${API_URL}/api/session-info`, { withCredentials: true })
       if (res.data?.email) {
-        setUser(res.data)
-        userRef.current = res.data
+        setUser(res.data); userRef.current = res.data
         fetchQuestions(res.data.email)
-      } else {
-        navigate('/login', { replace: true })
-      }
-    } catch {
-      navigate('/login', { replace: true })
-    }
+      } else { navigate('/login', { replace: true }) }
+    } catch { navigate('/login', { replace: true }) }
   }
 
   const fetchQuestions = async (email) => {
     try {
       let allQuestions = []
-
       if (multiTopics && multiTopics.length > 0) {
-        // Multi-topic: fetch countPerTopic from each topic in parallel
         const colorMap = {}
         multiTopics.forEach((t, i) => { colorMap[t.name] = TOPIC_PALETTE[i % TOPIC_PALETTE.length] })
         setTopicColorMap(colorMap)
-
         const fetches = multiTopics.map(t =>
           axios.get(`${API_URL}/api/iitm-math-questions/${encodeURIComponent(t.endpoint)}?email=${encodeURIComponent(email)}&count=${countPerTopic}`, { withCredentials: true })
             .then(r => (r.data.questions || []).map(q => ({ ...q, originalTopic: t.name })))
             .catch(() => [])
         )
-        const results = await Promise.all(fetches)
-        allQuestions = results.flat()
-        // Fisher-Yates shuffle
+        const res = await Promise.all(fetches)
+        allQuestions = res.flat()
         for (let i = allQuestions.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [allQuestions[i], allQuestions[j]] = [allQuestions[j], allQuestions[i]]
         }
       } else {
-        // Single topic
         const res = await axios.get(
           `${API_URL}/api/iitm-math-questions/${encodeURIComponent(topic)}?email=${encodeURIComponent(email)}&count=50`,
           { withCredentials: true }
         )
         allQuestions = (res.data.questions || []).map(q => ({ ...q, originalTopic: q.topic || topic }))
-        const colorMap = {}
-        colorMap[topic] = TOPIC_PALETTE[0]
-        setTopicColorMap(colorMap)
+        setTopicColorMap({ [topic]: TOPIC_PALETTE[0] })
       }
-
-      if (allQuestions.length === 0) {
-        setError('No questions found for this topic yet.')
-      } else {
-        setQuestions(allQuestions)
-      }
-    } catch {
-      setError('Failed to load questions. Please try again.')
-    } finally {
-      setLoading(false)
-    }
+      if (allQuestions.length === 0) setError('No questions found for this topic yet.')
+      else setQuestions(allQuestions)
+    } catch { setError('Failed to load questions. Please try again.') }
+    finally { setLoading(false) }
   }
 
-  // ── Anti-cheat ──
   const recordCheat = useCallback(async (type) => {
     cheatingRef.current += 1
     const u = userRef.current
     if (u?.email) {
       axios.post(`${API_URL}/api/log-cheating`, {
-        username: u.username || u.email,
-        email: u.email,
-        cheatingType: type,
-        timestamp: new Date(),
-        currentQuestion: cheatingRef.current,
-        quizType: topic
+        username: u.username || u.email, email: u.email,
+        cheatingType: type, timestamp: new Date(),
+        currentQuestion: cheatingRef.current, quizType: topic
       }, { withCredentials: true }).catch(() => {})
     }
     if (cheatingRef.current >= 5) {
@@ -422,7 +655,6 @@ const IITMMathQuiz = () => {
     window.addEventListener('focus', onFocus)
     window.addEventListener('blur', onBlur)
 
-    // DevTools detection
     devToolsIntervalRef.current = setInterval(() => {
       if (window.outerHeight - window.innerHeight > 160 || window.outerWidth - window.innerWidth > 160) {
         if (!devToolsWarnedRef.current) {
@@ -430,9 +662,7 @@ const IITMMathQuiz = () => {
           recordCheat('developer_tools')
           alert('Developer tools detected! This attempt has been logged.')
         }
-      } else {
-        devToolsWarnedRef.current = false
-      }
+      } else { devToolsWarnedRef.current = false }
     }, 500)
 
     return () => {
@@ -445,9 +675,6 @@ const IITMMathQuiz = () => {
     }
   }, [recordCheat, showCalc])
 
-  const [warningOverlay, setWarningOverlay] = useState(false)
-
-  // ── Helpers ──
   const saveCurrentTime = (qId) => {
     const elapsed = Math.round((Date.now() - questionStartRef.current) / 1000)
     timesRef.current[qId] = (timesRef.current[qId] || 0) + elapsed
@@ -458,6 +685,8 @@ const IITMMathQuiz = () => {
     const q = questions[currentIndex]
     if (q) saveCurrentTime(q._id)
     setCurrentIndex(newIdx)
+    setHoveredOpt(null)
+    setShowMobileNav(false)
   }
 
   const handleAnswer = (qId, value) => setAnswers(p => ({ ...p, [qId]: value }))
@@ -472,88 +701,104 @@ const IITMMathQuiz = () => {
   const checkCorrect = (question, userAnswer) => {
     const ca = question.correct_answer
     const alts = question.alternative_answers || []
+    if (userAnswer === undefined || userAnswer === null || userAnswer === '') return false
 
-    // Normalize like the HTML version: remove all whitespace, convert symbols, lowercase
-    const norm = t => String(t ?? '')
-      .replace(/\s+/g, '')
-      .replace(/infinity|∞/gi, 'inf')
-      .replace(/√(\d+)/g, 'sqrt($1)')
-      .replace(/√\(([^)]+)\)/g, 'sqrt($1)')
-      .replace(/≠/g, '!=')
-      .replace(/≤/g, '<=')
-      .replace(/≥/g, '>=')
-      .toLowerCase()
+    const norm = t => {
+      if (t === undefined || t === null) return ''
+      let str = String(t)
+      str = str.replace(/\s+/g, '').replace(/\\\(/g,'').replace(/\\\)/g,'')
+        .replace(/\\\[/g,'').replace(/\\\]/g,'').replace(/\$/g,'')
+        .replace(/infinity|∞/gi,'inf').replace(/√\(([^)]+)\)/g,'sqrt($1)')
+        .replace(/√(\d+)/g,'sqrt($1)').replace(/≠/g,'!=').replace(/≤/g,'<=')
+        .replace(/≥/g,'>=').replace(/×/g,'*').replace(/÷/g,'/')
+        .replace(/∪/g,'U').replace(/∩/g,'n').replace(/∈/g,'in')
+        .replace(/⊂/g,'subset').replace(/⊆/g,'subseteq')
+      if (str.includes('/') && !str.includes('sqrt')) {
+        const parts = str.split('/')
+        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1]))
+          str = String(parseFloat(parts[0]) / parseFloat(parts[1]))
+      }
+      return str.replace(/\.0$/, '').toLowerCase()
+    }
 
     if (question.type === 'multiple_choice') {
-      if (userAnswer === undefined || userAnswer === null) return false
-      const selectedText = resolveOptionText(question, userAnswer)
-      const correctText = resolveOptionText(question, ca)
+      let selectedText, correctText
+      if (typeof userAnswer === 'number' || !isNaN(parseInt(userAnswer))) {
+        const idx = typeof userAnswer === 'number' ? userAnswer : parseInt(userAnswer)
+        selectedText = question.options?.[idx] || ''
+      } else { selectedText = userAnswer }
+      if (typeof ca === 'number' || (typeof ca === 'string' && !isNaN(parseInt(ca)))) {
+        const idx = typeof ca === 'number' ? ca : parseInt(ca)
+        correctText = question.options?.[idx] || ''
+      } else { correctText = ca }
       if (norm(selectedText) === norm(correctText)) return true
-      return alts.some(a => norm(resolveOptionText(question, a)) === norm(selectedText) || norm(a) === norm(selectedText))
+      return alts.some(alt => {
+        let altText
+        if (typeof alt === 'number' || !isNaN(parseInt(alt))) {
+          const idx = typeof alt === 'number' ? alt : parseInt(alt)
+          altText = question.options?.[idx] || ''
+        } else { altText = alt }
+        return norm(altText) === norm(selectedText)
+      })
     }
 
     if (question.type === 'multiple_select') {
       if (!Array.isArray(userAnswer) || userAnswer.length === 0) return false
-      const caArr = Array.isArray(ca) ? ca : [ca]
-      const selectedTexts = userAnswer.map(i => norm(resolveOptionText(question, i))).sort()
-      const correctTexts = caArr.map(a => norm(resolveOptionText(question, a))).sort()
-      return JSON.stringify(selectedTexts) === JSON.stringify(correctTexts)
+      let correctIndices = []
+      if (Array.isArray(ca)) correctIndices = ca
+      else if (typeof ca === 'number') correctIndices = [ca]
+      else if (typeof ca === 'string' && !isNaN(parseInt(ca))) correctIndices = [parseInt(ca)]
+      else correctIndices = question.options.reduce((acc, opt, idx) => {
+        if (norm(opt) === norm(ca)) acc.push(idx); return acc
+      }, [])
+      return JSON.stringify([...userAnswer].sort((a,b)=>a-b)) === JSON.stringify([...correctIndices].sort((a,b)=>a-b))
     }
 
     if (question.type === 'numeric' || question.type === 'numeric_input') {
       const uNum = parseFloat(userAnswer), cNum = parseFloat(ca)
       if (isNaN(uNum) || isNaN(cNum)) return false
-      const tol = Math.max(Math.abs(cNum) * 0.01, 0.001)
-      if (Math.abs(uNum - cNum) <= tol) return true
-      return alts.some(a => { const an = parseFloat(a); return !isNaN(an) && Math.abs(uNum - an) <= Math.max(Math.abs(an) * 0.01, 0.001) })
+      const tolerance = Math.max(Math.abs(cNum) * 0.01, 0.001)
+      if (Math.abs(uNum - cNum) <= tolerance) return true
+      return alts.some(alt => {
+        const altNum = parseFloat(alt)
+        return !isNaN(altNum) && Math.abs(uNum - altNum) <= Math.max(Math.abs(altNum) * 0.01, 0.001)
+      })
     }
 
-    // interval_input, coordinate_input, text_input, equation_input etc.
-    const ua = norm(userAnswer)
-    if (ua === norm(ca)) return true
-    return alts.some(a => norm(a) === ua)
+    const normalizedUser = norm(userAnswer)
+    if (normalizedUser === norm(ca)) return true
+    return alts.some(a => norm(a) === normalizedUser)
   }
 
   const doSubmit = async () => {
     const q = questions[currentIndex]
     if (q) saveCurrentTime(q._id)
-
     const questionResults = questions.map(question => {
       const ua = answers[question._id]
       const fmt = (a) => Array.isArray(a) ? a.join(', ') : String(a ?? '')
       return {
-        questionId: question._id,
-        questionNumber: question.question_number,
-        questionText: question.question_text,
-        userAnswer: fmt(ua),
+        questionId: question._id, questionNumber: question.question_number,
+        questionText: question.question_text, userAnswer: fmt(ua),
         correctAnswer: fmt(question.correct_answer),
         isCorrect: checkCorrect(question, ua),
         timeTaken: timesRef.current[question._id] || 0
       }
     })
-
     const score = questionResults.filter(r => r.isCorrect).length
     const percentage = Math.round((score / questions.length) * 100)
     const totalTime = Object.values(timesRef.current).reduce((s, t) => s + t, 0)
-
     setSaving(true)
     try {
       const u = userRef.current
       await axios.post(`${API_URL}/api/iitmmath_scores`, {
-        email: u.email,
-        username: u.username || u.name || u.email,
-        quizData: { topic, score, totalQuestions: questions.length, percentage, totalTime, timestamp: new Date(), questionResults }
+        email: u.email, username: u.username || u.name || u.email,
+        quizData: { topic, score, totalQuestions: questions.length, percentage, timestamp: new Date(), questionResults }
       }, { withCredentials: true })
-    } catch (err) {
-      console.error('Score save failed:', err)
-    } finally {
-      setSaving(false)
-    }
-
+    } catch (err) { console.error('Score save failed:', err) }
+    finally { setSaving(false) }
     setResults({ score, percentage, totalTime, questionResults })
     setSubmitted(true)
     clearInterval(devToolsIntervalRef.current)
-    // Restore context menu / selection on review page
     document.onselectstart = null
   }
 
@@ -565,24 +810,32 @@ const IITMMathQuiz = () => {
     setLoading(true)
   }
 
-  // ── Input rendering ──
   const renderInput = (question) => {
     const { _id, type, options, format_hint } = question
     const answer = answers[_id]
 
     if (type === 'multiple_choice') {
       return (
-        <div className="mt-3">
-          {options?.map((opt, idx) => (
-            <div key={idx} className="form-check mb-2">
-              <input className="form-check-input" type="radio" name={`q-${_id}`}
-                id={`opt-${_id}-${idx}`}
-                checked={(typeof answer==='string'?parseInt(answer):answer)===idx}
-                onChange={()=>handleAnswer(_id,idx)} />
-              <label className="form-check-label" htmlFor={`opt-${_id}-${idx}`}
-                style={{fontSize:'0.95rem',cursor:'pointer'}}>{opt}</label>
-            </div>
-          ))}
+        <div className="mt-3" style={{display:'flex', flexDirection:'column', gap:9}}>
+          {options?.map((opt, idx) => {
+            const isSelected = (typeof answer === 'string' ? parseInt(answer) : answer) === idx
+            const isHovered = hoveredOpt === `${_id}-${idx}`
+            const style = isSelected ? S.optSelected : isHovered ? S.optHovered : S.optBase
+            return (
+              <div key={idx} style={style}
+                onClick={() => handleAnswer(_id, idx)}
+                onMouseEnter={() => setHoveredOpt(`${_id}-${idx}`)}
+                onMouseLeave={() => setHoveredOpt(null)}>
+                <input className="form-check-input" type="radio" name={`q-${_id}`}
+                  id={`opt-${_id}-${idx}`} checked={isSelected}
+                  onChange={() => handleAnswer(_id, idx)}
+                  style={{ flexShrink:0, accentColor:'#378ADD', marginTop:0 }} />
+                <label htmlFor={`opt-${_id}-${idx}`} style={S.optLabel(isSelected)}>
+                  {opt}
+                </label>
+              </div>
+            )
+          })}
         </div>
       )
     }
@@ -591,17 +844,30 @@ const IITMMathQuiz = () => {
       const sel = answer || []
       return (
         <div className="mt-3">
-          <small className="text-muted d-block mb-2"><i className="bi bi-info-circle me-1"/>Select all that apply</small>
-          {options?.map((opt, idx) => (
-            <div key={idx} className="form-check mb-2">
-              <input className="form-check-input" type="checkbox"
-                id={`opt-${_id}-${idx}`}
-                checked={sel.includes(idx)}
-                onChange={e=>handleMultiSelect(_id, idx, e.target.checked)} />
-              <label className="form-check-label" htmlFor={`opt-${_id}-${idx}`}
-                style={{fontSize:'0.95rem',cursor:'pointer'}}>{opt}</label>
-            </div>
-          ))}
+          <small className="text-muted d-block mb-2">
+            <i className="bi bi-info-circle me-1"/>Select all that apply
+          </small>
+          <div style={{display:'flex', flexDirection:'column', gap:9}}>
+            {options?.map((opt, idx) => {
+              const isSelected = sel.includes(idx)
+              const isHovered = hoveredOpt === `${_id}-${idx}`
+              const style = isSelected ? S.optSelected : isHovered ? S.optHovered : S.optBase
+              return (
+                <div key={idx} style={style}
+                  onClick={() => handleMultiSelect(_id, idx, !sel.includes(idx))}
+                  onMouseEnter={() => setHoveredOpt(`${_id}-${idx}`)}
+                  onMouseLeave={() => setHoveredOpt(null)}>
+                  <input className="form-check-input" type="checkbox"
+                    id={`opt-${_id}-${idx}`} checked={isSelected}
+                    onChange={e => handleMultiSelect(_id, idx, e.target.checked)}
+                    style={{ flexShrink:0, accentColor:'#378ADD', marginTop:0 }} />
+                  <label htmlFor={`opt-${_id}-${idx}`} style={S.optLabel(isSelected)}>
+                    {opt}
+                  </label>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )
     }
@@ -610,7 +876,8 @@ const IITMMathQuiz = () => {
       return (
         <div className="mt-3">
           {format_hint && <small className="text-muted d-block mb-1">{format_hint}</small>}
-          <input type="number" className="form-control" style={{maxWidth:220}}
+          <input type="number" className="form-control"
+            style={{maxWidth:240, background:'#E6F1FB', borderColor:'#85B7EB', color:'#042C53'}}
             value={answer??''} placeholder="e.g. 3.14, −5, 1/3"
             onChange={e=>handleAnswer(_id,e.target.value)} autoComplete="off" />
         </div>
@@ -626,18 +893,18 @@ const IITMMathQuiz = () => {
     return (
       <div className="mt-3">
         {format_hint && <small className="text-muted d-block mb-1">{format_hint}</small>}
-        <input type="text" className="form-control" style={{maxWidth:400}}
+        <input type="text" className="form-control"
+          style={{maxWidth:420, background:'#E6F1FB', borderColor:'#85B7EB', color:'#042C53'}}
           value={answer??''} placeholder={placeholders[type]||'Type your answer here'}
           onChange={e=>handleAnswer(_id,e.target.value)} autoComplete="off" spellCheck="false" />
       </div>
     )
   }
 
-  // ── Render guards ──
   if (loading) return (
     <div className="d-flex justify-content-center align-items-center" style={{height:'50vh'}}>
       <div className="text-center">
-        <div className="spinner-border mb-3" role="status"/>
+        <div className="spinner-border mb-3" style={{color:'#7F77DD'}} role="status"/>
         {multiTopics && <p className="text-muted">Loading questions from {multiTopics.length} topics…</p>}
       </div>
     </div>
@@ -657,14 +924,14 @@ const IITMMathQuiz = () => {
 
   const q = questions[currentIndex]
   const answeredCount = Object.keys(answers).filter(k => {
-    const a = answers[k]; return a !== undefined && a !== '' && !(Array.isArray(a) && a.length===0)
+    const a = answers[k]
+    return a !== undefined && a !== '' && !(Array.isArray(a) && a.length===0)
   }).length
   const progress = Math.round(((currentIndex+1)/questions.length)*100)
-  const topicColor = topicColorMap?.[q.originalTopic||q.topic] || '#6c757d'
 
   return (
-    <main className="main" style={{userSelect:'none',WebkitUserSelect:'none'}}>
-      {/* Warning overlay for tab switch */}
+    <main className="main" style={{userSelect:'none', WebkitUserSelect:'none'}}>
+      {/* Warning overlay */}
       {warningOverlay && (
         <div style={{position:'fixed',inset:0,background:'rgba(220,53,69,0.96)',zIndex:10000,
           display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',color:'#fff'}}>
@@ -677,18 +944,68 @@ const IITMMathQuiz = () => {
         </div>
       )}
 
-      {/* Calculator */}
       {showCalc && <Calculator onClose={()=>setShowCalc(false)} />}
 
-      {/* Floating calculator button */}
+      {/* Floating calc button */}
       <button onClick={()=>setShowCalc(v=>!v)}
-        style={{position:'fixed',bottom:20,right:20,width:56,height:56,borderRadius:'50%',
-          background:'linear-gradient(135deg,#667eea,#764ba2)',border:'none',color:'#fff',
-          fontSize:22,cursor:'pointer',boxShadow:'0 4px 16px rgba(102,126,234,0.5)',zIndex:9998,
-          display:'flex',alignItems:'center',justifyContent:'center'}}>
+        style={{position:'fixed',bottom:20,right:20,width:52,height:52,borderRadius:'50%',
+          background:'#7F77DD',border:'none',color:'#fff',
+          fontSize:20,cursor:'pointer',zIndex:9998,
+          display:'flex',alignItems:'center',justifyContent:'center',
+          boxShadow:'0 2px 8px rgba(127,119,221,0.4)'}}>
         🧮
       </button>
 
+      {/* Mobile: floating "Jump to Q" button */}
+      <button
+        className="d-md-none"
+        onClick={()=>setShowMobileNav(v=>!v)}
+        style={{position:'fixed',bottom:82,right:20,width:52,height:52,borderRadius:'50%',
+          background:'#378ADD',border:'none',color:'#fff',fontSize:11,fontWeight:700,
+          cursor:'pointer',zIndex:9997,display:'flex',flexDirection:'column',
+          alignItems:'center',justifyContent:'center',lineHeight:1.2,
+          boxShadow:'0 2px 8px rgba(55,138,221,0.4)'}}>
+        <span style={{fontSize:16}}>≡</span>
+        <span>Qs</span>
+      </button>
+
+      {/* Mobile nav drawer */}
+      {showMobileNav && (
+        <div className="d-md-none" style={{position:'fixed',inset:0,zIndex:10001,background:'rgba(4,44,83,0.5)'}}
+          onClick={()=>setShowMobileNav(false)}>
+          <div style={{position:'absolute',bottom:0,left:0,right:0,background:'#fff',
+            borderRadius:'16px 16px 0 0',padding:'20px 16px 30px'}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+              <span style={{fontWeight:700,color:'#042C53',fontSize:'0.9rem'}}>Question Navigator</span>
+              <button onClick={()=>setShowMobileNav(false)}
+                style={{background:'none',border:'none',fontSize:22,color:'#888',cursor:'pointer',lineHeight:1}}>×</button>
+            </div>
+            <div style={{...S.navGrid, gridTemplateColumns:'repeat(8,1fr)'}}>
+              {questions.map((qItem, i) => {
+                const ans = answers[qItem._id]
+                const answered = ans !== undefined && ans !== '' && !(Array.isArray(ans) && ans.length===0)
+                const state = i === currentIndex ? 'current' : answered ? 'answered' : 'default'
+                return (
+                  <button key={qItem._id} onClick={()=>goTo(i)} style={S.navBtn(state)}>
+                    {i+1}
+                  </button>
+                )
+              })}
+            </div>
+            <div style={{display:'flex',gap:16,marginTop:12,flexWrap:'wrap'}}>
+              {[['#7F77DD','Current'],['#1D9E75','Answered'],['#D3D1C7','Unanswered']].map(([c,l]) => (
+                <div key={l} style={{display:'flex',alignItems:'center',gap:5,fontSize:'0.72rem',color:'#5F5E5A'}}>
+                  <div style={{width:10,height:10,borderRadius:3,background:c,flexShrink:0}}/>
+                  {l}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Page title */}
       <div className="page-title" style={{marginBottom:'2rem'}}>
         <div className="heading"><div className="container">
           <div className="row d-flex justify-content-center text-center">
@@ -709,68 +1026,73 @@ const IITMMathQuiz = () => {
       </div>
 
       <div className="container mb-5">
+        {/* Desktop: two-column grid — question left, nav right */}
         <div className="row justify-content-center">
-          <div className="col-lg-8">
+          {/* Question column */}
+          <div className="col-12 col-md-8 col-lg-8">
             {/* Progress */}
             <div className="mb-3">
               <div className="d-flex justify-content-between mb-1">
                 <small className="text-muted">Question {currentIndex+1} of {questions.length}</small>
                 <small className="text-muted">{answeredCount} answered</small>
               </div>
-              <div className="progress" style={{height:6}}>
-                <div className="progress-bar bg-primary" style={{width:`${progress}%`}}/>
+              <div style={S.progBar}>
+                <div style={S.progFill(progress)}/>
               </div>
             </div>
 
             {/* Question card */}
-            <div className="card border-0 shadow-sm mb-3" style={{borderRadius:12}} ref={questionRef}>
-              <div className="card-body p-4">
-                <div className="d-flex gap-2 flex-wrap mb-3">
-                  <span className={`badge bg-${DIFF_COLORS[q.difficulty]||'secondary'}`}>{q.difficulty}</span>
-                  <span className="badge" style={{background:topicColor}}>{q.originalTopic||q.topic||topic}</span>
-                  <span className="badge bg-secondary text-capitalize">{q.type?.replace(/_/g,' ')}</span>
-                  {q.points > 1 && <span className="badge bg-info">{q.points} pts</span>}
-                </div>
+            <div style={S.qCard} ref={questionRef}>
+              {/* Badge strip — only difficulty + Q number */}
+              <div style={S.badgeStrip}>
+                <span className={`badge bg-${DIFF_COLORS[q.difficulty]||'secondary'}`}
+                  style={{fontSize:'0.75rem'}}>
+                  {q.difficulty}
+                </span>
+                {q.points > 1 && (
+                  <span className="badge"
+                    style={{background:'#CECBF6',color:'#3C3489',fontSize:'0.75rem'}}>
+                    {q.points} pts
+                  </span>
+                )}
+                <span style={S.qNumBadge}>Q {currentIndex + 1}</span>
+              </div>
 
-                <h5 className="mb-3" style={{lineHeight:1.7}}>
-                  <span className="text-muted me-2">{currentIndex+1}.</span>
-                  {q.question_text}
-                </h5>
+              <div style={S.qBody}>
+                <h5 style={S.qText}>{q.question_text}</h5>
 
+                <GraphImage imageFile={q.image_file} />
                 {renderInput(q)}
               </div>
             </div>
 
-            {/* Navigation */}
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <button className="btn btn-outline-secondary" onClick={()=>goTo(currentIndex-1)} disabled={currentIndex===0}>
+            {/* Prev / Next */}
+            <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
+              <button style={{...S.navPrev, opacity: currentIndex===0 ? 0.4 : 1, cursor: currentIndex===0 ? 'not-allowed' : 'pointer'}}
+                onClick={()=>currentIndex>0 && goTo(currentIndex-1)} disabled={currentIndex===0}>
                 <i className="bi bi-chevron-left me-1"/>Prev
               </button>
-              <div className="d-flex gap-1 flex-wrap justify-content-center" style={{maxWidth:380}}>
-                {questions.map((qItem, i) => {
-                  const ans = answers[qItem._id]
-                  const answered = ans !== undefined && ans !== '' && !(Array.isArray(ans) && ans.length===0)
-                  return (
-                    <button key={qItem._id} onClick={()=>goTo(i)}
-                      className={`btn btn-sm ${i===currentIndex?'btn-primary':answered?'btn-success':'btn-outline-secondary'}`}
-                      style={{width:34,height:34,padding:0,fontSize:'0.78rem'}}>
-                      {i+1}
-                    </button>
-                  )
-                })}
-              </div>
-              {currentIndex < questions.length-1
-                ? <button className="btn btn-outline-secondary" onClick={()=>goTo(currentIndex+1)}>
+              {currentIndex < questions.length - 1
+                ? <button style={S.navNext} onClick={()=>goTo(currentIndex+1)}>
                     Next<i className="bi bi-chevron-right ms-1"/>
                   </button>
-                : <button className="btn btn-success" onClick={doSubmit}
-                    disabled={saving}>
+                : <button style={S.navSubmit} onClick={doSubmit} disabled={saving}>
                     {saving
                       ? <><span className="spinner-border spinner-border-sm me-1"/>Saving…</>
                       : <><i className="bi bi-check-circle me-1"/>Submit</>}
                   </button>
               }
             </div>
+          </div>
+
+          {/* Navigator column — desktop only */}
+          <div className="col-md-4 col-lg-3 d-none d-md-block">
+            <QuestionNav
+              questions={questions}
+              answers={answers}
+              currentIndex={currentIndex}
+              goTo={goTo}
+            />
           </div>
         </div>
       </div>
