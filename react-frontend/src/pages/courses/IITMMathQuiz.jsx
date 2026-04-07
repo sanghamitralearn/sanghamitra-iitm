@@ -489,17 +489,32 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
                     {(q.type === 'multiple_choice' || q.type === 'multiple_select') && q.options && (
                       <div className="mb-3">
                         {q.options.map((opt, oi) => {
+                          // AFTER
                           const caArr = q.type === 'multiple_select'
                             ? (Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer]) : []
+
+                          // Resolve correct index — handles both numeric index AND text-based correct_answer
+                          const resolvedCorrectIdx = q.type === 'multiple_choice'
+                            ? (typeof q.correct_answer === 'number'
+                                ? q.correct_answer
+                                : !isNaN(parseInt(q.correct_answer))
+                                  ? parseInt(q.correct_answer)
+                                  : q.options?.findIndex(o => o === q.correct_answer))  // text match fallback
+                            : -1
+
                           const isCorrectOpt = q.type === 'multiple_choice'
-                            ? oi === (typeof q.correct_answer === 'string' ? parseInt(q.correct_answer) : q.correct_answer)
+                            ? oi === resolvedCorrectIdx
                             : caArr.includes(oi)
+
                           const userPicked = q.type === 'multiple_choice'
-                            ? answers[q._id] === oi
+                            ? (typeof answers[q._id] === 'number'
+                                ? answers[q._id] === oi
+                                : parseInt(answers[q._id]) === oi)
                             : (Array.isArray(answers[q._id]) ? answers[q._id].includes(oi) : false)
+
                           let bg = 'transparent'
-                          if (isCorrectOpt) bg = '#d4edda'
-                          else if (userPicked) bg = '#f8d7da'
+                          if (isCorrectOpt) bg = '#d4edda'       // green for correct (whether picked or not)
+                          else if (userPicked) bg = '#f8d7da'    // red only for wrong picks
                           return (
                             <div key={oi} className="d-flex align-items-center gap-2 mb-1 px-2 py-1 rounded" style={{background:bg}}>
                               {isCorrectOpt && <i className="bi bi-check-circle-fill text-success"/>}
