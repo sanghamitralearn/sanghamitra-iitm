@@ -1,13 +1,11 @@
 const mongoose = require('mongoose');
 
-
 const questionSchema = new mongoose.Schema({
     questionId: Number,
     title: String,
     type: { 
         type: String, 
         enum: ['mcq-single', 'mcq-multiple', 'numerical', 'interview'], 
-        
     },
     userAnswer: mongoose.Schema.Types.Mixed,
     correctAnswer: mongoose.Schema.Types.Mixed,

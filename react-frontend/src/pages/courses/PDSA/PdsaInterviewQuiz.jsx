@@ -13,7 +13,7 @@ const WEEK_CONFIG = {
   '6':  { topic: 'Advanced Data Structures',      name: 'Advanced Data Structures' },
   '7':  { topic: 'Advanced Algorithms',           name: 'Advanced Algorithms' },
   '8':  { topic: 'Divide and Conquer Algorithms', name: 'Divide and Conquer Algorithms' },
-  '9':  { topic: 'Dynamic programming',           name: 'Dynamic Programming' },
+  '9':  { topic: 'Dynamic Programming',           name: 'Dynamic Programming' },
   '10': { topic: 'Linear Programming',            name: 'Linear Programming' },
 }
 
@@ -204,7 +204,7 @@ for _k in list(globals().keys()):
       questions, duration: Math.round(elapsed / 60), timestamp: new Date(),
     }
     try {
-      await fetch(`${API}/api/interview-submissions`, {
+      await fetch(`${API}/api/interview-submission`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         credentials: 'include', body: JSON.stringify(payload),
       })

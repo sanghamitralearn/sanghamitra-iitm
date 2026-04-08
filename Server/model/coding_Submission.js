@@ -17,15 +17,20 @@ const codingQuestionSchema = new mongoose.Schema({
         type: String, 
         enum: ['coding', 'interview'],
         default: 'coding' },
-    userCode: { type: String },
-    functionName: String,
+    code: { type: String },
+    //functionName: String,
     score: { type: Number, required: true },
     maxScore: { type: Number, required: true },
     passedTests: Number,
     totalTests: Number,
     testResults: [testResultSchema],
     hasExplanations: Boolean,
-    timeTaken: Number // in seconds
+    timeTaken: Number,
+    difficulty: {
+        type: String,
+        enum: ['easy', 'medium', 'hard'],
+        default: 'medium'
+    }
 });
 
 const codingSubmissionSchema = new mongoose.Schema({
@@ -39,7 +44,13 @@ const codingSubmissionSchema = new mongoose.Schema({
     //cheatingAttempts: { type: Number, default: 0 },
     //tabSwitches: { type: Number, default: 0 },
     questions: [codingQuestionSchema],
-    //programmingLanguage: { type: String, default: 'python' }
+    // ADDED: Level field to track which quiz level was completed
+    level: {
+        type: Number,
+        min: 1,
+        max: 3,
+        required: true
+    }
 });
 
 module.exports = mongoose.model('CodingSubmission', codingSubmissionSchema, 'coding_submission');
