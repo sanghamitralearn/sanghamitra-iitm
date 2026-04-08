@@ -512,100 +512,109 @@ const Dashboard = () => {
   }
 
   return (
-    <section className="container mt-5">
-      <div className="row">
-        <div className="col-lg-12 mx-auto">
-          <div className="card shadow-sm mb-4 bg-light">
-            <div className="card-header text-black" style={{ backgroundColor: '#3498db' }}>
-              <h3 className="mb-1">Activity and Performance Dashboard</h3>
-            </div>
-            <div className="card-body">
-              {/* User Information Section */}
-              <div className="card-custom mb-4">
-                <div className="info-container">
-                  <div className="user-info">
-                    <h3>User Information</h3>
-                    <p><strong>Username:</strong> <span>{user.name}</span></p>
-                    <p><strong>Email:</strong> <span>{user.email}</span></p>
+    <section className="dashboard-container">
+      <div className="container">
+        <div className="row">
+          <div className="col-lg-12">
+            <div className="card shadow-sm mb-4">
+              <div className="card-header" style={{ backgroundColor: '#3498db' }}>
+                <h3 className="mb-1">
+                  <i className="bi bi-speedometer2 me-2"></i>
+                  Activity and Performance Dashboard
+                </h3>
+              </div>
+              <div className="card-body">
+                {/* User Information Section */}
+                <div className="card-custom mb-4">
+                  <div className="info-container">
+                    <div className="user-info">
+                      <h3><i className="bi bi-person-circle me-2"></i>User Information</h3>
+                      <p><strong>Username:</strong> <span>{user.name}</span></p>
+                      <p><strong>Email:</strong> <span>{user.email}</span></p>
+                    </div>
+                    
+                    <div className="quiz-count">
+                      <h3><i className="bi bi-bar-chart-line me-2"></i>Quiz Count</h3>
+                      <p>Math: <span className="badge bg-primary">{mathTopics.length}</span></p>
+                      <p>RC: <span className="badge bg-success">{Object.keys(rcScores.topics || {}).length}</span></p>
+                      <p>Vocabulary: <span className="badge bg-warning text-dark">{vocabScores.length}</span></p>
+                      <p>Programming: <span className="badge bg-info text-dark">{programmingScores.length}</span></p>
+                    </div>
                   </div>
                   
-                  <div className="quiz-count">
-                    <h3>Quiz Count</h3>
-                    <p>Math: <span>{mathTopics.length}</span></p>
-                    <p>RC: <span>{Object.keys(rcScores.topics || {}).length}</span></p>
-                    <p>Vocabulary: <span>{vocabScores.length}</span></p>
-                    <p>Programming: <span>{programmingScores.length}</span></p>
+                  <div className="streak-container">
+                    <div className="streak-title">
+                      <i className="bi bi-fire me-1"></i>Current Streak
+                    </div>
+                    <div className="streak-circle">
+                      <i className="bi bi-fire"></i>
+                      <span id="userStreak">{streak}</span>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="streak-container">
-                  <div className="streak-title">Current Streak</div>
-                  <div className="streak-circle">
-                    <i className="bi bi-fire"></i>
-                    <span id="userStreak">{streak}</span>
-                  </div>
-                </div>
-              </div>
 
-              {/* Vocabulary and Mathematics Section */}
-              <div className="row mb-4">
-                <div className="col-lg-6 col-md-12">
-                  <div className="card-custom">
-                    <h3>Vocabulary</h3>
-                    <div id="vocab-quiz-summary">
-                      {displayVocabScores()}
+                {/* Vocabulary and Mathematics Section */}
+                <div className="row mb-4">
+                  <div className="col-lg-6 col-md-12">
+                    <div className="card-custom">
+                      <h3><i className="bi bi-book me-2"></i>Vocabulary</h3>
+                      <div id="vocab-quiz-summary">
+                        {displayVocabScores()}
+                      </div>
+                      <button 
+                        className="btn btn-primary solve-more-btn" 
+                        onClick={() => window.location.href = '/vocabulary'}
+                      >
+                        <i className="bi bi-pencil me-1"></i>Solve More
+                      </button>
                     </div>
-                    <button 
-                      className="btn btn-primary solve-more-btn" 
-                      onClick={() => window.location.href = '/vocabulary'}
-                    >
-                      Solve More
-                    </button>
+                  </div>
+                  <div className="col-lg-6 col-md-12">
+                    <div className="card-custom">
+                      <h3><i className="bi bi-calculator me-2"></i>Mathematics</h3>
+                      <div id="topics-container">
+                        {displayMathTopics()}
+                      </div>
+                      <button 
+                        className="btn btn-primary solve-more-btn" 
+                        onClick={() => window.location.href = '/math'}
+                      >
+                        <i className="bi bi-pencil me-1"></i>Solve More
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div className="col-lg-6 col-md-12">
-                  <div className="card-custom">
-                    <h3>Mathematics</h3>
-                    <div id="topics-container">
-                      {displayMathTopics()}
-                    </div>
-                    <button 
-                      className="btn btn-primary solve-more-btn" 
-                      onClick={() => window.location.href = '/math'}
-                    >
-                      Solve More
-                    </button>
-                  </div>
-                </div>
-              </div>
 
-              {/* Full-Width Reading Comprehension Section */}
-              <div className="row">
-                <div className="col-12">
-                  <div className="card-custom">
-                    <h3>Reading Comprehension</h3>
-                    <div id="rc-table-container">
-                      {displayRCScores()}
+                {/* Full-Width Reading Comprehension Section */}
+                <div className="row mb-4">
+                  <div className="col-12">
+                    <div className="card-custom">
+                      <h3><i className="bi bi-journal-text me-2"></i>Reading Comprehension</h3>
+                      <div id="rc-table-container">
+                        {displayRCScores()}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Programming Quizzes Section */}
-              <div className="row mt-4">
-                <div className="col-12">
-                  <div className="card-custom">
-                    <h3>CT Finger Exercises</h3>
-                    <div id="ct-finger-container">
-                      {displayCTFingerExercises()}
-                    </div>
-                    <h3>Programming Finger Exercises</h3>
-                    <div id="programming-finger-container">
-                      {displayProgrammingFingerExercises()}
-                    </div>
-                    <h3>Programming Diagnostic</h3>
-                    <div id="programming-container">
-                      {displayProgrammingScores()}
+                {/* Programming Quizzes Section */}
+                <div className="row">
+                  <div className="col-12">
+                    <div className="card-custom">
+                      <h3><i className="bi bi-cpu me-2"></i>CT Finger Exercises</h3>
+                      <div id="ct-finger-container">
+                        {displayCTFingerExercises()}
+                      </div>
+                      
+                      <h3><i className="bi bi-code-slash me-2"></i>Programming Finger Exercises</h3>
+                      <div id="programming-finger-container">
+                        {displayProgrammingFingerExercises()}
+                      </div>
+                      
+                      <h3><i className="bi bi-braces me-2"></i>Programming Diagnostic</h3>
+                      <div id="programming-container">
+                        {displayProgrammingScores()}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -614,8 +623,4 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-    </section>
-  )
-}
-
-export default Dashboard
+    </section

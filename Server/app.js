@@ -25,7 +25,7 @@ if (!process.env.DATABASE || !process.env.SECRET_KEY) {
 
 // Middleware setup
 app.use(cors({
-    origin: ['http://localhost:3000', 'https://sanghamitra-iitm.vercel.app'],
+    origin: ['http://localhost:3000', 'http://localhost:5173', 'https://sanghamitra-iitm.vercel.app'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
@@ -48,8 +48,8 @@ app.use(session({
     }),
     cookie: {
         maxAge: 1000 * 60 * 60 * 24, // 1 day
-        secure: true,      // required for cross-site cookies
-        sameSite: 'none',  // allow cross-domain (frontend ↔ backend on different Vercel URLs)
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         httpOnly: true
     }
 }));
