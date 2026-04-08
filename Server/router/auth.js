@@ -1051,46 +1051,41 @@ router.get('/coding-submissions', async (req, res) => {
   }
 });
 
-// GET PDSA submissions - FIXED model name
-
+// GET all PDSA submissions (admin) — merges test, coding, and interview quiz submissions
 router.get('/pdsa-submissions', async (req, res) => {
   try {
-    const { username, email, topic, date, limit = 20 } = req.query;
-    
-    const filter = {};
-    if (username) filter.username = username;
-    if (email) filter.email = email;
-    if (topic) filter.topic = topic;
-    
-    if (date) {
-      const startDate = new Date(date);
-      const endDate = new Date(date);
-      endDate.setDate(endDate.getDate() + 1);
-      filter.timestamp = { $gte: startDate, $lt: endDate };
-    }
-    
-    // Most aggressive optimization - just get what you need
-    const submissions = await pdsaSubmission
-      .find(filter)
-      .sort({ timestamp: -1 })
-      .limit(parseInt(limit)) // Hard limit to prevent large responses
-      .select('-__v') // Exclude version field if not needed
-      .lean()
-      .maxTimeMS(5000);
-    
-    res.status(200).json({
-      success: true,
-      count: submissions.length,
-      submissions
+    const { email } = req.query;
+    const filter = email ? { email } : {};
+
+    const [testSubs, codingSubs, interviewSubs] = await Promise.all([
+      pdsaSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
+      CodingSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
+      InterviewSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
+    ]);
+
+    const normalize = (sub, quizType) => ({
+      _id: sub._id,
+      email: sub.email,
+      username: sub.username,
+      topic: sub.topic,
+      score: sub.score,
+      maxScore: sub.maxScore,
+      percentage: sub.percentage,
+      timestamp: sub.timestamp,
+      quizType,
     });
-    
+
+    const merged = [
+      ...testSubs.map(s => normalize(s, 'test')),
+      ...codingSubs.map(s => normalize(s, 'coding')),
+      ...interviewSubs.map(s => normalize(s, 'interview')),
+    ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    res.json({ success: true, data: merged });
+
   } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ 
-      success: false,
-      message: 'Server Error',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal error'
-    });
+    console.error('Error fetching PDSA submissions:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

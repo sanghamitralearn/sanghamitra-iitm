@@ -181,14 +181,17 @@ const PDSADashboard = () => {
             <div className="table-responsive">
               <table className="table table-striped">
                 <thead>
-                  <tr><th>Topic</th><th>Score</th><th>Percentage</th><th>Date</th></tr>
+                  <tr><th>Topic</th><th>Type</th><th>Score</th><th>Percentage</th><th>Date</th></tr>
                 </thead>
                 <tbody>
                   {selectedStudent.submissions.map((s, i) => {
                     const pct = Math.round(s.percentage || 0)
+                    const typeColors = { test: '#0d6efd', coding: '#198754', interview: '#6f42c1' }
+                    const quizType = s.quizType || 'test'
                     return (
                       <tr key={i}>
                         <td><strong>{s.topic || '—'}</strong></td>
+                        <td><span className="badge" style={{ background: typeColors[quizType] }}>{quizType}</span></td>
                         <td>{s.score}/{s.maxScore}</td>
                         <td><span style={{ color: getScoreColor(pct), fontWeight: 'bold' }}>{pct}%</span></td>
                         <td>{s.timestamp ? new Date(s.timestamp).toLocaleDateString() : '—'}</td>
