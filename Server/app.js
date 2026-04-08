@@ -26,7 +26,6 @@ if (!process.env.DATABASE || !process.env.SECRET_KEY) {
 // Middleware setup
 app.use(cors({
     origin: ['http://localhost:3000', 'https://sanghamitra-iitm.vercel.app', 'https://iitm.sanghamitra.com'],
->>>>>>> d4d8251f5bec9f192f1fb5b3f60aa0d5d6bf6ad6
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
