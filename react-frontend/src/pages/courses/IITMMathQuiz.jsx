@@ -497,14 +497,16 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
                           const resolvedCorrectIdx = q.type === 'multiple_choice'
                             ? (typeof q.correct_answer === 'number'
                                 ? q.correct_answer
-                                : !isNaN(parseInt(q.correct_answer))
-                                  ? parseInt(q.correct_answer)
-                                  : q.options?.findIndex(o => o === q.correct_answer))  // text match fallback
+                                : !isNaN(parseInt(String(q.correct_answer).trim()))
+                                  ? parseInt(String(q.correct_answer).trim())
+                                  : q.options?.findIndex(o =>
+                                      o?.toLowerCase().trim() === String(q.correct_answer).toLowerCase().trim()
+                                    ) ?? -1)
                             : -1
 
                           const isCorrectOpt = q.type === 'multiple_choice'
-                            ? oi === resolvedCorrectIdx
-                            : caArr.includes(oi)
+                          ? (resolvedCorrectIdx !== -1 && oi === resolvedCorrectIdx)
+                          : caArr.includes(oi)
 
                           const userPicked = q.type === 'multiple_choice'
                             ? (typeof answers[q._id] === 'number'
@@ -513,12 +515,14 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
                             : (Array.isArray(answers[q._id]) ? answers[q._id].includes(oi) : false)
 
                           let bg = 'transparent'
-                          if (isCorrectOpt) bg = '#d4edda'       // green for correct (whether picked or not)
-                          else if (userPicked) bg = '#f8d7da'    // red only for wrong picks
+                            if (isCorrectOpt && userPicked) bg = '#d4edda'   // user picked correctly → green
+                            else if (isCorrectOpt) bg = '#d4edda'            // correct option not picked → still green
+                            else if (userPicked && !isCorrectOpt) bg = '#f8d7da'  // user picked wrong → red
                           return (
                             <div key={oi} className="d-flex align-items-center gap-2 mb-1 px-2 py-1 rounded" style={{background:bg}}>
-                              {isCorrectOpt && <i className="bi bi-check-circle-fill text-success"/>}
-                              {userPicked && !isCorrectOpt && <i className="bi bi-x-circle-fill text-danger"/>}
+                             {isCorrectOpt && userPicked && <i className="bi bi-check-circle-fill text-success"/>}
+                              {isCorrectOpt && !userPicked && <i className="bi bi-check-circle text-success"/>}
+                              {!isCorrectOpt && userPicked && <i className="bi bi-x-circle-fill text-danger"/>}
                               {!isCorrectOpt && !userPicked && <i className="bi bi-circle text-muted"/>}
                               <span style={{fontSize:'0.9rem'}}>{opt}</span>
                             </div>
