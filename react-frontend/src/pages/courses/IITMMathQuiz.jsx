@@ -714,76 +714,111 @@ const IITMMathQuiz = () => {
   }
 
   const checkCorrect = (question, userAnswer) => {
-    const ca = question.correct_answer
-    const alts = question.alternative_answers || []
-    if (userAnswer === undefined || userAnswer === null || userAnswer === '') return false
+  const ca = question.correct_answer
+  const alts = question.alternative_answers || []
 
-    const norm = t => {
-      if (t === undefined || t === null) return ''
-      let str = String(t)
-      str = str.replace(/\s+/g, '').replace(/\\\(/g,'').replace(/\\\)/g,'')
-        .replace(/\\\[/g,'').replace(/\\\]/g,'').replace(/\$/g,'')
-        .replace(/infinity|∞/gi,'inf').replace(/√\(([^)]+)\)/g,'sqrt($1)')
-        .replace(/√(\d+)/g,'sqrt($1)').replace(/≠/g,'!=').replace(/≤/g,'<=')
-        .replace(/≥/g,'>=').replace(/×/g,'*').replace(/÷/g,'/')
-        .replace(/∪/g,'U').replace(/∩/g,'n').replace(/∈/g,'in')
-        .replace(/⊂/g,'subset').replace(/⊆/g,'subseteq')
-      if (str.includes('/') && !str.includes('sqrt')) {
-        const parts = str.split('/')
-        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1]))
-          str = String(parseFloat(parts[0]) / parseFloat(parts[1]))
-      }
-      return str.replace(/\.0$/, '').toLowerCase()
+  // ── Guard: empty answer is always wrong ──────────────────────────────────
+  if (userAnswer === undefined || userAnswer === null || userAnswer === '') return false
+  if (Array.isArray(userAnswer) && userAnswer.length === 0) return false
+
+  // ── Normalizer for text answers ───────────────────────────────────────────
+  const norm = (t) => {
+    if (t === undefined || t === null) return ''
+    let str = String(t).trim()
+    str = str.replace(/\s+/g, '').replace(/\\\(/g,'').replace(/\\\)/g,'')
+      .replace(/\\\[/g,'').replace(/\\\]/g,'').replace(/\$/g,'')
+      .replace(/infinity|∞/gi,'inf').replace(/√\(([^)]+)\)/g,'sqrt($1)')
+      .replace(/√(\d+)/g,'sqrt($1)').replace(/≠/g,'!=').replace(/≤/g,'<=')
+      .replace(/≥/g,'>=').replace(/×/g,'*').replace(/÷/g,'/')
+      .replace(/∪/g,'U').replace(/∩/g,'n').replace(/∈/g,'in')
+      .replace(/⊂/g,'subset').replace(/⊆/g,'subseteq')
+    // Fraction → decimal
+    if (str.includes('/') && !str.includes('sqrt')) {
+      const parts = str.split('/')
+      if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1]))
+        str = String(parseFloat(parts[0]) / parseFloat(parts[1]))
     }
-
-    if (question.type === 'multiple_choice') {
-      let selectedText, correctText
-      if (typeof userAnswer === 'number' || !isNaN(parseInt(userAnswer))) {
-        const idx = typeof userAnswer === 'number' ? userAnswer : parseInt(userAnswer)
-        selectedText = question.options?.[idx] || ''
-      } else { selectedText = userAnswer }
-      if (typeof ca === 'number' || (typeof ca === 'string' && !isNaN(parseInt(ca)))) {
-        const idx = typeof ca === 'number' ? ca : parseInt(ca)
-        correctText = question.options?.[idx] || ''
-      } else { correctText = ca }
-      if (norm(selectedText) === norm(correctText)) return true
-      return alts.some(alt => {
-        let altText
-        if (typeof alt === 'number' || !isNaN(parseInt(alt))) {
-          const idx = typeof alt === 'number' ? alt : parseInt(alt)
-          altText = question.options?.[idx] || ''
-        } else { altText = alt }
-        return norm(altText) === norm(selectedText)
-      })
-    }
-
-    if (question.type === 'multiple_select') {
-      if (!Array.isArray(userAnswer) || userAnswer.length === 0) return false
-      let correctIndices = []
-      if (Array.isArray(ca)) correctIndices = ca
-      else if (typeof ca === 'number') correctIndices = [ca]
-      else if (typeof ca === 'string' && !isNaN(parseInt(ca))) correctIndices = [parseInt(ca)]
-      else correctIndices = question.options.reduce((acc, opt, idx) => {
-        if (norm(opt) === norm(ca)) acc.push(idx); return acc
-      }, [])
-      return JSON.stringify([...userAnswer].sort((a,b)=>a-b)) === JSON.stringify([...correctIndices].sort((a,b)=>a-b))
-    }
-
-    if (question.type === 'numeric' || question.type === 'numeric_input') {
-      const uNum = parseFloat(userAnswer), cNum = parseFloat(ca)
-      if (isNaN(uNum) || isNaN(cNum)) return false
-      const tolerance = Math.max(Math.abs(cNum) * 0.01, 0.001)
-      if (Math.abs(uNum - cNum) <= tolerance) return true
-      return alts.some(alt => {
-        const altNum = parseFloat(alt)
-        return !isNaN(altNum) && Math.abs(uNum - altNum) <= Math.max(Math.abs(altNum) * 0.01, 0.001)
-      })
-    }
-
-    const normalizedUser = norm(userAnswer)
-    if (normalizedUser === norm(ca)) return true
-    return alts.some(a => norm(a) === normalizedUser)
+    return str.replace(/\.0$/, '').toLowerCase()
   }
+
+  // ── MULTIPLE CHOICE ───────────────────────────────────────────────────────
+  if (question.type === 'multiple_choice') {
+    // Resolves a value to an option index.
+    // Handles: number 2, string "2", or option text "Paris"
+    const resolveToIndex = (val) => {
+      if (val === undefined || val === null) return -1
+      if (typeof val === 'number' && !isNaN(val)) return val
+      const asInt = parseInt(String(val).trim())
+      if (!isNaN(asInt)) return asInt
+      // Text match fallback
+      return (question.options || []).findIndex(o => norm(o) === norm(String(val)))
+    }
+
+    const userIdx    = resolveToIndex(userAnswer)
+    const correctIdx = resolveToIndex(ca)
+
+    // Primary: index match
+    if (userIdx !== -1 && correctIdx !== -1 && userIdx === correctIdx) return true
+
+    // Secondary: text match (both resolved to text)
+    const userText    = norm(question.options?.[userIdx] ?? userAnswer)
+    const correctText = norm(question.options?.[correctIdx] ?? ca)
+    if (userText && correctText && userText === correctText) return true
+
+    // Check alternative_answers
+    return alts.some(alt => resolveToIndex(alt) === userIdx)
+  }
+
+  // ── MULTIPLE SELECT ───────────────────────────────────────────────────────
+  if (question.type === 'multiple_select') {
+    if (!Array.isArray(userAnswer) || userAnswer.length === 0) return false
+
+    let correctIndices = []
+    if (Array.isArray(ca)) {
+      correctIndices = ca.map(v => typeof v === 'number' ? v : parseInt(String(v).trim())).filter(v => !isNaN(v))
+    } else if (typeof ca === 'number') {
+      correctIndices = [ca]
+    } else if (typeof ca === 'string' && !isNaN(parseInt(ca.trim()))) {
+      correctIndices = [parseInt(ca.trim())]
+    } else {
+      // Text-based correct_answer fallback
+      correctIndices = (question.options || []).reduce((acc, opt, idx) => {
+        if (norm(opt) === norm(String(ca))) acc.push(idx)
+        return acc
+      }, [])
+    }
+
+    const sortedUser    = [...userAnswer].map(v => typeof v === 'number' ? v : parseInt(String(v).trim())).sort((a,b) => a-b)
+    const sortedCorrect = [...correctIndices].sort((a,b) => a-b)
+    return JSON.stringify(sortedUser) === JSON.stringify(sortedCorrect)
+  }
+
+  // ── NUMERIC ───────────────────────────────────────────────────────────────
+  if (question.type === 'numeric' || question.type === 'numeric_input') {
+    const uNum = parseFloat(String(userAnswer).trim())
+    const cNum = parseFloat(String(ca).trim())
+    if (isNaN(uNum) || isNaN(cNum)) return false
+    const tolerance = Math.max(Math.abs(cNum) * 0.01, 0.0001)
+    if (Math.abs(uNum - cNum) <= tolerance) return true
+    return alts.some(alt => {
+      const altNum = parseFloat(String(alt).trim())
+      return !isNaN(altNum) && Math.abs(uNum - altNum) <= Math.max(Math.abs(altNum) * 0.01, 0.0001)
+    })
+  }
+
+  // ── TEXT / ALL OTHER TYPES (default) ─────────────────────────────────────
+  const normalizedUser    = norm(String(userAnswer).trim())
+  const normalizedCorrect = norm(String(ca).trim())
+
+  if (normalizedUser === normalizedCorrect) return true
+
+  // Numeric fallback: "29" vs 29, "3.0" vs "3", etc.
+  const uNum = parseFloat(normalizedUser)
+  const cNum = parseFloat(normalizedCorrect)
+  if (!isNaN(uNum) && !isNaN(cNum) && Math.abs(uNum - cNum) <= Math.max(Math.abs(cNum) * 0.01, 0.0001)) return true
+
+  return alts.some(a => norm(String(a).trim()) === normalizedUser)
+}
 
   const doSubmit = async () => {
     const q = questions[currentIndex]
