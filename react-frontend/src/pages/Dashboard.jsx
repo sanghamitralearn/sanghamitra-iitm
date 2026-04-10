@@ -617,10 +617,13 @@ const Dashboard = () => {
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
+                              </div>
             </div>
           </div>
         </div>
       </div>
     </section>
+  )
+}
+
+export default Dashboard
