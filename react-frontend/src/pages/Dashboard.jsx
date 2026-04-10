@@ -617,7 +617,7 @@ const Dashboard = () => {
                       </div>
                     </div>
                   </div>
-                              </div>
+              </div>
             </div>
           </div>
         </div>
@@ -625,5 +625,4 @@ const Dashboard = () => {
     </section>
   )
 }
-
 export default Dashboard
