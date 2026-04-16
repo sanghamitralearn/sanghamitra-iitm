@@ -6,6 +6,15 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 const DIFF_COLORS = { easy: 'success', medium: 'warning', hard: 'danger' }
 const TOPIC_PALETTE = ['#4e73df','#1cc88a','#36b9cc','#f6c23e','#e74a3b','#6f42c1','#fd7e14','#858796']
 
+// ─── Helper ───────────────────────────────────────────────────────────────────
+function resolveOptionText(question, idxOrText) {
+  if (idxOrText === undefined || idxOrText === null) return ''
+  const opts = question.options || []
+  const idx = typeof idxOrText === 'number' ? idxOrText : parseInt(idxOrText)
+  if (!isNaN(idx) && idx >= 0 && idx < opts.length) return opts[idx]
+  return String(idxOrText)
+}
+
 // ─── MathJax ──────────────────────────────────────────────────────────────────
 function loadMathJax() {
   if (window.MathJax) return
@@ -20,9 +29,138 @@ function loadMathJax() {
 }
 function typesetEl(el) {
   if (!el) return
-  const run = () => window.MathJax?.typesetPromise?.([el]).catch(()=>{})
-  if (window.MathJax?.typesetPromise) run()
-  else setTimeout(run, 800)
+  if (window.MathJax?.typesetPromise) {
+    window.MathJax.typesetPromise([el]).catch(() => {})
+  } else {
+    setTimeout(() => {
+      if (window.MathJax?.typesetPromise) window.MathJax.typesetPromise([el]).catch(() => {})
+    }, 800)
+  }
+}
+
+// ─── Inline styles ─────────────────────────────────────────────────────────────
+const S = {
+  qCard: {
+    background: '#E6F1FB',
+    borderRadius: 16,
+    border: '0.5px solid #85B7EB',
+    overflow: 'hidden',
+  },
+  badgeStrip: {
+    background: '#B5D4F4',
+    borderBottom: '0.5px solid #85B7EB',
+    padding: '8px 18px',
+    display: 'flex',
+    gap: 8,
+    flexWrap: 'wrap',
+    alignItems: 'center',
+  },
+  qNumBadge: {
+    background: '#E6F1FB',
+    color: '#0C447C',
+    border: '1.5px solid #85B7EB',
+    borderRadius: 99,
+    fontSize: '0.72rem',
+    fontWeight: 700,
+    padding: '3px 12px',
+    whiteSpace: 'nowrap',
+    marginLeft: 'auto',
+    letterSpacing: '0.02em',
+  },
+  qBody: { padding: '1.2rem 1.4rem' },
+  qText: {
+    fontSize: '1rem',
+    fontWeight: 600,
+    color: '#042C53',
+    lineHeight: 1.75,
+    marginBottom: '1rem',
+  },
+  optBase: {
+    display: 'flex', alignItems: 'center', gap: 12,
+    padding: '10px 14px', borderRadius: 10,
+    border: '1.5px solid #85B7EB', background: '#E6F1FB',
+    cursor: 'pointer', transition: 'all 0.15s ease', marginBottom: 0,
+  },
+  optSelected: {
+    display: 'flex', alignItems: 'center', gap: 12,
+    padding: '10px 14px', borderRadius: 10,
+    border: '2px solid #378ADD', background: '#B5D4F4',
+    cursor: 'pointer', transition: 'all 0.15s ease', marginBottom: 0,
+  },
+  optHovered: {
+    display: 'flex', alignItems: 'center', gap: 12,
+    padding: '10px 14px', borderRadius: 10,
+    border: '1.5px solid #378ADD', background: '#d0e7f8',
+    cursor: 'pointer', transition: 'all 0.15s ease', marginBottom: 0,
+  },
+  optLabel: (selected) => ({
+    fontSize: '0.94rem',
+    fontWeight: selected ? 600 : 400,
+    color: selected ? '#042C53' : '#185FA5',
+    lineHeight: 1.5, cursor: 'pointer', margin: 0,
+  }),
+  sidebar: {
+    background: '#EEEDFE', borderRadius: 14,
+    border: '0.5px solid #CECBF6', padding: 14,
+    position: 'sticky', top: 20,
+  },
+  sbHead: {
+    fontSize: '0.72rem', fontWeight: 700, color: '#3C3489',
+    marginBottom: 10, letterSpacing: '0.04em', textTransform: 'uppercase',
+  },
+  navGrid: {
+    display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)',
+    gap: 5, marginBottom: 12,
+  },
+  navBtn: (state) => {
+    const base = {
+      width: 32, height: 32, padding: 0,
+      fontSize: '0.75rem', fontWeight: 600,
+      border: 'none', borderRadius: 6, cursor: 'pointer',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      transition: 'transform 0.1s',
+    }
+    if (state === 'current')  return { ...base, background: '#7F77DD', color: '#EEEDFE' }
+    if (state === 'answered') return { ...base, background: '#1D9E75', color: '#E1F5EE' }
+    return { ...base, background: '#D3D1C7', color: '#444441' }
+  },
+  legend: {
+    borderTop: '0.5px solid #CECBF6', paddingTop: 10,
+    display: 'flex', flexDirection: 'column', gap: 5,
+  },
+  legendRow: { display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.7rem', color: '#5F5E5A' },
+  legendDot: (color) => ({ width: 10, height: 10, borderRadius: 3, background: color, flexShrink: 0 }),
+  infoPill: {
+    background: '#CECBF6', borderRadius: 8, padding: '7px 12px', marginTop: 12,
+    fontSize: '0.72rem', color: '#3C3489', display: 'flex',
+    justifyContent: 'space-between', fontWeight: 500,
+  },
+  progBar: { height: 5, background: '#D3D1C7', borderRadius: 3, marginBottom: 16 },
+  progFill: (pct) => ({ height: '100%', width: `${pct}%`, background: '#7F77DD', borderRadius: 3, transition: 'width 0.3s' }),
+  navPrev: {
+    padding: '7px 18px', borderRadius: 8,
+    border: '1.5px solid #AFA9EC', background: 'transparent',
+    color: '#534AB7', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 500,
+  },
+  navNext: {
+    padding: '7px 18px', borderRadius: 8,
+    border: '1.5px solid #AFA9EC', background: 'transparent',
+    color: '#534AB7', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 500,
+  },
+  navSubmit: {
+    padding: '7px 18px', borderRadius: 8,
+    border: 'none', background: '#1D9E75',
+    color: '#E1F5EE', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600,
+  },
+}
+
+// ─── isAnswered helper ────────────────────────────────────────────────────────
+const isAnswered = (a) => {
+  if (a === undefined || a === null) return false
+  if (typeof a === 'number') return true
+  if (typeof a === 'string') return a.trim() !== ''
+  if (Array.isArray(a)) return a.length > 0
+  return false
 }
 
 // ─── Calculator ───────────────────────────────────────────────────────────────
@@ -81,6 +219,38 @@ const Calculator = ({ onClose }) => {
   )
 }
 
+// ─── Question Navigator Sidebar ────────────────────────────────────────────────
+const QuestionNav = ({ questions, answers, currentIndex, goTo }) => {
+  const answeredCount = questions.filter(q => isAnswered(answers[q._id])).length
+
+  return (
+    <div style={S.sidebar}>
+      <div style={S.sbHead}>Navigator</div>
+      <div style={S.navGrid}>
+        {questions.map((qItem, i) => {
+          const state = i === currentIndex ? 'current' : isAnswered(answers[qItem._id]) ? 'answered' : 'default'
+          return (
+            <button key={qItem._id} onClick={() => goTo(i)} style={S.navBtn(state)}>
+              {i + 1}
+            </button>
+          )
+        })}
+      </div>
+      <div style={S.legend}>
+        {[['#7F77DD','Current'],['#1D9E75','Answered'],['#D3D1C7','Unanswered']].map(([c,l]) => (
+          <div key={l} style={S.legendRow}>
+            <div style={S.legendDot(c)}/>{l}
+          </div>
+        ))}
+      </div>
+      <div style={S.infoPill}>
+        <span>Answered</span>
+        <strong>{answeredCount} / {questions.length}</strong>
+      </div>
+    </div>
+  )
+}
+
 // ─── Review Page ──────────────────────────────────────────────────────────────
 const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColorMap }) => {
   const [expanded, setExpanded] = useState(null)
@@ -88,15 +258,33 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
   useEffect(()=>{ if(ref.current) typesetEl(ref.current) },[expanded])
 
   const getDisplayAnswer = (q, answer) => {
-    if(answer===null||answer===undefined||answer==='') return '(no answer)'
-    if(q.type==='multiple_choice'||q.type==='mcq'){const idx=typeof answer==='string'?parseInt(answer):answer;return q.options?.[idx]??String(answer)}
-    if(q.type==='multiple_select'){const arr=Array.isArray(answer)?answer:[answer];return arr.map(i=>q.options?.[i]??String(i)).join(', ')}
+    if (answer === null || answer === undefined || answer === '') return '(no answer)'
+    if (q.type === 'multiple_choice' || q.type === 'mcq') {
+      const idx = typeof answer === 'string' ? parseInt(answer) : answer
+      return q.options?.[idx] ?? String(answer)
+    }
+    if (q.type === 'multiple_select') {
+      const arr = Array.isArray(answer) ? answer : [answer]
+      return arr.map(i => q.options?.[i] ?? String(i)).join(', ')
+    }
+    if ((q.type === 'numeric' || q.type === 'numeric_input') && !isNaN(parseFloat(answer))) {
+      const num = parseFloat(answer)
+      return num % 1 === 0 ? num.toString() : num.toFixed(4).replace(/\.?0+$/, '')
+    }
     return String(answer)
   }
-  const getCorrectDisplay = q => {
-    const ca=q.correct_answer
-    if(q.type==='multiple_choice'||q.type==='mcq'){const idx=typeof ca==='string'?parseInt(ca):ca;return q.options?.[idx]??String(ca)}
-    if(q.type==='multiple_select'){const arr=Array.isArray(ca)?ca:[ca];return arr.map(i=>q.options?.[i]??String(i)).join(', ')}
+
+  const getCorrectDisplay = (q) => {
+    const ca = q.correct_answer
+    if (q.type === 'multiple_choice' || q.type === 'mcq') return resolveOptionText(q, ca)
+    if (q.type === 'multiple_select') {
+      const arr = Array.isArray(ca) ? ca : [ca]
+      return arr.map(i => resolveOptionText(q, i)).join(', ')
+    }
+    if ((q.type === 'numeric' || q.type === 'numeric_input') && !isNaN(parseFloat(ca))) {
+      const num = parseFloat(ca)
+      return num % 1 === 0 ? num.toString() : num.toFixed(4).replace(/\.?0+$/, '')
+    }
     return String(ca)
   }
 
@@ -141,24 +329,31 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
           </div>
         </div>
 
-        {questions.map((q,idx)=>{
-          const res=results.questionResults[idx]
-          const isOpen=expanded===idx
-          const topicColor=topicColorMap?.[q.originalTopic||q.topic]||'#6c757d'
+        {questions.map((q, idx) => {
+          const res = results.questionResults[idx]
+          const isOpen = expanded === idx
+          const topicColor = topicColorMap?.[q.originalTopic||q.topic] || '#6c757d'
           return (
             <div key={q._id} className="card border-0 shadow-sm mb-3"
-              style={{borderRadius:12,borderLeft:`4px solid ${res?.isCorrect?'#28a745':'#dc3545'}`}}>
+              style={{borderRadius:12, borderLeft:`4px solid ${res?.isCorrect?'#28a745':'#dc3545'}`}}>
               <div className="card-body" style={{cursor:'pointer'}} onClick={()=>setExpanded(isOpen?null:idx)}>
                 <div className="d-flex align-items-start gap-3">
-                  <div style={{width:30,height:30,borderRadius:'50%',flexShrink:0,background:res?.isCorrect?'#28a745':'#dc3545',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                  <div style={{width:30,height:30,borderRadius:'50%',flexShrink:0,
+                    background:res?.isCorrect?'#28a745':'#dc3545',
+                    display:'flex',alignItems:'center',justifyContent:'center'}}>
                     <i className={`bi ${res?.isCorrect?'bi-check-lg':'bi-x-lg'} text-white`} style={{fontSize:13}}/>
                   </div>
                   <div className="flex-grow-1">
-                    <div className="d-flex justify-content-between">
-                      <p className="mb-1 fw-semibold" style={{fontSize:'0.95rem'}}>
-                        Q{idx+1}. {!isOpen&&q.question_text.length>100?q.question_text.slice(0,100)+'…':q.question_text}
+                    <div className="d-flex justify-content-between align-items-start gap-2">
+                      <p className="mb-1 fw-semibold" style={{fontSize:'0.95rem', flex:1}}>
+                        {!isOpen && q.question_text.length>100 ? q.question_text.slice(0,100)+'…' : q.question_text}
                       </p>
-                      <i className={`bi bi-chevron-${isOpen?'up':'down'} ms-2 text-muted`} style={{flexShrink:0}}/>
+                      <div className="d-flex align-items-center gap-2" style={{flexShrink:0}}>
+                        <span style={{fontSize:'0.72rem',fontWeight:600,color:'#0C447C',
+                          background:'#E6F1FB',border:'1.5px solid #85B7EB',
+                          borderRadius:99,padding:'2px 10px',whiteSpace:'nowrap'}}>Q{idx+1}</span>
+                        <i className={`bi bi-chevron-${isOpen?'up':'down'} text-muted`}/>
+                      </div>
                     </div>
                     <div className="d-flex gap-2 flex-wrap mt-1">
                       <span className={`badge bg-${DIFF_COLORS[q.difficulty]||'secondary'}`}>{q.difficulty}</span>
@@ -167,40 +362,63 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
                     </div>
                   </div>
                 </div>
-                {isOpen&&(
-                  <div className="mt-3 ms-5 ps-2">
-                    {/* Image if present */}
-                    {q.img_file&&<img src={q.img_file} alt="question diagram" className="img-fluid mb-3 rounded" style={{maxHeight:200}}/>}
 
-                    {(q.type==='multiple_choice'||q.type==='mcq'||q.type==='multiple_select')&&q.options&&(
+                {isOpen && (
+                  <div className="mt-3 ms-5 ps-2">
+                    {q.img_file && <img src={q.img_file} alt="question diagram" className="img-fluid mb-3 rounded" style={{maxHeight:200}}/>}
+
+                    {(q.type==='multiple_choice'||q.type==='mcq'||q.type==='multiple_select') && q.options && (
                       <div className="mb-3">
-                        {q.options.map((opt,oi)=>{
-                          const caIdx=(q.type==='multiple_choice'||q.type==='mcq')?(typeof q.correct_answer==='string'?parseInt(q.correct_answer):q.correct_answer):null
-                          const caArr=q.type==='multiple_select'?(Array.isArray(q.correct_answer)?q.correct_answer:[q.correct_answer]):[]
-                          const isCorrectOpt=(q.type==='multiple_choice'||q.type==='mcq')?oi===caIdx:caArr.includes(oi)
-                          const userPicked=(q.type==='multiple_choice'||q.type==='mcq')
-                            ?(typeof answers[q._id]==='string'?parseInt(answers[q._id]):answers[q._id])===oi
-                            :(Array.isArray(answers[q._id])?answers[q._id].includes(oi):false)
-                          const bg=isCorrectOpt?'#d4edda':userPicked?'#f8d7da':'transparent'
+                        {q.options.map((opt, oi) => {
+                          const caArr = q.type==='multiple_select'
+                            ? (Array.isArray(q.correct_answer)?q.correct_answer:[q.correct_answer]) : []
+
+                          const resolvedCorrectIdx = (q.type==='multiple_choice'||q.type==='mcq')
+                            ? (typeof q.correct_answer==='number'
+                                ? q.correct_answer
+                                : !isNaN(parseInt(String(q.correct_answer).trim()))
+                                  ? parseInt(String(q.correct_answer).trim())
+                                  : q.options?.findIndex(o =>
+                                      o?.toLowerCase().trim() === String(q.correct_answer).toLowerCase().trim()
+                                    ) ?? -1)
+                            : -1
+
+                          const isCorrectOpt = (q.type==='multiple_choice'||q.type==='mcq')
+                            ? (resolvedCorrectIdx !== -1 && oi === resolvedCorrectIdx)
+                            : caArr.includes(oi)
+
+                          const userPicked = (q.type==='multiple_choice'||q.type==='mcq')
+                            ? (typeof answers[q._id]==='number'
+                                ? answers[q._id]===oi
+                                : parseInt(answers[q._id])===oi)
+                            : (Array.isArray(answers[q._id]) ? answers[q._id].includes(oi) : false)
+
+                          let bg = 'transparent'
+                          if (isCorrectOpt) bg = '#d4edda'
+                          else if (userPicked && !isCorrectOpt) bg = '#f8d7da'
+
                           return (
                             <div key={oi} className="d-flex align-items-center gap-2 mb-1 px-2 py-1 rounded" style={{background:bg}}>
-                              {isCorrectOpt&&<i className="bi bi-check-circle-fill text-success"/>}
-                              {userPicked&&!isCorrectOpt&&<i className="bi bi-x-circle-fill text-danger"/>}
-                              {!isCorrectOpt&&!userPicked&&<i className="bi bi-circle text-muted"/>}
+                              {isCorrectOpt && userPicked  && <i className="bi bi-check-circle-fill text-success"/>}
+                              {isCorrectOpt && !userPicked && <i className="bi bi-check-circle text-success"/>}
+                              {!isCorrectOpt && userPicked && <i className="bi bi-x-circle-fill text-danger"/>}
+                              {!isCorrectOpt && !userPicked && <i className="bi bi-circle text-muted"/>}
                               <span style={{fontSize:'0.9rem'}}>{opt}</span>
                             </div>
                           )
                         })}
                       </div>
                     )}
-                    {q.type!=='multiple_choice'&&q.type!=='mcq'&&q.type!=='multiple_select'&&(
+
+                    {q.type!=='multiple_choice' && q.type!=='mcq' && q.type!=='multiple_select' && (
                       <div className="d-flex gap-2 flex-wrap mb-3">
-                        <span className="badge bg-light text-dark border">Your answer: <strong>{getDisplayAnswer(q,answers[q._id])}</strong></span>
+                        <span className="badge bg-light text-dark border">Your answer: <strong>{getDisplayAnswer(q, answers[q._id])}</strong></span>
                         <span className="badge bg-success">Correct: <strong>{getCorrectDisplay(q)}</strong></span>
                         {q.has_tolerance&&q.tolerance_value>0&&<span className="badge bg-info">±{q.tolerance_value} tolerance</span>}
                       </div>
                     )}
-                    {q.explanation&&(
+
+                    {q.explanation && (
                       <div className="alert alert-info py-2 mb-0" style={{fontSize:'0.88rem'}}>
                         <i className="bi bi-lightbulb me-2"/><strong>Explanation:</strong> {q.explanation}
                       </div>
@@ -236,6 +454,8 @@ const StatisticsQuiz = () => {
   const [showCalc, setShowCalc]   = useState(false)
   const [warningOverlay, setWarningOverlay] = useState(false)
   const [topicColorMap, setTopicColorMap]   = useState({})
+  const [hoveredOpt, setHoveredOpt]         = useState(null)
+  const [showMobileNav, setShowMobileNav]   = useState(false)
 
   const questionStartRef  = useRef(Date.now())
   const timesRef          = useRef({})
@@ -266,15 +486,23 @@ const StatisticsQuiz = () => {
         setTopicColorMap(colorMap)
         const fetches=multiTopics.map(t=>
           axios.get(`${API_URL}/api/iitm-stats-questions/${encodeURIComponent(t.endpoint)}?email=${encodeURIComponent(email)}&count=${countPerTopic}`,{withCredentials:true})
-            .then(r=>(r.data.questions||[]).map(q=>({...q,originalTopic:t.name})))
+            .then(r=>(r.data.questions||[]).map((q,i)=>{
+              const rawId = q._id || q.id || q.question_id || q.question_number || i
+              return { ...q, _id: `${t.name}__${rawId}`, originalTopic: t.name }
+            }))
             .catch(()=>[])
         )
         const res=await Promise.all(fetches)
         allQuestions=res.flat()
+        // Give every question a guaranteed unique key using its flat index
+        allQuestions=allQuestions.map((q,i)=>({...q,_id:`${q.originalTopic}__idx${i}__${q._id}`}))
         for(let i=allQuestions.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[allQuestions[i],allQuestions[j]]=[allQuestions[j],allQuestions[i]]}
       } else {
         const res=await axios.get(`${API_URL}/api/iitm-stats-questions/${encodeURIComponent(topic)}?email=${encodeURIComponent(email)}&count=50`,{withCredentials:true})
-        allQuestions=(res.data.questions||[]).map(q=>({...q,originalTopic:q.topic||topic}))
+        allQuestions=(res.data.questions||[]).map((q,i)=>{
+          const rawId = q._id || q.id || q.question_id || q.question_number || i
+          return { ...q, _id: `${topic}__idx${i}__${rawId}`, originalTopic: q.topic||topic }
+        })
         const colorMap={}; colorMap[topic]=TOPIC_PALETTE[0]; setTopicColorMap(colorMap)
       }
       if(allQuestions.length===0) setError('No questions found for this topic yet.')
@@ -326,34 +554,104 @@ const StatisticsQuiz = () => {
     questionStartRef.current=Date.now()
   }
 
-  const goTo = newIdx => { const q=questions[currentIndex]; if(q) saveCurrentTime(q._id); setCurrentIndex(newIdx) }
+  const goTo = newIdx => {
+    const q=questions[currentIndex]; if(q) saveCurrentTime(q._id)
+    setCurrentIndex(newIdx)
+    setHoveredOpt(null)
+    setShowMobileNav(false)
+  }
+
   const handleAnswer = (qId,value) => setAnswers(p=>({...p,[qId]:value}))
   const handleMultiSelect = (qId,optIdx,checked) => setAnswers(p=>{const cur=p[qId]||[];return{...p,[qId]:checked?[...cur,optIdx]:cur.filter(i=>i!==optIdx)}})
 
+  // ─── checkCorrect (robust, matches IITMMathQuiz) ───────────────────────────
   const checkCorrect = (question, userAnswer) => {
-    const ca=question.correct_answer, alts=question.alternative_answers||[]
-    const type=question.type
-    if(type==='multiple_choice'||type==='mcq'){
-      const caIdx=typeof ca==='string'?parseInt(ca):ca
-      const uaIdx=typeof userAnswer==='string'?parseInt(userAnswer):userAnswer
-      return uaIdx===caIdx
+    const ca   = question.correct_answer
+    const alts = question.alternative_answers || []
+    const type = question.type === 'mcq' ? 'multiple_choice'
+               : question.type === 'text' ? 'text_input'
+               : question.type
+
+    if (userAnswer === undefined || userAnswer === null || userAnswer === '') return false
+    if (Array.isArray(userAnswer) && userAnswer.length === 0) return false
+
+    const norm = (t) => {
+      if (t === undefined || t === null) return ''
+      let str = String(t).trim()
+      str = str.replace(/\s+/g,'').replace(/\\\(/g,'').replace(/\\\)/g,'')
+        .replace(/\\\[/g,'').replace(/\\\]/g,'').replace(/\$/g,'')
+        .replace(/infinity|∞/gi,'inf').replace(/√\(([^)]+)\)/g,'sqrt($1)')
+        .replace(/√(\d+)/g,'sqrt($1)').replace(/≠/g,'!=').replace(/≤/g,'<=')
+        .replace(/≥/g,'>=').replace(/×/g,'*').replace(/÷/g,'/')
+        .replace(/∪/g,'U').replace(/∩/g,'n').replace(/∈/g,'in')
+        .replace(/⊂/g,'subset').replace(/⊆/g,'subseteq')
+      if (str.includes('/') && !str.includes('sqrt')) {
+        const parts = str.split('/')
+        if (parts.length===2 && !isNaN(parts[0]) && !isNaN(parts[1]))
+          str = String(parseFloat(parts[0]) / parseFloat(parts[1]))
+      }
+      return str.replace(/\.0$/,'').toLowerCase()
     }
-    if(type==='multiple_select'){
-      if(!Array.isArray(userAnswer)) return false
-      const ua=[...userAnswer].map(Number).sort((a,b)=>a-b)
-      const exp=(Array.isArray(ca)?ca:[ca]).map(Number).sort((a,b)=>a-b)
-      return JSON.stringify(ua)===JSON.stringify(exp)
+
+    if (type === 'multiple_choice') {
+      const resolveToIndex = (val) => {
+        if (val === undefined || val === null) return -1
+        if (typeof val === 'number' && !isNaN(val)) return val
+        const asInt = parseInt(String(val).trim())
+        if (!isNaN(asInt)) return asInt
+        return (question.options || []).findIndex(o => norm(o) === norm(String(val)))
+      }
+      const userIdx    = resolveToIndex(userAnswer)
+      const correctIdx = resolveToIndex(ca)
+      if (userIdx !== -1 && correctIdx !== -1 && userIdx === correctIdx) return true
+      const userText    = norm(question.options?.[userIdx] ?? userAnswer)
+      const correctText = norm(question.options?.[correctIdx] ?? ca)
+      if (userText && correctText && userText === correctText) return true
+      return alts.some(alt => resolveToIndex(alt) === userIdx)
     }
-    if(type==='numeric'||type==='numeric_input'){
-      const uNum=parseFloat(userAnswer), cNum=parseFloat(ca)
-      if(isNaN(uNum)||isNaN(cNum)) return false
-      const tol=question.has_tolerance&&question.tolerance_value>0?question.tolerance_value:0.001
-      if(Math.abs(uNum-cNum)<=tol) return true
-      return alts.some(a=>Math.abs(uNum-parseFloat(a))<=tol)
+
+    if (type === 'multiple_select') {
+      if (!Array.isArray(userAnswer) || userAnswer.length === 0) return false
+      let correctIndices = []
+      if (Array.isArray(ca)) {
+        correctIndices = ca.map(v => typeof v==='number'?v:parseInt(String(v).trim())).filter(v=>!isNaN(v))
+      } else if (typeof ca === 'number') {
+        correctIndices = [ca]
+      } else if (!isNaN(parseInt(String(ca).trim()))) {
+        correctIndices = [parseInt(String(ca).trim())]
+      } else {
+        correctIndices = (question.options||[]).reduce((acc,opt,idx)=>{
+          if (norm(opt)===norm(String(ca))) acc.push(idx)
+          return acc
+        },[])
+      }
+      const sortedUser    = [...userAnswer].map(v=>typeof v==='number'?v:parseInt(String(v).trim())).sort((a,b)=>a-b)
+      const sortedCorrect = [...correctIndices].sort((a,b)=>a-b)
+      return JSON.stringify(sortedUser) === JSON.stringify(sortedCorrect)
     }
-    const ua=String(userAnswer||'').trim().toLowerCase()
-    const cStr=String(ca||'').trim().toLowerCase()
-    return ua===cStr||alts.some(a=>String(a).trim().toLowerCase()===ua)
+
+    if (type === 'numeric' || type === 'numeric_input') {
+      const uNum = parseFloat(String(userAnswer).trim())
+      const cNum = parseFloat(String(ca).trim())
+      if (isNaN(uNum) || isNaN(cNum)) return false
+      const tol = question.has_tolerance && question.tolerance_value > 0
+        ? question.tolerance_value
+        : Math.max(Math.abs(cNum) * 0.01, 0.0001)
+      if (Math.abs(uNum - cNum) <= tol) return true
+      return alts.some(alt => {
+        const altNum = parseFloat(String(alt).trim())
+        return !isNaN(altNum) && Math.abs(uNum-altNum) <= Math.max(Math.abs(altNum)*0.01, 0.0001)
+      })
+    }
+
+    // text / all other types
+    const normalizedUser    = norm(String(userAnswer).trim())
+    const normalizedCorrect = norm(String(ca).trim())
+    if (normalizedUser === normalizedCorrect) return true
+    const uNum = parseFloat(normalizedUser)
+    const cNum = parseFloat(normalizedCorrect)
+    if (!isNaN(uNum) && !isNaN(cNum) && Math.abs(uNum-cNum) <= Math.max(Math.abs(cNum)*0.01, 0.0001)) return true
+    return alts.some(a => norm(String(a).trim()) === normalizedUser)
   }
 
   const doSubmit = async () => {
@@ -361,7 +659,13 @@ const StatisticsQuiz = () => {
     const questionResults=questions.map(question=>{
       const ua=answers[question._id]
       const fmt=a=>Array.isArray(a)?a.join(', '):String(a??'')
-      return{questionId:question._id,questionNumber:question.question_number,questionText:question.question_text,userAnswer:fmt(ua),correctAnswer:fmt(question.correct_answer),isCorrect:checkCorrect(question,ua),timeTaken:timesRef.current[question._id]||0}
+      return{
+        questionId:question._id, questionNumber:question.question_number,
+        questionText:question.question_text, userAnswer:fmt(ua),
+        correctAnswer:fmt(question.correct_answer),
+        isCorrect:checkCorrect(question,ua),
+        timeTaken:timesRef.current[question._id]||0
+      }
     })
     const score=questionResults.filter(r=>r.isCorrect).length
     const percentage=Math.round((score/questions.length)*100)
@@ -369,7 +673,10 @@ const StatisticsQuiz = () => {
     setSaving(true)
     try {
       const u=userRef.current
-      await axios.post(`${API_URL}/api/statistics_scores`,{email:u.email,username:u.username||u.name||u.email,quizData:{topic,score,totalQuestions:questions.length,percentage,timestamp:new Date(),questionResults}},{withCredentials:true})
+      await axios.post(`${API_URL}/api/statistics_scores`,{
+        email:u.email, username:u.username||u.name||u.email,
+        quizData:{topic,score,totalQuestions:questions.length,percentage,timestamp:new Date(),questionResults}
+      },{withCredentials:true})
     } catch(err){ console.error('Score save failed:',err) }
     finally{ setSaving(false) }
     setResults({score,percentage,totalTime,questionResults})
@@ -386,57 +693,93 @@ const StatisticsQuiz = () => {
   }
 
   const renderInput = question => {
-    const{_id,type,options,format_hint,img_file}=question
-    const answer=answers[_id]
-    const normalType=type==='mcq'?'multiple_choice':type==='text'?'text_input':type
+    const { _id, type, options, format_hint, img_file } = question
+    const answer = answers[_id]
+    const normalType = type==='mcq'?'multiple_choice':type==='text'?'text_input':type
 
-    if(normalType==='multiple_choice'){
-      return(<div className="mt-3">
-        {img_file&&<img src={img_file} alt="diagram" className="img-fluid mb-3 rounded" style={{maxHeight:200}}/>}
-        {options?.map((opt,idx)=>(
-          <div key={idx} className="form-check mb-2">
-            <input className="form-check-input" type="radio" name={`q-${_id}`} id={`opt-${_id}-${idx}`}
-              checked={(typeof answer==='string'?parseInt(answer):answer)===idx}
-              onChange={()=>handleAnswer(_id,idx)}/>
-            <label className="form-check-label" htmlFor={`opt-${_id}-${idx}`} style={{fontSize:'0.95rem',cursor:'pointer'}}>{opt}</label>
-          </div>
-        ))}
-      </div>)
+    if (normalType === 'multiple_choice') {
+      return (
+        <div className="mt-3" style={{display:'flex',flexDirection:'column',gap:9}}>
+          {options?.map((opt,idx) => {
+            const isSelected = (typeof answer==='string'?parseInt(answer):answer)===idx
+            const isHovered  = hoveredOpt===`${_id}-${idx}`
+            const style      = isSelected ? S.optSelected : isHovered ? S.optHovered : S.optBase
+            return (
+              <div key={idx} style={style}
+                onClick={()=>handleAnswer(_id,idx)}
+                onMouseEnter={()=>setHoveredOpt(`${_id}-${idx}`)}
+                onMouseLeave={()=>setHoveredOpt(null)}>
+                <input className="form-check-input" type="radio" name={`q-${_id}`}
+                  id={`opt-${_id}-${idx}`} checked={isSelected}
+                  onChange={()=>handleAnswer(_id,idx)}
+                  style={{flexShrink:0,accentColor:'#378ADD',marginTop:0}}/>
+                <label htmlFor={`opt-${_id}-${idx}`} style={S.optLabel(isSelected)}>{opt}</label>
+              </div>
+            )
+          })}
+        </div>
+      )
     }
-    if(normalType==='multiple_select'){
-      const sel=answer||[]
-      return(<div className="mt-3">
-        {img_file&&<img src={img_file} alt="diagram" className="img-fluid mb-3 rounded" style={{maxHeight:200}}/>}
-        <small className="text-muted d-block mb-2"><i className="bi bi-info-circle me-1"/>Select all that apply</small>
-        {options?.map((opt,idx)=>(
-          <div key={idx} className="form-check mb-2">
-            <input className="form-check-input" type="checkbox" id={`opt-${_id}-${idx}`}
-              checked={sel.includes(idx)} onChange={e=>handleMultiSelect(_id,idx,e.target.checked)}/>
-            <label className="form-check-label" htmlFor={`opt-${_id}-${idx}`} style={{fontSize:'0.95rem',cursor:'pointer'}}>{opt}</label>
+
+    if (normalType === 'multiple_select') {
+      const sel = answer || []
+      return (
+        <div className="mt-3">
+          <small className="text-muted d-block mb-2"><i className="bi bi-info-circle me-1"/>Select all that apply</small>
+          <div style={{display:'flex',flexDirection:'column',gap:9}}>
+            {options?.map((opt,idx) => {
+              const isSelected = sel.includes(idx)
+              const isHovered  = hoveredOpt===`${_id}-${idx}`
+              const style      = isSelected ? S.optSelected : isHovered ? S.optHovered : S.optBase
+              return (
+                <div key={idx} style={style}
+                  onClick={()=>handleMultiSelect(_id,idx,!sel.includes(idx))}
+                  onMouseEnter={()=>setHoveredOpt(`${_id}-${idx}`)}
+                  onMouseLeave={()=>setHoveredOpt(null)}>
+                  <input className="form-check-input" type="checkbox"
+                    id={`opt-${_id}-${idx}`} checked={isSelected}
+                    onChange={e=>handleMultiSelect(_id,idx,e.target.checked)}
+                    style={{flexShrink:0,accentColor:'#378ADD',marginTop:0}}/>
+                  <label htmlFor={`opt-${_id}-${idx}`} style={S.optLabel(isSelected)}>{opt}</label>
+                </div>
+              )
+            })}
           </div>
-        ))}
-      </div>)
+        </div>
+      )
     }
-    if(normalType==='numeric'||normalType==='numeric_input'){
-      return(<div className="mt-3">
+
+    if (normalType === 'numeric' || normalType === 'numeric_input') {
+      return (
+        <div className="mt-3">
+          {img_file&&<img src={img_file} alt="diagram" className="img-fluid mb-3 rounded" style={{maxHeight:200}}/>}
+          {format_hint&&<small className="text-muted d-block mb-1">{format_hint}</small>}
+          {question.has_tolerance&&question.tolerance_value>0&&<small className="text-info d-block mb-1"><i className="bi bi-info-circle me-1"/>Accepted within ±{question.tolerance_value}</small>}
+          <input type="number" className="form-control"
+            style={{maxWidth:240,background:'#E6F1FB',borderColor:'#85B7EB',color:'#042C53'}}
+            value={answer??''} placeholder="e.g. 3.14, −5, 1/3"
+            onChange={e=>handleAnswer(_id,e.target.value)} autoComplete="off"/>
+        </div>
+      )
+    }
+
+    const placeholders={interval_input:'e.g. (-∞, 3]',coordinate_input:'e.g. (2, 3)',equation_input:'e.g. y = 2x + 1',set_notation:'e.g. {x | x ≠ 0}'}
+    return (
+      <div className="mt-3">
         {img_file&&<img src={img_file} alt="diagram" className="img-fluid mb-3 rounded" style={{maxHeight:200}}/>}
         {format_hint&&<small className="text-muted d-block mb-1">{format_hint}</small>}
-        {question.has_tolerance&&question.tolerance_value>0&&<small className="text-info d-block mb-1"><i className="bi bi-info-circle me-1"/>Accepted within ±{question.tolerance_value}</small>}
-        <input type="number" className="form-control" style={{maxWidth:220}} value={answer??''} placeholder="Enter a number" onChange={e=>handleAnswer(_id,e.target.value)} autoComplete="off"/>
-      </div>)
-    }
-    const placeholders={interval_input:'e.g. (-∞, 3]',coordinate_input:'e.g. (2, 3)',equation_input:'e.g. y = 2x + 1',set_notation:'e.g. {x | x ≠ 0}'}
-    return(<div className="mt-3">
-      {img_file&&<img src={img_file} alt="diagram" className="img-fluid mb-3 rounded" style={{maxHeight:200}}/>}
-      {format_hint&&<small className="text-muted d-block mb-1">{format_hint}</small>}
-      <input type="text" className="form-control" style={{maxWidth:400}} value={answer??''} placeholder={placeholders[normalType]||'Type your answer here'} onChange={e=>handleAnswer(_id,e.target.value)} autoComplete="off" spellCheck="false"/>
-    </div>)
+        <input type="text" className="form-control"
+          style={{maxWidth:420,background:'#E6F1FB',borderColor:'#85B7EB',color:'#042C53'}}
+          value={answer??''} placeholder={placeholders[normalType]||'Type your answer here'}
+          onChange={e=>handleAnswer(_id,e.target.value)} autoComplete="off" spellCheck="false"/>
+      </div>
+    )
   }
 
   if(loading) return(
     <div className="d-flex justify-content-center align-items-center" style={{height:'50vh'}}>
       <div className="text-center">
-        <div className="spinner-border mb-3" role="status"/>
+        <div className="spinner-border mb-3" style={{color:'#7F77DD'}} role="status"/>
         {multiTopics&&<p className="text-muted">Loading from {multiTopics.length} topics…</p>}
       </div>
     </div>
@@ -444,10 +787,10 @@ const StatisticsQuiz = () => {
   if(error) return(<div className="container mt-5 text-center"><div className="alert alert-warning">{error}</div><Link to="/courses/statistics" className="btn btn-primary">Back to Statistics</Link></div>)
   if(submitted&&results) return(<ReviewPage questions={questions} answers={answers} results={results} quizName={displayName} onRetake={handleRetake} topicColorMap={topicColorMap}/>)
 
-  const q=questions[currentIndex]
-  const answeredCount=Object.keys(answers).filter(k=>{const a=answers[k];return a!==undefined&&a!==''&&!(Array.isArray(a)&&a.length===0)}).length
-  const progress=Math.round(((currentIndex+1)/questions.length)*100)
-  const topicColor=topicColorMap?.[q.originalTopic||q.topic]||'#6c757d'
+  const q = questions[currentIndex]
+  const answeredCount = questions.filter(qItem => isAnswered(answers[qItem._id])).length
+  const progress = Math.round(((currentIndex+1)/questions.length)*100)
+  const topicColor = topicColorMap?.[q.originalTopic||q.topic] || '#6c757d'
 
   return(
     <main className="main" style={{userSelect:'none',WebkitUserSelect:'none'}}>
@@ -459,8 +802,56 @@ const StatisticsQuiz = () => {
           <button className="btn btn-light btn-lg mt-3" onClick={()=>setWarningOverlay(false)}>Return to Quiz</button>
         </div>
       )}
+
       {showCalc&&<Calculator onClose={()=>setShowCalc(false)}/>}
-      <button onClick={()=>setShowCalc(v=>!v)} style={{position:'fixed',bottom:20,right:20,width:56,height:56,borderRadius:'50%',background:'linear-gradient(135deg,#667eea,#764ba2)',border:'none',color:'#fff',fontSize:22,cursor:'pointer',boxShadow:'0 4px 16px rgba(102,126,234,0.5)',zIndex:9998,display:'flex',alignItems:'center',justifyContent:'center'}}>🧮</button>
+
+      {/* Floating calc button */}
+      <button onClick={()=>setShowCalc(v=>!v)}
+        style={{position:'fixed',bottom:20,right:20,width:52,height:52,borderRadius:'50%',
+          background:'#7F77DD',border:'none',color:'#fff',fontSize:20,cursor:'pointer',
+          zIndex:9998,display:'flex',alignItems:'center',justifyContent:'center',
+          boxShadow:'0 2px 8px rgba(127,119,221,0.4)'}}>
+        🧮
+      </button>
+
+      {/* Mobile: floating nav button */}
+      <button className="d-md-none" onClick={()=>setShowMobileNav(v=>!v)}
+        style={{position:'fixed',bottom:82,right:20,width:52,height:52,borderRadius:'50%',
+          background:'#378ADD',border:'none',color:'#fff',fontSize:11,fontWeight:700,
+          cursor:'pointer',zIndex:9997,display:'flex',flexDirection:'column',
+          alignItems:'center',justifyContent:'center',lineHeight:1.2,
+          boxShadow:'0 2px 8px rgba(55,138,221,0.4)'}}>
+        <span style={{fontSize:16}}>≡</span>
+        <span>Qs</span>
+      </button>
+
+      {/* Mobile nav drawer */}
+      {showMobileNav&&(
+        <div className="d-md-none" style={{position:'fixed',inset:0,zIndex:10001,background:'rgba(4,44,83,0.5)'}}
+          onClick={()=>setShowMobileNav(false)}>
+          <div style={{position:'absolute',bottom:0,left:0,right:0,background:'#fff',
+            borderRadius:'16px 16px 0 0',padding:'20px 16px 30px'}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+              <span style={{fontWeight:700,color:'#042C53',fontSize:'0.9rem'}}>Question Navigator</span>
+              <button onClick={()=>setShowMobileNav(false)} style={{background:'none',border:'none',fontSize:22,color:'#888',cursor:'pointer',lineHeight:1}}>×</button>
+            </div>
+            <div style={{...S.navGrid,gridTemplateColumns:'repeat(8,1fr)'}}>
+              {questions.map((qItem,i)=>{
+                const state = i===currentIndex ? 'current' : isAnswered(answers[qItem._id]) ? 'answered' : 'default'
+                return(<button key={qItem._id} onClick={()=>goTo(i)} style={S.navBtn(state)}>{i+1}</button>)
+              })}
+            </div>
+            <div style={{display:'flex',gap:16,marginTop:12,flexWrap:'wrap'}}>
+              {[['#7F77DD','Current'],['#1D9E75','Answered'],['#D3D1C7','Unanswered']].map(([c,l])=>(
+                <div key={l} style={{display:'flex',alignItems:'center',gap:5,fontSize:'0.72rem',color:'#5F5E5A'}}>
+                  <div style={{width:10,height:10,borderRadius:3,background:c,flexShrink:0}}/>{l}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="page-title" style={{marginBottom:'2rem'}}>
         <div className="heading"><div className="container">
@@ -480,51 +871,52 @@ const StatisticsQuiz = () => {
 
       <div className="container mb-5">
         <div className="row justify-content-center">
-          <div className="col-lg-8">
+          {/* Question column */}
+          <div className="col-12 col-md-8 col-lg-8">
             <div className="mb-3">
               <div className="d-flex justify-content-between mb-1">
                 <small className="text-muted">Question {currentIndex+1} of {questions.length}</small>
                 <small className="text-muted">{answeredCount} answered</small>
               </div>
-              <div className="progress" style={{height:6}}><div className="progress-bar bg-primary" style={{width:`${progress}%`}}/></div>
+              <div style={S.progBar}><div style={S.progFill(progress)}/></div>
             </div>
 
-            <div className="card border-0 shadow-sm mb-3" style={{borderRadius:12}} ref={questionRef}>
-              <div className="card-body p-4">
-                <div className="d-flex gap-2 flex-wrap mb-3">
-                  <span className={`badge bg-${DIFF_COLORS[q.difficulty]||'secondary'}`}>{q.difficulty}</span>
-                  <span className="badge" style={{background:topicColor}}>{q.originalTopic||q.topic||topic}</span>
-                  <span className="badge bg-secondary text-capitalize">{(q.type==='mcq'?'multiple choice':q.type==='text'?'text input':q.type)?.replace(/_/g,' ')}</span>
-                  {q.points>1&&<span className="badge bg-info">{q.points} pts</span>}
-                </div>
-                <h5 className="mb-3" style={{lineHeight:1.7}}>
-                  <span className="text-muted me-2">{currentIndex+1}.</span>{q.question_text}
-                </h5>
+            {/* Question card */}
+            <div style={S.qCard} ref={questionRef}>
+              <div style={S.badgeStrip}>
+                <span className={`badge bg-${DIFF_COLORS[q.difficulty]||'secondary'}`} style={{fontSize:'0.75rem'}}>{q.difficulty}</span>
+                <span className="badge" style={{background:topicColor,fontSize:'0.75rem'}}>{q.originalTopic||q.topic||topic}</span>
+                <span className="badge" style={{background:'#CECBF6',color:'#3C3489',fontSize:'0.75rem',textTransform:'capitalize'}}>
+                  {(q.type==='mcq'?'multiple choice':q.type==='text'?'text input':q.type)?.replace(/_/g,' ')}
+                </span>
+                {q.points>1&&<span className="badge" style={{background:'#CECBF6',color:'#3C3489',fontSize:'0.75rem'}}>{q.points} pts</span>}
+                <span style={S.qNumBadge}>Q {currentIndex+1}</span>
+              </div>
+              <div style={S.qBody}>
+                <h5 style={S.qText}>{q.question_text}</h5>
+                {q.img_file&&<img src={q.img_file} alt="diagram" className="img-fluid mb-3 rounded" style={{maxHeight:200,border:'1.5px solid #85B7EB'}}/>}
                 {renderInput(q)}
               </div>
             </div>
 
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <button className="btn btn-outline-secondary" onClick={()=>goTo(currentIndex-1)} disabled={currentIndex===0}><i className="bi bi-chevron-left me-1"/>Prev</button>
-              <div className="d-flex gap-1 flex-wrap justify-content-center" style={{maxWidth:380}}>
-                {questions.map((qItem,i)=>{
-                  const ans=answers[qItem._id]
-                  const answered=ans!==undefined&&ans!==''&&!(Array.isArray(ans)&&ans.length===0)
-                  return(<button key={qItem._id} onClick={()=>goTo(i)} className={`btn btn-sm ${i===currentIndex?'btn-primary':answered?'btn-success':'btn-outline-secondary'}`} style={{width:34,height:34,padding:0,fontSize:'0.78rem'}}>{i+1}</button>)
-                })}
-              </div>
+            {/* Prev / Next / Submit */}
+            <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
+              <button style={{...S.navPrev, opacity:currentIndex===0?0.4:1, cursor:currentIndex===0?'not-allowed':'pointer'}}
+                onClick={()=>currentIndex>0&&goTo(currentIndex-1)} disabled={currentIndex===0}>
+                <i className="bi bi-chevron-left me-1"/>Prev
+              </button>
               {currentIndex<questions.length-1
-                ?<button className="btn btn-outline-secondary" onClick={()=>goTo(currentIndex+1)}>Next<i className="bi bi-chevron-right ms-1"/></button>
-                :<button className="btn btn-success" onClick={doSubmit} disabled={answeredCount<questions.length||saving}>
+                ?<button style={S.navNext} onClick={()=>goTo(currentIndex+1)}>Next<i className="bi bi-chevron-right ms-1"/></button>
+                :<button style={S.navSubmit} onClick={doSubmit} disabled={saving}>
                   {saving?<><span className="spinner-border spinner-border-sm me-1"/>Saving…</>:<><i className="bi bi-check-circle me-1"/>Submit</>}
                 </button>
               }
             </div>
-            {answeredCount<questions.length&&currentIndex===questions.length-1&&(
-              <div className="alert alert-warning py-2" style={{fontSize:'0.88rem'}}>
-                <i className="bi bi-exclamation-triangle me-2"/>{questions.length-answeredCount} question{questions.length-answeredCount>1?'s':''} unanswered — use the number buttons to go back.
-              </div>
-            )}
+          </div>
+
+          {/* Sidebar navigator — desktop only */}
+          <div className="col-md-4 col-lg-3 d-none d-md-block">
+            <QuestionNav questions={questions} answers={answers} currentIndex={currentIndex} goTo={goTo}/>
           </div>
         </div>
       </div>
