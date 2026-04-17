@@ -41,6 +41,120 @@ function typesetEl(el) {
   }
 }
 
+function toTeX(raw) {
+  let s = raw.trim()
+  if (!s) return ''
+  s = s.replace(/\bpi\b/gi, '\\pi')
+  s = s.replace(/\binf(inity)?\b/gi, '\\infty')
+  s = s.replace(/sqrt\(([^)]+)\)/g, (_, inner) => `\\sqrt{${toTeX(inner)}}`)
+  s = s.replace(/sqrt(\d+)/g, (_, n) => `\\sqrt{${n}}`)
+  s = s.replace(/\babs\(([^)]+)\)/g, (_, inner) => `|${inner}|`)
+  s = s.replace(/\b(sin|cos|tan|cot|sec|csc|log|ln|exp)\(([^)]+)\)/g,
+    (_, fn, arg) => `\\${fn}(${toTeX(arg)})`)
+  s = s.replace(/([a-zA-Z0-9)]+)\^(\(([^)]+)\)|[a-zA-Z0-9]+)/g, (_, base, exp, grp) =>
+    `${base}^{${toTeX(grp || exp)}}`)
+  s = s.replace(/(-?[a-zA-Z0-9\\.]+|\([^)]+\))\s*\/\s*(-?[a-zA-Z0-9\\.]+|\([^)]+\))/g,
+    (_, num, den) => `\\frac{${toTeX(num)}}{${toTeX(den)}}`)
+  s = s.replace(/!=|≠/g, '\\neq').replace(/>=|≥/g, '\\geq').replace(/<=|≤/g, '\\leq')
+  s = s.replace(/\*/g, '\\cdot')
+  return s
+}
+
+const GUIDE_ENTRIES = [
+  { type: 'sqrt(2)',    label: '√2' },   { type: 'sqrt(x+1)', label: '√(x+1)' },
+  { type: 'x^2',       label: 'x²' },   { type: 'x^(n+1)',   label: 'xⁿ⁺¹' },
+  { type: '3/4',        label: '¾' },    { type: '(a+b)/c',   label: '(a+b)/c' },
+  { type: 'pi',         label: 'π' },    { type: 'inf',        label: '∞' },
+  { type: 'sin(x)',     label: 'sin x' },{ type: 'cos(x)',    label: 'cos x' },
+  { type: 'log(x)',     label: 'log x' },{ type: 'ln(x)',     label: 'ln x' },
+  { type: 'abs(x)',     label: '|x|' },  { type: '(-inf, 3]', label: '(-∞,3]' },
+  { type: 'x != 0',    label: 'x ≠ 0' },{ type: 'x >= 0',   label: 'x ≥ 0' },
+]
+
+const MathPreviewInput = ({ value, onChange, placeholder, type = 'text', style = {} }) => {
+  const [showGuide, setShowGuide] = useState(false)
+  const previewRef = useRef(null)
+  const typesetTimer = useRef(null)
+
+  useEffect(() => {
+    if (!previewRef.current) return
+    if (!value) return
+
+    const tex = toTeX(value)
+
+    previewRef.current.innerHTML = ''
+    previewRef.current.textContent = `\\(${tex}\\)`
+
+    clearTimeout(typesetTimer.current)
+    typesetTimer.current = setTimeout(() => {
+      if (window.MathJax?.typesetPromise) {
+        window.MathJax.typesetPromise([previewRef.current]).catch(() => {})
+      }
+    }, 150)
+
+    return () => clearTimeout(typesetTimer.current)
+  }, [value])
+
+  return (
+    <div className="mt-3">
+      <input
+        type={type === 'numeric' ? 'number' : 'text'}
+        className="form-control"
+        style={{ maxWidth: 420, background: '#E6F1FB', borderColor: '#85B7EB', color: '#042C53', ...style }}
+        value={value ?? ''}
+        placeholder={placeholder || 'Type your answer here'}
+        onChange={e => onChange(e.target.value)}
+        autoComplete="off" spellCheck="false"
+      />
+
+      {value ? (
+        <div style={{
+          marginTop: 8, padding: '10px 14px', background: '#fff',
+          border: '0.5px solid #85B7EB', borderRadius: 10,
+          minHeight: 44, display: 'flex', alignItems: 'center'
+        }}>
+          <span style={{ fontSize: 11, color: '#888', marginRight: 10 }}>Preview:</span>
+          <span ref={previewRef} style={{ fontSize: 20, color: '#042C53' }} />
+        </div>
+      ) : null}
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+        {['sqrt(2)', 'pi', 'x^2', '1/3', 'inf', 'sin(x)'].map(ins => (
+          <button key={ins} type="button" onClick={() => onChange(ins)}
+            style={{ fontSize: 12, padding: '3px 10px', background: '#B5D4F4',
+              color: '#0C447C', border: '1px solid #85B7EB', borderRadius: 99, cursor: 'pointer' }}>
+            {ins}
+          </button>
+        ))}
+      </div>
+
+      <button type="button" onClick={() => setShowGuide(v => !v)}
+        style={{ marginTop: 8, background: 'none', border: 'none', color: '#378ADD',
+          fontSize: 13, cursor: 'pointer', padding: 0, fontWeight: 500 }}>
+        {showGuide ? '▲' : '▼'} Typing guide
+      </button>
+
+      {showGuide && (
+        <div style={{ marginTop: 6, background: '#EEEDFE', border: '0.5px solid #CECBF6',
+          borderRadius: 10, padding: '12px 14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px' }}>
+            {GUIDE_ENTRIES.map(({ type: t, label }) => (
+              <div key={t} onClick={() => onChange(t)}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 4px',
+                  cursor: 'pointer', borderBottom: '0.5px solid #CECBF6', borderRadius: 4 }}>
+                <code style={{ fontSize: 12, color: '#534AB7', background: '#E6F1FB',
+                  border: '1px solid #AFA9EC', borderRadius: 4, padding: '1px 6px' }}>{t}</code>
+                <span style={{ fontSize: 12, color: '#AFA9EC' }}>→</span>
+                <span style={{ fontSize: 14, color: '#3C3489' }}>{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Inline styles ─────────────────────────────────────────────────────────────
 const S = {
   // Question card
@@ -421,14 +535,14 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
                   background: results.percentage>=60 ? 'linear-gradient(135deg,#28a745,#20c997)' : 'linear-gradient(135deg,#dc3545,#c82333)',
                   display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
                   <span style={{fontSize:28,fontWeight:700,color:'#fff'}}>{results.percentage}%</span>
-                  <span style={{fontSize:12,color:'rgba(255,255,255,0.85)'}}>{results.score}/{questions.length}</span>
+                  <span style={{fontSize:12,color:'rgba(255,255,255,0.85)'}}>{results.score}/{results.totalPossible}</span>
                 </div>
               </div>
               <div className="col-auto d-flex flex-column justify-content-center text-start">
                 <h4 className="mb-1">{results.percentage>=80?'Excellent!':results.percentage>=60?'Good job!':'Keep practicing!'}</h4>
                 <p className="text-muted mb-1">
-                  Correct: <strong className="text-success">{results.score}</strong> &nbsp;|&nbsp;
-                  Wrong: <strong className="text-danger">{questions.length - results.score}</strong>
+                  Correct: <strong className="text-success">{results.questionResults.filter(r => r.isCorrect).length} Q ({results.score} pts)</strong> &nbsp;|&nbsp;
+                  Wrong: <strong className="text-danger">{results.questionResults.filter(r => !r.isCorrect).length} Q</strong>
                 </p>
                 <p className="text-muted mb-0">
                   Total time: {Math.floor(results.totalTime/60)}m {results.totalTime%60}s
@@ -625,7 +739,7 @@ const IITMMathQuiz = () => {
         }
       } else {
         const res = await axios.get(
-          `${API_URL}/api/iitm-math-questions/${encodeURIComponent(topic)}?email=${encodeURIComponent(email)}&count=50`,
+          `${API_URL}/api/iitm-math-questions/${encodeURIComponent(topic)}?email=${encodeURIComponent(email)}&count=25`,
           { withCredentials: true }
         )
         allQuestions = (res.data.questions || []).map(q => ({ ...q, originalTopic: q.topic || topic }))
@@ -838,19 +952,22 @@ const IITMMathQuiz = () => {
         timeTaken: timesRef.current[question._id] || 0
       }
     })
-    const score = questionResults.filter(r => r.isCorrect).length
-    const percentage = Math.round((score / questions.length) * 100)
+    const score = questionResults.reduce((sum, r, i) => {
+      return sum + (r.isCorrect ? (questions[i].points || 1) : 0)
+    }, 0)
+    const totalPossible = 50
+    const percentage = Math.round((score / totalPossible) * 100)
     const totalTime = Object.values(timesRef.current).reduce((s, t) => s + t, 0)
     setSaving(true)
     try {
       const u = userRef.current
       await axios.post(`${API_URL}/api/iitmmath_scores`, {
         email: u.email, username: u.username || u.name || u.email,
-        quizData: { topic, score, totalQuestions: questions.length, percentage, timestamp: new Date(), questionResults }
+        quizData: { topic, score, totalQuestions: questions.length, totalPossible, percentage, timestamp: new Date(), questionResults }
       }, { withCredentials: true })
     } catch (err) { console.error('Score save failed:', err) }
     finally { setSaving(false) }
-    setResults({ score, percentage, totalTime, questionResults })
+    setResults({ score, percentage, totalTime, totalPossible, questionResults })
     setSubmitted(true)
     clearInterval(devToolsIntervalRef.current)
     document.onselectstart = null
@@ -928,30 +1045,26 @@ const IITMMathQuiz = () => {
 
     if (type === 'numeric' || type === 'numeric_input') {
       return (
-        <div className="mt-3">
-          {format_hint && <small className="text-muted d-block mb-1">{format_hint}</small>}
-          <input type="number" className="form-control"
-            style={{maxWidth:240, background:'#E6F1FB', borderColor:'#85B7EB', color:'#042C53'}}
-            value={answer??''} placeholder="e.g. 3.14, −5, 1/3"
-            onChange={e=>handleAnswer(_id,e.target.value)} autoComplete="off" />
-        </div>
+        <>
+          {format_hint && <small className="text-muted d-block mt-3 mb-1">{format_hint}</small>}
+          <MathPreviewInput type="numeric" value={answer} onChange={v => handleAnswer(_id, v)}
+            placeholder="e.g. 3.14, −5, sqrt(2)" />
+        </>
       )
     }
 
     const placeholders = {
-      interval_input: 'e.g. (-∞, 3] or [1,5)∪(5,∞)',
-      coordinate_input: 'e.g. (2, 3) or (−1/2, √2)',
-      equation_input: 'e.g. f(x) = x² + 1',
-      set_notation: 'e.g. {x | x ≠ 0}',
+      interval_input: 'e.g. (-inf, 3] or [1,5)',
+      coordinate_input: 'e.g. (2, 3) or (-1/2, sqrt(2))',
+      equation_input: 'e.g. f(x) = x^2 + 1',
+      set_notation: 'e.g. x != 0',
     }
     return (
-      <div className="mt-3">
-        {format_hint && <small className="text-muted d-block mb-1">{format_hint}</small>}
-        <input type="text" className="form-control"
-          style={{maxWidth:420, background:'#E6F1FB', borderColor:'#85B7EB', color:'#042C53'}}
-          value={answer??''} placeholder={placeholders[type]||'Type your answer here'}
-          onChange={e=>handleAnswer(_id,e.target.value)} autoComplete="off" spellCheck="false" />
-      </div>
+      <>
+        {format_hint && <small className="text-muted d-block mt-3 mb-1">{format_hint}</small>}
+        <MathPreviewInput value={answer} onChange={v => handleAnswer(_id, v)}
+          placeholder={placeholders[type] || 'Type your answer here'} />
+      </>
     )
   }
 
