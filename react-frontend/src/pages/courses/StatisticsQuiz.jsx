@@ -313,7 +313,7 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
                   background:results.percentage>=60?'linear-gradient(135deg,#28a745,#20c997)':'linear-gradient(135deg,#dc3545,#c82333)',
                   display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
                   <span style={{fontSize:28,fontWeight:700,color:'#fff'}}>{results.percentage}%</span>
-                  <span style={{fontSize:12,color:'rgba(255,255,255,0.85)'}}>{results.score}/{questions.length}</span>
+                  <span style={{fontSize:12,color:'rgba(255,255,255,0.85)'}}>{results.score}/{results.totalPossible}</span>
                 </div>
               </div>
               <div className="col-auto d-flex flex-column justify-content-center text-start">
@@ -667,9 +667,12 @@ const StatisticsQuiz = () => {
         timeTaken:timesRef.current[question._id]||0
       }
     })
-    const score=questionResults.filter(r=>r.isCorrect).length
-    const percentage=Math.round((score/questions.length)*100)
-    const totalTime=Object.values(timesRef.current).reduce((s,t)=>s+t,0)
+    const score = questionResults.reduce((sum, r, i) => {
+      return sum + (r.isCorrect ? (questions[i].points || 1) : 0)
+    }, 0)
+    const totalPossible = 50
+    const percentage = Math.round((score / totalPossible) * 100)
+    const totalTime = Object.values(timesRef.current).reduce((s,t)=>s+t,0)
     setSaving(true)
     try {
       const u=userRef.current
@@ -679,7 +682,7 @@ const StatisticsQuiz = () => {
       },{withCredentials:true})
     } catch(err){ console.error('Score save failed:',err) }
     finally{ setSaving(false) }
-    setResults({score,percentage,totalTime,questionResults})
+    setResults({ score, percentage, totalTime, totalPossible, questionResults })
     setSubmitted(true)
     clearInterval(devToolsInterval.current)
     document.onselectstart=null
