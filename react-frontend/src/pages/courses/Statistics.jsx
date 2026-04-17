@@ -121,6 +121,16 @@ const Statistics = () => {
       icon: 'bi-diagram-3',
       url: '/courses/statistics/quiz/conditional_probability',
       linkState: { quizName: 'Week 8 - Conditional Probability' }
+
+    },
+    {
+      id: 'week9',
+      name: 'Week-9 - Random Variables',
+      displayName: 'Week-9 - Random Variables',
+      description: 'Sampling distributions, confidence intervals, hypothesis testing',
+      icon: 'bi-dice-1',
+      url: '/courses/statistics/quiz/week9_stats1',
+      linkState: { quizName: 'Week-9 - Random Variables' }
     }
   ]
 
@@ -134,7 +144,8 @@ const Statistics = () => {
     'Week 5 - Counting and Factorial':   ['week-5 - Counting_and_Factorial','Counting_and_Factorial','counting_and_factorial'],
     'Week 6 - Permutations and Combinations': ['week-6_permutations_and_combinations','permutations_and_combinations'],
     'Week 7 - Probability':              ['week_7_probability','probability','Probability'],
-    'Week 8 - Conditional Probability':  ['conditional_probability','Conditional Probability','Conditional%20Probability']
+    'Week 8 - Conditional Probability':  ['conditional_probability','Conditional Probability','Conditional%20Probability'],
+    'Week 9 - Random Variables':  ['week9_stats1']
   }
 
   const findTopicAssessment = (topicId) => {
@@ -203,11 +214,6 @@ const Statistics = () => {
       </div>
 
       <div className="container">
-        <div style={{ maxWidth: '900px', margin: '0 auto', padding: '0 15px 12px' }} className="d-flex justify-content-end">
-          <Link to="/courses/statistics/review" className="btn btn-outline-secondary btn-sm">
-            <i className="bi bi-clock-history me-1"></i> Review Past Quizzes
-          </Link>
-        </div>
         <div className="course-list" style={{maxWidth:'900px',margin:'0 auto',padding:'0 15px'}}>
           {availableTopics.map((topic) => {
             const assessment = findTopicAssessment(topic.id)
