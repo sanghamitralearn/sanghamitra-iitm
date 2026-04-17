@@ -2166,7 +2166,6 @@ router.post('/reset-ct-progress', async (req, res) => {
 
 
 
-// GET Statistics Questions by Topic - Single route like math
 router.get('/iitm-stats-questions/:topic', async (req, res) => {
   try {
     const { topic } = req.params;
@@ -2187,7 +2186,7 @@ router.get('/iitm-stats-questions/:topic', async (req, res) => {
     // Get all questions for the topic (NO FILTERING by completed questions)
     let allQuestions = await Statistics_questions.find({
       topic: topic
-    });
+    }).lean();
 
     console.log(`📊 Found ${allQuestions.length} total questions for topic: ${topic}`);
     
@@ -2199,19 +2198,30 @@ router.get('/iitm-stats-questions/:topic', async (req, res) => {
     }
 
     // Enhanced shuffle for better randomness
-    const shuffledQuestions = [...allQuestions];
-    
-    // Fisher-Yates shuffle
-    for (let i = shuffledQuestions.length - 1; i > 0; i--) {
+    const shuffle = arr => {
+    const a = [...arr]
+    for (let i = a.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [shuffledQuestions[i], shuffledQuestions[j]] = [shuffledQuestions[j], shuffledQuestions[i]];
+      [a[i], a[j]] = [a[j], a[i]]
     }
+    return a
+  }
 
-    // Take exactly the requested count
-    const selectedQuestions = shuffledQuestions.slice(0, parseInt(count));
+    const withPoints = (qs, pts) => qs.map(q => ({ ...q, points: pts }))
+
+    const easy   = shuffle(allQuestions.filter(q => q.difficulty?.toLowerCase() === 'easy'))
+    const medium = shuffle(allQuestions.filter(q => q.difficulty?.toLowerCase() === 'medium'))
+    const hard   = shuffle(allQuestions.filter(q => q.difficulty?.toLowerCase() === 'hard'))
+
+    const selectedQuestions = shuffle([
+    ...withPoints(easy.slice(0, 10), 1),
+    ...withPoints(medium.slice(0, 10), 2),
+    ...withPoints(hard.slice(0, 5), 4),
+  ])
+// 10 easy(×1) + 10 medium(×2) + 5 hard(×4) = 25 questions, 50 points
     
     // Optional: Sort by question_number for consistent display
-    selectedQuestions.sort((a, b) => a.question_number - b.question_number);
+   
 
     console.log(`✅ Returning ${selectedQuestions.length} random questions for ${topic} to ${email}`);
 
