@@ -317,6 +317,17 @@ const IIITMMath = () => {
       linkState: { quizName: 'Week 7 - Differentiation' }
     },
 
+    {
+      id: 'Integrals',
+      name: 'Week 9 - Integrals',
+      displayName: 'Week 9 - Integrals',
+      description: 'Assessment on Integrals',
+      icon: 'bi-cpu',
+      url: '/courses/IIITM-math/quiz/integrals',
+      linkState: { quizName: 'Week 7 - Integrals' }
+    },
+
+
    
    
     {
@@ -355,7 +366,7 @@ const IIITMMath = () => {
     'Week 7 - Sequence': ['sequences', 'Sequence', 'Quiz19'],
     'Week 7 - Sequence and Limits': ['Function_Limits', 'Function Limits', 'Quiz10'],
     'Week 8 - Limits, Continuity and Differentiation': ['Limit Concepts', 'Limit_Concepts', 'Differentiation', 'Quiz11'],
-    'Week 9 - Derivatives and Integrals': ['Derivatives and Integrals', 'Derivatives_Integrals', 'Derivatives', 'Integrals', 'Quiz12'],
+    'Week 9 - Integrals': ['integrals'],
     'Week 10 - Graph Theory': ['graph_theory', 'Graph_Theory', 'Graph Theory', 'Quiz13'],
     'Week 11 - Graph Properties': ['graph_properties', 'Graph_Properties', 'Graph Properties', 'Quiz14']
   }
