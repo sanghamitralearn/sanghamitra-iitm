@@ -955,15 +955,15 @@ const IITMMathQuiz = () => {
     const score = questionResults.reduce((sum, r, i) => {
       return sum + (r.isCorrect ? (questions[i].points || 1) : 0)
     }, 0)
-    const totalPossible = 50
-    const percentage = Math.round((score / totalPossible) * 100)
+    const totalPossible = questions.reduce((sum, q) => sum + (q.points || 1), 0)
+    const percentage = totalPossible > 0 ? Math.round((score / totalPossible) * 100) : 0
     const totalTime = Object.values(timesRef.current).reduce((s, t) => s + t, 0)
     setSaving(true)
     try {
       const u = userRef.current
       await axios.post(`${API_URL}/api/iitmmath_scores`, {
         email: u.email, username: u.username || u.name || u.email,
-        quizData: { topic, score, totalQuestions: questions.length, totalPossible, percentage, timestamp: new Date(), questionResults }
+        quizData: { topic, score, maxScore: totalPossible, totalQuestions: questions.length, totalPossible, percentage, timestamp: new Date(), questionResults }
       }, { withCredentials: true })
     } catch (err) { console.error('Score save failed:', err) }
     finally { setSaving(false) }
