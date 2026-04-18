@@ -40,8 +40,8 @@ const Stats1Dashboard = () => {
     let totalSubmissions = 0, totalCorrect = 0, totalQ = 0
     data.forEach(s => (s.quizScores || []).forEach(q => {
       totalSubmissions++
-      totalCorrect += q.correctAnswers || 0
-      totalQ += q.totalQuestions || 0
+      totalCorrect += q.score || q.correctAnswers || 0
+      totalQ += q.maxScore || q.totalPossible || 50
     }))
     return {
       totalStudents: data.length,
@@ -135,9 +135,7 @@ const Stats1Dashboard = () => {
                         const recent = scores.length > 0
                           ? scores.reduce((a, b) => new Date(a.timestamp || 0) > new Date(b.timestamp || 0) ? a : b)
                           : null
-                        const pct = recent
-                          ? Math.round(recent.percentage || ((recent.correctAnswers / (recent.totalQuestions || 1)) * 100))
-                          : 0
+                        const pct = recent ? Math.round(recent.percentage || 0) : 0
                         return (
                           <tr key={i} style={{ cursor: 'pointer' }} onClick={() => setSelectedStudent(student)}>
                             <td><strong>{student.username || student.name || student.email}</strong></td>
@@ -150,7 +148,7 @@ const Stats1Dashboard = () => {
                             <td>
                               {recent
                                 ? <span style={{ color: getScoreColor(pct), fontWeight: 'bold' }}>
-                                    {recent.correctAnswers}/{recent.totalQuestions} ({pct}%)
+                                    {recent.score || recent.correctAnswers || 0}/{recent.maxScore || recent.totalPossible || 50} ({pct}%)
                                   </span>
                                 : <span className="text-muted">—</span>}
                             </td>
@@ -211,11 +209,11 @@ const Stats1Dashboard = () => {
                     {[...selectedStudent.quizScores]
                       .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
                       .map((q, i) => {
-                        const pct = Math.round(q.percentage || ((q.correctAnswers / (q.totalQuestions || 1)) * 100))
+                        const pct = Math.round(q.percentage || 0)
                         return (
                           <tr key={i}>
                             <td><strong>{q.topic || 'Unknown'}</strong></td>
-                            <td>{q.correctAnswers}/{q.totalQuestions}</td>
+                            <td>{q.score || q.correctAnswers || 0}/{q.maxScore || q.totalPossible || 50}</td>
                             <td><span style={{ color: getScoreColor(pct), fontWeight: 'bold' }}>{pct}%</span></td>
                             <td>{q.timestamp ? new Date(q.timestamp).toLocaleDateString() : '—'}</td>
                           </tr>
