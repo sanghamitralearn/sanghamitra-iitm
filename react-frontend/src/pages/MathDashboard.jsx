@@ -268,7 +268,7 @@ const MathDashboard = () => {
                                 <td>
                                   {recentExam ? (
                                     <span style={{ color: getScoreColor(recentExam.percentage || 0), fontWeight: 'bold' }}>
-                                      {recentExam.score || 0}/{recentExam.maxScore || 100} ({Math.round(recentExam.percentage || 0)}%)
+                                      {recentExam.score || 0}/{recentExam.maxScore || recentExam.totalPossible || 50} ({Math.round(recentExam.percentage || 0)}%)
                                     </span>
                                   ) : (
                                     <span className="text-muted">-</span>
