@@ -127,11 +127,22 @@ const Statistics = () => {
       id: 'week9',
       name: 'Week-9 - Random Variables',
       displayName: 'Week-9 - Random Variables',
-      description: 'Sampling distributions, confidence intervals, hypothesis testing',
+      description: 'Basics of random variables and distributions',
       icon: 'bi-dice-1',
       url: '/courses/statistics/quiz/week9_stats1',
       linkState: { quizName: 'Week-9 - Random Variables' }
+    },
+
+    {
+      id: 'week10',
+      name: 'Week-10 - Expectation and Variance',
+      displayName: 'Week-10 - Expectation and Variance',
+      description: 'Mean, variance, and their properties',
+      icon: 'bi-dice-1',
+      url: '/courses/statistics/quiz/week10_stats1',
+      linkState: { quizName: 'Week-10 - Expectation and Variance' }
     }
+
   ]
 
   // Match saved scores to topics using flexible topic name matching
@@ -145,7 +156,8 @@ const Statistics = () => {
     'Week 6 - Permutations and Combinations': ['week-6_permutations_and_combinations','permutations_and_combinations'],
     'Week 7 - Probability':              ['week_7_probability','probability','Probability'],
     'Week 8 - Conditional Probability':  ['conditional_probability','Conditional Probability','Conditional%20Probability'],
-    'Week 9 - Random Variables':  ['week9_stats1']
+    'Week 9 - Random Variables':  ['week9_stats1'],
+    'Week-10 - Expectation and Variance'  : ['week10_stats1']
   }
 
   const findTopicAssessment = (topicId) => {
