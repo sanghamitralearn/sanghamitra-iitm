@@ -10,7 +10,7 @@ function resolveOptionText(question, idxOrText) {
   if (idxOrText === undefined || idxOrText === null) return ''
   const opts = question.options || []
   const idx = typeof idxOrText === 'number' ? idxOrText : parseInt(idxOrText)
-  if (!isNaN(idx) && idx >= 0 && idx < opts.length) return opts[idx]if (question.type === 'multiple_select') {
+  if (!isNaN(idx) && idx >= 0 && idx < opts.length) return opts[idx]
   return String(idxOrText)
 }
 
@@ -500,12 +500,7 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
     if (q.type === 'multiple_choice') return resolveOptionText(q, ca)
     if (q.type === 'multiple_select') {
       const arr = Array.isArray(ca) ? ca : [ca]
-      return arr.map(v => {
-        if (typeof v === 'number') return q.options?.[v] ?? String(v)
-        const asInt = parseInt(String(v).trim())
-        if (!isNaN(asInt)) return q.options?.[asInt] ?? String(v)
-        return String(v)
-      }).join(', ')
+      return arr.map(i => resolveOptionText(q, i)).join(', ')
     }
     if ((q.type === 'numeric' || q.type === 'numeric_input') && !isNaN(parseFloat(ca))) {
       const num = parseFloat(ca)
@@ -610,13 +605,7 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
                         {q.options.map((opt, oi) => {
                           // AFTER
                           const caArr = q.type === 'multiple_select'
-                            ? (Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer]).map(v => {
-                                if (typeof v === 'number') return v
-                                const asInt = parseInt(String(v).trim())
-                                if (!isNaN(asInt)) return asInt
-                                return (q.options || []).findIndex(o => o === v)
-                              }).filter(v => v !== -1)
-                            : []
+                            ? (Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer]) : []
 
                           // Resolve correct index — handles both numeric index AND text-based correct_answer
                           const resolvedCorrectIdx = q.type === 'multiple_choice'
@@ -900,21 +889,27 @@ const IITMMathQuiz = () => {
 
   // ── MULTIPLE SELECT ───────────────────────────────────────────────────────
   if (question.type === 'multiple_select') {
-      if (!Array.isArray(userAnswer) || userAnswer.length === 0) return false
+    if (!Array.isArray(userAnswer) || userAnswer.length === 0) return false
 
-      const opts = question.options || []
-      const correctTexts = Array.isArray(ca) ? ca : [ca]
-
-      const userSelectedTexts = userAnswer.map(idx => opts[idx]).filter(Boolean)
-
-      if (userSelectedTexts.length !== correctTexts.length) return false
-
-      return correctTexts.every(correctText =>
-        userSelectedTexts.some(userText =>
-          String(userText).trim() === String(correctText).trim()
-        )
-      )
+    let correctIndices = []
+    if (Array.isArray(ca)) {
+      correctIndices = ca.map(v => typeof v === 'number' ? v : parseInt(String(v).trim())).filter(v => !isNaN(v))
+    } else if (typeof ca === 'number') {
+      correctIndices = [ca]
+    } else if (typeof ca === 'string' && !isNaN(parseInt(ca.trim()))) {
+      correctIndices = [parseInt(ca.trim())]
+    } else {
+      // Text-based correct_answer fallback
+      correctIndices = (question.options || []).reduce((acc, opt, idx) => {
+        if (norm(opt) === norm(String(ca))) acc.push(idx)
+        return acc
+      }, [])
     }
+
+    const sortedUser    = [...userAnswer].map(v => typeof v === 'number' ? v : parseInt(String(v).trim())).sort((a,b) => a-b)
+    const sortedCorrect = [...correctIndices].sort((a,b) => a-b)
+    return JSON.stringify(sortedUser) === JSON.stringify(sortedCorrect)
+  }
 
   // ── NUMERIC ───────────────────────────────────────────────────────────────
   if (question.type === 'numeric' || question.type === 'numeric_input') {
@@ -948,15 +943,6 @@ const IITMMathQuiz = () => {
     if (q) saveCurrentTime(q._id)
     const questionResults = questions.map(question => {
       const ua = answers[question._id]
-      
-      if (question.type === 'multiple_select') {
-        console.log('SUBMIT CHECK', question._id, {
-          userAnswer: ua,
-          correct_answer: question.correct_answer,
-          isCorrect: checkCorrect(question, ua)
-        })
-      }
-      
       const fmt = (a) => Array.isArray(a) ? a.join(', ') : String(a ?? '')
       return {
         questionId: question._id, questionNumber: question.question_number,
