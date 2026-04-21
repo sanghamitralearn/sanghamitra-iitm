@@ -500,7 +500,12 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
     if (q.type === 'multiple_choice') return resolveOptionText(q, ca)
     if (q.type === 'multiple_select') {
       const arr = Array.isArray(ca) ? ca : [ca]
-      return arr.map(i => resolveOptionText(q, i)).join(', ')
+      return arr.map(v => {
+        if (typeof v === 'number') return q.options?.[v] ?? String(v)
+        const asInt = parseInt(String(v).trim())
+        if (!isNaN(asInt)) return q.options?.[asInt] ?? String(v)
+        return String(v)
+      }).join(', ')
     }
     if ((q.type === 'numeric' || q.type === 'numeric_input') && !isNaN(parseFloat(ca))) {
       const num = parseFloat(ca)
@@ -605,7 +610,13 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
                         {q.options.map((opt, oi) => {
                           // AFTER
                           const caArr = q.type === 'multiple_select'
-                            ? (Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer]) : []
+                            ? (Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer]).map(v => {
+                                if (typeof v === 'number') return v
+                                const asInt = parseInt(String(v).trim())
+                                if (!isNaN(asInt)) return asInt
+                                return (q.options || []).findIndex(o => o === v)
+                              }).filter(v => v !== -1)
+                            : []
 
                           // Resolve correct index — handles both numeric index AND text-based correct_answer
                           const resolvedCorrectIdx = q.type === 'multiple_choice'
@@ -889,27 +900,30 @@ const IITMMathQuiz = () => {
 
   // ── MULTIPLE SELECT ───────────────────────────────────────────────────────
   if (question.type === 'multiple_select') {
-    if (!Array.isArray(userAnswer) || userAnswer.length === 0) return false
+      if (!Array.isArray(userAnswer) || userAnswer.length === 0) return false
 
-    let correctIndices = []
-    if (Array.isArray(ca)) {
-      correctIndices = ca.map(v => typeof v === 'number' ? v : parseInt(String(v).trim())).filter(v => !isNaN(v))
-    } else if (typeof ca === 'number') {
-      correctIndices = [ca]
-    } else if (typeof ca === 'string' && !isNaN(parseInt(ca.trim()))) {
-      correctIndices = [parseInt(ca.trim())]
-    } else {
-      // Text-based correct_answer fallback
-      correctIndices = (question.options || []).reduce((acc, opt, idx) => {
-        if (norm(opt) === norm(String(ca))) acc.push(idx)
-        return acc
-      }, [])
+      const resolveToIndex = (val) => {
+        if (typeof val === 'number' && !isNaN(val)) return val
+        const asInt = parseInt(String(val).trim())
+        if (!isNaN(asInt)) return asInt
+        return (question.options || []).findIndex(o => norm(o) === norm(String(val)))
+      }
+
+      let correctIndices = []
+      if (Array.isArray(ca)) {
+        correctIndices = ca.map(v => resolveToIndex(v)).filter(v => v !== -1)
+      } else {
+        const idx = resolveToIndex(ca)
+        if (idx !== -1) correctIndices = [idx]
+      }
+
+      const sortedUser = [...userAnswer]
+        .map(v => typeof v === 'number' ? v : parseInt(String(v).trim()))
+        .filter(v => !isNaN(v))
+        .sort((a, b) => a - b)
+      const sortedCorrect = [...correctIndices].sort((a, b) => a - b)
+      return JSON.stringify(sortedUser) === JSON.stringify(sortedCorrect)
     }
-
-    const sortedUser    = [...userAnswer].map(v => typeof v === 'number' ? v : parseInt(String(v).trim())).sort((a,b) => a-b)
-    const sortedCorrect = [...correctIndices].sort((a,b) => a-b)
-    return JSON.stringify(sortedUser) === JSON.stringify(sortedCorrect)
-  }
 
   // ── NUMERIC ───────────────────────────────────────────────────────────────
   if (question.type === 'numeric' || question.type === 'numeric_input') {
