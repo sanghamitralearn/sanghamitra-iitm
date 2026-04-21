@@ -141,6 +141,16 @@ const Statistics = () => {
       icon: 'bi-dice-1',
       url: '/courses/statistics/quiz/week10_stats1',
       linkState: { quizName: 'Week-10 - Expectation and Variance' }
+    },
+
+    {
+      id: 'week11',
+      name: 'Week-11 - Binomial and poisson random variables',
+      displayName: 'Week-11 - Binomial and poisson random variables',
+      description: 'Mean, variance, and their properties',
+      icon: 'bi-dice-1',
+      url: '/courses/statistics/quiz/week11_stats1',
+      linkState: { quizName: 'Week-11 - Binomial and poisson random variables' }
     }
 
   ]
