@@ -10,7 +10,7 @@ function resolveOptionText(question, idxOrText) {
   if (idxOrText === undefined || idxOrText === null) return ''
   const opts = question.options || []
   const idx = typeof idxOrText === 'number' ? idxOrText : parseInt(idxOrText)
-  if (!isNaN(idx) && idx >= 0 && idx < opts.length) return opts[idx]
+  if (!isNaN(idx) && idx >= 0 && idx < opts.length) return opts[idx]if (question.type === 'multiple_select') {
   return String(idxOrText)
 }
 
@@ -902,27 +902,18 @@ const IITMMathQuiz = () => {
   if (question.type === 'multiple_select') {
       if (!Array.isArray(userAnswer) || userAnswer.length === 0) return false
 
-      const resolveToIndex = (val) => {
-        if (typeof val === 'number' && !isNaN(val)) return val
-        const asInt = parseInt(String(val).trim())
-        if (!isNaN(asInt)) return asInt
-        return (question.options || []).findIndex(o => norm(o) === norm(String(val)))
-      }
+      const opts = question.options || []
+      const correctTexts = Array.isArray(ca) ? ca : [ca]
 
-      let correctIndices = []
-      if (Array.isArray(ca)) {
-        correctIndices = ca.map(v => resolveToIndex(v)).filter(v => v !== -1)
-      } else {
-        const idx = resolveToIndex(ca)
-        if (idx !== -1) correctIndices = [idx]
-      }
+      const userSelectedTexts = userAnswer.map(idx => opts[idx]).filter(Boolean)
 
-      const sortedUser = [...userAnswer]
-        .map(v => typeof v === 'number' ? v : parseInt(String(v).trim()))
-        .filter(v => !isNaN(v))
-        .sort((a, b) => a - b)
-      const sortedCorrect = [...correctIndices].sort((a, b) => a - b)
-      return JSON.stringify(sortedUser) === JSON.stringify(sortedCorrect)
+      if (userSelectedTexts.length !== correctTexts.length) return false
+
+      return correctTexts.every(correctText =>
+        userSelectedTexts.some(userText =>
+          String(userText).trim() === String(correctText).trim()
+        )
+      )
     }
 
   // ── NUMERIC ───────────────────────────────────────────────────────────────
