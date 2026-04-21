@@ -957,6 +957,15 @@ const IITMMathQuiz = () => {
     if (q) saveCurrentTime(q._id)
     const questionResults = questions.map(question => {
       const ua = answers[question._id]
+      
+      if (question.type === 'multiple_select') {
+        console.log('SUBMIT CHECK', question._id, {
+          userAnswer: ua,
+          correct_answer: question.correct_answer,
+          isCorrect: checkCorrect(question, ua)
+        })
+      }
+      
       const fmt = (a) => Array.isArray(a) ? a.join(', ') : String(a ?? '')
       return {
         questionId: question._id, questionNumber: question.question_number,
