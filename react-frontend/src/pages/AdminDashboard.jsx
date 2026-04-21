@@ -323,13 +323,27 @@ const AdminDashboard = () => {
   }, [loadNotifications])
 
   useEffect(() => {
-    subjectApis.forEach(async ({ key, url, countFn }) => {
-      try {
-        const data = await fetchFromAPI(`${VITE_API_URL}${url}`)
+  subjectApis.forEach(async ({ key, url, countFn }) => {
+    try {
+      const data = await fetchFromAPI(`${VITE_API_URL}${url}`)
+      
+      // Special handling for PDSA and Python to count unique students
+      if (key === 'pdsa' || key === 'py') {
+        const submissions = Array.isArray(data) ? data : (data.submissions || data.data || [])
+        const uniqueStudents = new Set(
+          submissions
+            .filter(s => s.email && s.email.toLowerCase() !== 'test@example.com')
+            .map(s => s.email.toLowerCase())
+        )
+        setSubjectCounts(prev => ({ ...prev, [key]: uniqueStudents.size }))
+      } else {
         setSubjectCounts(prev => ({ ...prev, [key]: countFn(data) }))
-      } catch { /* leave as undefined */ }
-    })
-  }, [])
+      }
+    } catch { 
+      // leave as undefined
+    }
+  })
+}, [])
 
   // Close dropdown on outside click
   useEffect(() => {
