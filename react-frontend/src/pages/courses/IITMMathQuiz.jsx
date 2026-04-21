@@ -605,7 +605,21 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
                         {q.options.map((opt, oi) => {
                           // AFTER
                           const caArr = q.type === 'multiple_select'
-                            ? (Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer]) : []
+                            ? (() => {
+                                const ca = q.correct_answer;
+                                if (Array.isArray(ca)) return ca.map(v => typeof v === 'number' ? v : parseInt(v));
+                                if (typeof ca === 'string') {
+                                  // Try parsing as JSON array first
+                                  try {
+                                    const parsed = JSON.parse(ca);
+                                    if (Array.isArray(parsed)) return parsed.map(v => parseInt(v));
+                                  } catch (e) {}
+                                  // Fallback: split by comma
+                                  return ca.split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v));
+                                }
+                                if (typeof ca === 'number') return [ca];
+                                return [];
+                              })() : []
 
                           // Resolve correct index — handles both numeric index AND text-based correct_answer
                           const resolvedCorrectIdx = q.type === 'multiple_choice'
