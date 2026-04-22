@@ -60,6 +60,133 @@ function toTeX(raw) {
   return s
 }
 
+// Format answer for preview (like HTML version)
+function formatAnswerPreview(value, questionType) {
+  if (!value) return ''
+  
+  let formatted = value.trim()
+  
+  // Handle different question types
+  if (questionType === 'interval_input') {
+    formatted = formatted
+      .replace(/infinity|∞/gi, '∞')
+      .replace(/-inf/gi, '-∞')
+      .replace(/\+inf/gi, '∞')
+  } else if (questionType === 'coordinate_input') {
+    formatted = formatted
+  } else if (questionType === 'equation_input') {
+    formatted = formatted
+      .replace(/²/g, '^2')
+      .replace(/³/g, '^3')
+  } else if (questionType === 'numeric' || questionType === 'numeric_input') {
+    formatted = formatted
+      .replace(/infinity|∞/gi, '∞')
+      .replace(/sqrt\(/g, '√(')
+  }
+  
+  // Common replacements for all types
+  formatted = formatted
+    .replace(/\*/g, '×')
+    .replace(/pi/gi, 'π')
+    .replace(/sqrt\(([^)]+)\)/g, '√($1)')
+    .replace(/(\d+)\^(\d+)/g, '$1^$2')
+    .replace(/≠/g, '≠')
+    .replace(/<=/g, '≤')
+    .replace(/>=/g, '≥')
+  
+  return formatted
+}
+
+// Answer Preview Component
+const AnswerPreview = ({ value, questionType, formatHint }) => {
+  const previewRef = useRef(null)
+  const [formattedValue, setFormattedValue] = useState('')
+  
+  useEffect(() => {
+    if (!value) {
+      setFormattedValue('')
+      return
+    }
+    
+    const formatted = formatAnswerPreview(value, questionType)
+    setFormattedValue(formatted)
+  }, [value, questionType])
+  
+  useEffect(() => {
+    if (previewRef.current && formattedValue) {
+      const tex = toTeX(formattedValue)
+      previewRef.current.innerHTML = ''
+      previewRef.current.textContent = `\\(${tex}\\)`
+      
+      if (window.MathJax?.typesetPromise) {
+        window.MathJax.typesetPromise([previewRef.current]).catch(() => {})
+      }
+    }
+  }, [formattedValue])
+  
+  if (!value) return null
+  
+  return (
+    <div style={{
+      marginTop: 12,
+      padding: '12px 16px',
+      background: '#f8f9fa',
+      border: '2px solid #e9ecef',
+      borderRadius: 8,
+      animation: 'fadeIn 0.3s ease'
+    }}>
+      <h4 style={{
+        margin: '0 0 10px 0',
+        color: '#333',
+        fontSize: 14,
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px'
+      }}>Answer Preview</h4>
+      <div className="answer-preview-content">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{
+            fontWeight: 600,
+            color: '#666',
+            minWidth: 100,
+            fontSize: 14
+          }}>Formatted view:</span>
+          <div style={{
+            flex: 1,
+            padding: '8px 12px',
+            background: 'white',
+            borderRadius: 4,
+            border: '1px solid #dee2e6',
+            minHeight: 40,
+            display: 'flex',
+            alignItems: 'center',
+            fontFamily: 'inherit',
+            fontSize: 16,
+            color: '#2c3e50'
+          }}>
+            <span ref={previewRef} style={{ lineHeight: 1.2 }} />
+          </div>
+        </div>
+        {formatHint && (
+          <div style={{
+            fontSize: 12,
+            color: '#6c757d',
+            fontStyle: 'italic',
+            marginTop: 8
+          }}>
+            {formatHint}
+          </div>
+        )}
+      </div>
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `}</style>
+    </div>
+  )
+}
+
 const GUIDE_ENTRIES = [
   { type: 'sqrt(2)',    label: '√2' },   { type: 'sqrt(x+1)', label: '√(x+1)' },
   { type: 'x^2',       label: 'x²' },   { type: 'x^(n+1)',   label: 'xⁿ⁺¹' },
@@ -71,29 +198,35 @@ const GUIDE_ENTRIES = [
   { type: 'x != 0',    label: 'x ≠ 0' },{ type: 'x >= 0',   label: 'x ≥ 0' },
 ]
 
-const MathPreviewInput = ({ value, onChange, placeholder, type = 'text', style = {} }) => {
+const MathPreviewInput = ({ value, onChange, placeholder, type = 'text', questionType, formatHint, style = {} }) => {
   const [showGuide, setShowGuide] = useState(false)
+  const [localValue, setLocalValue] = useState(value || '')
   const previewRef = useRef(null)
-  const typesetTimer = useRef(null)
+
+  // Simple function to format preview
+  const getFormattedPreview = (input) => {
+    if (!input) return ''
+    let str = String(input)
+    str = str.replace(/sqrt\(([^)]+)\)/g, '√$1')
+    str = str.replace(/pi/gi, 'π')
+    str = str.replace(/inf/gi, '∞')
+    str = str.replace(/(\w+)\^(\d+)/g, (_, b, e) => b + (e === '2' ? '²' : e === '3' ? '³' : `^${e}`))
+    return str
+  }
+
+  const handleChange = (newValue) => {
+    setLocalValue(newValue)
+    onChange(newValue)
+  }
 
   useEffect(() => {
-    if (!previewRef.current) return
-    if (!value) return
-
-    const tex = toTeX(value)
-
-    previewRef.current.innerHTML = ''
-    previewRef.current.textContent = `\\(${tex}\\)`
-
-    clearTimeout(typesetTimer.current)
-    typesetTimer.current = setTimeout(() => {
-      if (window.MathJax?.typesetPromise) {
-        window.MathJax.typesetPromise([previewRef.current]).catch(() => {})
-      }
-    }, 150)
-
-    return () => clearTimeout(typesetTimer.current)
+    setLocalValue(value || '')
   }, [value])
+
+  const quickInsert = (val) => {
+    setLocalValue(val)
+    onChange(val)
+  }
 
   return (
     <div className="mt-3">
@@ -101,51 +234,136 @@ const MathPreviewInput = ({ value, onChange, placeholder, type = 'text', style =
         type={type === 'numeric' ? 'number' : 'text'}
         className="form-control"
         style={{ maxWidth: 420, background: '#E6F1FB', borderColor: '#85B7EB', color: '#042C53', ...style }}
-        value={value ?? ''}
+        value={localValue}
         placeholder={placeholder || 'Type your answer here'}
-        onChange={e => onChange(e.target.value)}
-        autoComplete="off" spellCheck="false"
+        onChange={e => handleChange(e.target.value)}
+        autoComplete="off" 
+        spellCheck="false"
       />
 
-      {value ? (
+      {/* Live Preview - This will show immediately */}
+      {localValue && localValue.trim() && (
         <div style={{
-          marginTop: 8, padding: '10px 14px', background: '#fff',
-          border: '0.5px solid #85B7EB', borderRadius: 10,
-          minHeight: 44, display: 'flex', alignItems: 'center'
+          marginTop: 8, 
+          padding: '10px 14px', 
+          background: '#fff',
+          border: '1px solid #85B7EB', 
+          borderRadius: 10,
+          minHeight: 44
         }}>
           <span style={{ fontSize: 11, color: '#888', marginRight: 10 }}>Preview:</span>
-          <span ref={previewRef} style={{ fontSize: 20, color: '#042C53' }} />
+          <span style={{ fontSize: 18, color: '#042C53' }}>
+            {getFormattedPreview(localValue)}
+          </span>
         </div>
-      ) : null}
+      )}
 
+      {/* Answer Preview Box */}
+      {localValue && localValue.trim() && (
+        <div style={{
+          marginTop: 12,
+          padding: '12px 16px',
+          background: '#f8f9fa',
+          border: '2px solid #e9ecef',
+          borderRadius: 8
+        }}>
+          <h4 style={{ margin: '0 0 10px 0', fontSize: 14, textTransform: 'uppercase' }}>
+            ANSWER PREVIEW
+          </h4>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontWeight: 600, minWidth: 100 }}>Formatted view:</span>
+            <div style={{
+              flex: 1,
+              padding: '8px 12px',
+              background: 'white',
+              borderRadius: 4,
+              border: '1px solid #dee2e6',
+              minHeight: 40
+            }}>
+              <span style={{ fontSize: 16, color: '#2c3e50' }}>
+                {getFormattedPreview(localValue)}
+              </span>
+            </div>
+          </div>
+          {formatHint && (
+            <div style={{ fontSize: 12, color: '#6c757d', marginTop: 8 }}>{formatHint}</div>
+          )}
+        </div>
+      )}
+
+      {/* Quick buttons */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-        {['sqrt(2)', 'pi', 'x^2', '1/3', 'inf', 'sin(x)'].map(ins => (
-          <button key={ins} type="button" onClick={() => onChange(ins)}
-            style={{ fontSize: 12, padding: '3px 10px', background: '#B5D4F4',
-              color: '#0C447C', border: '1px solid #85B7EB', borderRadius: 99, cursor: 'pointer' }}>
+        {['sqrt(2)', 'sqrt(3)', 'pi', 'x^2', '1/3', 'inf', 'sin(x)'].map(ins => (
+          <button 
+            key={ins} 
+            type="button" 
+            onClick={() => quickInsert(ins)}
+            style={{ 
+              fontSize: 12, 
+              padding: '3px 10px', 
+              background: '#B5D4F4',
+              color: '#0C447C', 
+              border: '1px solid #85B7EB', 
+              borderRadius: 99, 
+              cursor: 'pointer' 
+            }}>
             {ins}
           </button>
         ))}
       </div>
 
-      <button type="button" onClick={() => setShowGuide(v => !v)}
-        style={{ marginTop: 8, background: 'none', border: 'none', color: '#378ADD',
-          fontSize: 13, cursor: 'pointer', padding: 0, fontWeight: 500 }}>
+      {/* Typing guide toggle */}
+      <button 
+        type="button" 
+        onClick={() => setShowGuide(v => !v)}
+        style={{ 
+          marginTop: 8, 
+          background: 'none', 
+          border: 'none', 
+          color: '#378ADD',
+          fontSize: 13, 
+          cursor: 'pointer', 
+          padding: 0, 
+          fontWeight: 500 
+        }}>
         {showGuide ? '▲' : '▼'} Typing guide
       </button>
 
+      {/* Typing guide */}
       {showGuide && (
-        <div style={{ marginTop: 6, background: '#EEEDFE', border: '0.5px solid #CECBF6',
-          borderRadius: 10, padding: '12px 14px' }}>
+        <div style={{ 
+          marginTop: 6, 
+          background: '#EEEDFE', 
+          borderRadius: 10, 
+          padding: '12px 14px' 
+        }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px' }}>
-            {GUIDE_ENTRIES.map(({ type: t, label }) => (
-              <div key={t} onClick={() => onChange(t)}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 4px',
-                  cursor: 'pointer', borderBottom: '0.5px solid #CECBF6', borderRadius: 4 }}>
-                <code style={{ fontSize: 12, color: '#534AB7', background: '#E6F1FB',
-                  border: '1px solid #AFA9EC', borderRadius: 4, padding: '1px 6px' }}>{t}</code>
-                <span style={{ fontSize: 12, color: '#AFA9EC' }}>→</span>
-                <span style={{ fontSize: 14, color: '#3C3489' }}>{label}</span>
+            {[
+              { type: 'sqrt(2)', label: '√2' },
+              { type: 'sqrt(x+1)', label: '√(x+1)' },
+              { type: 'x^2', label: 'x²' },
+              { type: 'x^(n+1)', label: 'xⁿ⁺¹' },
+              { type: '3/4', label: '¾' },
+              { type: '(a+b)/c', label: '(a+b)/c' },
+              { type: 'pi', label: 'π' },
+              { type: 'inf', label: '∞' },
+              { type: 'sin(x)', label: 'sin x' },
+              { type: 'cos(x)', label: 'cos x' },
+            ].map(({ type: t, label }) => (
+              <div 
+                key={t} 
+                onClick={() => quickInsert(t)}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 8, 
+                  padding: '5px 4px',
+                  cursor: 'pointer', 
+                  borderRadius: 4 
+                }}>
+                <code style={{ fontSize: 12, background: '#E6F1FB', padding: '1px 6px', borderRadius: 4 }}>{t}</code>
+                <span>→</span>
+                <span>{label}</span>
               </div>
             ))}
           </div>
@@ -157,7 +375,6 @@ const MathPreviewInput = ({ value, onChange, placeholder, type = 'text', style =
 
 // ─── Inline styles ─────────────────────────────────────────────────────────────
 const S = {
-  // Question card
   qCard: {
     background: '#E6F1FB',
     borderRadius: 16,
@@ -193,7 +410,6 @@ const S = {
     lineHeight: 1.75,
     marginBottom: '1rem',
   },
-  // Option (unselected)
   optBase: {
     display: 'flex',
     alignItems: 'center',
@@ -238,7 +454,6 @@ const S = {
     cursor: 'pointer',
     margin: 0,
   }),
-  // Sidebar
   sidebar: {
     background: '#EEEDFE',
     borderRadius: 14,
@@ -299,10 +514,8 @@ const S = {
     justifyContent: 'space-between',
     fontWeight: 500,
   },
-  // Progress
   progBar: { height: 5, background: '#D3D1C7', borderRadius: 3, marginBottom: 16 },
   progFill: (pct) => ({ height: '100%', width: `${pct}%`, background: '#7F77DD', borderRadius: 3, transition: 'width 0.3s' }),
-  // Prev/Next
   navPrev: {
     padding: '7px 18px', borderRadius: 8,
     border: '1.5px solid #AFA9EC', background: 'transparent',
@@ -603,25 +816,27 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
                     {(q.type === 'multiple_choice' || q.type === 'multiple_select') && q.options && (
                       <div className="mb-3">
                         {q.options.map((opt, oi) => {
-                          // AFTER
                           const caArr = q.type === 'multiple_select'
-                            ? (() => {
-                                const ca = q.correct_answer;
-                                if (Array.isArray(ca)) return ca.map(v => typeof v === 'number' ? v : parseInt(v));
-                                if (typeof ca === 'string') {
-                                  // Try parsing as JSON array first
-                                  try {
-                                    const parsed = JSON.parse(ca);
-                                    if (Array.isArray(parsed)) return parsed.map(v => parseInt(v));
-                                  } catch (e) {}
-                                  // Fallback: split by comma
-                                  return ca.split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v));
-                                }
-                                if (typeof ca === 'number') return [ca];
-                                return [];
-                              })() : []
+                        ? (() => {
+                            const ca = q.correct_answer;
+                            const toOptText = (val) => {
+                              const asInt = typeof val === 'number' ? val : parseInt(String(val).trim())
+                              if (!isNaN(asInt) && asInt >= 0 && asInt < (q.options||[]).length)
+                                return q.options[asInt]
+                              return String(val)
+                            }
+                            if (Array.isArray(ca)) return ca.map(toOptText)
+                            if (typeof ca === 'string') {
+                              try {
+                                const parsed = JSON.parse(ca)
+                                if (Array.isArray(parsed)) return parsed.map(toOptText)
+                              } catch (e) {}
+                              return ca.split(',').map(v => toOptText(v.trim()))
+                            }
+                            if (typeof ca === 'number') return [toOptText(ca)]
+                            return []
+                          })() : []
 
-                          // Resolve correct index — handles both numeric index AND text-based correct_answer
                           const resolvedCorrectIdx = q.type === 'multiple_choice'
                             ? (typeof q.correct_answer === 'number'
                                 ? q.correct_answer
@@ -633,19 +848,23 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
                             : -1
 
                           const isCorrectOpt = q.type === 'multiple_choice'
-                          ? (resolvedCorrectIdx !== -1 && oi === resolvedCorrectIdx)
-                          : caArr.includes(oi)
+                            ? (resolvedCorrectIdx !== -1 && oi === resolvedCorrectIdx)
+                            : caArr.includes(opt)
 
                           const userPicked = q.type === 'multiple_choice'
-                            ? (typeof answers[q._id] === 'number'
-                                ? answers[q._id] === oi
+                            ? (typeof answers[q._id] === 'number' 
+                                ? answers[q._id] === oi 
                                 : parseInt(answers[q._id]) === oi)
-                            : (Array.isArray(answers[q._id]) ? answers[q._id].includes(oi) : false)
+                            : (() => {
+                              const ans = answers[q._id];
+                              if (!ans || !Array.isArray(ans)) return false
+                              return ans.includes(opt)
+                            })();
 
                           let bg = 'transparent'
-                            if (isCorrectOpt && userPicked) bg = '#d4edda'   // user picked correctly → green
-                            else if (isCorrectOpt) bg = '#d4edda'            // correct option not picked → still green
-                            else if (userPicked && !isCorrectOpt) bg = '#f8d7da'  // user picked wrong → red
+                            if (isCorrectOpt && userPicked) bg = '#d4edda'
+                            else if (isCorrectOpt) bg = '#d4edda'
+                            else if (userPicked && !isCorrectOpt) bg = '#f8d7da'
                           return (
                             <div key={oi} className="d-flex align-items-center gap-2 mb-1 px-2 py-1 rounded" style={{background:bg}}>
                              {isCorrectOpt && userPicked && <i className="bi bi-check-circle-fill text-success"/>}
@@ -838,119 +1057,119 @@ const IITMMathQuiz = () => {
 
   const handleAnswer = (qId, value) => setAnswers(p => ({ ...p, [qId]: value }))
 
-  const handleMultiSelect = (qId, optIdx, checked) => {
-    setAnswers(p => {
-      const cur = p[qId] || []
-      return { ...p, [qId]: checked ? [...cur, optIdx] : cur.filter(i => i !== optIdx) }
-    })
-  }
+  const handleMultiSelect = (qId, optIdx, checked, optText) => {
+  setAnswers(p => {
+    const cur = p[qId] || []
+    return { ...p, [qId]: checked ? [...cur, optText] : cur.filter(t => t !== optText) }
+  })
+}
 
   const checkCorrect = (question, userAnswer) => {
-  const ca = question.correct_answer
-  const alts = question.alternative_answers || []
+    const ca = question.correct_answer
+    const alts = question.alternative_answers || []
 
-  // ── Guard: empty answer is always wrong ──────────────────────────────────
-  if (userAnswer === undefined || userAnswer === null || userAnswer === '') return false
-  if (Array.isArray(userAnswer) && userAnswer.length === 0) return false
+    if (userAnswer === undefined || userAnswer === null || userAnswer === '') return false
+    if (Array.isArray(userAnswer) && userAnswer.length === 0) return false
 
-  // ── Normalizer for text answers ───────────────────────────────────────────
-  const norm = (t) => {
-    if (t === undefined || t === null) return ''
-    let str = String(t).trim()
-    str = str.replace(/\s+/g, '').replace(/\\\(/g,'').replace(/\\\)/g,'')
-      .replace(/\\\[/g,'').replace(/\\\]/g,'').replace(/\$/g,'')
-      .replace(/infinity|∞/gi,'inf').replace(/√\(([^)]+)\)/g,'sqrt($1)')
-      .replace(/√(\d+)/g,'sqrt($1)').replace(/≠/g,'!=').replace(/≤/g,'<=')
-      .replace(/≥/g,'>=').replace(/×/g,'*').replace(/÷/g,'/')
-      .replace(/∪/g,'U').replace(/∩/g,'n').replace(/∈/g,'in')
-      .replace(/⊂/g,'subset').replace(/⊆/g,'subseteq')
-    // Fraction → decimal
-    if (str.includes('/') && !str.includes('sqrt')) {
-      const parts = str.split('/')
-      if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1]))
-        str = String(parseFloat(parts[0]) / parseFloat(parts[1]))
-    }
-    return str.replace(/\.0$/, '').toLowerCase()
-  }
-
-  // ── MULTIPLE CHOICE ───────────────────────────────────────────────────────
-  if (question.type === 'multiple_choice') {
-    // Resolves a value to an option index.
-    // Handles: number 2, string "2", or option text "Paris"
-    const resolveToIndex = (val) => {
-      if (val === undefined || val === null) return -1
-      if (typeof val === 'number' && !isNaN(val)) return val
-      const asInt = parseInt(String(val).trim())
-      if (!isNaN(asInt)) return asInt
-      // Text match fallback
-      return (question.options || []).findIndex(o => norm(o) === norm(String(val)))
+    const norm = (t) => {
+      if (t === undefined || t === null) return ''
+      let str = String(t).trim()
+      str = str.replace(/\s+/g, '').replace(/\\\(/g,'').replace(/\\\)/g,'')
+        .replace(/\\\[/g,'').replace(/\\\]/g,'').replace(/\$/g,'')
+        .replace(/infinity|∞/gi,'inf').replace(/√\(([^)]+)\)/g,'sqrt($1)')
+        .replace(/√(\d+)/g,'sqrt($1)').replace(/≠/g,'!=').replace(/≤/g,'<=')
+        .replace(/≥/g,'>=').replace(/×/g,'*').replace(/÷/g,'/')
+        .replace(/∪/g,'U').replace(/∩/g,'n').replace(/∈/g,'in')
+        .replace(/⊂/g,'subset').replace(/⊆/g,'subseteq')
+      if (str.includes('/') && !str.includes('sqrt')) {
+        const parts = str.split('/')
+        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1]))
+          str = String(parseFloat(parts[0]) / parseFloat(parts[1]))
+      }
+      return str.replace(/\.0$/, '').toLowerCase()
     }
 
-    const userIdx    = resolveToIndex(userAnswer)
-    const correctIdx = resolveToIndex(ca)
+    if (question.type === 'multiple_choice') {
+      const resolveToIndex = (val) => {
+        if (val === undefined || val === null) return -1
+        if (typeof val === 'number' && !isNaN(val)) return val
+        const asInt = parseInt(String(val).trim())
+        if (!isNaN(asInt)) return asInt
+        return (question.options || []).findIndex(o => norm(o) === norm(String(val)))
+      }
 
-    // Primary: index match
-    if (userIdx !== -1 && correctIdx !== -1 && userIdx === correctIdx) return true
+      const userIdx = resolveToIndex(userAnswer)
+      const correctIdx = resolveToIndex(ca)
 
-    // Secondary: text match (both resolved to text)
-    const userText    = norm(question.options?.[userIdx] ?? userAnswer)
-    const correctText = norm(question.options?.[correctIdx] ?? ca)
-    if (userText && correctText && userText === correctText) return true
+      if (userIdx !== -1 && correctIdx !== -1 && userIdx === correctIdx) return true
 
-    // Check alternative_answers
-    return alts.some(alt => resolveToIndex(alt) === userIdx)
-  }
+      const userText = norm(question.options?.[userIdx] ?? userAnswer)
+      const correctText = norm(question.options?.[correctIdx] ?? ca)
+      if (userText && correctText && userText === correctText) return true
 
-  // ── MULTIPLE SELECT ───────────────────────────────────────────────────────
-  if (question.type === 'multiple_select') {
-    if (!Array.isArray(userAnswer) || userAnswer.length === 0) return false
-
-    let correctIndices = []
-    if (Array.isArray(ca)) {
-      correctIndices = ca.map(v => typeof v === 'number' ? v : parseInt(String(v).trim())).filter(v => !isNaN(v))
-    } else if (typeof ca === 'number') {
-      correctIndices = [ca]
-    } else if (typeof ca === 'string' && !isNaN(parseInt(ca.trim()))) {
-      correctIndices = [parseInt(ca.trim())]
-    } else {
-      // Text-based correct_answer fallback
-      correctIndices = (question.options || []).reduce((acc, opt, idx) => {
-        if (norm(opt) === norm(String(ca))) acc.push(idx)
-        return acc
-      }, [])
+      return alts.some(alt => resolveToIndex(alt) === userIdx)
     }
 
-    const sortedUser    = [...userAnswer].map(v => typeof v === 'number' ? v : parseInt(String(v).trim())).sort((a,b) => a-b)
-    const sortedCorrect = [...correctIndices].sort((a,b) => a-b)
-    return JSON.stringify(sortedUser) === JSON.stringify(sortedCorrect)
+   if (question.type === 'multiple_select') {
+  if (!Array.isArray(userAnswer) || userAnswer.length === 0) return false
+
+  const toText = (val) => {
+    if (val === undefined || val === null) return ''
+    const asInt = typeof val === 'number' ? val : parseInt(String(val).trim())
+    if (!isNaN(asInt) && asInt >= 0 && asInt < (question.options || []).length) {
+      return norm(question.options[asInt])
+    }
+    return norm(String(val))
   }
 
-  // ── NUMERIC ───────────────────────────────────────────────────────────────
-  if (question.type === 'numeric' || question.type === 'numeric_input') {
-    const uNum = parseFloat(String(userAnswer).trim())
-    const cNum = parseFloat(String(ca).trim())
-    if (isNaN(uNum) || isNaN(cNum)) return false
-    const tolerance = Math.max(Math.abs(cNum) * 0.01, 0.0001)
-    if (Math.abs(uNum - cNum) <= tolerance) return true
-    return alts.some(alt => {
-      const altNum = parseFloat(String(alt).trim())
-      return !isNaN(altNum) && Math.abs(uNum - altNum) <= Math.max(Math.abs(altNum) * 0.01, 0.0001)
-    })
+  let correctTexts = []
+  if (Array.isArray(ca)) {
+    correctTexts = ca.map(toText)
+  } else if (typeof ca === 'string') {
+    try {
+      const parsed = JSON.parse(ca)
+      correctTexts = Array.isArray(parsed) ? parsed.map(toText) : [toText(ca)]
+    } catch {
+      correctTexts = ca.split(',').map(v => toText(v.trim()))
+    }
+  } else {
+    correctTexts = [toText(ca)]
   }
 
-  // ── TEXT / ALL OTHER TYPES (default) ─────────────────────────────────────
-  const normalizedUser    = norm(String(userAnswer).trim())
-  const normalizedCorrect = norm(String(ca).trim())
+  const userTexts = userAnswer.map(toText)
+  const sortedUser    = [...userTexts].sort()
+  const sortedCorrect = [...correctTexts].sort()
 
-  if (normalizedUser === normalizedCorrect) return true
 
-  // Numeric fallback: "29" vs 29, "3.0" vs "3", etc.
-  const uNum = parseFloat(normalizedUser)
-  const cNum = parseFloat(normalizedCorrect)
-  if (!isNaN(uNum) && !isNaN(cNum) && Math.abs(uNum - cNum) <= Math.max(Math.abs(cNum) * 0.01, 0.0001)) return true
-
-  return alts.some(a => norm(String(a).trim()) === normalizedUser)
+  return (
+    sortedUser.length === sortedCorrect.length &&
+    sortedUser.every((t, i) => t === sortedCorrect[i])
+  )
 }
+
+    if (question.type === 'numeric' || question.type === 'numeric_input') {
+      const uNum = parseFloat(String(userAnswer).trim())
+      const cNum = parseFloat(String(ca).trim())
+      if (isNaN(uNum) || isNaN(cNum)) return false
+      const tolerance = Math.max(Math.abs(cNum) * 0.01, 0.0001)
+      if (Math.abs(uNum - cNum) <= tolerance) return true
+      return alts.some(alt => {
+        const altNum = parseFloat(String(alt).trim())
+        return !isNaN(altNum) && Math.abs(uNum - altNum) <= Math.max(Math.abs(altNum) * 0.01, 0.0001)
+      })
+    }
+
+    const normalizedUser = norm(String(userAnswer).trim())
+    const normalizedCorrect = norm(String(ca).trim())
+
+    if (normalizedUser === normalizedCorrect) return true
+
+    const uNum = parseFloat(normalizedUser)
+    const cNum = parseFloat(normalizedCorrect)
+    if (!isNaN(uNum) && !isNaN(cNum) && Math.abs(uNum - cNum) <= Math.max(Math.abs(cNum) * 0.01, 0.0001)) return true
+
+    return alts.some(a => norm(String(a).trim()) === normalizedUser)
+  }
 
   const doSubmit = async () => {
     const q = questions[currentIndex]
@@ -1034,17 +1253,18 @@ const IITMMathQuiz = () => {
           </small>
           <div style={{display:'flex', flexDirection:'column', gap:9}}>
             {options?.map((opt, idx) => {
-              const isSelected = sel.includes(idx)
+              const isSelected = sel.includes(opt)
               const isHovered = hoveredOpt === `${_id}-${idx}`
               const style = isSelected ? S.optSelected : isHovered ? S.optHovered : S.optBase
               return (
                 <div key={idx} style={style}
-                  onClick={() => handleMultiSelect(_id, idx, !sel.includes(idx))}
+                  onClick={() => handleMultiSelect(_id, idx, !sel.includes(opt), opt)}
                   onMouseEnter={() => setHoveredOpt(`${_id}-${idx}`)}
                   onMouseLeave={() => setHoveredOpt(null)}>
                   <input className="form-check-input" type="checkbox"
                     id={`opt-${_id}-${idx}`} checked={isSelected}
-                    onChange={e => handleMultiSelect(_id, idx, e.target.checked)}
+                    onChange={e => e.stopPropagation()}
+                    onClick={e => e.stopPropagation()}
                     style={{ flexShrink:0, accentColor:'#378ADD', marginTop:0 }} />
                   <label htmlFor={`opt-${_id}-${idx}`} style={S.optLabel(isSelected)}>
                     {opt}
@@ -1061,8 +1281,14 @@ const IITMMathQuiz = () => {
       return (
         <>
           {format_hint && <small className="text-muted d-block mt-3 mb-1">{format_hint}</small>}
-          <MathPreviewInput type="numeric" value={answer} onChange={v => handleAnswer(_id, v)}
-            placeholder="e.g. 3.14, −5, sqrt(2)" />
+          <MathPreviewInput 
+            type="numeric" 
+            value={answer} 
+            onChange={v => handleAnswer(_id, v)}
+            placeholder="e.g. 3.14, −5, sqrt(2)"
+            questionType={type}
+            formatHint={format_hint}
+          />
         </>
       )
     }
@@ -1076,8 +1302,13 @@ const IITMMathQuiz = () => {
     return (
       <>
         {format_hint && <small className="text-muted d-block mt-3 mb-1">{format_hint}</small>}
-        <MathPreviewInput value={answer} onChange={v => handleAnswer(_id, v)}
-          placeholder={placeholders[type] || 'Type your answer here'} />
+        <MathPreviewInput 
+          value={answer} 
+          onChange={v => handleAnswer(_id, v)}
+          placeholder={placeholders[type] || 'Type your answer here'}
+          questionType={type}
+          formatHint={format_hint}
+        />
       </>
     )
   }
@@ -1112,7 +1343,6 @@ const IITMMathQuiz = () => {
 
   return (
     <main className="main" style={{userSelect:'none', WebkitUserSelect:'none'}}>
-      {/* Warning overlay */}
       {warningOverlay && (
         <div style={{position:'fixed',inset:0,background:'rgba(220,53,69,0.96)',zIndex:10000,
           display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',color:'#fff'}}>
@@ -1127,7 +1357,6 @@ const IITMMathQuiz = () => {
 
       {showCalc && <Calculator onClose={()=>setShowCalc(false)} />}
 
-      {/* Floating calc button */}
       <button onClick={()=>setShowCalc(v=>!v)}
         style={{position:'fixed',bottom:20,right:20,width:52,height:52,borderRadius:'50%',
           background:'#7F77DD',border:'none',color:'#fff',
@@ -1137,7 +1366,6 @@ const IITMMathQuiz = () => {
         🧮
       </button>
 
-      {/* Mobile: floating "Jump to Q" button */}
       <button
         className="d-md-none"
         onClick={()=>setShowMobileNav(v=>!v)}
@@ -1150,7 +1378,6 @@ const IITMMathQuiz = () => {
         <span>Qs</span>
       </button>
 
-      {/* Mobile nav drawer */}
       {showMobileNav && (
         <div className="d-md-none" style={{position:'fixed',inset:0,zIndex:10001,background:'rgba(4,44,83,0.5)'}}
           onClick={()=>setShowMobileNav(false)}>
@@ -1186,7 +1413,6 @@ const IITMMathQuiz = () => {
         </div>
       )}
 
-      {/* Page title */}
       <div className="page-title" style={{marginBottom:'2rem'}}>
         <div className="heading"><div className="container">
           <div className="row d-flex justify-content-center text-center">
@@ -1207,11 +1433,8 @@ const IITMMathQuiz = () => {
       </div>
 
       <div className="container mb-5">
-        {/* Desktop: two-column grid — question left, nav right */}
         <div className="row justify-content-center">
-          {/* Question column */}
           <div className="col-12 col-md-8 col-lg-8">
-            {/* Progress */}
             <div className="mb-3">
               <div className="d-flex justify-content-between mb-1">
                 <small className="text-muted">Question {currentIndex+1} of {questions.length}</small>
@@ -1222,9 +1445,7 @@ const IITMMathQuiz = () => {
               </div>
             </div>
 
-            {/* Question card */}
             <div style={S.qCard} ref={questionRef}>
-              {/* Badge strip — only difficulty + Q number */}
               <div style={S.badgeStrip}>
                 <span className={`badge bg-${DIFF_COLORS[q.difficulty]||'secondary'}`}
                   style={{fontSize:'0.75rem'}}>
@@ -1240,14 +1461,12 @@ const IITMMathQuiz = () => {
               </div>
 
               <div style={S.qBody}>
-                <h5 style={S.qText}>{q.question_text}</h5>
-
+                <h5 style={S.qText} dangerouslySetInnerHTML={{ __html: q.question_text }} />
                 <GraphImage imageFile={q.image_file} />
                 {renderInput(q)}
               </div>
             </div>
 
-            {/* Prev / Next */}
             <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
               <button style={{...S.navPrev, opacity: currentIndex===0 ? 0.4 : 1, cursor: currentIndex===0 ? 'not-allowed' : 'pointer'}}
                 onClick={()=>currentIndex>0 && goTo(currentIndex-1)} disabled={currentIndex===0}>
@@ -1266,7 +1485,6 @@ const IITMMathQuiz = () => {
             </div>
           </div>
 
-          {/* Navigator column — desktop only */}
           <div className="col-md-4 col-lg-3 d-none d-md-block">
             <QuestionNav
               questions={questions}
