@@ -324,7 +324,7 @@ const IIITMMath = () => {
       description: 'Assessment on Integrals',
       icon: 'bi-cpu',
       url: '/courses/IIITM-math/quiz/integrals',
-      linkState: { quizName: 'Week 7 - Integrals' }
+      linkState: { quizName: 'Week 9 - Integrals' }
     },
 
 
