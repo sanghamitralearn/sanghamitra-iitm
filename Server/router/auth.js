@@ -53,7 +53,7 @@ const InterviewSubmission = require('../model/interview_Submission');
 
 const QuizAttempt     = require('../model/iitmMaths2QuizAttempt');
 const QuestionResult  = require('../model/iitmMaths2QuestionResult');
-
+const IITMath2Question = require('../model/iitmMath2QuestionsSchema')
 
 require('../db/conn');
 const User = require('../model/userSchema');
