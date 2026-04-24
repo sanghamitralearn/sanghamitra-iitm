@@ -2955,6 +2955,48 @@ router.post('/iitmmath_scores', async (req, res) => {
   }
 });
 
+router.post('/get-question-explanations', async (req, res) => {
+  try {
+    const { questionIds } = req.body
+
+    if (!questionIds || !Array.isArray(questionIds) || questionIds.length === 0) {
+      return res.json({ success: false, message: 'Question IDs array is required' })
+    }
+
+    const objectIds = questionIds.filter(id => /^[a-f0-9]{24}$/i.test(id))
+    const numbers   = questionIds.map(Number).filter(n => !isNaN(n))
+
+    const questions = await IITMathQuestion.find({  // ← replace with your model name
+      $or: [
+        ...(objectIds.length ? [{ _id: { $in: objectIds } }] : []),
+        ...(numbers.length   ? [{ question_number: { $in: numbers } }] : []),
+      ]
+    }).lean()
+
+    const explanationMap = {}
+    questions.forEach(q => {
+      const entry = {
+        explanation:   q.explanation    || '',
+        difficulty:    q.difficulty     || '',
+        points:        q.points         || 1,
+        questionType:  q.type           || '',
+        options:       q.options        || [],
+        topic:         q.topic          || '',
+        correctAnswer: q.correct_answer || '',
+        questionText:  q.question_text  || '',
+      }
+      if (q._id)             explanationMap[q._id.toString()]          = entry
+      if (q.question_number) explanationMap[String(q.question_number)] = entry
+    })
+
+    res.json({ success: true, explanationMap })
+
+  } catch (error) {
+    console.error('Error fetching explanations:', error)
+    res.status(500).json({ success: false, message: 'Failed to fetch explanations' })
+  }
+})
+
 // fetching users' predaignostic data
 
 router.get('/arithmetic_responses', async (req, res) => {
