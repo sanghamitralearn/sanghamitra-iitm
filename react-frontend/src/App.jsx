@@ -42,21 +42,14 @@ import Python from './pages/courses/Python'
 import AdminSubject from './pages/courses/Admin'
 import IITMMathQuiz from './pages/courses/IITMMathQuiz'
 import StatisticsQuiz from './pages/courses/StatisticsQuiz'
-
+import MathReview from './pages/MathReview'
 // PDSA quiz type imports
 import PdsaTestQuiz from './pages/courses/PDSA/PdsaTestQuiz'
 import PdsaCodingQuiz from './pages/courses/PDSA/PdsaCodingQuiz'
 import PdsaInterviewQuiz from './pages/courses/PDSA/PdsaInterviewQuiz'
 import Math2Quiz from './pages/courses/Math2Quiz'
-import Stats2Quiz from './pages/courses/Stats2Quiz'
-import PythonCodingQuiz from './pages/courses/PythonCodingQuiz'
-import DBMS from './pages/courses/DBMS'
-import MathReview from './pages/courses/MathReview'
-import StatisticsReview from './pages/courses/StatisticsReview'
-import Math2Review from './pages/courses/Math2Review'
-import Stats2Review from './pages/courses/Stats2Review'
-import PythonReview from './pages/courses/PythonReview'
-import PDSAReview from './pages/courses/PDSAReview'
+import MathExamReview from './pages/MathReview'
+
 
 function App() {
   return (
@@ -96,7 +89,7 @@ function App() {
             <Route path="/math2" element={<Math2 />} />
             <Route path="/statistics2" element={<Statistics2 />} />
             <Route path="/computational-thinking" element={<IIITMMath />} />
-            <Route path="/dbms" element={<DBMS />} />
+            <Route path="/dbms" element={<AdminSubject />} />
             
             {/* Course-specific routes */}
             <Route path="/courses/IIITM-math" element={<IIITMMath />} />
@@ -112,16 +105,8 @@ function App() {
             
             {/* IIITM Math Quiz — dynamic, DB-driven */}
             <Route path="/courses/IIITM-math/quiz/:topic" element={<IITMMathQuiz />} />
+            <Route path="/admin/math/exam/:email/:topic/:attemptNumber" element={<MathReview />} />
             <Route path="/courses/IIITM-math/review" element={<MathReview />} />
-
-            {/* Review routes */}
-            <Route path="/courses/IIITM-math/review" element={<MathReview />} />
-            <Route path="/courses/statistics/review" element={<StatisticsReview />} />
-            <Route path="/courses/math2/review" element={<Math2Review />} />
-            <Route path="/courses/statistics2/review" element={<Stats2Review />} />
-            <Route path="/courses/python/review" element={<PythonReview />} />
-            <Route path="/courses/pdsa/review" element={<PDSAReview />} />
-
             {/* Statistics Quiz — dynamic, DB-driven */}
             <Route path="/courses/statistics/quiz/:topic" element={<StatisticsQuiz />} />
 
@@ -129,18 +114,9 @@ function App() {
             <Route path="/courses/pdsa/test/:weekId" element={<PdsaTestQuiz />} />
             <Route path="/courses/pdsa/coding/:weekId" element={<PdsaCodingQuiz />} />
             <Route path="/courses/pdsa/interview/:weekId" element={<PdsaInterviewQuiz />} />
-
+      
             {/* Math 2 Quiz — week-based, DB-driven */}
             <Route path="/courses/math2/quiz/:week" element={<Math2Quiz />} />
-
-            {/* Statistics 2 Quiz — week-based, DB-driven */}
-            <Route path="/courses/statistics2/quiz/:week" element={<Stats2Quiz />} />
-
-            {/* Python Coding Quiz — topic-based */}
-            <Route path="/courses/python/coding/:topicId" element={<PythonCodingQuiz />} />
-
-            {/* DBMS */}
-            <Route path="/courses/dbms" element={<DBMS />} />
           </Routes>
         </main>
         <Footer />
