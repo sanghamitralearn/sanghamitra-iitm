@@ -112,6 +112,7 @@ function App() {
             
             {/* IIITM Math Quiz — dynamic, DB-driven */}
             <Route path="/courses/IIITM-math/quiz/:topic" element={<IITMMathQuiz />} />
+            <Route path="/courses/IIITM-math/review" element={<MathReview />} />
 
             {/* Review routes */}
             <Route path="/courses/IIITM-math/review" element={<MathReview />} />
