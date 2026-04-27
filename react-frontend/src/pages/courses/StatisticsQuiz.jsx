@@ -465,9 +465,27 @@ const StatisticsQuiz = () => {
   const questionRef       = useRef(null)
   const devToolsInterval  = useRef(null)
 
+  // ── FIX: track last cheat timestamp to enforce per-type cooldown ──────────
+  const lastCheatTimeRef  = useRef({})   // { [type]: timestamp }
+  const CHEAT_COOLDOWN_MS = 30_000       // 30 s between same-type events
+  // Threshold stays at 5 — but tab_switch only counts after 10 s of absence
+  const CHEAT_THRESHOLD   = 5
+  // ── FIX: baseline window dimensions captured once on mount ────────────────
+  const baseWindowRef = useRef({ outerHeight: 0, outerWidth: 0, innerHeight: 0, innerWidth: 0 })
+
   useEffect(()=>{ loadMathJax() },[])
   useEffect(()=>{ if(questionRef.current) typesetEl(questionRef.current) },[currentIndex,questions])
   useEffect(()=>{ checkAuth() },[])
+
+  // Capture baseline window dimensions on mount (before any virtual keyboard / toolbar changes)
+  useEffect(() => {
+    baseWindowRef.current = {
+      outerHeight: window.outerHeight,
+      outerWidth:  window.outerWidth,
+      innerHeight: window.innerHeight,
+      innerWidth:  window.innerWidth,
+    }
+  }, [])
 
   const checkAuth = async () => {
     try {
@@ -494,7 +512,6 @@ const StatisticsQuiz = () => {
         )
         const res=await Promise.all(fetches)
         allQuestions=res.flat()
-        // Give every question a guaranteed unique key using its flat index
         allQuestions=allQuestions.map((q,i)=>({...q,_id:`${q.originalTopic}__idx${i}__${q._id}`}))
         for(let i=allQuestions.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[allQuestions[i],allQuestions[j]]=[allQuestions[j],allQuestions[i]]}
       } else {
@@ -511,49 +528,130 @@ const StatisticsQuiz = () => {
     finally { setLoading(false) }
   }
 
-  // Anti-cheat
+  // ── FIX: recordCheat now enforces per-type cooldown and higher threshold ───
   const recordCheat = useCallback(async type => {
-    cheatingRef.current+=1
-    const u=userRef.current
-    if(u?.email) axios.post(`${API_URL}/api/log-cheating`,{username:u.username||u.email,email:u.email,cheatingType:type,timestamp:new Date(),currentQuestion:cheatingRef.current,quizType:topic},{withCredentials:true}).catch(()=>{})
-    if(cheatingRef.current>=5){ alert('Too many suspicious activities detected. Quiz will be auto-submitted.'); doSubmit() }
-  },[topic])
+    const now = Date.now()
+    const lastTime = lastCheatTimeRef.current[type] || 0
+
+    // Skip if same cheat type fired within cooldown window
+    if (now - lastTime < CHEAT_COOLDOWN_MS) return
+    lastCheatTimeRef.current[type] = now
+
+    cheatingRef.current += 1
+    const u = userRef.current
+    if (u?.email) {
+      axios.post(`${API_URL}/api/log-cheating`, {
+        username: u.username || u.email,
+        email: u.email,
+        cheatingType: type,
+        timestamp: new Date(),
+        currentQuestion: cheatingRef.current,
+        quizType: topic,
+      }, { withCredentials: true }).catch(() => {})
+    }
+
+    if (cheatingRef.current >= CHEAT_THRESHOLD) {
+      alert('Too many suspicious activities detected. Quiz will be auto-submitted.')
+      doSubmit()
+    }
+  }, [topic])
 
   useEffect(()=>{
-    const onCtx=e=>{e.preventDefault();recordCheat('right_click');return false}
-    const onKey=e=>{
-      if(e.keyCode===123||(e.ctrlKey&&e.shiftKey&&e.keyCode===73)||(e.ctrlKey&&e.keyCode===85)||(e.ctrlKey&&e.keyCode===83)||e.keyCode===44){e.preventDefault();recordCheat('keyboard_shortcut');return false}
-      if(e.ctrlKey&&(e.keyCode===65||e.keyCode===67||e.keyCode===86)){e.preventDefault();recordCheat('copy_paste');return false}
+    const onCtx = e => { e.preventDefault(); recordCheat('right_click'); return false }
+
+    const onKey = e => {
+      if (
+        e.keyCode === 123 ||
+        (e.ctrlKey && e.shiftKey && e.keyCode === 73) ||
+        (e.ctrlKey && e.keyCode === 85) ||
+        (e.ctrlKey && e.keyCode === 83) ||
+        e.keyCode === 44
+      ) {
+        e.preventDefault(); recordCheat('keyboard_shortcut'); return false
+      }
+      if (e.ctrlKey && (e.keyCode === 65 || e.keyCode === 67 || e.keyCode === 86)) {
+        e.preventDefault(); recordCheat('copy_paste'); return false
+      }
     }
-    const onSel=()=>{recordCheat('text_selection');return false}
-    const onFocus=()=>setWarningOverlay(false)
-    const onBlur=()=>{
-      setTimeout(()=>{
-        if(!document.hasFocus()&&!showCalc){
+
+    const onSel = () => { recordCheat('text_selection'); return false }
+    const onFocus = () => setWarningOverlay(false)
+
+    // ── FIX: ignore blur caused by the calculator overlay itself,
+    //         and require the window to be unfocused for >1 s (debounce)
+    //         to avoid mobile keyboard / notification false positives
+    let blurTimer = null
+    const onBlur = () => {
+      blurTimer = setTimeout(() => {
+        if (!document.hasFocus() && !showCalc) {
           recordCheat('tab_switch')
           setWarningOverlay(true)
         }
-      }, 200)
+      }, 10_000) // 10 s grace — screen-off/on and keyboard blur won't trigger
     }
-    document.addEventListener('contextmenu',onCtx)
-    document.addEventListener('keydown',onKey)
-    document.onselectstart=onSel
-    window.addEventListener('focus',onFocus)
-    window.addEventListener('blur',onBlur)
-    devToolsInterval.current=setInterval(()=>{
-      if(window.outerHeight-window.innerHeight>160||window.outerWidth-window.innerWidth>160){
-        if(!devToolsWarnedRef.current){devToolsWarnedRef.current=true;recordCheat('developer_tools');alert('Developer tools detected! This attempt has been logged.')}
-      } else devToolsWarnedRef.current=false
-    },500)
-    return()=>{
-      document.removeEventListener('contextmenu',onCtx)
-      document.removeEventListener('keydown',onKey)
-      document.onselectstart=null
-      window.removeEventListener('focus',onFocus)
-      window.removeEventListener('blur',onBlur)
+    const onFocusCancel = () => {
+      clearTimeout(blurTimer)
+      setWarningOverlay(false)
+    }
+
+    document.addEventListener('contextmenu', onCtx)
+    document.addEventListener('keydown', onKey)
+    document.onselectstart = onSel
+    window.addEventListener('focus', onFocusCancel)
+    window.addEventListener('blur', onBlur)
+
+    // ── FIX: devTools detection uses a stable baseline + larger margin
+    //         to avoid false positives from mobile browser chrome (address bar,
+    //         virtual keyboard) and window resize events
+    devToolsInterval.current = setInterval(() => {
+      const base = baseWindowRef.current
+      // Only flag if the *current* dimensions deviate by >200px from baseline
+      // in BOTH axes simultaneously (real devtools open on a side), OR
+      // outerHeight - innerHeight exceeds 200 (devtools docked at bottom).
+      // Mobile virtual keyboards increase innerHeight difference but also
+      // reduce outerHeight, so the delta stays small relative to baseline.
+      const heightDiff = window.outerHeight - window.innerHeight
+      const widthDiff  = window.outerWidth  - window.innerWidth
+      const suspiciouslyLarge = heightDiff > 200 || widthDiff > 200
+
+      // Extra guard: if the outer dimensions themselves changed a lot
+      // (user resized the browser window), update the baseline instead of flagging.
+      const outerChanged =
+        Math.abs(window.outerHeight - base.outerHeight) > 100 ||
+        Math.abs(window.outerWidth  - base.outerWidth)  > 100
+      if (outerChanged) {
+        // Browser window was resized — recalibrate baseline, don't flag
+        baseWindowRef.current = {
+          outerHeight: window.outerHeight,
+          outerWidth:  window.outerWidth,
+          innerHeight: window.innerHeight,
+          innerWidth:  window.innerWidth,
+        }
+        devToolsWarnedRef.current = false
+        return
+      }
+
+      if (suspiciouslyLarge) {
+        if (!devToolsWarnedRef.current) {
+          devToolsWarnedRef.current = true
+          recordCheat('developer_tools')
+          alert('Developer tools detected! This attempt has been logged.')
+        }
+      } else {
+        devToolsWarnedRef.current = false
+      }
+    }, 500)
+
+    return () => {
+      document.removeEventListener('contextmenu', onCtx)
+      document.removeEventListener('keydown', onKey)
+      document.onselectstart = null
+      window.removeEventListener('focus', onFocusCancel)
+      window.removeEventListener('blur', onBlur)
+      clearTimeout(blurTimer)
       clearInterval(devToolsInterval.current)
     }
-  },[recordCheat,showCalc])
+  }, [recordCheat, showCalc])
 
   const saveCurrentTime = qId => {
     const elapsed=Math.round((Date.now()-questionStartRef.current)/1000)
@@ -571,7 +669,7 @@ const StatisticsQuiz = () => {
   const handleAnswer = (qId,value) => setAnswers(p=>({...p,[qId]:value}))
   const handleMultiSelect = (qId,optIdx,checked) => setAnswers(p=>{const cur=p[qId]||[];return{...p,[qId]:checked?[...cur,optIdx]:cur.filter(i=>i!==optIdx)}})
 
-  // ─── checkCorrect (robust, matches IITMMathQuiz) ───────────────────────────
+  // ─── checkCorrect ──────────────────────────────────────────────────────────
   const checkCorrect = (question, userAnswer) => {
     const ca   = question.correct_answer
     const alts = question.alternative_answers || []
@@ -651,7 +749,6 @@ const StatisticsQuiz = () => {
       })
     }
 
-    // text / all other types
     const normalizedUser    = norm(String(userAnswer).trim())
     const normalizedCorrect = norm(String(ca).trim())
     if (normalizedUser === normalizedCorrect) return true
@@ -698,6 +795,7 @@ const StatisticsQuiz = () => {
   const handleRetake = () => {
     setAnswers({});setCurrentIndex(0);setSubmitted(false);setResults(null)
     timesRef.current={};cheatingRef.current=0;devToolsWarnedRef.current=false
+    lastCheatTimeRef.current={}
     questionStartRef.current=Date.now()
     if(userRef.current){fetchQuestions(userRef.current.email);setLoading(true)}
   }
@@ -815,7 +913,6 @@ const StatisticsQuiz = () => {
 
       {showCalc&&<Calculator onClose={()=>setShowCalc(false)}/>}
 
-      {/* Floating calc button */}
       <button onClick={()=>setShowCalc(v=>!v)}
         style={{position:'fixed',bottom:20,right:20,width:52,height:52,borderRadius:'50%',
           background:'#7F77DD',border:'none',color:'#fff',fontSize:20,cursor:'pointer',
@@ -824,7 +921,6 @@ const StatisticsQuiz = () => {
         🧮
       </button>
 
-      {/* Mobile: floating nav button */}
       <button className="d-md-none" onClick={()=>setShowMobileNav(v=>!v)}
         style={{position:'fixed',bottom:82,right:20,width:52,height:52,borderRadius:'50%',
           background:'#378ADD',border:'none',color:'#fff',fontSize:11,fontWeight:700,
@@ -835,7 +931,6 @@ const StatisticsQuiz = () => {
         <span>Qs</span>
       </button>
 
-      {/* Mobile nav drawer */}
       {showMobileNav&&(
         <div className="d-md-none" style={{position:'fixed',inset:0,zIndex:10001,background:'rgba(4,44,83,0.5)'}}
           onClick={()=>setShowMobileNav(false)}>
@@ -881,7 +976,6 @@ const StatisticsQuiz = () => {
 
       <div className="container mb-5">
         <div className="row justify-content-center">
-          {/* Question column */}
           <div className="col-12 col-md-8 col-lg-8">
             <div className="mb-3">
               <div className="d-flex justify-content-between mb-1">
@@ -891,7 +985,6 @@ const StatisticsQuiz = () => {
               <div style={S.progBar}><div style={S.progFill(progress)}/></div>
             </div>
 
-            {/* Question card */}
             <div style={S.qCard} ref={questionRef}>
               <div style={S.badgeStrip}>
                 <span className={`badge bg-${DIFF_COLORS[q.difficulty]||'secondary'}`} style={{fontSize:'0.75rem'}}>{q.difficulty}</span>
@@ -909,7 +1002,6 @@ const StatisticsQuiz = () => {
               </div>
             </div>
 
-            {/* Prev / Next / Submit */}
             <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
               <button style={{...S.navPrev, opacity:currentIndex===0?0.4:1, cursor:currentIndex===0?'not-allowed':'pointer'}}
                 onClick={()=>currentIndex>0&&goTo(currentIndex-1)} disabled={currentIndex===0}>
@@ -924,7 +1016,6 @@ const StatisticsQuiz = () => {
             </div>
           </div>
 
-          {/* Sidebar navigator — desktop only */}
           <div className="col-md-4 col-lg-3 d-none d-md-block">
             <QuestionNav questions={questions} answers={answers} currentIndex={currentIndex} goTo={goTo}/>
           </div>
