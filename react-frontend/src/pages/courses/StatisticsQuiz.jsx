@@ -313,7 +313,7 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
                   background:results.percentage>=60?'linear-gradient(135deg,#28a745,#20c997)':'linear-gradient(135deg,#dc3545,#c82333)',
                   display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
                   <span style={{fontSize:28,fontWeight:700,color:'#fff'}}>{results.percentage}%</span>
-                  <span style={{fontSize:12,color:'rgba(255,255,255,0.85)'}}>{Number.isInteger(results.score)?results.score:results.score.toFixed(2)}/{results.totalPossible}</span>
+                  <span style={{fontSize:12,color:'rgba(255,255,255,0.85)'}}>{results.score}/{results.totalPossible}</span>
                 </div>
               </div>
               <div className="col-auto d-flex flex-column justify-content-center text-start">
@@ -339,11 +339,9 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
               <div className="card-body" style={{cursor:'pointer'}} onClick={()=>setExpanded(isOpen?null:idx)}>
                 <div className="d-flex align-items-start gap-3">
                   <div style={{width:30,height:30,borderRadius:'50%',flexShrink:0,
-                    background: res?.isCorrect ? '#28a745'
-                              : (res?.isMSQ && res?.partialScore > 0) ? '#f6c23e'
-                              : '#dc3545',
+                    background:res?.isCorrect?'#28a745':'#dc3545',
                     display:'flex',alignItems:'center',justifyContent:'center'}}>
-                    <i className={`bi ${res?.isCorrect ? 'bi-check-lg' : (res?.isMSQ && res?.partialScore > 0) ? 'bi-dash-lg' : 'bi-x-lg'} text-white`} style={{fontSize:13}}/>
+                    <i className={`bi ${res?.isCorrect?'bi-check-lg':'bi-x-lg'} text-white`} style={{fontSize:13}}/>
                   </div>
                   <div className="flex-grow-1">
                     <div className="d-flex justify-content-between align-items-start gap-2">
@@ -361,7 +359,6 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
                       <span className={`badge bg-${DIFF_COLORS[q.difficulty]||'secondary'}`}>{q.difficulty}</span>
                       <span className="badge" style={{background:topicColor}}>{q.originalTopic||q.topic}</span>
                       {res?.timeTaken>0&&<span className="badge bg-light text-dark"><i className="bi bi-clock me-1"/>{res.timeTaken}s</span>}
-                      {res?.isMSQ&&<span className="badge" style={{background: res.isCorrect?'#28a745': res.partialScore>0?'#f6c23e':'#dc3545',color:'#fff'}}>{res.partialScore}/{res.maxScore} pts</span>}
                     </div>
                   </div>
                 </div>
@@ -468,27 +465,9 @@ const StatisticsQuiz = () => {
   const questionRef       = useRef(null)
   const devToolsInterval  = useRef(null)
 
-  // ── FIX: track last cheat timestamp to enforce per-type cooldown ──────────
-  const lastCheatTimeRef  = useRef({})   // { [type]: timestamp }
-  const CHEAT_COOLDOWN_MS = 30_000       // 30 s between same-type events
-  // Threshold stays at 5 — but tab_switch only counts after 10 s of absence
-  const CHEAT_THRESHOLD   = 5
-  // ── FIX: baseline window dimensions captured once on mount ────────────────
-  const baseWindowRef = useRef({ outerHeight: 0, outerWidth: 0, innerHeight: 0, innerWidth: 0 })
-
   useEffect(()=>{ loadMathJax() },[])
   useEffect(()=>{ if(questionRef.current) typesetEl(questionRef.current) },[currentIndex,questions])
   useEffect(()=>{ checkAuth() },[])
-
-  // Capture baseline window dimensions on mount (before any virtual keyboard / toolbar changes)
-  useEffect(() => {
-    baseWindowRef.current = {
-      outerHeight: window.outerHeight,
-      outerWidth:  window.outerWidth,
-      innerHeight: window.innerHeight,
-      innerWidth:  window.innerWidth,
-    }
-  }, [])
 
   const checkAuth = async () => {
     try {
@@ -515,6 +494,7 @@ const StatisticsQuiz = () => {
         )
         const res=await Promise.all(fetches)
         allQuestions=res.flat()
+        // Give every question a guaranteed unique key using its flat index
         allQuestions=allQuestions.map((q,i)=>({...q,_id:`${q.originalTopic}__idx${i}__${q._id}`}))
         for(let i=allQuestions.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[allQuestions[i],allQuestions[j]]=[allQuestions[j],allQuestions[i]]}
       } else {
@@ -531,130 +511,49 @@ const StatisticsQuiz = () => {
     finally { setLoading(false) }
   }
 
-  // ── FIX: recordCheat now enforces per-type cooldown and higher threshold ───
+  // Anti-cheat
   const recordCheat = useCallback(async type => {
-    const now = Date.now()
-    const lastTime = lastCheatTimeRef.current[type] || 0
-
-    // Skip if same cheat type fired within cooldown window
-    if (now - lastTime < CHEAT_COOLDOWN_MS) return
-    lastCheatTimeRef.current[type] = now
-
-    cheatingRef.current += 1
-    const u = userRef.current
-    if (u?.email) {
-      axios.post(`${API_URL}/api/log-cheating`, {
-        username: u.username || u.email,
-        email: u.email,
-        cheatingType: type,
-        timestamp: new Date(),
-        currentQuestion: cheatingRef.current,
-        quizType: topic,
-      }, { withCredentials: true }).catch(() => {})
-    }
-
-    if (cheatingRef.current >= CHEAT_THRESHOLD) {
-      alert('Too many suspicious activities detected. Quiz will be auto-submitted.')
-      doSubmit()
-    }
-  }, [topic])
+    cheatingRef.current+=1
+    const u=userRef.current
+    if(u?.email) axios.post(`${API_URL}/api/log-cheating`,{username:u.username||u.email,email:u.email,cheatingType:type,timestamp:new Date(),currentQuestion:cheatingRef.current,quizType:topic},{withCredentials:true}).catch(()=>{})
+    if(cheatingRef.current>=5){ alert('Too many suspicious activities detected. Quiz will be auto-submitted.'); doSubmit() }
+  },[topic])
 
   useEffect(()=>{
-    const onCtx = e => { e.preventDefault(); recordCheat('right_click'); return false }
-
-    const onKey = e => {
-      if (
-        e.keyCode === 123 ||
-        (e.ctrlKey && e.shiftKey && e.keyCode === 73) ||
-        (e.ctrlKey && e.keyCode === 85) ||
-        (e.ctrlKey && e.keyCode === 83) ||
-        e.keyCode === 44
-      ) {
-        e.preventDefault(); recordCheat('keyboard_shortcut'); return false
-      }
-      if (e.ctrlKey && (e.keyCode === 65 || e.keyCode === 67 || e.keyCode === 86)) {
-        e.preventDefault(); recordCheat('copy_paste'); return false
-      }
+    const onCtx=e=>{e.preventDefault();recordCheat('right_click');return false}
+    const onKey=e=>{
+      if(e.keyCode===123||(e.ctrlKey&&e.shiftKey&&e.keyCode===73)||(e.ctrlKey&&e.keyCode===85)||(e.ctrlKey&&e.keyCode===83)||e.keyCode===44){e.preventDefault();recordCheat('keyboard_shortcut');return false}
+      if(e.ctrlKey&&(e.keyCode===65||e.keyCode===67||e.keyCode===86)){e.preventDefault();recordCheat('copy_paste');return false}
     }
-
-    const onSel = () => { recordCheat('text_selection'); return false }
-    const onFocus = () => setWarningOverlay(false)
-
-    // ── FIX: ignore blur caused by the calculator overlay itself,
-    //         and require the window to be unfocused for >1 s (debounce)
-    //         to avoid mobile keyboard / notification false positives
-    let blurTimer = null
-    const onBlur = () => {
-      blurTimer = setTimeout(() => {
-        if (!document.hasFocus() && !showCalc) {
+    const onSel=()=>{recordCheat('text_selection');return false}
+    const onFocus=()=>setWarningOverlay(false)
+    const onBlur=()=>{
+      setTimeout(()=>{
+        if(!document.hasFocus()&&!showCalc){
           recordCheat('tab_switch')
           setWarningOverlay(true)
         }
-      }, 10_000) // 10 s grace — screen-off/on and keyboard blur won't trigger
+      }, 200)
     }
-    const onFocusCancel = () => {
-      clearTimeout(blurTimer)
-      setWarningOverlay(false)
-    }
-
-    document.addEventListener('contextmenu', onCtx)
-    document.addEventListener('keydown', onKey)
-    document.onselectstart = onSel
-    window.addEventListener('focus', onFocusCancel)
-    window.addEventListener('blur', onBlur)
-
-    // ── FIX: devTools detection uses a stable baseline + larger margin
-    //         to avoid false positives from mobile browser chrome (address bar,
-    //         virtual keyboard) and window resize events
-    devToolsInterval.current = setInterval(() => {
-      const base = baseWindowRef.current
-      // Only flag if the *current* dimensions deviate by >200px from baseline
-      // in BOTH axes simultaneously (real devtools open on a side), OR
-      // outerHeight - innerHeight exceeds 200 (devtools docked at bottom).
-      // Mobile virtual keyboards increase innerHeight difference but also
-      // reduce outerHeight, so the delta stays small relative to baseline.
-      const heightDiff = window.outerHeight - window.innerHeight
-      const widthDiff  = window.outerWidth  - window.innerWidth
-      const suspiciouslyLarge = heightDiff > 200 || widthDiff > 200
-
-      // Extra guard: if the outer dimensions themselves changed a lot
-      // (user resized the browser window), update the baseline instead of flagging.
-      const outerChanged =
-        Math.abs(window.outerHeight - base.outerHeight) > 100 ||
-        Math.abs(window.outerWidth  - base.outerWidth)  > 100
-      if (outerChanged) {
-        // Browser window was resized — recalibrate baseline, don't flag
-        baseWindowRef.current = {
-          outerHeight: window.outerHeight,
-          outerWidth:  window.outerWidth,
-          innerHeight: window.innerHeight,
-          innerWidth:  window.innerWidth,
-        }
-        devToolsWarnedRef.current = false
-        return
-      }
-
-      if (suspiciouslyLarge) {
-        if (!devToolsWarnedRef.current) {
-          devToolsWarnedRef.current = true
-          recordCheat('developer_tools')
-          alert('Developer tools detected! This attempt has been logged.')
-        }
-      } else {
-        devToolsWarnedRef.current = false
-      }
-    }, 500)
-
-    return () => {
-      document.removeEventListener('contextmenu', onCtx)
-      document.removeEventListener('keydown', onKey)
-      document.onselectstart = null
-      window.removeEventListener('focus', onFocusCancel)
-      window.removeEventListener('blur', onBlur)
-      clearTimeout(blurTimer)
+    document.addEventListener('contextmenu',onCtx)
+    document.addEventListener('keydown',onKey)
+    document.onselectstart=onSel
+    window.addEventListener('focus',onFocus)
+    window.addEventListener('blur',onBlur)
+    devToolsInterval.current=setInterval(()=>{
+      if(window.outerHeight-window.innerHeight>160||window.outerWidth-window.innerWidth>160){
+        if(!devToolsWarnedRef.current){devToolsWarnedRef.current=true;recordCheat('developer_tools');alert('Developer tools detected! This attempt has been logged.')}
+      } else devToolsWarnedRef.current=false
+    },500)
+    return()=>{
+      document.removeEventListener('contextmenu',onCtx)
+      document.removeEventListener('keydown',onKey)
+      document.onselectstart=null
+      window.removeEventListener('focus',onFocus)
+      window.removeEventListener('blur',onBlur)
       clearInterval(devToolsInterval.current)
     }
-  }, [recordCheat, showCalc])
+  },[recordCheat,showCalc])
 
   const saveCurrentTime = qId => {
     const elapsed=Math.round((Date.now()-questionStartRef.current)/1000)
@@ -672,58 +571,35 @@ const StatisticsQuiz = () => {
   const handleAnswer = (qId,value) => setAnswers(p=>({...p,[qId]:value}))
   const handleMultiSelect = (qId,optIdx,checked) => setAnswers(p=>{const cur=p[qId]||[];return{...p,[qId]:checked?[...cur,optIdx]:cur.filter(i=>i!==optIdx)}})
 
-  // ─── norm helper (shared) ─────────────────────────────────────────────────
-  const norm = (t) => {
-    if (t === undefined || t === null) return ''
-    let str = String(t).trim()
-    str = str.replace(/\s+/g,'').replace(/\\\(/g,'').replace(/\\\)/g,'')
-      .replace(/\\\[/g,'').replace(/\\\]/g,'').replace(/\$/g,'')
-      .replace(/infinity|∞/gi,'inf').replace(/√\(([^)]+)\)/g,'sqrt($1)')
-      .replace(/√(\d+)/g,'sqrt($1)').replace(/≠/g,'!=').replace(/≤/g,'<=')
-      .replace(/≥/g,'>=').replace(/×/g,'*').replace(/÷/g,'/')
-      .replace(/∪/g,'U').replace(/∩/g,'n').replace(/∈/g,'in')
-      .replace(/⊂/g,'subset').replace(/⊆/g,'subseteq')
-    if (str.includes('/') && !str.includes('sqrt')) {
-      const parts = str.split('/')
-      if (parts.length===2 && !isNaN(parts[0]) && !isNaN(parts[1]))
-        str = String(parseFloat(parts[0]) / parseFloat(parts[1]))
-    }
-    return str.replace(/\.0$/,'').toLowerCase()
-  }
+  // ─── checkCorrect (robust, matches IITMMathQuiz) ───────────────────────────
+  const checkCorrect = (question, userAnswer) => {
+    const ca   = question.correct_answer
+    const alts = question.alternative_answers || []
+    const type = question.type === 'mcq' ? 'multiple_choice'
+               : question.type === 'text' ? 'text_input'
+               : question.type
 
-  // ─── scoreQuestion ────────────────────────────────────────────────────────
-  // Returns { partialScore, isCorrect, isMSQ }
-  // • MCQ / numeric / text  → full points or 0  (isCorrect true/false)
-  // • MSQ                   → partial marks using IITM formula
-  //     +points/n  per correct option selected   (n = total correct options)
-  //     −points/3  per wrong option selected
-  //     floored at 0, capped at points
-  const scoreQuestion = (question, userAnswer) => {
-    const ca     = question.correct_answer
-    const alts   = question.alternative_answers || []
-    const points = question.points || 1
-    const type   = question.type === 'mcq'  ? 'multiple_choice'
-                 : question.type === 'text' ? 'text_input'
-                 : question.type
+    if (userAnswer === undefined || userAnswer === null || userAnswer === '') return false
+    if (Array.isArray(userAnswer) && userAnswer.length === 0) return false
 
-    const empty = userAnswer === undefined || userAnswer === null || userAnswer === ''
-                  || (Array.isArray(userAnswer) && userAnswer.length === 0)
-    if (empty) return { partialScore: 0, isCorrect: false, isMSQ: type === 'multiple_select' }
-
-    // ── resolve correct indices helper ────────────────────────────────────
-    const getCorrectIndices = () => {
-      if (Array.isArray(ca))
-        return ca.map(v => typeof v==='number' ? v : parseInt(String(v).trim())).filter(v=>!isNaN(v))
-      if (typeof ca === 'number') return [ca]
-      const asInt = parseInt(String(ca).trim())
-      if (!isNaN(asInt)) return [asInt]
-      return (question.options||[]).reduce((acc,opt,idx)=>{
-        if (norm(opt) === norm(String(ca))) acc.push(idx)
-        return acc
-      },[])
+    const norm = (t) => {
+      if (t === undefined || t === null) return ''
+      let str = String(t).trim()
+      str = str.replace(/\s+/g,'').replace(/\\\(/g,'').replace(/\\\)/g,'')
+        .replace(/\\\[/g,'').replace(/\\\]/g,'').replace(/\$/g,'')
+        .replace(/infinity|∞/gi,'inf').replace(/√\(([^)]+)\)/g,'sqrt($1)')
+        .replace(/√(\d+)/g,'sqrt($1)').replace(/≠/g,'!=').replace(/≤/g,'<=')
+        .replace(/≥/g,'>=').replace(/×/g,'*').replace(/÷/g,'/')
+        .replace(/∪/g,'U').replace(/∩/g,'n').replace(/∈/g,'in')
+        .replace(/⊂/g,'subset').replace(/⊆/g,'subseteq')
+      if (str.includes('/') && !str.includes('sqrt')) {
+        const parts = str.split('/')
+        if (parts.length===2 && !isNaN(parts[0]) && !isNaN(parts[1]))
+          str = String(parseFloat(parts[0]) / parseFloat(parts[1]))
+      }
+      return str.replace(/\.0$/,'').toLowerCase()
     }
 
-    // ── MCQ ───────────────────────────────────────────────────────────────
     if (type === 'multiple_choice') {
       const resolveToIndex = (val) => {
         if (val === undefined || val === null) return -1
@@ -734,65 +610,55 @@ const StatisticsQuiz = () => {
       }
       const userIdx    = resolveToIndex(userAnswer)
       const correctIdx = resolveToIndex(ca)
-      let correct = (userIdx !== -1 && correctIdx !== -1 && userIdx === correctIdx)
-      if (!correct) {
-        const uText = norm(question.options?.[userIdx] ?? userAnswer)
-        const cText = norm(question.options?.[correctIdx] ?? ca)
-        correct = !!(uText && cText && uText === cText)
-      }
-      if (!correct) correct = alts.some(alt => resolveToIndex(alt) === userIdx)
-      return { partialScore: correct ? points : 0, isCorrect: correct, isMSQ: false }
+      if (userIdx !== -1 && correctIdx !== -1 && userIdx === correctIdx) return true
+      const userText    = norm(question.options?.[userIdx] ?? userAnswer)
+      const correctText = norm(question.options?.[correctIdx] ?? ca)
+      if (userText && correctText && userText === correctText) return true
+      return alts.some(alt => resolveToIndex(alt) === userIdx)
     }
 
-    // ── MSQ — IITM partial marking ────────────────────────────────────────
     if (type === 'multiple_select') {
-      const correctIndices = getCorrectIndices()
-      const userIndices    = [...userAnswer].map(v => typeof v==='number' ? v : parseInt(String(v).trim()))
-      const n              = correctIndices.length   // number of correct options
-
-      if (n === 0) return { partialScore: 0, isCorrect: false, isMSQ: true }
-
-      const perCorrect = points / n          // e.g. easy=1/2, medium=2/2, hard=4/2
-      const perWrong   = points / 3          // e.g. easy=0.33, medium=0.67, hard=1.33
-
-      let raw = 0
-      userIndices.forEach(idx => {
-        if (correctIndices.includes(idx)) raw += perCorrect
-        else                              raw -= perWrong
-      })
-
-      const partialScore = parseFloat(Math.max(0, Math.min(points, raw)).toFixed(4))
-      const isCorrect    = partialScore === points   // fully correct only if all correct & none wrong
-
-      return { partialScore, isCorrect, isMSQ: true }
+      if (!Array.isArray(userAnswer) || userAnswer.length === 0) return false
+      let correctIndices = []
+      if (Array.isArray(ca)) {
+        correctIndices = ca.map(v => typeof v==='number'?v:parseInt(String(v).trim())).filter(v=>!isNaN(v))
+      } else if (typeof ca === 'number') {
+        correctIndices = [ca]
+      } else if (!isNaN(parseInt(String(ca).trim()))) {
+        correctIndices = [parseInt(String(ca).trim())]
+      } else {
+        correctIndices = (question.options||[]).reduce((acc,opt,idx)=>{
+          if (norm(opt)===norm(String(ca))) acc.push(idx)
+          return acc
+        },[])
+      }
+      const sortedUser    = [...userAnswer].map(v=>typeof v==='number'?v:parseInt(String(v).trim())).sort((a,b)=>a-b)
+      const sortedCorrect = [...correctIndices].sort((a,b)=>a-b)
+      return JSON.stringify(sortedUser) === JSON.stringify(sortedCorrect)
     }
 
-    // ── Numeric ───────────────────────────────────────────────────────────
     if (type === 'numeric' || type === 'numeric_input') {
       const uNum = parseFloat(String(userAnswer).trim())
       const cNum = parseFloat(String(ca).trim())
-      if (isNaN(uNum) || isNaN(cNum)) return { partialScore: 0, isCorrect: false, isMSQ: false }
+      if (isNaN(uNum) || isNaN(cNum)) return false
       const tol = question.has_tolerance && question.tolerance_value > 0
         ? question.tolerance_value
         : Math.max(Math.abs(cNum) * 0.01, 0.0001)
-      let correct = Math.abs(uNum - cNum) <= tol
-      if (!correct) correct = alts.some(alt => {
+      if (Math.abs(uNum - cNum) <= tol) return true
+      return alts.some(alt => {
         const altNum = parseFloat(String(alt).trim())
         return !isNaN(altNum) && Math.abs(uNum-altNum) <= Math.max(Math.abs(altNum)*0.01, 0.0001)
       })
-      return { partialScore: correct ? points : 0, isCorrect: correct, isMSQ: false }
     }
 
-    // ── Text / other ──────────────────────────────────────────────────────
-    const nUser = norm(String(userAnswer).trim())
-    const nCorr = norm(String(ca).trim())
-    let correct = nUser === nCorr
-    if (!correct) {
-      const uNum = parseFloat(nUser), cNum = parseFloat(nCorr)
-      if (!isNaN(uNum) && !isNaN(cNum)) correct = Math.abs(uNum-cNum) <= Math.max(Math.abs(cNum)*0.01, 0.0001)
-    }
-    if (!correct) correct = alts.some(a => norm(String(a).trim()) === nUser)
-    return { partialScore: correct ? points : 0, isCorrect: correct, isMSQ: false }
+    // text / all other types
+    const normalizedUser    = norm(String(userAnswer).trim())
+    const normalizedCorrect = norm(String(ca).trim())
+    if (normalizedUser === normalizedCorrect) return true
+    const uNum = parseFloat(normalizedUser)
+    const cNum = parseFloat(normalizedCorrect)
+    if (!isNaN(uNum) && !isNaN(cNum) && Math.abs(uNum-cNum) <= Math.max(Math.abs(cNum)*0.01, 0.0001)) return true
+    return alts.some(a => norm(String(a).trim()) === normalizedUser)
   }
 
   const doSubmit = async () => {
@@ -800,21 +666,17 @@ const StatisticsQuiz = () => {
     const questionResults=questions.map(question=>{
       const ua=answers[question._id]
       const fmt=a=>Array.isArray(a)?a.join(', '):String(a??'')
-      const { partialScore, isCorrect, isMSQ } = scoreQuestion(question, ua)
       return{
         questionId:question._id, questionNumber:question.question_number,
         questionText:question.question_text, userAnswer:fmt(ua),
         correctAnswer:fmt(question.correct_answer),
-        isCorrect,
-        isMSQ,
-        partialScore,
-        maxScore: question.points || 1,
+        isCorrect:checkCorrect(question,ua),
         timeTaken:timesRef.current[question._id]||0
       }
     })
-    const score = parseFloat(
-      questionResults.reduce((sum, r) => sum + r.partialScore, 0).toFixed(4)
-    )
+    const score = questionResults.reduce((sum, r, i) => {
+      return sum + (r.isCorrect ? (questions[i].points || 1) : 0)
+    }, 0)
     const totalPossible = questions.reduce((sum, q) => sum + (q.points || 1), 0)
     const percentage = totalPossible > 0 ? Math.round((score / totalPossible) * 100) : 0
     const totalTime = Object.values(timesRef.current).reduce((s,t)=>s+t,0)
@@ -836,7 +698,6 @@ const StatisticsQuiz = () => {
   const handleRetake = () => {
     setAnswers({});setCurrentIndex(0);setSubmitted(false);setResults(null)
     timesRef.current={};cheatingRef.current=0;devToolsWarnedRef.current=false
-    lastCheatTimeRef.current={}
     questionStartRef.current=Date.now()
     if(userRef.current){fetchQuestions(userRef.current.email);setLoading(true)}
   }
@@ -954,6 +815,7 @@ const StatisticsQuiz = () => {
 
       {showCalc&&<Calculator onClose={()=>setShowCalc(false)}/>}
 
+      {/* Floating calc button */}
       <button onClick={()=>setShowCalc(v=>!v)}
         style={{position:'fixed',bottom:20,right:20,width:52,height:52,borderRadius:'50%',
           background:'#7F77DD',border:'none',color:'#fff',fontSize:20,cursor:'pointer',
@@ -962,6 +824,7 @@ const StatisticsQuiz = () => {
         🧮
       </button>
 
+      {/* Mobile: floating nav button */}
       <button className="d-md-none" onClick={()=>setShowMobileNav(v=>!v)}
         style={{position:'fixed',bottom:82,right:20,width:52,height:52,borderRadius:'50%',
           background:'#378ADD',border:'none',color:'#fff',fontSize:11,fontWeight:700,
@@ -972,6 +835,7 @@ const StatisticsQuiz = () => {
         <span>Qs</span>
       </button>
 
+      {/* Mobile nav drawer */}
       {showMobileNav&&(
         <div className="d-md-none" style={{position:'fixed',inset:0,zIndex:10001,background:'rgba(4,44,83,0.5)'}}
           onClick={()=>setShowMobileNav(false)}>
@@ -1017,6 +881,7 @@ const StatisticsQuiz = () => {
 
       <div className="container mb-5">
         <div className="row justify-content-center">
+          {/* Question column */}
           <div className="col-12 col-md-8 col-lg-8">
             <div className="mb-3">
               <div className="d-flex justify-content-between mb-1">
@@ -1026,6 +891,7 @@ const StatisticsQuiz = () => {
               <div style={S.progBar}><div style={S.progFill(progress)}/></div>
             </div>
 
+            {/* Question card */}
             <div style={S.qCard} ref={questionRef}>
               <div style={S.badgeStrip}>
                 <span className={`badge bg-${DIFF_COLORS[q.difficulty]||'secondary'}`} style={{fontSize:'0.75rem'}}>{q.difficulty}</span>
@@ -1043,6 +909,7 @@ const StatisticsQuiz = () => {
               </div>
             </div>
 
+            {/* Prev / Next / Submit */}
             <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
               <button style={{...S.navPrev, opacity:currentIndex===0?0.4:1, cursor:currentIndex===0?'not-allowed':'pointer'}}
                 onClick={()=>currentIndex>0&&goTo(currentIndex-1)} disabled={currentIndex===0}>
@@ -1057,6 +924,7 @@ const StatisticsQuiz = () => {
             </div>
           </div>
 
+          {/* Sidebar navigator — desktop only */}
           <div className="col-md-4 col-lg-3 d-none d-md-block">
             <QuestionNav questions={questions} answers={answers} currentIndex={currentIndex} goTo={goTo}/>
           </div>
