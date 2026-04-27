@@ -313,7 +313,7 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
                   background:results.percentage>=60?'linear-gradient(135deg,#28a745,#20c997)':'linear-gradient(135deg,#dc3545,#c82333)',
                   display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
                   <span style={{fontSize:28,fontWeight:700,color:'#fff'}}>{results.percentage}%</span>
-                  <span style={{fontSize:12,color:'rgba(255,255,255,0.85)'}}>{results.score}/{results.totalPossible}</span>
+                  <span style={{fontSize:12,color:'rgba(255,255,255,0.85)'}}>{Number.isInteger(results.score)?results.score:results.score.toFixed(2)}/{results.totalPossible}</span>
                 </div>
               </div>
               <div className="col-auto d-flex flex-column justify-content-center text-start">
@@ -339,9 +339,11 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
               <div className="card-body" style={{cursor:'pointer'}} onClick={()=>setExpanded(isOpen?null:idx)}>
                 <div className="d-flex align-items-start gap-3">
                   <div style={{width:30,height:30,borderRadius:'50%',flexShrink:0,
-                    background:res?.isCorrect?'#28a745':'#dc3545',
+                    background: res?.isCorrect ? '#28a745'
+                              : (res?.isMSQ && res?.partialScore > 0) ? '#f6c23e'
+                              : '#dc3545',
                     display:'flex',alignItems:'center',justifyContent:'center'}}>
-                    <i className={`bi ${res?.isCorrect?'bi-check-lg':'bi-x-lg'} text-white`} style={{fontSize:13}}/>
+                    <i className={`bi ${res?.isCorrect ? 'bi-check-lg' : (res?.isMSQ && res?.partialScore > 0) ? 'bi-dash-lg' : 'bi-x-lg'} text-white`} style={{fontSize:13}}/>
                   </div>
                   <div className="flex-grow-1">
                     <div className="d-flex justify-content-between align-items-start gap-2">
@@ -359,6 +361,7 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
                       <span className={`badge bg-${DIFF_COLORS[q.difficulty]||'secondary'}`}>{q.difficulty}</span>
                       <span className="badge" style={{background:topicColor}}>{q.originalTopic||q.topic}</span>
                       {res?.timeTaken>0&&<span className="badge bg-light text-dark"><i className="bi bi-clock me-1"/>{res.timeTaken}s</span>}
+                      {res?.isMSQ&&<span className="badge" style={{background: res.isCorrect?'#28a745': res.partialScore>0?'#f6c23e':'#dc3545',color:'#fff'}}>{res.partialScore}/{res.maxScore} pts</span>}
                     </div>
                   </div>
                 </div>
@@ -669,35 +672,58 @@ const StatisticsQuiz = () => {
   const handleAnswer = (qId,value) => setAnswers(p=>({...p,[qId]:value}))
   const handleMultiSelect = (qId,optIdx,checked) => setAnswers(p=>{const cur=p[qId]||[];return{...p,[qId]:checked?[...cur,optIdx]:cur.filter(i=>i!==optIdx)}})
 
-  // ─── checkCorrect ──────────────────────────────────────────────────────────
-  const checkCorrect = (question, userAnswer) => {
-    const ca   = question.correct_answer
-    const alts = question.alternative_answers || []
-    const type = question.type === 'mcq' ? 'multiple_choice'
-               : question.type === 'text' ? 'text_input'
-               : question.type
+  // ─── norm helper (shared) ─────────────────────────────────────────────────
+  const norm = (t) => {
+    if (t === undefined || t === null) return ''
+    let str = String(t).trim()
+    str = str.replace(/\s+/g,'').replace(/\\\(/g,'').replace(/\\\)/g,'')
+      .replace(/\\\[/g,'').replace(/\\\]/g,'').replace(/\$/g,'')
+      .replace(/infinity|∞/gi,'inf').replace(/√\(([^)]+)\)/g,'sqrt($1)')
+      .replace(/√(\d+)/g,'sqrt($1)').replace(/≠/g,'!=').replace(/≤/g,'<=')
+      .replace(/≥/g,'>=').replace(/×/g,'*').replace(/÷/g,'/')
+      .replace(/∪/g,'U').replace(/∩/g,'n').replace(/∈/g,'in')
+      .replace(/⊂/g,'subset').replace(/⊆/g,'subseteq')
+    if (str.includes('/') && !str.includes('sqrt')) {
+      const parts = str.split('/')
+      if (parts.length===2 && !isNaN(parts[0]) && !isNaN(parts[1]))
+        str = String(parseFloat(parts[0]) / parseFloat(parts[1]))
+    }
+    return str.replace(/\.0$/,'').toLowerCase()
+  }
 
-    if (userAnswer === undefined || userAnswer === null || userAnswer === '') return false
-    if (Array.isArray(userAnswer) && userAnswer.length === 0) return false
+  // ─── scoreQuestion ────────────────────────────────────────────────────────
+  // Returns { partialScore, isCorrect, isMSQ }
+  // • MCQ / numeric / text  → full points or 0  (isCorrect true/false)
+  // • MSQ                   → partial marks using IITM formula
+  //     +points/n  per correct option selected   (n = total correct options)
+  //     −points/3  per wrong option selected
+  //     floored at 0, capped at points
+  const scoreQuestion = (question, userAnswer) => {
+    const ca     = question.correct_answer
+    const alts   = question.alternative_answers || []
+    const points = question.points || 1
+    const type   = question.type === 'mcq'  ? 'multiple_choice'
+                 : question.type === 'text' ? 'text_input'
+                 : question.type
 
-    const norm = (t) => {
-      if (t === undefined || t === null) return ''
-      let str = String(t).trim()
-      str = str.replace(/\s+/g,'').replace(/\\\(/g,'').replace(/\\\)/g,'')
-        .replace(/\\\[/g,'').replace(/\\\]/g,'').replace(/\$/g,'')
-        .replace(/infinity|∞/gi,'inf').replace(/√\(([^)]+)\)/g,'sqrt($1)')
-        .replace(/√(\d+)/g,'sqrt($1)').replace(/≠/g,'!=').replace(/≤/g,'<=')
-        .replace(/≥/g,'>=').replace(/×/g,'*').replace(/÷/g,'/')
-        .replace(/∪/g,'U').replace(/∩/g,'n').replace(/∈/g,'in')
-        .replace(/⊂/g,'subset').replace(/⊆/g,'subseteq')
-      if (str.includes('/') && !str.includes('sqrt')) {
-        const parts = str.split('/')
-        if (parts.length===2 && !isNaN(parts[0]) && !isNaN(parts[1]))
-          str = String(parseFloat(parts[0]) / parseFloat(parts[1]))
-      }
-      return str.replace(/\.0$/,'').toLowerCase()
+    const empty = userAnswer === undefined || userAnswer === null || userAnswer === ''
+                  || (Array.isArray(userAnswer) && userAnswer.length === 0)
+    if (empty) return { partialScore: 0, isCorrect: false, isMSQ: type === 'multiple_select' }
+
+    // ── resolve correct indices helper ────────────────────────────────────
+    const getCorrectIndices = () => {
+      if (Array.isArray(ca))
+        return ca.map(v => typeof v==='number' ? v : parseInt(String(v).trim())).filter(v=>!isNaN(v))
+      if (typeof ca === 'number') return [ca]
+      const asInt = parseInt(String(ca).trim())
+      if (!isNaN(asInt)) return [asInt]
+      return (question.options||[]).reduce((acc,opt,idx)=>{
+        if (norm(opt) === norm(String(ca))) acc.push(idx)
+        return acc
+      },[])
     }
 
+    // ── MCQ ───────────────────────────────────────────────────────────────
     if (type === 'multiple_choice') {
       const resolveToIndex = (val) => {
         if (val === undefined || val === null) return -1
@@ -708,54 +734,65 @@ const StatisticsQuiz = () => {
       }
       const userIdx    = resolveToIndex(userAnswer)
       const correctIdx = resolveToIndex(ca)
-      if (userIdx !== -1 && correctIdx !== -1 && userIdx === correctIdx) return true
-      const userText    = norm(question.options?.[userIdx] ?? userAnswer)
-      const correctText = norm(question.options?.[correctIdx] ?? ca)
-      if (userText && correctText && userText === correctText) return true
-      return alts.some(alt => resolveToIndex(alt) === userIdx)
-    }
-
-    if (type === 'multiple_select') {
-      if (!Array.isArray(userAnswer) || userAnswer.length === 0) return false
-      let correctIndices = []
-      if (Array.isArray(ca)) {
-        correctIndices = ca.map(v => typeof v==='number'?v:parseInt(String(v).trim())).filter(v=>!isNaN(v))
-      } else if (typeof ca === 'number') {
-        correctIndices = [ca]
-      } else if (!isNaN(parseInt(String(ca).trim()))) {
-        correctIndices = [parseInt(String(ca).trim())]
-      } else {
-        correctIndices = (question.options||[]).reduce((acc,opt,idx)=>{
-          if (norm(opt)===norm(String(ca))) acc.push(idx)
-          return acc
-        },[])
+      let correct = (userIdx !== -1 && correctIdx !== -1 && userIdx === correctIdx)
+      if (!correct) {
+        const uText = norm(question.options?.[userIdx] ?? userAnswer)
+        const cText = norm(question.options?.[correctIdx] ?? ca)
+        correct = !!(uText && cText && uText === cText)
       }
-      const sortedUser    = [...userAnswer].map(v=>typeof v==='number'?v:parseInt(String(v).trim())).sort((a,b)=>a-b)
-      const sortedCorrect = [...correctIndices].sort((a,b)=>a-b)
-      return JSON.stringify(sortedUser) === JSON.stringify(sortedCorrect)
+      if (!correct) correct = alts.some(alt => resolveToIndex(alt) === userIdx)
+      return { partialScore: correct ? points : 0, isCorrect: correct, isMSQ: false }
     }
 
+    // ── MSQ — IITM partial marking ────────────────────────────────────────
+    if (type === 'multiple_select') {
+      const correctIndices = getCorrectIndices()
+      const userIndices    = [...userAnswer].map(v => typeof v==='number' ? v : parseInt(String(v).trim()))
+      const n              = correctIndices.length   // number of correct options
+
+      if (n === 0) return { partialScore: 0, isCorrect: false, isMSQ: true }
+
+      const perCorrect = points / n          // e.g. easy=1/2, medium=2/2, hard=4/2
+      const perWrong   = points / 3          // e.g. easy=0.33, medium=0.67, hard=1.33
+
+      let raw = 0
+      userIndices.forEach(idx => {
+        if (correctIndices.includes(idx)) raw += perCorrect
+        else                              raw -= perWrong
+      })
+
+      const partialScore = parseFloat(Math.max(0, Math.min(points, raw)).toFixed(4))
+      const isCorrect    = partialScore === points   // fully correct only if all correct & none wrong
+
+      return { partialScore, isCorrect, isMSQ: true }
+    }
+
+    // ── Numeric ───────────────────────────────────────────────────────────
     if (type === 'numeric' || type === 'numeric_input') {
       const uNum = parseFloat(String(userAnswer).trim())
       const cNum = parseFloat(String(ca).trim())
-      if (isNaN(uNum) || isNaN(cNum)) return false
+      if (isNaN(uNum) || isNaN(cNum)) return { partialScore: 0, isCorrect: false, isMSQ: false }
       const tol = question.has_tolerance && question.tolerance_value > 0
         ? question.tolerance_value
         : Math.max(Math.abs(cNum) * 0.01, 0.0001)
-      if (Math.abs(uNum - cNum) <= tol) return true
-      return alts.some(alt => {
+      let correct = Math.abs(uNum - cNum) <= tol
+      if (!correct) correct = alts.some(alt => {
         const altNum = parseFloat(String(alt).trim())
         return !isNaN(altNum) && Math.abs(uNum-altNum) <= Math.max(Math.abs(altNum)*0.01, 0.0001)
       })
+      return { partialScore: correct ? points : 0, isCorrect: correct, isMSQ: false }
     }
 
-    const normalizedUser    = norm(String(userAnswer).trim())
-    const normalizedCorrect = norm(String(ca).trim())
-    if (normalizedUser === normalizedCorrect) return true
-    const uNum = parseFloat(normalizedUser)
-    const cNum = parseFloat(normalizedCorrect)
-    if (!isNaN(uNum) && !isNaN(cNum) && Math.abs(uNum-cNum) <= Math.max(Math.abs(cNum)*0.01, 0.0001)) return true
-    return alts.some(a => norm(String(a).trim()) === normalizedUser)
+    // ── Text / other ──────────────────────────────────────────────────────
+    const nUser = norm(String(userAnswer).trim())
+    const nCorr = norm(String(ca).trim())
+    let correct = nUser === nCorr
+    if (!correct) {
+      const uNum = parseFloat(nUser), cNum = parseFloat(nCorr)
+      if (!isNaN(uNum) && !isNaN(cNum)) correct = Math.abs(uNum-cNum) <= Math.max(Math.abs(cNum)*0.01, 0.0001)
+    }
+    if (!correct) correct = alts.some(a => norm(String(a).trim()) === nUser)
+    return { partialScore: correct ? points : 0, isCorrect: correct, isMSQ: false }
   }
 
   const doSubmit = async () => {
@@ -763,17 +800,21 @@ const StatisticsQuiz = () => {
     const questionResults=questions.map(question=>{
       const ua=answers[question._id]
       const fmt=a=>Array.isArray(a)?a.join(', '):String(a??'')
+      const { partialScore, isCorrect, isMSQ } = scoreQuestion(question, ua)
       return{
         questionId:question._id, questionNumber:question.question_number,
         questionText:question.question_text, userAnswer:fmt(ua),
         correctAnswer:fmt(question.correct_answer),
-        isCorrect:checkCorrect(question,ua),
+        isCorrect,
+        isMSQ,
+        partialScore,
+        maxScore: question.points || 1,
         timeTaken:timesRef.current[question._id]||0
       }
     })
-    const score = questionResults.reduce((sum, r, i) => {
-      return sum + (r.isCorrect ? (questions[i].points || 1) : 0)
-    }, 0)
+    const score = parseFloat(
+      questionResults.reduce((sum, r) => sum + r.partialScore, 0).toFixed(4)
+    )
     const totalPossible = questions.reduce((sum, q) => sum + (q.points || 1), 0)
     const percentage = totalPossible > 0 ? Math.round((score / totalPossible) * 100) : 0
     const totalTime = Object.values(timesRef.current).reduce((s,t)=>s+t,0)
