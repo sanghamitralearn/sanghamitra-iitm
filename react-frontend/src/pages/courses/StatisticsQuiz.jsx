@@ -315,7 +315,6 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
       </div>
 
       <div className="container mb-5">
-        {/* Score card */}
         <div className="card border-0 shadow-sm mb-4 text-center" style={{borderRadius:16}}>
           <div className="card-body py-4">
             <div className="row justify-content-center g-4">
@@ -494,6 +493,7 @@ const StatisticsQuiz = () => {
   const [error, setError]         = useState(null)
   const [saving, setSaving]       = useState(false)
   const [showCalc, setShowCalc]   = useState(false)
+  const showCalcRef = useRef(false)
   const [warningOverlay, setWarningOverlay] = useState(false)
   const [topicColorMap, setTopicColorMap]   = useState({})
   const [hoveredOpt, setHoveredOpt]         = useState(null)
@@ -596,11 +596,11 @@ const StatisticsQuiz = () => {
     let blurTimer = null
     const onBlur = () => {
       blurTimer = setTimeout(() => {
-        if (!document.hasFocus() && !showCalc) {
+        if (!document.hasFocus() && !showCalcRef.current) {
           recordCheat('tab_switch')
           setWarningOverlay(true)
         }
-      }, 10_000)
+      }, 5_000)
     }
     const onFocus = () => { clearTimeout(blurTimer); setWarningOverlay(false) }
 
@@ -609,6 +609,46 @@ const StatisticsQuiz = () => {
     document.onselectstart=onSel
     window.addEventListener('focus',onFocus)
     window.addEventListener('blur',onBlur)
+
+    // Screenshot detection
+    const onKeyUp = (e) => {
+      if (e.keyCode === 44 || e.key === 'PrintScreen') {
+        recordCheat('screenshot_attempt')
+        alert('Screenshots are not allowed during the quiz!')
+      }
+      if (e.key === 's' && e.metaKey && e.shiftKey) {
+        recordCheat('snipping_tool')
+        alert('Snippets are not allowed during the quiz!')
+      }
+      if (e.key === 's' && e.ctrlKey && e.shiftKey) {
+        recordCheat('screenshot_attempt')
+        alert('Screenshots are not allowed during the quiz!')
+      }
+    }
+
+    const onPaste = (e) => {
+      const items = e.clipboardData?.items
+      if (items) {
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf('image') !== -1) {
+            recordCheat('screenshot_paste')
+            alert('Pasting screenshots is not allowed!')
+            e.preventDefault()
+            return
+          }
+        }
+      }
+    }
+
+    const onCopy = (e) => {
+      recordCheat('copy_attempt')
+      e.preventDefault()
+      return false
+    }
+
+    document.addEventListener('keyup', onKeyUp)
+    document.addEventListener('paste', onPaste)
+    document.addEventListener('copy', onCopy)
 
     devToolsInterval.current = setInterval(() => {
       const base = baseWindowRef.current
@@ -637,18 +677,29 @@ const StatisticsQuiz = () => {
     return()=>{
       document.removeEventListener('contextmenu',onCtx)
       document.removeEventListener('keydown',onKey)
+      document.removeEventListener('keyup', onKeyUp)
+      document.removeEventListener('paste', onPaste)
+      document.removeEventListener('copy', onCopy)
       document.onselectstart=null
       window.removeEventListener('focus',onFocus)
       window.removeEventListener('blur',onBlur)
       clearTimeout(blurTimer)
       clearInterval(devToolsInterval.current)
     }
-  },[recordCheat,showCalc])
+  },[recordCheat])
 
   const saveCurrentTime = qId => {
     const elapsed=Math.round((Date.now()-questionStartRef.current)/1000)
     timesRef.current[qId]=(timesRef.current[qId]||0)+elapsed
     questionStartRef.current=Date.now()
+  }
+
+  const toggleCalc = () => {
+    setShowCalc(v => {
+      const nv = !v
+      showCalcRef.current = nv
+      return nv
+    })
   }
 
   const goTo = newIdx => {
@@ -803,13 +854,13 @@ const StatisticsQuiz = () => {
         correctAnswer: fmt(question.correct_answer),
         isCorrect,
         isMSQ,
-        partialScore: Math.round(partialScore * 100) / 100,  // clean decimals
+        partialScore: Math.round(partialScore * 100) / 100,
         maxScore: question.points || 1,
         timeTaken: timesRef.current[question._id] || 0
       }
     })
     const rawScore = questionResults.reduce((sum, r) => sum + r.partialScore, 0)
-    const score = Math.round(rawScore * 100) / 100  // max 2 decimal places
+    const score = Math.round(rawScore * 100) / 100
     const totalPossible = questions.reduce((sum, q) => sum + (q.points || 1), 0)
     const percentage = totalPossible > 0 ? Math.round((score / totalPossible) * 100) : 0
     const totalTime = Object.values(timesRef.current).reduce((s,t)=>s+t,0)
@@ -951,10 +1002,10 @@ const StatisticsQuiz = () => {
         </div>
       )}
 
-      {showCalc&&<Calculator onClose={()=>setShowCalc(false)}/>}
+      {showCalc&&<Calculator onClose={toggleCalc}/>}
 
       {/* Floating calc button */}
-      <button onClick={()=>setShowCalc(v=>!v)}
+      <button onClick={toggleCalc}
         style={{position:'fixed',bottom:20,right:20,width:52,height:52,borderRadius:'50%',
           background:'#7F77DD',border:'none',color:'#fff',fontSize:20,cursor:'pointer',
           zIndex:9998,display:'flex',alignItems:'center',justifyContent:'center',
@@ -1021,7 +1072,6 @@ const StatisticsQuiz = () => {
 
       <div className="container mb-5">
         <div className="row justify-content-center">
-          {/* Question column */}
           <div className="col-12 col-md-8 col-lg-8">
             <div className="mb-3">
               <div className="d-flex justify-content-between mb-1">
@@ -1031,7 +1081,6 @@ const StatisticsQuiz = () => {
               <div style={S.progBar}><div style={S.progFill(progress)}/></div>
             </div>
 
-            {/* Question card */}
             <div style={S.qCard} ref={questionRef}>
               <div style={S.badgeStrip}>
                 <span className={`badge bg-${DIFF_COLORS[q.difficulty]||'secondary'}`} style={{fontSize:'0.75rem'}}>{q.difficulty}</span>
@@ -1049,7 +1098,6 @@ const StatisticsQuiz = () => {
               </div>
             </div>
 
-            {/* Prev / Next / Submit */}
             <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
               <button style={{...S.navPrev, opacity:currentIndex===0?0.4:1, cursor:currentIndex===0?'not-allowed':'pointer'}}
                 onClick={()=>currentIndex>0&&goTo(currentIndex-1)} disabled={currentIndex===0}>
@@ -1064,7 +1112,6 @@ const StatisticsQuiz = () => {
             </div>
           </div>
 
-          {/* Sidebar navigator — desktop only */}
           <div className="col-md-4 col-lg-3 d-none d-md-block">
             <QuestionNav questions={questions} answers={answers} currentIndex={currentIndex} goTo={goTo}/>
           </div>
