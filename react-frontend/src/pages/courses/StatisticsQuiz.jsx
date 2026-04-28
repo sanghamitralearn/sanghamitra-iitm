@@ -615,7 +615,13 @@ const StatisticsQuiz = () => {
     // Logging on every drag/click was burning through the 5-event threshold
     document.onselectstart = () => false
 
+    // ── Tab / window switch detection ──────────────────────────────────────
+    // onBlur          — desktop tab/window switch (5 s grace for quick Alt+Tab)
+    // visibilitychange — mobile app switch, phone lock, browser hide
+    // onFocus          — clears red overlay on return
+
     let blurTimer = null
+
     const onBlur = () => {
       blurTimer = setTimeout(() => {
         if (!document.hasFocus() && !showCalcRef.current) {
@@ -624,12 +630,27 @@ const StatisticsQuiz = () => {
         }
       }, 5_000)
     }
-    const onFocus = () => { clearTimeout(blurTimer); setWarningOverlay(false) }
+
+    const onFocus = () => {
+      clearTimeout(blurTimer)
+      setWarningOverlay(false)
+    }
+
+    const onVisibility = () => {
+      if (document.hidden && !showCalcRef.current) {
+        clearTimeout(blurTimer)         // don't double-count with blur timer
+        recordCheat('tab_switch', true)
+        setWarningOverlay(true)
+      } else if (!document.hidden) {
+        setWarningOverlay(false)
+      }
+    }
 
     document.addEventListener('contextmenu', onCtx)
     document.addEventListener('keydown', onKey)
     window.addEventListener('focus', onFocus)
     window.addEventListener('blur', onBlur)
+    document.addEventListener('visibilitychange', onVisibility)
 
     // FIX 2: PrintScreen handled in keyup only — eliminates double-count from keydown+keyup
     const onKeyUp = e => {
@@ -710,6 +731,7 @@ const StatisticsQuiz = () => {
       document.removeEventListener('keyup', onKeyUp)
       document.removeEventListener('paste', onPaste)
       document.removeEventListener('copy', onCopy)
+      document.removeEventListener('visibilitychange', onVisibility)
       document.onselectstart = null
       window.removeEventListener('focus', onFocus)
       window.removeEventListener('blur', onBlur)
