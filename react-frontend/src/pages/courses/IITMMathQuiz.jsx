@@ -668,20 +668,40 @@ const IITMMathQuiz = () => {
     document.onselectstart = () => false
 
     // ── Tab / window switch detection ──────────────────────────────────────
-    // Three complementary listeners cover all cases:
-    //   onBlur          — desktop tab switch, window minimise (5 s grace period
-    //                     so a brief Alt+Tab to check a formula doesn't count)
-    //   visibilitychange — mobile app switch, phone lock, browser hide
-    //                     (blur doesn't fire reliably on mobile)
-    //   onFocus          — clears the red overlay when the student returns
+    // visibilitychange = PRIMARY (covers desktop tab, mobile app switch, phone lock)
+    // onBlur           = FALLBACK only for edge cases visibilitychange misses
+    //                    (popup windows, some OS-level focus changes)
+    // A visibilityFired flag prevents both from counting the same switch.
+    // Grace periods: 3 s for visibilitychange, 5 s for blur fallback.
+    // Calculator open (showCalcRef.current) suppresses both.
 
     let blurTimer = null
+    let visTimer  = null
+    let visibilityFired = false
+
+    const onVisibility = () => {
+      if (document.hidden) {
+        if (showCalcRef.current) return
+        visibilityFired = true
+        clearTimeout(blurTimer)
+        visTimer = setTimeout(() => {
+          if (document.hidden) {
+            recordCheat('tab_switch', true)
+            setWarningOverlay(true)
+          }
+        }, 3_000)
+      } else {
+        clearTimeout(visTimer)
+        visibilityFired = false
+        setWarningOverlay(false)
+      }
+    }
 
     const onBlur = () => {
-      // 5-second grace: ignore very brief focus losses (e.g. clicking calculator)
+      if (showCalcRef.current) return
       blurTimer = setTimeout(() => {
-        if (!document.hasFocus() && !showCalcRef.current) {
-          recordCheat('tab_switch', true)   // skipCooldown=true → every switch counts
+        if (!document.hasFocus() && !visibilityFired && !showCalcRef.current) {
+          recordCheat('tab_switch', true)
           setWarningOverlay(true)
         }
       }, 5_000)
@@ -689,19 +709,9 @@ const IITMMathQuiz = () => {
 
     const onFocus = () => {
       clearTimeout(blurTimer)
+      clearTimeout(visTimer)
+      visibilityFired = false
       setWarningOverlay(false)
-    }
-
-    // visibilitychange fires immediately — no grace period needed here because
-    // the page being hidden is a definitive signal (not just a click elsewhere)
-    const onVisibility = () => {
-      if (document.hidden && !showCalcRef.current) {
-        clearTimeout(blurTimer)           // don't double-count with blur timer
-        recordCheat('tab_switch', true)
-        setWarningOverlay(true)
-      } else if (!document.hidden) {
-        setWarningOverlay(false)
-      }
     }
 
     document.addEventListener('contextmenu', onCtx)
@@ -783,6 +793,7 @@ const IITMMathQuiz = () => {
       window.removeEventListener('focus', onFocus)
       window.removeEventListener('blur', onBlur)
       clearTimeout(blurTimer)
+      clearTimeout(visTimer)
       clearInterval(devToolsIntervalRef.current)
     }
     cleanupRef.current = cleanup
