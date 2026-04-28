@@ -61,21 +61,26 @@ const IIITMMath = () => {
     const searchName = topicName.toLowerCase().trim();
     
     const topicGroups = {
-      'Week 1 and 2 (Quiz 1)': ['Domain_and_Range', 'Quiz1', 'Week 1 and 2', 'Week1_and_Week2'],
-      'Domain and Range (Week 1)': ['Domain_and_Range-2', 'Quiz2', 'Quiz2_Domain_Range', 'Domain and Range-2', 'Domain_and_Range_2'],
-      'Linear Functions (Week 2)': ['Quiz3', 'Quiz3_Linear_functions', 'Linear_functions', 'Linear_Functions'],
-      'Quadratic Functions (Week 3)': ['Quiz4', 'quadratic', 'Quadratic_functions', 'Quadratic_Functions'],
-      'Linear function (Week 2)': ['Quiz5', 'Linear', 'Linear_functions - 2', 'Linear_functions-2'],
-      'Sets and Relations (Week 1)': ['Quiz6', 'Sets', 'Relations', 'sets_and_relations', 'Sets And Relations', 'Sets_and_Relations'],
-      'Polynomials (Week 4)': ['Quiz7', 'Polynomials', 'Polynomial Function', 'Polynomial_Function'],
-      'Exponential Functions (Week-5)': ['Quiz8', 'function_concepts', 'Exponential', 'Function Concepts', 'Function_Concepts'],
-      'Logarithmic Functions (Week 6)': ['Quiz9', 'Logarithmic', 'logarithmic_functions', 'Logarithmic Functions', 'Logarithmic_Functions'],
-      'Sequence and limit (Week 7)': ['Quiz10', 'Function_Limits', 'Function Limits'],
-      'Limits, Continuity and Differentiation (Week 8)': ['Quiz11', 'Limit_Concepts', 'Differentiation'],
-      'Derivatives and Integrals (Week 9)': ['Quiz12', 'Derivatives_Integrals', 'Derivatives and Integrals', 'Derivatives', 'Integrals'],
-      'Graph Theory (Week 10)': ['Quiz13', 'graph_theory', 'Graph Theory', 'Graph_Theory'],
-      'Graph Properties (Week 11)': ['Quiz14', 'graph_properties', 'Graph Properties', 'Graph_Properties']
-    };
+    'Quiz 1 Midterm': ['Quiz1_Midterm', 'Domain_and_Range', 'Quiz1', 'Week 1 and 2', 'Week1_and_Week2', 'Domain and Range', 'quadratic_functions', 'linear_functions', 'sets_and_relations', 'Polynomials'],
+    'Quiz 1 Midterm - 2': ['Quiz1_midterm', 'Quiz1_Midterm_2'],
+    'Week 1 - Sets and Relations': ['sets_and_relations', 'Quiz6', 'Sets', 'Relations', 'Sets And Relations', 'Sets_and_Relations'],
+    'Week 1 - Domain and Range': ['Domain and Range', 'Domain_and_Range', 'Domain_and_Range-2', 'Quiz2', 'Domain and Range-2'],
+    'Week 2 - Linear Functions': ['linear_functions', 'Linear_functions', 'Quiz3', 'Quiz5', 'Linear_functions-2'],
+    'Week 3 - Quadratic Functions': ['quadratic_functions', 'Quadratic_functions', 'Quiz4', 'quadratic'],
+    'Week 4 - Polynomial Zeros & Multiplicity': ['polynomial_zeros_and_multiplicity', 'Polynomial_Zeros', 'Quiz15'],
+    'Week 4 - Polynomial Functions': ['Polynomials', 'Polynomial_Function', 'Polynomial Function', 'Quiz7'],
+    'Week 5 - Exponential Functions': ['exponential_function', 'Function_Concepts', 'function_concepts', 'Exponential', 'Quiz8'],
+    'Week 5 - Composite Function': ['composite_function', 'Composite_Function', 'Quiz16'],
+    'Week 5 - Inverse Function': ['inverse_function', 'Inverse_function', 'Quiz17'],
+    'Week 6 - Logarithmic Functions': ['logarithmic_functions', 'Logarithmic_Functions', 'Logarithmic', 'Quiz9'],
+    'Week 7 - Sequence': ['sequences', 'Sequence', 'Quiz19'],
+    'Week 7 - Sequence and Limits': ['Function_Limits', 'Function Limits', 'Quiz10'],
+    'Week 8 - Limits, Continuity and Differentiation': ['Limit Concepts', 'Limit_Concepts', 'Differentiation', 'Quiz11'],
+    'Week 9 - Integrals': ['integrals'],
+    'Week 10 - Graph Theory': ['graph_theory', 'Graph_Theory', 'Graph Theory', 'Quiz13'],
+    'Week 11 - Graph Properties': ['graph_properties', 'Graph_Properties', 'Graph Properties', 'Quiz14']
+  };
+
 
     for (const [displayTopic, variations] of Object.entries(topicGroups)) {
       for (const variation of variations) {
