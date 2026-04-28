@@ -331,7 +331,7 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
               <div className="col-auto d-flex flex-column justify-content-center text-start">
                 <h4 className="mb-1">{results.percentage>=80?'Excellent!':results.percentage>=60?'Good job!':'Keep practicing!'}</h4>
                 <p className="text-muted mb-1">
-                  Correct: <strong className="text-success">{results.questionResults.filter(r => r.isCorrect).length} Q ({Number.isInteger(results.score) ? results.score : results.score.toFixed(1)} pts)</strong> &nbsp;|&nbsp; 
+                  Correct: <strong className="text-success">{results.questionResults.filter(r => r.isCorrect).length} Q ({Number.isInteger(results.score) ? results.score : results.score.toFixed(1)} pts)</strong> &nbsp;|&nbsp;
                   Wrong: <strong className="text-danger">{results.questionResults.filter(r => !r.isCorrect).length} Q</strong>
                 </p>
                 <p className="text-muted mb-0">Total time: {Math.floor(results.totalTime/60)}m {results.totalTime%60}s</p>
@@ -506,10 +506,15 @@ const StatisticsQuiz = () => {
   const userRef           = useRef(null)
   const questionRef       = useRef(null)
   const devToolsInterval  = useRef(null)
-  const lastCheatTimeRef    = useRef({})
-  const baseWindowRef       = useRef({ outerHeight:0, outerWidth:0, innerHeight:0, innerWidth:0 })
-  const CHEAT_COOLDOWN_MS   = 30_000
-  const CHEAT_THRESHOLD     = 5
+  const lastCheatTimeRef  = useRef({})
+  const baseWindowRef     = useRef({ outerHeight:0, outerWidth:0, innerHeight:0, innerWidth:0 })
+
+  const doSubmitRef  = useRef(null)
+  // FIX 3: store cleanup fn so doSubmit can tear down all listeners immediately
+  const cleanupRef   = useRef(null)
+
+  const CHEAT_COOLDOWN_MS = 30_000
+  const CHEAT_THRESHOLD   = 5
 
   useEffect(()=>{ loadMathJax() },[])
   useEffect(()=>{ if(questionRef.current) typesetEl(questionRef.current) },[currentIndex,questions])
@@ -563,11 +568,10 @@ const StatisticsQuiz = () => {
     finally { setLoading(false) }
   }
 
-  // Anti-cheat
-  const recordCheat = useCallback(async (type) => {
+  const recordCheat = useCallback(async (type, skipCooldown = false) => {
     const now = Date.now()
     const lastTime = lastCheatTimeRef.current[type] || 0
-    if (now - lastTime < CHEAT_COOLDOWN_MS) return
+    if (!skipCooldown && now - lastTime < CHEAT_COOLDOWN_MS) return
     lastCheatTimeRef.current[type] = now
 
     cheatingRef.current += 1
@@ -581,57 +585,74 @@ const StatisticsQuiz = () => {
     }
     if (cheatingRef.current >= CHEAT_THRESHOLD) {
       alert('Too many suspicious activities detected. Quiz will be auto-submitted.')
-      doSubmit()
+      doSubmitRef.current?.()
     }
   }, [topic])
 
-  useEffect(()=>{
-    const onCtx=e=>{e.preventDefault();recordCheat('right_click');return false}
-    const onKey=e=>{
-      if(e.keyCode===123||(e.ctrlKey&&e.shiftKey&&e.keyCode===73)||(e.ctrlKey&&e.keyCode===85)||(e.ctrlKey&&e.keyCode===83)||e.keyCode===44){e.preventDefault();recordCheat('keyboard_shortcut');return false}
-      if(e.ctrlKey&&(e.keyCode===65||e.keyCode===67||e.keyCode===86)){e.preventDefault();recordCheat('copy_paste');return false}
+  useEffect(() => {
+    const onCtx = e => { e.preventDefault(); recordCheat('right_click'); return false }
+
+    const onKey = e => {
+      // FIX 2: removed keyCode 44 (PrintScreen) from keydown — handled in keyup only
+      if (
+        e.keyCode === 123 ||
+        (e.ctrlKey && e.shiftKey && e.keyCode === 73) ||
+        (e.ctrlKey && e.keyCode === 85) ||
+        (e.ctrlKey && e.keyCode === 83)
+      ) {
+        e.preventDefault()
+        recordCheat('keyboard_shortcut')
+        return false
+      }
+      if (e.ctrlKey && (e.keyCode === 65 || e.keyCode === 67 || e.keyCode === 86)) {
+        e.preventDefault()
+        recordCheat('copy_paste')
+        return false
+      }
     }
-    const onSel=()=>{recordCheat('text_selection');return false}
-    
+
+    // FIX 1: onselectstart silently blocks selection — no cheat logging
+    // Logging on every drag/click was burning through the 5-event threshold
+    document.onselectstart = () => false
+
     let blurTimer = null
     const onBlur = () => {
       blurTimer = setTimeout(() => {
         if (!document.hasFocus() && !showCalcRef.current) {
-          recordCheat('tab_switch')
+          recordCheat('tab_switch', true)
           setWarningOverlay(true)
         }
       }, 5_000)
     }
     const onFocus = () => { clearTimeout(blurTimer); setWarningOverlay(false) }
 
-    document.addEventListener('contextmenu',onCtx)
-    document.addEventListener('keydown',onKey)
-    document.onselectstart=onSel
-    window.addEventListener('focus',onFocus)
-    window.addEventListener('blur',onBlur)
+    document.addEventListener('contextmenu', onCtx)
+    document.addEventListener('keydown', onKey)
+    window.addEventListener('focus', onFocus)
+    window.addEventListener('blur', onBlur)
 
-    // Screenshot detection
-    const onKeyUp = (e) => {
+    // FIX 2: PrintScreen handled in keyup only — eliminates double-count from keydown+keyup
+    const onKeyUp = e => {
       if (e.keyCode === 44 || e.key === 'PrintScreen') {
-        recordCheat('screenshot_attempt')
+        recordCheat('screenshot_attempt', true)
         alert('Screenshots are not allowed during the quiz!')
       }
       if (e.key === 's' && e.metaKey && e.shiftKey) {
-        recordCheat('snipping_tool')
+        recordCheat('snipping_tool', true)
         alert('Snippets are not allowed during the quiz!')
       }
       if (e.key === 's' && e.ctrlKey && e.shiftKey) {
-        recordCheat('screenshot_attempt')
+        recordCheat('screenshot_attempt', true)
         alert('Screenshots are not allowed during the quiz!')
       }
     }
 
-    const onPaste = (e) => {
+    const onPaste = e => {
       const items = e.clipboardData?.items
       if (items) {
         for (let i = 0; i < items.length; i++) {
           if (items[i].type.indexOf('image') !== -1) {
-            recordCheat('screenshot_paste')
+            recordCheat('screenshot_paste', true)
             alert('Pasting screenshots is not allowed!')
             e.preventDefault()
             return
@@ -640,7 +661,7 @@ const StatisticsQuiz = () => {
       }
     }
 
-    const onCopy = (e) => {
+    const onCopy = e => {
       recordCheat('copy_attempt')
       e.preventDefault()
       return false
@@ -654,44 +675,55 @@ const StatisticsQuiz = () => {
       const base = baseWindowRef.current
       const heightDiff = window.outerHeight - window.innerHeight
       const widthDiff  = window.outerWidth  - window.innerWidth
-      const outerChanged =
-        Math.abs(window.outerHeight - base.outerHeight) > 100 ||
-        Math.abs(window.outerWidth  - base.outerWidth)  > 100
-      if (outerChanged) {
-        baseWindowRef.current = {
-          outerHeight: window.outerHeight, outerWidth: window.outerWidth,
-          innerHeight: window.innerHeight, innerWidth: window.innerWidth,
-        }
-        devToolsWarnedRef.current = false
-        return
-      }
-      if (heightDiff > 200 || widthDiff > 200) {
+
+      const outerUnchanged =
+        Math.abs(window.outerHeight - base.outerHeight) < 10 &&
+        Math.abs(window.outerWidth  - base.outerWidth)  < 10
+
+      // FIX 4: only flag when outer dimensions are stable (rules out zoom/resize)
+      // and use a higher threshold (300px) to reduce false positives on mobile/scaling
+      if (outerUnchanged && (heightDiff > 300 || widthDiff > 300)) {
         if (!devToolsWarnedRef.current) {
           devToolsWarnedRef.current = true
           recordCheat('developer_tools')
           alert('Developer tools detected! This attempt has been logged.')
         }
-      } else { devToolsWarnedRef.current = false }
+      } else {
+        devToolsWarnedRef.current = false
+        // Update baseline when outer size legitimately changes (resize, zoom)
+        if (
+          Math.abs(window.outerHeight - base.outerHeight) >= 10 ||
+          Math.abs(window.outerWidth  - base.outerWidth)  >= 10
+        ) {
+          baseWindowRef.current = {
+            outerHeight: window.outerHeight, outerWidth: window.outerWidth,
+            innerHeight: window.innerHeight, innerWidth: window.innerWidth,
+          }
+        }
+      }
     }, 500)
 
-    return()=>{
-      document.removeEventListener('contextmenu',onCtx)
-      document.removeEventListener('keydown',onKey)
+    // FIX 3: store cleanup so doSubmit can call it immediately on auto-submit
+    const cleanup = () => {
+      document.removeEventListener('contextmenu', onCtx)
+      document.removeEventListener('keydown', onKey)
       document.removeEventListener('keyup', onKeyUp)
       document.removeEventListener('paste', onPaste)
       document.removeEventListener('copy', onCopy)
-      document.onselectstart=null
-      window.removeEventListener('focus',onFocus)
-      window.removeEventListener('blur',onBlur)
+      document.onselectstart = null
+      window.removeEventListener('focus', onFocus)
+      window.removeEventListener('blur', onBlur)
       clearTimeout(blurTimer)
       clearInterval(devToolsInterval.current)
     }
-  },[recordCheat])
+    cleanupRef.current = cleanup
+    return cleanup
+  }, [recordCheat])
 
   const saveCurrentTime = qId => {
-    const elapsed=Math.round((Date.now()-questionStartRef.current)/1000)
-    timesRef.current[qId]=(timesRef.current[qId]||0)+elapsed
-    questionStartRef.current=Date.now()
+    const elapsed = Math.round((Date.now() - questionStartRef.current) / 1000)
+    timesRef.current[qId] = (timesRef.current[qId] || 0) + elapsed
+    questionStartRef.current = Date.now()
   }
 
   const toggleCalc = () => {
@@ -703,14 +735,14 @@ const StatisticsQuiz = () => {
   }
 
   const goTo = newIdx => {
-    const q=questions[currentIndex]; if(q) saveCurrentTime(q._id)
+    const q = questions[currentIndex]; if (q) saveCurrentTime(q._id)
     setCurrentIndex(newIdx)
     setHoveredOpt(null)
     setShowMobileNav(false)
   }
 
-  const handleAnswer = (qId,value) => setAnswers(p=>({...p,[qId]:value}))
-  
+  const handleAnswer = (qId, value) => setAnswers(p => ({ ...p, [qId]: value }))
+
   const handleMultiSelect = (qId, optIdx, checked, optText) => {
     setAnswers(p => {
       const cur = p[qId] || []
@@ -737,7 +769,7 @@ const StatisticsQuiz = () => {
     return str.replace(/\.0$/,'').toLowerCase()
   }
 
-  // ─── scoreQuestion — returns { partialScore, isCorrect, isMSQ } ───────────
+  // ─── scoreQuestion ────────────────────────────────────────────────────────
   const scoreQuestion = (question, userAnswer) => {
     const ca     = question.correct_answer
     const alts   = question.alternative_answers || []
@@ -750,7 +782,6 @@ const StatisticsQuiz = () => {
                   || (Array.isArray(userAnswer) && userAnswer.length === 0)
     if (empty) return { partialScore: 0, isCorrect: false, isMSQ: type === 'multiple_select' }
 
-    // ── MCQ ─────────────────────────────────────────────────────────────────
     if (type === 'multiple_choice') {
       const resolveToIndex = (val) => {
         if (val === undefined || val === null) return -1
@@ -771,7 +802,6 @@ const StatisticsQuiz = () => {
       return { partialScore: correct ? points : 0, isCorrect: correct, isMSQ: false }
     }
 
-    // ── MSQ — IITM partial marking (stores option TEXT in answers) ──────
     if (type === 'multiple_select') {
       if (!Array.isArray(userAnswer) || userAnswer.length === 0)
         return { partialScore: 0, isCorrect: false, isMSQ: true }
@@ -814,7 +844,6 @@ const StatisticsQuiz = () => {
       return { partialScore, isCorrect, isMSQ: true }
     }
 
-    // ── Numeric ──────────────────────────────────────────────────────────────
     if (type === 'numeric' || type === 'numeric_input') {
       const uNum = parseFloat(String(userAnswer).trim())
       const cNum = parseFloat(String(ca).trim())
@@ -830,7 +859,6 @@ const StatisticsQuiz = () => {
       return { partialScore: correct ? points : 0, isCorrect: correct, isMSQ: false }
     }
 
-    // ── Text / other ─────────────────────────────────────────────────────────
     const nUser = norm(String(userAnswer).trim())
     const nCorr = norm(String(ca).trim())
     let correct = nUser === nCorr
@@ -843,7 +871,10 @@ const StatisticsQuiz = () => {
   }
 
   const doSubmit = async () => {
-    const q=questions[currentIndex]; if(q) saveCurrentTime(q._id)
+    // FIX 3: tear down all listeners immediately so no more cheat events fire post-submit
+    cleanupRef.current?.()
+
+    const q = questions[currentIndex]; if (q) saveCurrentTime(q._id)
     const questionResults = questions.map(question => {
       const ua = answers[question._id]
       const fmt = (a) => Array.isArray(a) ? a.join(', ') : String(a ?? '')
@@ -863,28 +894,31 @@ const StatisticsQuiz = () => {
     const score = Math.round(rawScore * 100) / 100
     const totalPossible = questions.reduce((sum, q) => sum + (q.points || 1), 0)
     const percentage = totalPossible > 0 ? Math.round((score / totalPossible) * 100) : 0
-    const totalTime = Object.values(timesRef.current).reduce((s,t)=>s+t,0)
+    const totalTime = Object.values(timesRef.current).reduce((s, t) => s + t, 0)
     setSaving(true)
     try {
-      const u=userRef.current
-      await axios.post(`${API_URL}/api/statistics_scores`,{
-        email:u.email, username:u.username||u.name||u.email,
-        quizData:{topic,score,maxScore:totalPossible,totalQuestions:questions.length,percentage,timestamp:new Date(),questionResults}
-      },{withCredentials:true})
-    } catch(err){ console.error('Score save failed:',err) }
-    finally{ setSaving(false) }
+      const u = userRef.current
+      await axios.post(`${API_URL}/api/statistics_scores`, {
+        email: u.email, username: u.username || u.name || u.email,
+        quizData: { topic, score, maxScore: totalPossible, totalQuestions: questions.length, percentage, timestamp: new Date(), questionResults }
+      }, { withCredentials: true })
+    } catch(err) { console.error('Score save failed:', err) }
+    finally { setSaving(false) }
     setResults({ score, percentage, totalTime, totalPossible, questionResults })
     setSubmitted(true)
-    clearInterval(devToolsInterval.current)
-    document.onselectstart=null
   }
 
+  // Keep doSubmitRef in sync with the latest doSubmit closure
+  useEffect(() => {
+    doSubmitRef.current = doSubmit
+  })
+
   const handleRetake = () => {
-    setAnswers({});setCurrentIndex(0);setSubmitted(false);setResults(null)
-    timesRef.current={};cheatingRef.current=0;devToolsWarnedRef.current=false
+    setAnswers({}); setCurrentIndex(0); setSubmitted(false); setResults(null)
+    timesRef.current = {}; cheatingRef.current = 0; devToolsWarnedRef.current = false
     lastCheatTimeRef.current = {}
-    questionStartRef.current=Date.now()
-    if(userRef.current){fetchQuestions(userRef.current.email);setLoading(true)}
+    questionStartRef.current = Date.now()
+    if (userRef.current) { fetchQuestions(userRef.current.email); setLoading(true) }
   }
 
   const renderInput = question => {
@@ -895,7 +929,7 @@ const StatisticsQuiz = () => {
     if (normalType === 'multiple_choice') {
       return (
         <div className="mt-3" style={{display:'flex',flexDirection:'column',gap:9}}>
-          {options?.map((opt,idx) => {
+          {options?.map((opt, idx) => {
             const isSelected = (typeof answer==='string'?parseInt(answer):answer)===idx
             const isHovered  = hoveredOpt===`${_id}-${idx}`
             const style      = isSelected ? S.optSelected : isHovered ? S.optHovered : S.optBase
@@ -922,7 +956,7 @@ const StatisticsQuiz = () => {
         <div className="mt-3">
           <small className="text-muted d-block mb-2"><i className="bi bi-info-circle me-1"/>Select all that apply</small>
           <div style={{display:'flex',flexDirection:'column',gap:9}}>
-            {options?.map((opt,idx) => {
+            {options?.map((opt, idx) => {
               const isSelected = sel.includes(opt)
               const isHovered  = hoveredOpt===`${_id}-${idx}`
               const style      = isSelected ? S.optSelected : isHovered ? S.optHovered : S.optBase
@@ -972,7 +1006,7 @@ const StatisticsQuiz = () => {
     )
   }
 
-  if(loading) return(
+  if (loading) return (
     <div className="d-flex justify-content-center align-items-center" style={{height:'50vh'}}>
       <div className="text-center">
         <div className="spinner-border mb-3" style={{color:'#7F77DD'}} role="status"/>
@@ -980,8 +1014,16 @@ const StatisticsQuiz = () => {
       </div>
     </div>
   )
-  if(error) return(<div className="container mt-5 text-center"><div className="alert alert-warning">{error}</div><Link to="/courses/statistics" className="btn btn-primary">Back to Statistics</Link></div>)
-  if(submitted&&results) return(<ReviewPage questions={questions} answers={answers} results={results} quizName={displayName} onRetake={handleRetake} topicColorMap={topicColorMap}/>)
+  if (error) return (
+    <div className="container mt-5 text-center">
+      <div className="alert alert-warning">{error}</div>
+      <Link to="/courses/statistics" className="btn btn-primary">Back to Statistics</Link>
+    </div>
+  )
+  if (submitted && results) return (
+    <ReviewPage questions={questions} answers={answers} results={results}
+      quizName={displayName} onRetake={handleRetake} topicColorMap={topicColorMap}/>
+  )
 
   const q = questions[currentIndex]
   const answeredCount = Object.keys(answers).filter(k => {
@@ -991,9 +1033,9 @@ const StatisticsQuiz = () => {
   const progress = Math.round(((currentIndex+1)/questions.length)*100)
   const topicColor = topicColorMap?.[q.originalTopic||q.topic] || '#6c757d'
 
-  return(
+  return (
     <main className="main" style={{userSelect:'none',WebkitUserSelect:'none'}}>
-      {warningOverlay&&(
+      {warningOverlay && (
         <div style={{position:'fixed',inset:0,background:'rgba(220,53,69,0.96)',zIndex:10000,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',color:'#fff'}}>
           <i className="bi bi-exclamation-triangle-fill" style={{fontSize:64,marginBottom:16}}/>
           <h2>Focus Lost!</h2>
@@ -1002,7 +1044,7 @@ const StatisticsQuiz = () => {
         </div>
       )}
 
-      {showCalc&&<Calculator onClose={toggleCalc}/>}
+      {showCalc && <Calculator onClose={toggleCalc}/>}
 
       {/* Floating calc button */}
       <button onClick={toggleCalc}
@@ -1025,7 +1067,7 @@ const StatisticsQuiz = () => {
       </button>
 
       {/* Mobile nav drawer */}
-      {showMobileNav&&(
+      {showMobileNav && (
         <div className="d-md-none" style={{position:'fixed',inset:0,zIndex:10001,background:'rgba(4,44,83,0.5)'}}
           onClick={()=>setShowMobileNav(false)}>
           <div style={{position:'absolute',bottom:0,left:0,right:0,background:'#fff',
@@ -1040,7 +1082,7 @@ const StatisticsQuiz = () => {
                 const ans = answers[qItem._id]
                 const answered = ans !== undefined && ans !== '' && !(Array.isArray(ans) && ans.length===0)
                 const state = i===currentIndex ? 'current' : answered ? 'answered' : 'default'
-                return(<button key={qItem._id} onClick={()=>goTo(i)} style={S.navBtn(state)}>{i+1}</button>)
+                return (<button key={qItem._id} onClick={()=>goTo(i)} style={S.navBtn(state)}>{i+1}</button>)
               })}
             </div>
             <div style={{display:'flex',gap:16,marginTop:12,flexWrap:'wrap'}}>
@@ -1103,11 +1145,11 @@ const StatisticsQuiz = () => {
                 onClick={()=>currentIndex>0&&goTo(currentIndex-1)} disabled={currentIndex===0}>
                 <i className="bi bi-chevron-left me-1"/>Prev
               </button>
-              {currentIndex<questions.length-1
-                ?<button style={S.navNext} onClick={()=>goTo(currentIndex+1)}>Next<i className="bi bi-chevron-right ms-1"/></button>
-                :<button style={S.navSubmit} onClick={doSubmit} disabled={saving}>
-                  {saving?<><span className="spinner-border spinner-border-sm me-1"/>Saving…</>:<><i className="bi bi-check-circle me-1"/>Submit</>}
-                </button>
+              {currentIndex < questions.length-1
+                ? <button style={S.navNext} onClick={()=>goTo(currentIndex+1)}>Next<i className="bi bi-chevron-right ms-1"/></button>
+                : <button style={S.navSubmit} onClick={doSubmit} disabled={saving}>
+                    {saving?<><span className="spinner-border spinner-border-sm me-1"/>Saving…</>:<><i className="bi bi-check-circle me-1"/>Submit</>}
+                  </button>
               }
             </div>
           </div>
