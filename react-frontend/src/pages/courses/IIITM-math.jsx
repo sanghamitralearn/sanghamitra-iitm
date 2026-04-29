@@ -339,6 +339,16 @@ const IIITMMath = () => {
       icon: 'bi-cpu',
       url: '/courses/IIITM-math/quiz/graph_properties',
       linkState: { quizName: 'Week 11 - Graph Properties' }
+    },
+
+     {
+      id: 'End_term',
+      name: 'End term',
+      displayName: 'End term',
+      description: 'Assessment on End_term',
+      icon: 'bi-cpu',
+      url: '/courses/IIITM-math/quiz/end_term',
+      linkState: { quizName: 'End_term' }
     }
   ];
 
