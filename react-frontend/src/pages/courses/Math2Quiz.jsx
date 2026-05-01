@@ -476,7 +476,7 @@ const Math2Quiz = () => {
   const weekNum = week ? parseInt(week, 10) : 1
   
   // Validate week number (1-8), default to 1 if invalid
-  const validWeekNum = !isNaN(weekNum) && weekNum >= 1 && weekNum <= 11 ? weekNum : 1
+  const validWeekNum = !isNaN(weekNum) && weekNum >= 1 && weekNum <= 12 ? weekNum : 1
 
   
   // Get topic from the mapping
