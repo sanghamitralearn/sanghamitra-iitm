@@ -235,8 +235,8 @@ router.get('/iitm_maths2_questions_databases', async (req, res) => {
     }
 
     const weekNum = parseInt(week);
-    if (isNaN(weekNum) || weekNum < 1 || weekNum > 11) {
-      return res.status(400).json({ error: 'week must be between 1 and 11' });
+    if (isNaN(weekNum) || weekNum < 1 || weekNum > 12) {
+      return res.status(400).json({ error: 'week must be between 1 and 12' });
     }
 
     const filter = {
