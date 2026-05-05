@@ -151,6 +151,26 @@ const Statistics = () => {
       icon: 'bi-dice-1',
       url: '/courses/statistics/quiz/week11_stats1',
       linkState: { quizName: 'Week-11 - Binomial and poisson random variables' }
+    },
+
+    {
+      id: 'week12',
+      name: 'Week-12 - Introduction to continous random variables',
+      displayName: 'Week-12 - Introduction to continous random variables',
+      description: 'Mean, variance, and their properties',
+      icon: 'bi-dice-1',
+      url: '/courses/statistics/quiz/week_12',
+      linkState: { quizName: 'Week-12 - Introduction to continous random variables' }
+    },
+
+    {
+      id: 'endterm',
+      name: 'Endterm',
+      displayName: 'Endterm',
+      description: 'Covers all week topics',
+      icon: 'bi-dice-1',
+      url: '/courses/statistics/quiz/end_term',
+      linkState: { quizName: 'Endterm' }
     }
 
   ]
