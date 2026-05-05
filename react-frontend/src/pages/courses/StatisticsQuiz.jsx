@@ -38,6 +38,184 @@ function typesetEl(el) {
   }
 }
 
+// ─── Render Table Helper ────────────────────────────────────────────────────
+// Enhanced renderQuestionText - handles tables, lists, and line breaks
+function renderQuestionText(text) {
+  if (!text) return null;
+  
+  // First, handle line breaks - split by newlines
+  const lines = text.split('\n');
+  
+  // Check if text contains a table (starts with | and contains --- separator)
+  if (text.includes('|---')) {
+    let inTable = false;
+    let tableRows = [];
+    let beforeTable = [];
+    let afterTable = [];
+    let tableFound = false;
+    
+    let i = 0;
+    // Process before table
+    while (i < lines.length && !lines[i].includes('|---')) {
+      beforeTable.push(lines[i]);
+      i++;
+    }
+    
+    // Process table
+    if (i < lines.length) {
+      tableFound = true;
+      // Skip the separator line
+      i++;
+      
+      // Collect table rows (everything that starts with |)
+      while (i < lines.length && lines[i].trim().startsWith('|')) {
+        tableRows.push(lines[i]);
+        i++;
+      }
+    }
+    
+    // Process after table
+    while (i < lines.length) {
+      afterTable.push(lines[i]);
+      i++;
+    }
+    
+    return (
+      <>
+        {/* Text before table */}
+        {beforeTable.filter(line => line.trim()).map((line, idx) => (
+          <p key={`before-${idx}`} style={{marginBottom: '0.5rem'}}>{line}</p>
+        ))}
+        
+        {/* Table */}
+        {tableFound && tableRows.length > 0 && (
+          <table className="table table-bordered table-striped" style={{
+            marginTop: '0.5rem',
+            marginBottom: '1rem',
+            backgroundColor: '#f8f9fa',
+            borderColor: '#85B7EB'
+          }}>
+            <thead>
+              <tr>
+                {tableRows[0].split('|').filter(cell => cell.trim()).map((cell, idx) => (
+                  <th key={`th-${idx}`} style={{padding: '8px 12px', textAlign: 'center'}}>
+                    {cell.trim()}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {tableRows.slice(1).map((row, rowIdx) => (
+                <tr key={`tr-${rowIdx}`}>
+                  {row.split('|').filter(cell => cell.trim() !== '').map((cell, cellIdx) => (
+                    <td key={`td-${rowIdx}-${cellIdx}`} style={{padding: '8px 12px', textAlign: 'center'}}>
+                      {cell.trim()}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        
+        {/* Text after table */}
+        {afterTable.filter(line => line.trim()).map((line, idx) => (
+          <p key={`after-${idx}`} style={{marginTop: '0.5rem'}}>{line}</p>
+        ))}
+      </>
+    );
+  }
+  
+  // Check for Roman numerals or bullet points pattern
+  const hasRomanNumerals = /[IVX]+\.\s/.test(text);
+  const hasBulletPoints = /[•\-]\s/.test(text);
+  const hasNumberedList = /\d+\.\s/.test(text);
+  
+  // If text contains line breaks or list markers, render as formatted list
+  if (lines.length > 1 || hasRomanNumerals || hasBulletPoints || hasNumberedList) {
+    // Group lines into paragraphs and lists
+    let paragraphs = [];
+    let currentParagraph = [];
+    let inList = false;
+    let listItems = [];
+    
+    for (let line of lines) {
+      line = line.trim();
+      if (!line) {
+        // Empty line - end current paragraph/list
+        if (currentParagraph.length > 0) {
+          paragraphs.push({ type: 'text', content: currentParagraph.join(' ') });
+          currentParagraph = [];
+        }
+        if (listItems.length > 0) {
+          paragraphs.push({ type: 'list', content: listItems });
+          listItems = [];
+          inList = false;
+        }
+        continue;
+      }
+      
+      // Check if line starts with Roman numeral, number, or bullet
+      const isListItem = /^[IVX]+\.\s/.test(line) || /^\d+\.\s/.test(line) || /^[•\-]\s/.test(line);
+      
+      if (isListItem) {
+        // If we were in a paragraph, end it
+        if (currentParagraph.length > 0) {
+          paragraphs.push({ type: 'text', content: currentParagraph.join(' ') });
+          currentParagraph = [];
+        }
+        inList = true;
+        listItems.push(line);
+      } else {
+        // Not a list item
+        if (inList && listItems.length > 0) {
+          paragraphs.push({ type: 'list', content: listItems });
+          listItems = [];
+          inList = false;
+        }
+        currentParagraph.push(line);
+      }
+    }
+    
+    // Handle any remaining content
+    if (currentParagraph.length > 0) {
+      paragraphs.push({ type: 'text', content: currentParagraph.join(' ') });
+    }
+    if (listItems.length > 0) {
+      paragraphs.push({ type: 'list', content: listItems });
+    }
+    
+    // Render the parsed content
+    return (
+      <>
+        {paragraphs.map((para, idx) => {
+          if (para.type === 'text') {
+            return (
+              <p key={`para-${idx}`} style={{marginBottom: '0.75rem'}}>
+                {para.content}
+              </p>
+            );
+          } else if (para.type === 'list') {
+            return (
+              <div key={`list-${idx}`} style={{marginBottom: '0.75rem', paddingLeft: '1.5rem'}}>
+                {para.content.map((item, itemIdx) => (
+                  <div key={`item-${itemIdx}`} style={{marginBottom: '0.25rem'}}>
+                    {item}
+                  </div>
+                ))}
+              </div>
+            );
+          }
+          return null;
+        })}
+      </>
+    );
+  }
+  
+  // No special formatting needed - return plain text
+  return <p style={{marginBottom: '0.5rem'}}>{text}</p>;
+}
+
 // ─── Inline styles ─────────────────────────────────────────────────────────────
 const S = {
   qCard: {
@@ -510,7 +688,6 @@ const StatisticsQuiz = () => {
   const baseWindowRef     = useRef({ outerHeight:0, outerWidth:0, innerHeight:0, innerWidth:0 })
 
   const doSubmitRef  = useRef(null)
-  // FIX 3: store cleanup fn so doSubmit can tear down all listeners immediately
   const cleanupRef   = useRef(null)
 
   const CHEAT_COOLDOWN_MS = 30_000
@@ -593,7 +770,6 @@ const StatisticsQuiz = () => {
     const onCtx = e => { e.preventDefault(); recordCheat('right_click'); return false }
 
     const onKey = e => {
-      // FIX 2: removed keyCode 44 (PrintScreen) from keydown — handled in keyup only
       if (
         e.keyCode === 123 ||
         (e.ctrlKey && e.shiftKey && e.keyCode === 73) ||
@@ -611,14 +787,7 @@ const StatisticsQuiz = () => {
       }
     }
 
-    // FIX 1: onselectstart silently blocks selection — no cheat logging
-    // Logging on every drag/click was burning through the 5-event threshold
     document.onselectstart = () => false
-
-    // ── Tab / window switch detection ──────────────────────────────────────
-    // onBlur          — desktop tab/window switch (5 s grace for quick Alt+Tab)
-    // visibilitychange — mobile app switch, phone lock, browser hide
-    // onFocus          — clears red overlay on return
 
     let blurTimer = null
 
@@ -638,7 +807,7 @@ const StatisticsQuiz = () => {
 
     const onVisibility = () => {
       if (document.hidden && !showCalcRef.current) {
-        clearTimeout(blurTimer)         // don't double-count with blur timer
+        clearTimeout(blurTimer)
         recordCheat('tab_switch', true)
         setWarningOverlay(true)
       } else if (!document.hidden) {
@@ -652,7 +821,6 @@ const StatisticsQuiz = () => {
     window.addEventListener('blur', onBlur)
     document.addEventListener('visibilitychange', onVisibility)
 
-    // FIX 2: PrintScreen handled in keyup only — eliminates double-count from keydown+keyup
     const onKeyUp = e => {
       if (e.keyCode === 44 || e.key === 'PrintScreen') {
         recordCheat('screenshot_attempt', true)
@@ -701,8 +869,6 @@ const StatisticsQuiz = () => {
         Math.abs(window.outerHeight - base.outerHeight) < 10 &&
         Math.abs(window.outerWidth  - base.outerWidth)  < 10
 
-      // FIX 4: only flag when outer dimensions are stable (rules out zoom/resize)
-      // and use a higher threshold (300px) to reduce false positives on mobile/scaling
       if (outerUnchanged && (heightDiff > 300 || widthDiff > 300)) {
         if (!devToolsWarnedRef.current) {
           devToolsWarnedRef.current = true
@@ -711,7 +877,6 @@ const StatisticsQuiz = () => {
         }
       } else {
         devToolsWarnedRef.current = false
-        // Update baseline when outer size legitimately changes (resize, zoom)
         if (
           Math.abs(window.outerHeight - base.outerHeight) >= 10 ||
           Math.abs(window.outerWidth  - base.outerWidth)  >= 10
@@ -724,7 +889,6 @@ const StatisticsQuiz = () => {
       }
     }, 500)
 
-    // FIX 3: store cleanup so doSubmit can call it immediately on auto-submit
     const cleanup = () => {
       document.removeEventListener('contextmenu', onCtx)
       document.removeEventListener('keydown', onKey)
@@ -893,7 +1057,6 @@ const StatisticsQuiz = () => {
   }
 
   const doSubmit = async () => {
-    // FIX 3: tear down all listeners immediately so no more cheat events fire post-submit
     cleanupRef.current?.()
 
     const q = questions[currentIndex]; if (q) saveCurrentTime(q._id)
@@ -930,7 +1093,6 @@ const StatisticsQuiz = () => {
     setSubmitted(true)
   }
 
-  // Keep doSubmitRef in sync with the latest doSubmit closure
   useEffect(() => {
     doSubmitRef.current = doSubmit
   })
@@ -1068,7 +1230,6 @@ const StatisticsQuiz = () => {
 
       {showCalc && <Calculator onClose={toggleCalc}/>}
 
-      {/* Floating calc button */}
       <button onClick={toggleCalc}
         style={{position:'fixed',bottom:20,right:20,width:52,height:52,borderRadius:'50%',
           background:'#7F77DD',border:'none',color:'#fff',fontSize:20,cursor:'pointer',
@@ -1077,7 +1238,6 @@ const StatisticsQuiz = () => {
         🧮
       </button>
 
-      {/* Mobile: floating nav button */}
       <button className="d-md-none" onClick={()=>setShowMobileNav(v=>!v)}
         style={{position:'fixed',bottom:82,right:20,width:52,height:52,borderRadius:'50%',
           background:'#378ADD',border:'none',color:'#fff',fontSize:11,fontWeight:700,
@@ -1088,7 +1248,6 @@ const StatisticsQuiz = () => {
         <span>Qs</span>
       </button>
 
-      {/* Mobile nav drawer */}
       {showMobileNav && (
         <div className="d-md-none" style={{position:'fixed',inset:0,zIndex:10001,background:'rgba(4,44,83,0.5)'}}
           onClick={()=>setShowMobileNav(false)}>
@@ -1156,7 +1315,8 @@ const StatisticsQuiz = () => {
                 <span style={S.qNumBadge}>Q {currentIndex+1}</span>
               </div>
               <div style={S.qBody}>
-                <h5 style={S.qText}>{q.question_text}</h5>
+                {/* NEW: renderQuestionText replaces the plain h5 */}
+                <h5 style={S.qText}>{renderQuestionText(q.question_text)}</h5>
                 {q.img_file&&<img src={q.img_file} alt="diagram" className="img-fluid mb-3 rounded" style={{maxHeight:200,border:'1.5px solid #85B7EB'}}/>}
                 {renderInput(q)}
               </div>
