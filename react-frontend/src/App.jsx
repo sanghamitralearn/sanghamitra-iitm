@@ -50,6 +50,9 @@ import PdsaInterviewQuiz from './pages/courses/PDSA/PdsaInterviewQuiz'
 import Math2Quiz from './pages/courses/Math2Quiz'
 import MathExamReview from './pages/MathReview'
 
+import CompetitiveExamFoundation from './pages/courses/CompetitiveExamFoundation';
+import MathQuiz from './pages/courses/Competitive/MathQuiz'
+
 
 function App() {
   return (
@@ -117,6 +120,11 @@ function App() {
       
             {/* Math 2 Quiz — week-based, DB-driven */}
             <Route path="/courses/math2/quiz/:week" element={<Math2Quiz />} />
+
+            {/* competitive-exam-foundation */}
+            <Route path="/competitive-exam-foundation" element={<CompetitiveExamFoundation />} />
+            <Route path="/competitive-exam-foundation/mathematics" element={<MathQuiz />} />
+
           </Routes>
         </main>
         <Footer />
