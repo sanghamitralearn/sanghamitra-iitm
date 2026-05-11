@@ -233,6 +233,28 @@ const Home = () => {
                 </div>
               </div>
             </div>
+
+            
+         {/* Competitive Exam Foundation Course Card */}
+            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
+              <div className="course-item">
+                <img src="/img/competitive-exam-foundation.png" className="img-fluid" alt="Competitive Exam Foundation Course" />
+                <div className="course-content">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <Link to="/competitive-exam-foundation"><button className="category">Competitive Exam Foundation</button></Link>
+                  </div>
+                  <p className="description">
+                    Master the fundamentals required for various competitive exams including banking, SSC, railways, and state-level examinations. Our comprehensive course covers quantitative aptitude, logical reasoning, verbal ability, and general awareness. Get access to topic-wise modules, practice tests, time management strategies, and exam-specific preparation techniques designed to help you crack competitive exams with confidence.
+                  </p>
+                  <div className="trainer d-flex justify-content-between align-items-center">
+                    <div className="trainer-rank d-flex align-items-center">
+                      <i className="bi bi-heart heart-icon"></i>&nbsp;56
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
           </div>
         </div>
       </section>
