@@ -52,6 +52,7 @@ import MathExamReview from './pages/MathReview'
 
 import CompetitiveExamFoundation from './pages/courses/CompetitiveExamFoundation';
 import MathQuiz from './pages/courses/Competitive/MathQuiz'
+import PhysicsQuiz from './pages/courses/Competitive/PhysicsQuiz'
 
 
 function App() {
@@ -124,6 +125,7 @@ function App() {
             {/* competitive-exam-foundation */}
             <Route path="/competitive-exam-foundation" element={<CompetitiveExamFoundation />} />
             <Route path="/competitive-exam-foundation/mathematics" element={<MathQuiz />} />
+            <Route path="/competitive-exam-foundation/physics" element={<PhysicsQuiz />} />
 
           </Routes>
         </main>
