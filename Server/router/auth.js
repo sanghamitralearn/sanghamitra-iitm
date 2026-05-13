@@ -55,6 +55,11 @@ const QuizAttempt     = require('../model/iitmMaths2QuizAttempt');
 const QuestionResult  = require('../model/iitmMaths2QuestionResult');
 const IITMath2Question = require('../model/iitmMath2QuestionsSchema')
 
+const competitive_MathQuizAttempt     = require('../model/competitive_MathQuizAttempt');
+const competitive_MathResult  = require('../model/competitive_MathResult');
+const competitive_MathQue = require('../model/competitive_MathQue');
+
+
 require('../db/conn');
 const User = require('../model/userSchema');
 
@@ -3669,6 +3674,277 @@ router.get("/iitm_stats2_scores", async (req, res) => {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 });
+
+
+
+
+// competitive Mathematics routes 
+
+// CHANGED: Route path updated
+router.get('/competitive_math_questions', async (req, res) => {
+  try {
+    const { week, email, count = 10, difficulty, type, topic } = req.query;
+
+    if (!week || !email) {
+      return res.status(400).json({
+        error: 'week and email are required',
+        example: '/competitive_math_questions?week=7&email=user@example.com&count=10'
+      });
+    }
+
+    const weekNum = parseInt(week);
+    if (isNaN(weekNum) || weekNum < 1 || weekNum > 12) {
+      return res.status(400).json({ error: 'week must be between 1 and 12' });
+    }
+
+    const filter = {
+      week:      weekNum,
+      is_active: true
+    };
+    if (difficulty) filter.difficulty = difficulty;
+    if (type)       filter.type       = type;
+    if (topic)      filter.topic      = topic;
+
+    let pool = await competitive_MathQue.find(filter).lean();
+
+    if (pool.length === 0) {
+      return res.status(404).json({ error: 'No questions found for this week' });
+    }
+
+    // Fisher-Yates shuffle
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+
+    const requestedCount = Math.min(parseInt(count), pool.length);
+    const selected = pool.slice(0, requestedCount);
+
+    return res.status(200).json({
+      questions: selected,
+      metadata: {
+        week:      weekNum,
+        pool_size: pool.length,
+        returned:  selected.length,
+        requested: requestedCount
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching questions:', error);
+    return res.status(500).json({ error: 'Failed to fetch questions', details: error.message });
+  }
+});
+
+
+// CHANGED: Route path updated
+router.post('/competitive_math_quiz_attempts', async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { email, username, quizData } = req.body;
+    
+    console.log('📥 Received body:', JSON.stringify({ email, username }, null, 2));
+    console.log('📥 quizData keys:', quizData ? Object.keys(quizData) : 'quizData is undefined');
+    console.log('📥 week:', quizData?.week);
+    console.log('📥 startTime:', quizData?.startTime);
+    console.log('📥 endTime:', quizData?.endTime);
+
+    if (!email || !quizData) {
+      return res.status(400).json({ error: 'email and quizData are required' });
+    }
+
+    const {
+      week,
+      topic,
+      score,
+      maxPossibleScore,
+      percentage,
+      totalQuestions,
+      correctAnswers,
+      difficultyBreakdown,
+      questionResults,
+      startTime,
+      endTime,
+      totalTimeTaken,
+      cheatCount
+    } = quizData;
+
+    // ── 1. Save attempt summary ────────────────────────────────────
+    const [attempt] = await competitive_MathQuizAttempt.create([{
+      email,
+      username:           username || email,
+      week:               week     || 7,
+      topic:              topic    || '',
+      score,
+      max_possible_score: maxPossibleScore,
+      percentage:         Math.round(percentage),
+      total_questions:    totalQuestions,
+      correct_answers:    correctAnswers,
+
+      easy_attempted:   difficultyBreakdown?.easy?.attempted   || 0,
+      easy_correct:     difficultyBreakdown?.easy?.correct     || 0,
+      medium_attempted: difficultyBreakdown?.medium?.attempted || 0,
+      medium_correct:   difficultyBreakdown?.medium?.correct   || 0,
+      hard_attempted:   difficultyBreakdown?.hard?.attempted   || 0,
+      hard_correct:     difficultyBreakdown?.hard?.correct     || 0,
+
+      total_time_seconds: totalTimeTaken || 0,
+      started_at:         new Date(startTime),
+      submitted_at:       new Date(endTime),
+      is_completed:       true,
+      cheat_count:        cheatCount || 0
+    }], { session });
+
+    // ── 2. Save individual question results ────────────────────────
+    if (Array.isArray(questionResults) && questionResults.length > 0) {
+
+      const resultDocs = questionResults.map(qr => ({
+        attempt_id:         attempt._id,
+        email,
+        week:               week || 7,
+        question_id:        qr.questionId,
+        user_answer:        qr.userAnswer      ?? null,
+        is_correct:         qr.isCorrect,
+        marks_awarded:      qr.marksAwarded    || 0,
+        time_taken_seconds: qr.timeTaken       || 0,
+        difficulty:         qr.difficulty      || 'medium',
+        topic:              topic              || '',
+        subtopic:           qr.subtopic        || '',
+        question_type:      qr.questionType    || '',
+        concept_tags:       qr.conceptTags     || [],
+        bloom_level:        qr.bloomLevel      || 'apply'
+      }));
+
+      await competitive_MathResult.insertMany(resultDocs, { session });
+    }
+
+    // ── 3. Commit both writes atomically ───────────────────────────
+    await session.commitTransaction();
+
+    return res.status(201).json({
+      success:    true,
+      attempt_id: attempt._id,
+      message:    'Quiz attempt saved successfully'
+    });
+
+  } catch (error) {
+    await session.abortTransaction();
+    console.error('❌ Error saving quiz attempt:', error);
+    return res.status(500).json({
+      error:   'Failed to save quiz attempt',
+      details: error.message
+    });
+  } finally {
+    session.endSession();
+  }
+});
+
+// CHANGED: Route path updated
+router.get('/competitive_math_quiz_attempts', async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({ error: 'email is required' });
+    }
+
+    const attempts = await competitive_MathQuizAttempt.find({ email })
+      .sort({ submitted_at: -1 })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        quizScores: attempts
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching scores:', error);
+    return res.status(500).json({
+      error:   'Failed to fetch scores',
+      details: error.message
+    });
+  }
+});
+
+// CHANGED: Route path updated
+router.get('/competitive_math_quiz_attempts/:attemptId', async (req, res) => {
+  try {
+    const { attemptId } = req.params;
+
+    // Get attempt summary
+    const attempt = await competitive_MathQuizAttempt.findById(attemptId).lean();
+    if (!attempt) {
+      return res.status(404).json({ error: 'Attempt not found' });
+    }
+
+    // Get question results and populate full question data
+    const questionResults = await competitive_MathResult.find({ attempt_id: attemptId })
+      .populate({
+        path:   'question_id',
+        select: 'question_text options correct_answer explanation difficulty type points has_latex subtopic'
+      })
+      .lean();
+
+    // Shape data for review page
+    const reviewQuestions = questionResults.map(qr => ({
+      // Full question content
+      question_text:  qr.question_id?.question_text  || '',
+      type:           qr.question_id?.type           || qr.question_type,
+      difficulty:     qr.question_id?.difficulty     || qr.difficulty,
+      points:         qr.question_id?.points         || 1,
+      has_latex:      qr.question_id?.has_latex      || false,
+      explanation:    qr.question_id?.explanation    || '',
+      options:        qr.question_id?.options        || [],
+      correct_answer: qr.question_id?.correct_answer,
+
+      // What the user did
+      user_answer:        qr.user_answer,
+      is_correct:         qr.is_correct,
+      marks_awarded:      qr.marks_awarded,
+      time_taken_seconds: qr.time_taken_seconds,
+      subtopic:           qr.subtopic,
+      concept_tags:       qr.concept_tags,
+      bloom_level:        qr.bloom_level
+    }));
+
+    return res.status(200).json({
+      success: true,
+      attempt: {
+        _id:                attempt._id,
+        week:               attempt.week,
+        topic:              attempt.topic,
+        score:              attempt.score,
+        max_possible_score: attempt.max_possible_score,
+        percentage:         attempt.percentage,
+        total_questions:    attempt.total_questions,
+        correct_answers:    attempt.correct_answers,
+        total_time_seconds: attempt.total_time_seconds,
+        submitted_at:       attempt.submitted_at,
+        easy_attempted:     attempt.easy_attempted,
+        easy_correct:       attempt.easy_correct,
+        medium_attempted:   attempt.medium_attempted,
+        medium_correct:     attempt.medium_correct,
+        hard_attempted:     attempt.hard_attempted,
+        hard_correct:       attempt.hard_correct
+      },
+      questions: reviewQuestions
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching review:', error);
+    return res.status(500).json({
+      error:   'Failed to fetch review data',
+      details: error.message
+    });
+  }
+});
+
+
+
 
 // ─── Aggregated Admin Notifications ────────────────────────────────────────
 // Single endpoint that replaces 8 separate frontend calls.
