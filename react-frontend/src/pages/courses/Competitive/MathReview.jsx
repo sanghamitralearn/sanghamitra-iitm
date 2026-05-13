@@ -74,14 +74,14 @@ const MathReview = () => {
         <div className="heading"><div className="container">
           <div className="row d-flex justify-content-center text-center">
             <div className="col-lg-8">
-              <h1>Math 2 — Quiz Review</h1>
+              <h1>Mathematics — Quiz Review</h1>
               <p className="mb-0">Review your previous quiz attempts and check your answers.</p>
             </div>
           </div>
         </div></div>
         <nav className="breadcrumbs"><div className="container"><ol>
           <li><Link to="/">Home</Link></li>
-          <li><Link to="/courses/math2">Math 2</Link></li>
+          <li><Link to="/competitive-exam-foundation/mathematics">Mathematics</Link></li>
           <li className="current">Review</li>
         </ol></div></nav>
       </div>
