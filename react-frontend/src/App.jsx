@@ -54,6 +54,9 @@ import CompetitiveExamFoundation from './pages/courses/CompetitiveExamFoundation
 import MathQuiz from './pages/courses/Competitive/MathQuiz'
 import PhysicsQuiz from './pages/courses/Competitive/PhysicsQuiz'
 
+import JAVA from './pages/courses/JAVA'
+import JavaQuiz from './pages/courses/JAVA/JavaQuiz'
+
 
 function App() {
   return (
@@ -126,6 +129,10 @@ function App() {
             <Route path="/competitive-exam-foundation" element={<CompetitiveExamFoundation />} />
             <Route path="/competitive-exam-foundation/mathematics" element={<MathQuiz />} />
             <Route path="/competitive-exam-foundation/physics" element={<PhysicsQuiz />} />
+            
+            {/* JAVA COURSE */}
+            <Route path="/courses/JAVA" element={<JAVA />} />
+            <Route path="/courses/JAVA/:weekId" element={<JavaQuiz />} />
 
           </Routes>
         </main>
