@@ -212,6 +212,28 @@ const Home = () => {
               </div>
             </div>
 
+            {/* JAVA Course Card */}
+            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
+              <div className="course-item">
+                <img src="/img/java.png" className="img-fluid" alt="Data Structures and Algorithms Course" />
+                <div className="course-content">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <Link to="/courses/JAVA"><button className="category">JAVA</button></Link>
+                  </div>
+                  <p className="description">
+                    Welcome to our Java Programming Hub, where you start your journey from basic syntax to 
+                    advanced application development. Master variables, control flow, OOP concepts, data structures, 
+                    file I/O, and JDBC through clear explanations, challenging quizzes, and real-world projects.
+                  </p>
+                  <div className="trainer d-flex justify-content-between align-items-center">
+                    <div className="trainer-rank d-flex align-items-center">
+                      <i className="bi bi-heart heart-icon"></i>&nbsp;89
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* DBMS Course Card */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
               <div className="course-item">
