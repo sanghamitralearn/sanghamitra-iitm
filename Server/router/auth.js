@@ -63,6 +63,9 @@ const PhysicQuizAttempt = require('../model/competitive_PhysicQuizAttempt');
 const PhysicResult = require('../model/competitive_PhysicResult');
 const PhysicQue = require('../model/competitive_PhysicQue');
 
+const JavaSubmission = require('../model/Java_Submission');
+const JavaQuestions = require('../model/Java_Questions');
+
 
 require('../db/conn');
 const User = require('../model/userSchema');
@@ -4217,6 +4220,156 @@ router.get('/physics_scores_databases/:attemptId', async (req, res) => {
       details: error.message
     });
   }
+});
+
+// GET all Java submissions (admin) — merges test, coding, and interview quiz submissions
+router.get('/java-submission', async (req, res) => {
+  try {
+    const { email } = req.query;
+    const filter = email ? { email } : {};
+
+    const [testSubs, codingSubs, interviewSubs] = await Promise.all([
+      JavaSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
+      // Note: If you have separate CodingSubmission and InterviewSubmission models for Java, 
+      // replace these with your actual model names
+      CodingSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
+      InterviewSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
+    ]);
+
+    const normalize = (sub, quizType) => ({
+      _id: sub._id,
+      email: sub.email,
+      username: sub.username,
+      topic: sub.topic,
+      score: sub.score,
+      maxScore: sub.maxScore,
+      percentage: sub.percentage,
+      timestamp: sub.timestamp,
+      quizType,
+    });
+
+    const merged = [
+      ...testSubs.map(s => normalize(s, 'test')),
+      ...codingSubs.map(s => normalize(s, 'coding')),
+      ...interviewSubs.map(s => normalize(s, 'interview')),
+    ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    res.json({ success: true, data: merged });
+
+  } catch (error) {
+    console.error('Error fetching Java submissions:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Submit quiz results route
+router.post('/java-submission', async (req, res) => {
+    try {
+        const submissionData = req.body;
+        
+        console.log('📝 Received Java submission:', {
+            username: submissionData.username,
+            topic: submissionData.topic,
+            score: submissionData.score,
+            maxScore: submissionData.maxScore
+        });
+
+        // Create submission document using JavaSubmission model
+        const submission = new JavaSubmission(submissionData);
+        
+        // Save to database
+        await submission.save();
+        
+        console.log('✅ Java submission saved successfully');
+        
+        res.status(201).json({
+            success: true,
+            message: 'Quiz results saved successfully',
+            submissionId: submission._id
+        });
+        
+    } catch (error) {
+        console.error('❌ Error saving Java submission:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to save quiz results',
+            error: error.message
+        });
+    }
+});
+
+//Alternative: Get questions by specific week (most common use case)
+router.get('/java/questions/week/:week', async (req, res) => {
+    try {
+        const { week } = req.params;
+        const { topic, subtopic, type, difficulty, limit } = req.query;
+        
+        // Validate week range
+        if (week < 1 || week > 11) {
+            return res.status(400).json({
+                success: false,
+                message: 'Week must be between 1 and 11'
+            });
+        }
+        
+        // Build filter
+        let filter = { week: parseInt(week) };
+        if (topic) filter.topic = topic;
+        if (subtopic) filter.subtopic = subtopic;
+        if (type) filter.type = type;
+        if (difficulty) filter.difficulty = difficulty;
+        
+        // Execute query with optional limit
+        let query = JavaQuestions.find(filter).sort({ questionId: 1 });
+        if (limit) {
+            query = query.limit(parseInt(limit));
+        }
+        
+        const questions = await query.lean();
+        
+        if (questions.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: `No questions found for week ${week}`,
+                filters: filter
+            });
+        }
+        
+        // Get statistics for the response
+        const stats = {
+            totalQuestions: questions.length,
+            byType: {},
+            byDifficulty: {},
+            byTopic: {},
+            totalMaxScore: questions.reduce((sum, q) => sum + (q.maxScore || 0), 0)
+        };
+        
+        // Calculate statistics
+        questions.forEach(q => {
+            // By type
+            stats.byType[q.type] = (stats.byType[q.type] || 0) + 1;
+            // By difficulty
+            stats.byDifficulty[q.difficulty] = (stats.byDifficulty[q.difficulty] || 0) + 1;
+            // By topic
+            stats.byTopic[q.topic] = (stats.byTopic[q.topic] || 0) + 1;
+        });
+        
+        res.json({
+            success: true,
+            week: parseInt(week),
+            count: questions.length,
+            statistics: stats,
+            questions: questions
+        });
+        
+    } catch (error) {
+        console.error('❌ Error fetching questions by week:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch questions',
+            error: error.message
+        });
+    }
 });
 
 
