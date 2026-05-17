@@ -11,7 +11,7 @@ const availableTopics = [
     displayName: 'WEEK 1: Java Basics',
     description: 'Assessment on Java fundamentals: Variables, Data Types, Operators, Control Flow, and Basic Syntax',
     icon: 'bi-code-slash',
-    testUrl: '/courses/JAVA/1',
+    testUrl: '/courses/java/1',  // Changed to match pattern
   },
   {
     id: 'oop-concepts',
@@ -19,7 +19,7 @@ const availableTopics = [
     displayName: 'WEEK 2: Object-Oriented Programming',
     description: 'Assessment on Classes, Objects, Inheritance, Polymorphism, Encapsulation, and Abstraction',
     icon: 'bi-diagram-3',
-    testUrl: '/courses/JAVA/2',
+    testUrl: '/courses/java/2',
   },
   {
     id: 'exception-handling',
@@ -27,7 +27,7 @@ const availableTopics = [
     displayName: 'WEEK 3: Exception Handling',
     description: 'Assessment on Try-Catch, Throw, Throws, Finally, and Custom Exceptions',
     icon: 'bi-exclamation-triangle',
-    testUrl: '/courses/JAVA/3',
+    testUrl: '/courses/java/3',
   },
   {
     id: 'collections-framework',
@@ -35,7 +35,7 @@ const availableTopics = [
     displayName: 'WEEK 4: Collections Framework',
     description: 'Assessment on List, Set, Map, Queue, and their implementations (ArrayList, HashSet, HashMap)',
     icon: 'bi-database',
-    testUrl: '/courses/JAVA/4',
+    testUrl: '/courses/java/4',
   },
   {
     id: 'multithreading',
@@ -43,7 +43,7 @@ const availableTopics = [
     displayName: 'WEEK 5: Multithreading',
     description: 'Assessment on Threads, Runnable, Synchronization, Locks, and Concurrency Utilities',
     icon: 'bi-cpu',
-    testUrl: '/courses/JAVA/5',
+    testUrl: '/courses/java/5',
   },
   {
     id: 'lambda-expressions',
@@ -51,7 +51,7 @@ const availableTopics = [
     displayName: 'WEEK 6: Lambda Expressions',
     description: 'Assessment on Functional Interfaces, Lambda Syntax, Method References, and Streams Basics',
     icon: 'bi-arrow-repeat',
-    testUrl: '/courses/JAVA/6',
+    testUrl: '/courses/java/6',
   },
   {
     id: 'stream-api',
@@ -59,7 +59,7 @@ const availableTopics = [
     displayName: 'WEEK 7: Stream API',
     description: 'Assessment on Stream Operations, Filtering, Mapping, Reducing, and Collectors',
     icon: 'bi-water',
-    testUrl: '/courses/JAVA/7',
+    testUrl: '/courses/java/7',
   },
   {
     id: 'file-io',
@@ -67,7 +67,7 @@ const availableTopics = [
     displayName: 'WEEK 8: File I/O',
     description: 'Assessment on FileReader, FileWriter, BufferedReader, BufferedWriter, and NIO Package',
     icon: 'bi-file-text',
-    testUrl: '/courses/JAVA/8',
+    testUrl: '/courses/java/8',
   },
   {
     id: 'jdbc',
@@ -75,7 +75,7 @@ const availableTopics = [
     displayName: 'WEEK 9: JDBC',
     description: 'Assessment on Database Connectivity, Statement, PreparedStatement, ResultSet, and Transactions',
     icon: 'bi-database-add',
-    testUrl: '/courses/JAVA/9',
+    testUrl: '/courses/java/9',
   },
   {
     id: 'servlets-jsp',
@@ -83,7 +83,7 @@ const availableTopics = [
     displayName: 'WEEK 10: Servlets & JSP',
     description: 'Assessment on Servlets, JSP, Session Management, and MVC Architecture',
     icon: 'bi-server',
-    testUrl: '/courses/JAVA/10',
+    testUrl: '/courses/java/10',
   },
   {
     id: 'spring-boot',
@@ -91,7 +91,7 @@ const availableTopics = [
     displayName: 'WEEK 11: Spring Boot Basics',
     description: 'Assessment on Spring Boot Fundamentals, REST APIs, Dependency Injection, and Annotations',
     icon: 'bi-bootstrap',
-    testUrl: '/courses/JAVA/11',
+    testUrl: '/courses/java/11',
   },
   {
     id: 'Midterm-1',
@@ -99,7 +99,7 @@ const availableTopics = [
     displayName: 'Midterm 1 Exam',
     description: 'Comprehensive exam covering Weeks 1-5',
     icon: 'bi-journal-check',
-    testUrl: '/courses/JAVA/midterm1',
+    testUrl: '/courses/java/midterm1',
   },
   {
     id: 'Midterm-2',
@@ -107,7 +107,7 @@ const availableTopics = [
     displayName: 'Midterm 2 Exam',
     description: 'Comprehensive exam covering Weeks 6-8',
     icon: 'bi-journal-check',
-    testUrl: '/courses/JAVA/midterm2',
+    testUrl: '/courses/java/midterm2',
   },
   {
     id: 'End-Term',
@@ -115,7 +115,7 @@ const availableTopics = [
     displayName: 'End Term Exam',
     description: 'Final comprehensive exam covering all weeks',
     icon: 'bi-flag',
-    testUrl: '/courses/JAVA/endterm',
+    testUrl: '/courses/java/endterm',
   },
 ]
 
@@ -164,13 +164,13 @@ const Java = () => {
     try {
       const res = await axios.get(`${API}/api/session-info`, { withCredentials: true })
       if (res.data && res.data.email) {
-        const user = { email: res.data.email, username: res.data.username }
         setIsAuthenticated(true)
-        await loadCourseData(user)
+        await loadCourseData(res.data)  // Pass the user data directly
       } else {
         setIsAuthenticated(false)
       }
-    } catch {
+    } catch (error) {
+      console.error('Auth check failed:', error)
       setIsAuthenticated(false)
     } finally {
       setLoading(false)
@@ -178,14 +178,21 @@ const Java = () => {
   }
 
   async function loadCourseData(user) {
-    const filterByUser = (subs) =>
-      (subs || []).filter(s => s.email === user.email || s.username === user.username)
-
-    const [javaRes] = await Promise.allSettled([
-      axios.get(`${API}/api/java-submission`, { withCredentials: true }),
-    ])
-
-    setJavaSubs(filterByUser(javaRes.status === 'fulfilled' ? javaRes.value.data : []))
+    try {
+      // Change this to GET request for submissions (not POST)
+      const javaRes = await axios.get(`${API}/api/java-submission`, { 
+        withCredentials: true 
+      })
+      
+      // Filter submissions for this user
+      const filtered = (javaRes.data.data || []).filter(s => 
+        s.email === user.email || s.username === user.username
+      )
+      setJavaSubs(filtered)
+    } catch (error) {
+      console.error('Error loading course data:', error)
+      setJavaSubs([])
+    }
   }
 
   if (loading) {
