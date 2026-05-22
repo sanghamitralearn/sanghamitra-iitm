@@ -66,6 +66,9 @@ const PhysicQue = require('../model/competitive_PhysicQue');
 const JavaSubmission = require('../model/Java_Submission');
 const JavaQuestions = require('../model/Java_Questions');
 
+const JeeQuestion = require('../model/jee_questions')
+const JeeScore = require('../model/jee_scores')
+
 
 require('../db/conn');
 const User = require('../model/userSchema');
@@ -4489,6 +4492,79 @@ router.get('/admin-notifications', async (req, res) => {
     res.json({ success: true, data: all.slice(0, 50) })
   } catch (err) {
     res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// ─── JEE Questions ────────────────────────────────────────────────────────────
+// GET /api/jee_questions?subject=Physics&difficulty=easy&limit=30
+router.get('/jee_questions', async (req, res) => {
+  try {
+    const { subject, difficulty, limit } = req.query
+    const filter = {}
+    if (subject) filter.subject = subject
+    if (difficulty) filter.difficulty = difficulty
+    const qs = await JeeQuestion.find(filter)
+      .limit(limit ? parseInt(limit) : 0)
+      .lean()
+    res.json(qs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/jee_scores — upsert: one doc per (email+subject), keep last 5 attempts
+router.post('/jee_scores', async (req, res) => {
+  try {
+    const { email, name, subject, totalQuestions, correctAnswers, wrongAnswers,
+            unattempted, score, maxScore, responses } = req.body
+    if (!email || !subject) return res.status(400).json({ error: 'email and subject are required' })
+
+    const newAttempt = {
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore,
+      // Only store questionId + userResponse + isCorrect + marksAwarded (no text/answer duplication)
+      responses: (responses || []).map(r => ({
+        questionId:   r.questionId,
+        userResponse: r.userResponse,
+        isCorrect:    r.isCorrect,
+        marksAwarded: r.marksAwarded,
+      })),
+      dateAttempted: new Date(),
+    }
+
+    // Upsert: find existing doc, prepend new attempt, slice to last 5
+    const doc = await JeeScore.findOneAndUpdate(
+      { email, subject },
+      {
+        $set:  { name },
+        $push: { attempts: { $each: [newAttempt], $position: 0, $slice: 5 } },
+      },
+      { upsert: true, new: true }
+    )
+    res.json({ success: true, data: { email: doc.email, subject: doc.subject, attemptCount: doc.attempts.length } })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/jee_scores?email=x@y.com  — returns latest attempt summary per subject
+router.get('/jee_scores', async (req, res) => {
+  try {
+    const { email } = req.query
+    const filter = email ? { email } : {}
+    const docs = await JeeScore.find(filter).lean()
+    // Return flattened: latest attempt per (email, subject)
+    const result = docs.map(doc => ({
+      email:          doc.email,
+      name:           doc.name,
+      subject:        doc.subject,
+      attemptCount:   doc.attempts?.length || 0,
+      // Latest attempt stats (index 0 = most recent)
+      ...(doc.attempts?.[0] || {}),
+    }))
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
   }
 })
 
