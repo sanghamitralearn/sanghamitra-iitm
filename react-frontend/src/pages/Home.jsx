@@ -212,28 +212,6 @@ const Home = () => {
               </div>
             </div>
 
-            {/* JAVA Course Card */}
-            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
-              <div className="course-item">
-                <img src="/img/java.png" className="img-fluid" alt="Data Structures and Algorithms Course" />
-                <div className="course-content">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Link to="/courses/JAVA"><button className="category">JAVA</button></Link>
-                  </div>
-                  <p className="description">
-                    Welcome to our Java Programming Hub, where you start your journey from basic syntax to 
-                    advanced application development. Master variables, control flow, OOP concepts, data structures, 
-                    file I/O, and JDBC through clear explanations, challenging quizzes, and real-world projects.
-                  </p>
-                  <div className="trainer d-flex justify-content-between align-items-center">
-                    <div className="trainer-rank d-flex align-items-center">
-                      <i className="bi bi-heart heart-icon"></i>&nbsp;89
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* DBMS Course Card */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
               <div className="course-item">
@@ -243,8 +221,8 @@ const Home = () => {
                     <Link to="/dbms"><button className="category">Database Management Systems</button></Link>
                   </div>
                   <p className="description">
-                    Welcome to our Database Management Systems Hub, where you learn how data is stored, 
-                    organized, and queried. Explore ER modeling, relational design, SQL fundamentals, 
+                    Welcome to our Database Management Systems Hub, where you learn how data is stored,
+                    organized, and queried. Explore ER modeling, relational design, SQL fundamentals,
                     normalization, indexing, and transactions through clear notes, quizzes, and hands-on practice.
                   </p>
                   <div className="trainer d-flex justify-content-between align-items-center">
@@ -256,27 +234,56 @@ const Home = () => {
               </div>
             </div>
 
-            
-         {/* Competitive Exam Foundation Course Card */}
-            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
-              <div className="course-item">
-                <img src="/img/competitive-exam-foundation.png" className="img-fluid" alt="Competitive Exam Foundation Course" />
+            {/* JEE Advanced Course Card */}
+            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4" data-aos="zoom-in" data-aos-delay="300">
+              <div className="course-item" style={{ width: '100%' }}>
+                {/* Gradient banner instead of image */}
+                <div style={{
+                  background: 'linear-gradient(135deg, #0d6efd 0%, #6610f2 40%, #dc3545 100%)',
+                  height: '180px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                }}>
+                  <div style={{ display: 'flex', gap: '18px' }}>
+                    <div style={{ textAlign: 'center', color: '#fff' }}>
+                      <i className="bi bi-lightning-charge-fill" style={{ fontSize: '1.8rem' }}></i>
+                      <div style={{ fontSize: '0.75rem', marginTop: 4 }}>Physics</div>
+                    </div>
+                    <div style={{ textAlign: 'center', color: '#fff' }}>
+                      <i className="bi bi-eyedropper" style={{ fontSize: '1.8rem' }}></i>
+                      <div style={{ fontSize: '0.75rem', marginTop: 4 }}>Chemistry</div>
+                    </div>
+                    <div style={{ textAlign: 'center', color: '#fff' }}>
+                      <i className="bi bi-calculator-fill" style={{ fontSize: '1.8rem' }}></i>
+                      <div style={{ fontSize: '0.75rem', marginTop: 4 }}>Mathematics</div>
+                    </div>
+                  </div>
+                  <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.8rem', letterSpacing: '1px' }}>
+                    JEE ADVANCED 2024 &amp; 2025
+                  </span>
+                </div>
+
                 <div className="course-content">
                   <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Link to="/competitive-exam-foundation"><button className="category">Competitive Exam Foundation</button></Link>
+                    <Link to="/courses/jee"><button className="category">JEE Advanced</button></Link>
+                    <span className="badge bg-danger" style={{ fontSize: '0.75rem' }}>+3 / −1</span>
                   </div>
                   <p className="description">
-                    Master the fundamentals required for various competitive exams including banking, SSC, railways, and state-level examinations. Our comprehensive course covers quantitative aptitude, logical reasoning, verbal ability, and general awareness. Get access to topic-wise modules, practice tests, time management strategies, and exam-specific preparation techniques designed to help you crack competitive exams with confidence.
+                    Practice JEE Advanced 2024 &amp; 2025 questions subject-wise — Physics, Chemistry and Mathematics.
+                    Full JEE marking scheme applied: +3 for correct, −1 for wrong MCQ, 0 for unattempted.
+                    Includes LaTeX rendering and diagram support.
                   </p>
                   <div className="trainer d-flex justify-content-between align-items-center">
                     <div className="trainer-rank d-flex align-items-center">
-                      <i className="bi bi-heart heart-icon"></i>&nbsp;56
+                      <i className="bi bi-heart heart-icon"></i>&nbsp;95
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            
           </div>
         </div>
       </section>
