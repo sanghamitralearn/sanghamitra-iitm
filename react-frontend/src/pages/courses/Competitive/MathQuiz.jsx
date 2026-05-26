@@ -6,7 +6,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 // Topic map: each week number maps to the exact topic string the backend expects.
 const WEEK_TOPIC_MAP = {
-  1: 'Probability',
+  1: 'Number System & Arithmetic',
+  9: 'Probability',
+  
 }
 
 // KaTeX loader
