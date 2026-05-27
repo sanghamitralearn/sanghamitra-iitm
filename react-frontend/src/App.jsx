@@ -49,6 +49,12 @@ import PdsaCodingQuiz from './pages/courses/PDSA/PdsaCodingQuiz'
 import PdsaInterviewQuiz from './pages/courses/PDSA/PdsaInterviewQuiz'
 import Math2Quiz from './pages/courses/Math2Quiz'
 import MathExamReview from './pages/MathReview'
+import CompetitiveExamFoundation from './pages/courses/CompetitiveExamFoundation';
+import MathQuiz from './pages/courses/Competitive/MathQuiz'
+import PhysicsQuiz from './pages/courses/Competitive/PhysicsQuiz'
+
+import JAVA from './pages/courses/JAVA'
+import JavaQuiz from './pages/courses/JAVA/JavaQuiz'
 import JEE from './pages/courses/JEE'
 import JEEQuiz from './pages/courses/JEEQuiz'
 
@@ -119,6 +125,15 @@ function App() {
       
             {/* Math 2 Quiz — week-based, DB-driven */}
             <Route path="/courses/math2/quiz/:week" element={<Math2Quiz />} />
+
+            {/* competitive-exam-foundation */}
+            <Route path="/competitive-exam-foundation" element={<CompetitiveExamFoundation />} />
+            <Route path="/competitive-exam-foundation/mathematics" element={<MathQuiz />} />
+            <Route path="/competitive-exam-foundation/physics" element={<PhysicsQuiz />} />
+            
+            {/* JAVA COURSE */}
+            <Route path="/courses/JAVA" element={<JAVA />} />
+            <Route path="/courses/JAVA/:weekId" element={<JavaQuiz />} />
 
             {/* JEE Advanced — subject-wise quizzes */}
             <Route path="/courses/jee" element={<JEE />} />
