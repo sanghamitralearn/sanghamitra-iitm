@@ -308,7 +308,7 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake }) => {
         </div></div>
         <nav className="breadcrumbs"><div className="container"><ol>
           <li><Link to="/">Home</Link></li>
-          <li><Link to="/competitive-exam-foundation/mathematics">Mathematics Math 2</Link></li>
+          <li><Link to="/courses/competitive-math">Mathematics</Link></li>
           <li className="current">Review</li>
         </ol></div></nav>
       </div>
@@ -351,7 +351,7 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake }) => {
               <button className="btn btn-primary" onClick={onRetake}>
                 <i className="bi bi-arrow-clockwise me-1" />Retake
               </button>
-              <Link to="/competitive-exam-foundation/mathematics" className="btn btn-outline-secondary">
+              <Link to="/courses/competitive-math" className="btn btn-outline-secondary">
                 <i className="bi bi-arrow-left me-1" />Back
               </Link>
             </div>
@@ -770,7 +770,7 @@ const MathQuiz = () => {
       <i className="bi bi-exclamation-triangle fs-1 text-danger" />
       <h4 className="mt-3">{error}</h4>
       <button className="btn btn-primary mt-3" onClick={() => userRef.current?.email && fetchQuestions()}>Retry</button>
-      <Link to="/competitive-exam-foundation/mathematics" className="btn btn-outline-secondary mt-3 ms-2">Back</Link>
+      <Link to="/courses/competitive-math" className="btn btn-outline-secondary mt-3 ms-2">Back</Link>
     </div>
   )
 
@@ -814,7 +814,7 @@ const MathQuiz = () => {
         </div></div>
         <nav className="breadcrumbs"><div className="container"><ol>
           <li><Link to="/">Home</Link></li>
-          <li><Link to="/competitive-exam-foundation/mathematics">Mathematics</Link></li>
+          <li><Link to="/courses/competitive-math">Mathematics</Link></li>
           <li className="current">{displayName}</li>
         </ol></div></nav>
       </div>
@@ -968,7 +968,7 @@ const MathQuiz = () => {
                 <button className="btn btn-success w-100" onClick={() => handleSubmit(false)} disabled={saving}>
                   {saving ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</> : <><i className="bi bi-check-lg me-1" />Submit Quiz</>}
                 </button>
-                <Link to="/competitive-exam-foundation/mathematics" className="btn btn-outline-secondary w-100 mt-2 btn-sm">
+                <Link to="/courses/competitive-math" className="btn btn-outline-secondary w-100 mt-2 btn-sm">
                   <i className="bi bi-arrow-left me-1" />Exit
                 </Link>
               </div>
