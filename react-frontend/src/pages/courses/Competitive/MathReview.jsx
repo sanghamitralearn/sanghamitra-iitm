@@ -31,7 +31,7 @@ const MathReview = () => {
       try {
         const authCheck = await axios.get(`${API}/api/check-auth`, { withCredentials: true })
         if (!authCheck.data.authenticated) {
-          navigate('/login', { state: { from: { pathname: '/courses/math2/review' } }, replace: true })
+          navigate('/login', { state: { from: { pathname: '/courses/competitive-math/review' } }, replace: true })
           return
         }
         const session = await axios.get(`${API}/api/session-info`, { withCredentials: true })
@@ -81,7 +81,7 @@ const MathReview = () => {
         </div></div>
         <nav className="breadcrumbs"><div className="container"><ol>
           <li><Link to="/">Home</Link></li>
-          <li><Link to="/competitive-exam-foundation/mathematics">Mathematics</Link></li>
+          <li><Link to="/courses/competitive-math">Mathematics</Link></li>
           <li className="current">Review</li>
         </ol></div></nav>
       </div>
@@ -161,7 +161,7 @@ const MathReview = () => {
           <div>
             <div className="d-flex justify-content-between align-items-center mb-3">
               <h4 className="mb-0">Your Quiz Attempts ({scores.length})</h4>
-              <Link to="/courses/math2" className="btn btn-outline-primary btn-sm">← Back to Topics</Link>
+              <Link to="/courses/competitive-math" className="btn btn-outline-primary btn-sm">← Back to Topics</Link>
             </div>
             <div className="mb-3">
               <input type="text" className="form-control" placeholder="Filter by week or topic..."
