@@ -17,7 +17,7 @@ const CompetitiveExamFoundation = () => {
       id: 2,
       title: "Mathematics",
       image: "/img/mathematics-competitive.png",
-      link: "/competitive-exam-foundation/mathematics",
+      link: "/courses/competitive-math",
       description: "Build strong mathematical foundations for banking, SSC, railways, and other competitive exams. Comprehensive coverage of arithmetic, algebra, geometry, trigonometry, calculus, and data interpretation with shortcut techniques.",
       likes: 89,
       aosDelay: "100"
