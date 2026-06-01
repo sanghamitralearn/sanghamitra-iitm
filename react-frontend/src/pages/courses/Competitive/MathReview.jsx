@@ -5,18 +5,18 @@ import axios from 'axios'
 const API = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 const WEEK_TOPICS = {
-  1: 'Descriptive Statistics',
-  2: 'Probability Basics',
-  3: 'Random Variables',
-  4: 'Distributions',
-  5: 'Sampling',
-  6: 'Hypothesis Testing',
-  7: 'Regression',
-  8: 'Linear Algebra I',
-  9: 'Linear Algebra II',
-  10: 'Calculus I',
-  11: 'Calculus II',
-  12: 'Optimization'
+  1: 'Number System & Arithmetic',
+  2: 'Algebra',
+  3: 'Functions',
+  4: 'Geometry',
+  5:  'Mensuration',
+  6:  'Trigonometry',
+  7:  'Coordinate Geometry',
+  8:  'Statistics',
+  9:  'Probability',
+  10:  'Sets & Venn Diagrams',
+  11:  'Vectors & Transformations',
+  12:  'Graphs & Practical Mathematics',
 }
 
 const MathReview = () => {
