@@ -43,18 +43,25 @@ import AdminSubject from './pages/courses/Admin'
 import IITMMathQuiz from './pages/courses/IITMMathQuiz'
 import StatisticsQuiz from './pages/courses/StatisticsQuiz'
 import MathReview from './pages/MathReview'
+import Math2Quiz from './pages/courses/Math2Quiz'
+import MathExamReview from './pages/MathReview'
+
 // PDSA quiz type imports
 import PdsaTestQuiz from './pages/courses/PDSA/PdsaTestQuiz'
 import PdsaCodingQuiz from './pages/courses/PDSA/PdsaCodingQuiz'
 import PdsaInterviewQuiz from './pages/courses/PDSA/PdsaInterviewQuiz'
-import Math2Quiz from './pages/courses/Math2Quiz'
-import MathExamReview from './pages/MathReview'
+
+
 import CompetitiveExamFoundation from './pages/courses/CompetitiveExamFoundation';
 import MathQuiz from './pages/courses/Competitive/MathQuiz'
+import ReviewPage from './pages/courses/Competitive/MathReview'
+import CompetitiveMath from './pages/courses/Competitive/CompetitiveMath'
 import PhysicsQuiz from './pages/courses/Competitive/PhysicsQuiz'
+
 
 import JAVA from './pages/courses/JAVA'
 import JavaQuiz from './pages/courses/JAVA/JavaQuiz'
+
 import JEE from './pages/courses/JEE'
 import JEEQuiz from './pages/courses/JEEQuiz'
 
@@ -128,9 +135,11 @@ function App() {
 
             {/* competitive-exam-foundation */}
             <Route path="/competitive-exam-foundation" element={<CompetitiveExamFoundation />} />
-            <Route path="/competitive-exam-foundation/mathematics" element={<MathQuiz />} />
+            <Route path="/courses/competitive-math" element={<CompetitiveMath />} />
+            <Route path="/courses/competitive-math/quiz/:topic" element={<MathQuiz />} />
+            <Route path="/courses/competitive-math/review" element={<ReviewPage />} />
             <Route path="/competitive-exam-foundation/physics" element={<PhysicsQuiz />} />
-            
+
             {/* JAVA COURSE */}
             <Route path="/courses/JAVA" element={<JAVA />} />
             <Route path="/courses/JAVA/:weekId" element={<JavaQuiz />} />
@@ -138,6 +147,7 @@ function App() {
             {/* JEE Advanced — subject-wise quizzes */}
             <Route path="/courses/jee" element={<JEE />} />
             <Route path="/courses/jee/quiz/:subject" element={<JEEQuiz />} />
+            
           </Routes>
         </main>
         <Footer />
