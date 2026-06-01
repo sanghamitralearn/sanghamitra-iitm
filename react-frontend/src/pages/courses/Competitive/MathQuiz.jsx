@@ -10,7 +10,14 @@ const WEEK_TOPIC_MAP = {
   2: 'Algebra',
   3: 'Functions',
   4: 'Geometry',
-  9: 'Probability',
+  5:  'Mensuration',
+  6:  'Trigonometry',
+  7:  'Coordinate Geometry',
+  8:  'Statistics',
+  9:  'Probability',
+  10:  'Sets & Venn Diagrams',
+  11:  'Vectors & Transformations',
+  12:  'Graphs & Practical Mathematics',
   
 }
 
