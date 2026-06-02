@@ -136,7 +136,7 @@ function App() {
             {/* competitive-exam-foundation */}
             <Route path="/competitive-exam-foundation" element={<CompetitiveExamFoundation />} />
             <Route path="/courses/competitive-math" element={<CompetitiveMath />} />
-            <Route path="/courses/competitive-math/quiz/:topic" element={<MathQuiz />} />
+            <Route path="/courses/competitive-math/quiz/:week" element={<MathQuiz />} />
             <Route path="/courses/competitive-math/review" element={<ReviewPage />} />
             <Route path="/competitive-exam-foundation/physics" element={<PhysicsQuiz />} />
 
