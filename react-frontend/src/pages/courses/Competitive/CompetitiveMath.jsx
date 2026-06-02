@@ -82,7 +82,7 @@ const availableTopics = [
     displayName: 'Number System & Arithmetic',
     description: 'Real numbers, HCF/LCM, ratio, percentages, profit/loss, interest, GST, shares, currency conversion, scales, speed-distance-time',
     icon: 'bi-calculator-fill',
-    url: '/courses/competitive-math/quiz/number-system',
+    url: '/courses/competitive-math/quiz/1',
     linkState: { quizName: 'Number System & Arithmetic Quiz' },
     week: 1
   },
@@ -92,7 +92,7 @@ const availableTopics = [
     displayName: 'Algebra',
     description: 'Polynomials, linear equations, Cramer\'s Rule, quadratic equations, AP, GP, algebraic manipulation, inequations, indices',
     icon: 'bi-infinity',
-    url: '/courses/competitive-math/quiz/algebra',
+    url: '/courses/competitive-math/quiz/2',
     linkState: { quizName: 'Algebra Quiz' },
     week: 2
   },
@@ -102,7 +102,7 @@ const availableTopics = [
     displayName: 'Functions',
     description: 'Function notation, domain & range, composite functions, inverse functions, mappings, vertical line test, real-life functions',
     icon: 'bi-graph-up',
-    url: '/courses/competitive-math/quiz/functions',
+    url: '/courses/competitive-math/quiz/3',
     linkState: { quizName: 'Functions Quiz' },
     week: 3
   },
@@ -112,7 +112,7 @@ const availableTopics = [
     displayName: 'Geometry',
     description: 'Similarity of triangles, circles, tangents, secants, cyclic quadrilaterals, circle theorems, geometric constructions',
     icon: 'bi-bounding-box-circles',
-    url: '/courses/competitive-math/quiz/geometry',
+    url: '/courses/competitive-math/quiz/4',
     linkState: { quizName: 'Geometry Quiz' },
     week: 4
   },
@@ -122,7 +122,7 @@ const availableTopics = [
     displayName: 'Mensuration',
     description: 'Area, volume, frustum, combination of solids, surface area of 2D & 3D shapes',
     icon: 'bi-cube',
-    url: '/courses/competitive-math/quiz/mensuration',
+    url: '/courses/competitive-math/quiz/5',
     linkState: { quizName: 'Mensuration Quiz' },
     week: 5
   },
@@ -132,7 +132,7 @@ const availableTopics = [
     displayName: 'Trigonometry',
     description: 'Trigonometric ratios, identities, heights & distances, bearings, sine/cosine rules',
     icon: 'bi-triangle-fill',
-    url: '/courses/competitive-math/quiz/trigonometry',
+    url: '/courses/competitive-math/quiz/6',
     linkState: { quizName: 'Trigonometry Quiz' },
     week: 6
   },
@@ -142,7 +142,7 @@ const availableTopics = [
     displayName: 'Coordinate Geometry',
     description: 'Distance formula, section formula, slope, line equations, straight lines',
     icon: 'bi-geo-alt-fill',
-    url: '/courses/competitive-math/quiz/coordinate-geometry',
+    url: '/courses/competitive-math/quiz/7',
     linkState: { quizName: 'Coordinate Geometry Quiz' },
     week: 7
   },
@@ -152,7 +152,7 @@ const availableTopics = [
     displayName: 'Statistics',
     description: 'Mean, median, mode, ogive, histograms, scatter plots, bar graphs, pie charts',
     icon: 'bi-bar-chart-steps',
-    url: '/courses/competitive-math/quiz/statistics',
+    url: '/courses/competitive-math/quiz/8',
     linkState: { quizName: 'Statistics Quiz' },
     week: 8
   },
@@ -162,7 +162,7 @@ const availableTopics = [
     displayName: 'Probability',
     description: 'Basic probability, complementary events, dice/coin/cards, combined events, tree diagrams, mutually exclusive events',
     icon: 'bi-dice-5-fill',
-    url: '/courses/competitive-math/quiz/probability',
+    url: '/courses/competitive-math/quiz/9',
     linkState: { quizName: 'Probability Quiz' },
     week: 9
   },
@@ -172,7 +172,7 @@ const availableTopics = [
     displayName: 'Sets & Venn Diagrams',
     description: 'Set notation, union, intersection, complement, 3-set problems, Venn diagram applications',
     icon: 'bi-venn-diagram',
-    url: '/courses/competitive-math/quiz/sets-venn',
+    url: '/courses/competitive-math/quiz/10',
     linkState: { quizName: 'Sets & Venn Diagrams Quiz' },
     week: 10
   },
@@ -182,7 +182,7 @@ const availableTopics = [
     displayName: 'Vectors & Transformations',
     description: 'Vector operations, reflection, rotation, enlargement, translation, transformations',
     icon: 'bi-arrow-repeat',
-    url: '/courses/competitive-math/quiz/vectors',
+    url: '/courses/competitive-math/quiz/11',
     linkState: { quizName: 'Vectors & Transformations Quiz' },
     week: 11
   },
@@ -192,7 +192,7 @@ const availableTopics = [
     displayName: 'Graphs & Practical Mathematics',
     description: 'Linear graphs, quadratic graphs, real-life graphs, practical math applications',
     icon: 'bi-diagram-3-fill',
-    url: '/courses/competitive-math/quiz/graphs',
+    url: '/courses/competitive-math/quiz/12',
     linkState: { quizName: 'Graphs & Practical Mathematics Quiz' },
     week: 12
   }
