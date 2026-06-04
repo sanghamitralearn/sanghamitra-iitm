@@ -89,6 +89,7 @@ const Stats1Dashboard = () => {
     return '#dc3545'
   }
 
+
   const stats = (() => {
     let totalSubmissions = 0, totalCorrect = 0, totalQ = 0
     data.forEach(s => (s.quizScores || []).forEach(q => {
@@ -201,7 +202,7 @@ const Stats1Dashboard = () => {
                             <td>
                               {recent
                                 ? <span style={{ color: getScoreColor(pct), fontWeight: 'bold' }}>
-                                    {recent.score || recent.correctAnswers || 0}/{recent.maxScore || recent.totalPossible || 50} ({pct}%)
+                                    {recent.score || 0}/{recent.maxScore || recent.totalPossible || 50} ({pct}%)
                                   </span>
                                 : <span className="text-muted">—</span>}
                             </td>
@@ -266,7 +267,7 @@ const Stats1Dashboard = () => {
                         return (
                           <tr key={i}>
                             <td><strong>{getDisplayTopicName(q.topic)}</strong></td>
-                            <td>{q.score || q.correctAnswers || 0}/{q.maxScore || q.totalPossible || 50}</td>
+                            <td>{q.score || 0}/{q.maxScore || q.totalPossible || 50}</td>
                             <td><span style={{ color: getScoreColor(pct), fontWeight: 'bold' }}>{pct}%</span></td>
                             <td>{q.timestamp ? new Date(q.timestamp).toLocaleDateString() : '—'}</td>
                           </tr>
