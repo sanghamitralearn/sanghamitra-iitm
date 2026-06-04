@@ -38,12 +38,67 @@ function typesetEl(el) {
   }
 }
 
-// ─── Render Table Helper ────────────────────────────────────────────────────
-// Enhanced renderQuestionText - handles tables, lists, and line breaks
+// ─── NEW: Format plain text math to LaTeX ─────────────────────────────────────
+const formatMathText = (text) => {
+  if (!text) return text;
+  
+  let formatted = text;
+  
+  // Remove any existing LaTeX delimiters first (to avoid double-wrapping)
+  formatted = formatted.replace(/\\\(/g, '').replace(/\\\)/g, '');
+  formatted = formatted.replace(/\$\$/g, '').replace(/\$/g, '');
+  
+  // Convert Unicode minus to regular hyphen
+  formatted = formatted.replace(/−/g, '-');
+  
+  // Convert X ~ U(a, b) to $X \sim U(a, b)$
+  formatted = formatted.replace(/([A-Z])\s*~\s*([A-Z])\(([^,]+),\s*([^)]+)\)/g, '$$$1 \\sim $2($3, $4)$$');
+  
+  // Convert simple X ~ U(a, b) without comma
+  formatted = formatted.replace(/([A-Z])\s*~\s*([A-Z])\(([^)]+)\)/g, '$$$1 \\sim $2($3)$$');
+  
+  // Convert fractions like (a + b)/2
+  formatted = formatted.replace(/\(([a-z]\s*[+-]\s*[a-z])\)\s*\/\s*(\d+)/g, '$$\\frac{$1}{$2}$$');
+  
+  // Convert fractions like (b - a)/12
+  formatted = formatted.replace(/\(([a-z]\s*-\s*[a-z])\)\s*\/\s*(\d+)/g, '$$\\frac{$1}{$2}$$');
+  
+  // Convert simple fractions like 1/2
+  formatted = formatted.replace(/(\d+)\s*\/\s*(\d+)/g, '$$\\frac{$1}{$2}$$');
+  
+  // Convert 1/(b - a) pattern
+  formatted = formatted.replace(/(\d+)\s*\/\s*\(([^)]+)\)/g, '$$\\frac{$1}{$2}$$');
+  
+  // Convert X² to X^2
+  formatted = formatted.replace(/([A-Z])²/g, '$$$1^2$$');
+  
+  // Convert √ to \sqrt
+  formatted = formatted.replace(/√(\d+)/g, '$$\\sqrt{$1}$$');
+  
+  return formatted;
+};
+
+// ─── Enhanced Render Table Helper with Math Formatting ────────────────────────
 function renderQuestionText(text) {
   if (!text) return null;
   
-  // First, handle line breaks - split by newlines
+  // First, convert plain text math to LaTeX
+  const convertedText = formatMathText(text);
+  
+  // If conversion added LaTeX delimiters, render with MathJax
+  if (convertedText.includes('$$')) {
+    const lines = convertedText.split('\n');
+    return (
+      <>
+        {lines.filter(line => line.trim()).map((line, idx) => (
+          <p key={`math-${idx}`} style={{marginBottom: '0.5rem'}} 
+             dangerouslySetInnerHTML={{ __html: line }} />
+        ))}
+      </>
+    );
+  }
+  
+  // Handle line breaks - split by newlines
   const lines = text.split('\n');
   
   // Check if text contains a table (starts with | and contains --- separator)
@@ -110,12 +165,12 @@ function renderQuestionText(text) {
                   {row.split('|').filter(cell => cell.trim() !== '').map((cell, cellIdx) => (
                     <td key={`td-${rowIdx}-${cellIdx}`} style={{padding: '8px 12px', textAlign: 'center'}}>
                       {cell.trim()}
-                    </td>
+                     </td>
                   ))}
-                </tr>
+                 </tr>
               ))}
             </tbody>
-          </table>
+           </table>
         )}
         
         {/* Text after table */}
@@ -1085,7 +1140,7 @@ const StatisticsQuiz = () => {
       const u = userRef.current
       await axios.post(`${API_URL}/api/statistics_scores`, {
         email: u.email, username: u.username || u.name || u.email,
-        quizData: { topic, score, maxScore: totalPossible, totalQuestions: questions.length, percentage, timestamp: new Date(), questionResults }
+        quizData: { topic, score, maxScore: totalPossible, totalQuestions: questions.length, totalPossible, percentage, timestamp: new Date(), questionResults }
       }, { withCredentials: true })
     } catch(err) { console.error('Score save failed:', err) }
     finally { setSaving(false) }
@@ -1315,7 +1370,6 @@ const StatisticsQuiz = () => {
                 <span style={S.qNumBadge}>Q {currentIndex+1}</span>
               </div>
               <div style={S.qBody}>
-                {/* NEW: renderQuestionText replaces the plain h5 */}
                 <h5 style={S.qText}>{renderQuestionText(q.question_text)}</h5>
                 {q.img_file&&<img src={q.img_file} alt="diagram" className="img-fluid mb-3 rounded" style={{maxHeight:200,border:'1.5px solid #85B7EB'}}/>}
                 {renderInput(q)}
@@ -1323,13 +1377,13 @@ const StatisticsQuiz = () => {
             </div>
 
             <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
-              <button style={{...S.navPrev, opacity:currentIndex===0?0.4:1, cursor:currentIndex===0?'not-allowed':'pointer'}}
+              <button type="button" style={{...S.navPrev, opacity:currentIndex===0?0.4:1, cursor:currentIndex===0?'not-allowed':'pointer'}}
                 onClick={()=>currentIndex>0&&goTo(currentIndex-1)} disabled={currentIndex===0}>
                 <i className="bi bi-chevron-left me-1"/>Prev
               </button>
               {currentIndex < questions.length-1
-                ? <button style={S.navNext} onClick={()=>goTo(currentIndex+1)}>Next<i className="bi bi-chevron-right ms-1"/></button>
-                : <button style={S.navSubmit} onClick={doSubmit} disabled={saving}>
+                ? <button type="button" style={S.navNext} onClick={()=>goTo(currentIndex+1)}>Next<i className="bi bi-chevron-right ms-1"/></button>
+                : <button type="button" style={S.navSubmit} onClick={doSubmit} disabled={saving}>
                     {saving?<><span className="spinner-border spinner-border-sm me-1"/>Saving…</>:<><i className="bi bi-check-circle me-1"/>Submit</>}
                   </button>
               }
