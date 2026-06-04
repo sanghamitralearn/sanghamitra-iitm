@@ -5,6 +5,45 @@ import axios from 'axios'
 
 const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
+const STATS_TOPIC_NAMES = {
+  // Week 1
+  'Week1_Basics_of_Data':               'Week 1 - Basics of Data',
+  'basics_of_data':                     'Week 1 - Basics of Data',
+  'Basics of Data':                     'Week 1 - Basics of Data',
+  'Week 1 - Basics of Data':            'Week 1 - Basics of Data',
+  // Week 2
+  'Week2_Categorical_Analysis':         'Week 2 - Categorical Analysis',
+  'categorical_analysis':               'Week 2 - Categorical Analysis',
+  'Categorical Analysis':               'Week 2 - Categorical Analysis',
+  'Week 2 - Categorical Analysis':      'Week 2 - Categorical Analysis',
+  // Week 3
+  'Week3_Descriptive_Statistics':       'Week 3 - Descriptive Statistics',
+  'descriptive_statistics':             'Week 3 - Descriptive Statistics',
+  'Descriptive Statistics':             'Week 3 - Descriptive Statistics',
+  'Week 3 - Descriptive Statistics':    'Week 3 - Descriptive Statistics',
+  // Week 4
+  'Week4_Variable_Association':         'Week 4 - Variable Association',
+  'variable_association':               'Week 4 - Variable Association',
+  'Variable Association':               'Week 4 - Variable Association',
+  'Week 4 - Variable Association':      'Week 4 - Variable Association',
+  // Week 5
+  'Week5_Basic_Principles_of_Counting': 'Week 5 - Basic Principles of Counting',
+  'basic_principles_of_counting':       'Week 5 - Basic Principles of Counting',
+  'Basic Principles of Counting':       'Week 5 - Basic Principles of Counting',
+  'Week 5 - Basic Principles of Counting': 'Week 5 - Basic Principles of Counting',
+  // Week 6
+  'Week6_Permutations_and_Combinations':'Week 6 - Permutations & Combinations',
+  'permutations_and_combinations':      'Week 6 - Permutations & Combinations',
+  'Permutations and Combinations':      'Week 6 - Permutations & Combinations',
+  'Week 6 - Permutations and Combinations': 'Week 6 - Permutations & Combinations',
+}
+
+function getDisplayTopicName(topic) {
+  if (!topic) return 'Unknown Topic'
+  if (STATS_TOPIC_NAMES[topic]) return STATS_TOPIC_NAMES[topic]
+  return topic.replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
+
 const Stats1Dashboard = () => {
   const navigate = useNavigate()
   const [data, setData] = useState([])
@@ -50,7 +89,7 @@ const Stats1Dashboard = () => {
     }
   })()
 
-  const sortedData = [...data].sort((a, b) => {
+  const sortedData = [...data].filter(s => s.quizScores?.length > 0).sort((a, b) => {
     const aLatest = (a.quizScores || []).reduce((max, q) => Math.max(max, new Date(q.timestamp || 0)), 0)
     const bLatest = (b.quizScores || []).reduce((max, q) => Math.max(max, new Date(q.timestamp || 0)), 0)
     return bLatest - aLatest
@@ -142,7 +181,7 @@ const Stats1Dashboard = () => {
                             <td>{student.email}</td>
                             <td>
                               {recent
-                                ? <span className="badge bg-success">{recent.topic || 'Unknown'}</span>
+                                ? <span className="badge bg-success">{getDisplayTopicName(recent.topic)}</span>
                                 : <span className="text-muted">No attempts</span>}
                             </td>
                             <td>
@@ -212,7 +251,7 @@ const Stats1Dashboard = () => {
                         const pct = Math.round(q.percentage || 0)
                         return (
                           <tr key={i}>
-                            <td><strong>{q.topic || 'Unknown'}</strong></td>
+                            <td><strong>{getDisplayTopicName(q.topic)}</strong></td>
                             <td>{q.score || q.correctAnswers || 0}/{q.maxScore || q.totalPossible || 50}</td>
                             <td><span style={{ color: getScoreColor(pct), fontWeight: 'bold' }}>{pct}%</span></td>
                             <td>{q.timestamp ? new Date(q.timestamp).toLocaleDateString() : '—'}</td>
