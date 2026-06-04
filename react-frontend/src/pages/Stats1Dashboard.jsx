@@ -6,36 +6,50 @@ import axios from 'axios'
 const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 const STATS_TOPIC_NAMES = {
+  // Midterm / Endterm
+  'Quiz1_midterm':                           'Quiz 1 Midterm',
+  'Quiz1 midterm':                           'Quiz 1 Midterm',
+  'quiz1_midterm':                           'Quiz 1 Midterm',
+  'end_term':                                'Endterm',
+  'Endterm':                                 'Endterm',
   // Week 1
-  'Week1_Basics_of_Data':               'Week 1 - Basics of Data',
-  'basics_of_data':                     'Week 1 - Basics of Data',
-  'Basics of Data':                     'Week 1 - Basics of Data',
-  'Week 1 - Basics of Data':            'Week 1 - Basics of Data',
+  'Basics of Data':                          'Week 1 - Basics of Data',
+  'basics_of_data':                          'Week 1 - Basics of Data',
+  'Week1_Basics_of_Data':                    'Week 1 - Basics of Data',
   // Week 2
-  'Week2_Categorical_Analysis':         'Week 2 - Categorical Analysis',
-  'categorical_analysis':               'Week 2 - Categorical Analysis',
-  'Categorical Analysis':               'Week 2 - Categorical Analysis',
-  'Week 2 - Categorical Analysis':      'Week 2 - Categorical Analysis',
+  'Categorical Analysis':                    'Week 2 - Categorical Analysis',
+  'categorical_analysis':                    'Week 2 - Categorical Analysis',
+  'Week2_Categorical_Analysis':              'Week 2 - Categorical Analysis',
   // Week 3
-  'Week3_Descriptive_Statistics':       'Week 3 - Descriptive Statistics',
-  'descriptive_statistics':             'Week 3 - Descriptive Statistics',
-  'Descriptive Statistics':             'Week 3 - Descriptive Statistics',
-  'Week 3 - Descriptive Statistics':    'Week 3 - Descriptive Statistics',
+  'Descriptive Statistics':                  'Week 3 - Descriptive Statistics',
+  'descriptive_statistics':                  'Week 3 - Descriptive Statistics',
+  'Week3_Descriptive_Statistics':            'Week 3 - Descriptive Statistics',
   // Week 4
-  'Week4_Variable_Association':         'Week 4 - Variable Association',
-  'variable_association':               'Week 4 - Variable Association',
-  'Variable Association':               'Week 4 - Variable Association',
-  'Week 4 - Variable Association':      'Week 4 - Variable Association',
+  'Variable Association':                    'Week 4 - Variable Association',
+  'variable_association':                    'Week 4 - Variable Association',
+  'Week4_Variable_Association':              'Week 4 - Variable Association',
   // Week 5
-  'Week5_Basic_Principles_of_Counting': 'Week 5 - Basic Principles of Counting',
-  'basic_principles_of_counting':       'Week 5 - Basic Principles of Counting',
-  'Basic Principles of Counting':       'Week 5 - Basic Principles of Counting',
-  'Week 5 - Basic Principles of Counting': 'Week 5 - Basic Principles of Counting',
+  'week-5 - Counting_and_Factorial':         'Week 5 - Counting and Factorial',
+  'Counting_and_Factorial':                  'Week 5 - Counting and Factorial',
+  'counting_and_factorial':                  'Week 5 - Counting and Factorial',
   // Week 6
-  'Week6_Permutations_and_Combinations':'Week 6 - Permutations & Combinations',
-  'permutations_and_combinations':      'Week 6 - Permutations & Combinations',
-  'Permutations and Combinations':      'Week 6 - Permutations & Combinations',
-  'Week 6 - Permutations and Combinations': 'Week 6 - Permutations & Combinations',
+  'week-6_permutations_and_combinations':    'Week 6 - Permutations and Combinations',
+  'permutations_and_combinations':           'Week 6 - Permutations and Combinations',
+  // Week 7
+  'week_7_probability':                      'Week 7 - Probability',
+  'probability':                             'Week 7 - Probability',
+  'Probability':                             'Week 7 - Probability',
+  // Week 8
+  'conditional_probability':                 'Week 8 - Conditional Probability',
+  'Conditional Probability':                 'Week 8 - Conditional Probability',
+  // Week 9
+  'week9_stats1':                            'Week 9 - Random Variables',
+  // Week 10
+  'week10_stats1':                           'Week 10 - Expectation and Variance',
+  // Week 11
+  'week11_stats1':                           'Week 11 - Binomial and Poisson Random Variables',
+  // Week 12
+  'week_12':                                 'Week 12 - Introduction to Continuous Random Variables',
 }
 
 function getDisplayTopicName(topic) {
