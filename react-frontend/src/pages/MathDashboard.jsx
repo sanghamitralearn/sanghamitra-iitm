@@ -3,7 +3,40 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-  
+
+const TOPIC_NAMES = {
+  // Math 1 - Functions & Calculus
+  exponential_functions:  'Week 5 - Exponential Functions',
+  logarithmic_functions:  'Week 6 - Logarithmic Functions',
+  quadratic_functions:    'Week 3 - Quadratic Functions',
+  linear_functions_2:     'Week 2 - Linear Functions',
+  polynomials:            'Week 4 - Polynomial Functions',
+  sequence_limits:        'Week 7 - Sequences & Limits',
+  limits_continuity:      'Week 8 - Limits & Continuity',
+  differentiability:      'Week 8 - Differentiability',
+  Limit:                  'Week 8 - Limits',
+  continuity:             'Week 8 - Continuity',
+  inverse_function:       'Week 6 - Inverse Functions',
+  composite_function:     'Week 5 - Composite Functions',
+  // Discrete Math / additional topics
+  sets_and_relations:     'Sets & Relations',
+  graph_theory:           'Graph Theory',
+  end_term:               'End Term Exam',
+  mid_term:               'Mid Term Exam',
+  functions:              'Functions',
+  matrices:               'Matrices',
+  calculus:               'Calculus',
+  number_theory:          'Number Theory',
+  combinatorics:          'Combinatorics',
+};
+
+function getDisplayTopicName(topic) {
+  if (!topic) return 'Unknown Topic';
+  if (TOPIC_NAMES[topic]) return TOPIC_NAMES[topic];
+  // Fallback: replace underscores/hyphens with spaces and title-case
+  return topic.replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
 const MathDashboard = () => {
   const navigate = useNavigate();
   const [mathData, setMathData] = useState([]);
@@ -259,7 +292,7 @@ const MathDashboard = () => {
                                 <td>
                                   {recentExam ? (
                                     <span className={`badge ${recentExam.difficultyLevel === 'hard' ? 'bg-danger' : recentExam.difficultyLevel === 'medium' ? 'bg-warning' : 'bg-success'}`}>
-                                      {recentExam.topic || 'Unknown Topic'}
+                                      {getDisplayTopicName(recentExam.topic)}
                                     </span>
                                   ) : (
                                     <span className="text-muted">No exams</span>
@@ -362,7 +395,7 @@ const MathDashboard = () => {
                         <tbody>
                           {[...selectedStudent.quizScores].sort((a, b) => new Date(b.timestamp||0) - new Date(a.timestamp||0)).map((quiz, index) => (
                             <tr key={index}>
-                              <td><strong>{quiz.topic || 'Unknown Topic'}</strong></td>
+                              <td><strong>{getDisplayTopicName(quiz.topic)}</strong></td>
                               <td>#{quiz.attemptNumber || index + 1}</td>
                               <td>{quiz.score || 0}/{quiz.maxScore || quiz.totalPossible || 50}</td>
                               <td>
