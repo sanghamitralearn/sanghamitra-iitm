@@ -16,6 +16,8 @@ const topicScoreSchema = new mongoose.Schema({
   topic: { type: String, required: true }, // Removed enum to match Math schema
   percentage: { type: Number, required: false },
   score: { type: Number, required: false },
+  maxScore: { type: Number, required: false },
+  totalPossible: { type: Number, required: false },
   totalQuestions: { type: Number, required: true },
   correctAnswers: { type: Number, required: false },
   attemptNumber: { type: Number, default: 1 },
