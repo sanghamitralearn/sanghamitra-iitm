@@ -271,7 +271,7 @@ const MathDashboard = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {[...mathData].sort((a, b) => {
+                          {[...mathData].filter(s => s.quizScores?.length > 0).sort((a, b) => {
                             const aLatest = (a.quizScores || []).reduce((max, q) => Math.max(max, new Date(q.timestamp||0)), 0)
                             const bLatest = (b.quizScores || []).reduce((max, q) => Math.max(max, new Date(q.timestamp||0)), 0)
                             return bLatest - aLatest
