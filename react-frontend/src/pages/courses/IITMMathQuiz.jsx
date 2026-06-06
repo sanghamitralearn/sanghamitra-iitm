@@ -9,9 +9,18 @@ const TOPIC_PALETTE = ['#4e73df','#1cc88a','#36b9cc','#f6c23e','#e74a3b','#6f42c
 function resolveOptionText(question, idxOrText) {
   if (idxOrText === undefined || idxOrText === null) return ''
   const opts = question.options || []
-  const idx = typeof idxOrText === 'number' ? idxOrText : parseInt(idxOrText)
+  if (typeof idxOrText === 'number') {
+    if (idxOrText >= 0 && idxOrText < opts.length) return opts[idxOrText]
+    return String(idxOrText)
+  }
+  // String: try exact text match first so numeric option labels (e.g. "2") aren't
+  // accidentally treated as array indices pointing to the wrong option
+  const strVal = String(idxOrText).trim()
+  const exactIdx = opts.findIndex(o => o === strVal)
+  if (exactIdx !== -1) return opts[exactIdx]
+  const idx = parseInt(strVal)
   if (!isNaN(idx) && idx >= 0 && idx < opts.length) return opts[idx]
-  return String(idxOrText)
+  return strVal
 }
 
 function loadMathJax() {
@@ -464,9 +473,16 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
                             ? (() => {
                                 const ca = q.correct_answer
                                 const toOptText = val => {
-                                  const asInt = typeof val==='number' ? val : parseInt(String(val).trim())
+                                  if (typeof val === 'number') {
+                                    if (val >= 0 && val < (q.options||[]).length) return q.options[val]
+                                    return String(val)
+                                  }
+                                  const sv = String(val).trim()
+                                  const ei = (q.options||[]).findIndex(o => o === sv)
+                                  if (ei !== -1) return q.options[ei]
+                                  const asInt = parseInt(sv)
                                   if (!isNaN(asInt) && asInt>=0 && asInt<(q.options||[]).length) return q.options[asInt]
-                                  return String(val)
+                                  return sv
                                 }
                                 if (Array.isArray(ca)) return ca.map(toOptText)
                                 if (typeof ca==='string') {
@@ -478,9 +494,16 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
                               })() : []
 
                           const resolvedCorrectIdx = q.type==='multiple_choice'
-                            ? (typeof q.correct_answer==='number' ? q.correct_answer
-                                : !isNaN(parseInt(String(q.correct_answer).trim())) ? parseInt(String(q.correct_answer).trim())
-                                : q.options?.findIndex(o=>o?.toLowerCase().trim()===String(q.correct_answer).toLowerCase().trim())??-1)
+                            ? (() => {
+                                const ca = q.correct_answer
+                                if (typeof ca === 'number') return ca
+                                const strCa = String(ca).trim()
+                                const ei = (q.options||[]).findIndex(o => o === strCa)
+                                if (ei !== -1) return ei
+                                const asInt = parseInt(strCa)
+                                if (!isNaN(asInt) && asInt >= 0 && asInt < (q.options||[]).length) return asInt
+                                return (q.options||[]).findIndex(o => o?.toLowerCase().trim() === strCa.toLowerCase())
+                              })()
                             : -1
 
                           const isCorrectOpt = q.type==='multiple_choice'
@@ -860,9 +883,14 @@ const IITMMathQuiz = () => {
       const resolveToIndex = val => {
         if (val === undefined || val === null) return -1
         if (typeof val === 'number' && !isNaN(val)) return val
-        const asInt = parseInt(String(val).trim())
-        if (!isNaN(asInt)) return asInt
-        return (question.options || []).findIndex(o => norm(o) === norm(String(val)))
+        const strVal = String(val).trim()
+        // Exact text match first — prevents "2" being treated as index 2 when
+        // the option labelled "2" actually sits at a different index
+        const exactIdx = (question.options || []).findIndex(o => o === strVal)
+        if (exactIdx !== -1) return exactIdx
+        const asInt = parseInt(strVal)
+        if (!isNaN(asInt) && asInt >= 0 && asInt < (question.options || []).length) return asInt
+        return (question.options || []).findIndex(o => norm(o) === norm(strVal))
       }
       const userIdx    = resolveToIndex(userAnswer)
       const correctIdx = resolveToIndex(ca)
@@ -883,10 +911,18 @@ const IITMMathQuiz = () => {
 
       const toText = val => {
         if (val === undefined || val === null) return ''
-        const asInt = typeof val === 'number' ? val : parseInt(String(val).trim())
+        if (typeof val === 'number') {
+          if (val >= 0 && val < (question.options || []).length)
+            return norm(question.options[val])
+          return norm(String(val))
+        }
+        const strVal = String(val).trim()
+        const exactIdx = (question.options || []).findIndex(o => o === strVal)
+        if (exactIdx !== -1) return norm(question.options[exactIdx])
+        const asInt = parseInt(strVal)
         if (!isNaN(asInt) && asInt >= 0 && asInt < (question.options || []).length)
           return norm(question.options[asInt])
-        return norm(String(val))
+        return norm(strVal)
       }
 
       let correctTexts = []
@@ -1241,13 +1277,13 @@ const IITMMathQuiz = () => {
             </div>
 
             <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
-              <button style={{...S.navPrev, opacity:currentIndex===0?0.4:1, cursor:currentIndex===0?'not-allowed':'pointer'}}
+              <button type="button" style={{...S.navPrev, opacity:currentIndex===0?0.4:1, cursor:currentIndex===0?'not-allowed':'pointer'}}
                 onClick={()=>currentIndex>0&&goTo(currentIndex-1)} disabled={currentIndex===0}>
                 <i className="bi bi-chevron-left me-1"/>Prev
               </button>
               {currentIndex < questions.length-1
-                ? <button style={S.navNext} onClick={()=>goTo(currentIndex+1)}>Next<i className="bi bi-chevron-right ms-1"/></button>
-                : <button style={S.navSubmit} onClick={doSubmit} disabled={saving}>
+                ? <button type="button" style={S.navNext} onClick={()=>goTo(currentIndex+1)}>Next<i className="bi bi-chevron-right ms-1"/></button>
+                : <button type="button" style={S.navSubmit} onClick={doSubmit} disabled={saving}>
                     {saving ? <><span className="spinner-border spinner-border-sm me-1"/>Saving…</> : <><i className="bi bi-check-circle me-1"/>Submit</>}
                   </button>
               }
