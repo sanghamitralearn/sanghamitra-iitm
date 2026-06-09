@@ -72,6 +72,10 @@ const JeeScore = require('../model/jee_scores')
 const SatQuestion = require('../model/sat_questions')
 const SatScore = require('../model/sat_scores')
 
+const DBMSSubmission = require('../model/DBMS_Submission');
+const DBMSQuestions = require('../model/DBMS_Questions');
+
+
 
 // programming course models
 const QuizQuestion = require('../model/Questions');  
@@ -5191,6 +5195,113 @@ router.get('/quiz/attempts/:attemptId', async (req, res) => {
   }
 });
 
+// GET all DBMS submissions — merges test, coding, and interview quiz submissions
+router.get('/dbms-submission', async (req, res) => {
+  try {
+    const { email } = req.query;
+    const filter = email ? { email } : {};
+
+    const [testSubs, codingSubs, interviewSubs] = await Promise.all([
+      DBMSSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
+      CodingSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
+      InterviewSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
+    ]);
+
+    const normalize = (sub, quizType) => ({
+      _id: sub._id,
+      email: sub.email,
+      username: sub.username,
+      topic: sub.topic,
+      score: sub.score,
+      maxScore: sub.maxScore,
+      percentage: sub.percentage,
+      timestamp: sub.timestamp,
+      quizType,
+    });
+
+    const merged = [
+      ...testSubs.map(s => normalize(s, 'test')),
+      ...codingSubs.map(s => normalize(s, 'coding')),
+      ...interviewSubs.map(s => normalize(s, 'interview')),
+    ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    res.json({ success: true, data: merged });
+
+  } catch (error) {
+    console.error('Error fetching DBMS submissions:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST — save DBMS quiz submission
+router.post('/dbms-submission', async (req, res) => {
+  try {
+    const submissionData = req.body;
+    const submission = new DBMSSubmission(submissionData);
+    await submission.save();
+    res.status(201).json({
+      success: true,
+      message: 'Quiz results saved successfully',
+      submissionId: submission._id
+    });
+  } catch (error) {
+    console.error('❌ Error saving DBMS submission:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to save quiz results',
+      error: error.message
+    });
+  }
+});
+
+// GET — fetch DBMS questions by week number
+router.get('/dbms/questions/week/:week', async (req, res) => {
+  try {
+    const { week } = req.params;
+    const { topic, subtopic, type, difficulty, limit } = req.query;
+
+    if (week < 1 || week > 11) {
+      return res.status(400).json({ success: false, message: 'Week must be between 1 and 11' });
+    }
+
+    let filter = { week: parseInt(week) };
+    if (topic) filter.topic = topic;
+    if (subtopic) filter.subtopic = subtopic;
+    if (type) filter.type = type;
+    if (difficulty) filter.difficulty = difficulty;
+
+    let query = DBMSQuestions.find(filter).sort({ questionId: 1 });
+    if (limit) query = query.limit(parseInt(limit));
+
+    const questions = await query.lean();
+
+    if (questions.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `No questions found for week ${week}`,
+        filters: filter
+      });
+    }
+
+    const stats = {
+      totalQuestions: questions.length,
+      byType: {}, byDifficulty: {}, byTopic: {},
+      totalMaxScore: questions.reduce((sum, q) => sum + (q.maxScore || 0), 0)
+    };
+    questions.forEach(q => {
+      stats.byType[q.type] = (stats.byType[q.type] || 0) + 1;
+      stats.byDifficulty[q.difficulty] = (stats.byDifficulty[q.difficulty] || 0) + 1;
+      stats.byTopic[q.topic] = (stats.byTopic[q.topic] || 0) + 1;
+    });
+
+    res.json({ success: true, week: parseInt(week), count: questions.length, statistics: stats, questions });
+
+  } catch (error) {
+    console.error('❌ Error fetching questions by week:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch questions', error: error.message });
+  }
+});
 
 
 module.exports = router
+
