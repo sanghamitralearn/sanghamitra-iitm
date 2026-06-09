@@ -565,7 +565,6 @@ const DBMSTestQuiz = () => {
                                 ? 'linear-gradient(135deg, rgba(76,175,80,0.12), rgba(46,125,50,0.12))'
                                 : '#f8f9fa',
                               border: `2px solid ${sel ? '#4caf50' : '#dee2e6'}`,
-                              transform: sel ? 'scale(1.01)' : 'scale(1)'
                             }}
                           >
                             <div className="d-flex align-items-center gap-3">
