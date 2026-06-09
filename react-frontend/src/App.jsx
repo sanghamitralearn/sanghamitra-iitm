@@ -70,7 +70,7 @@ import SATQuiz from './pages/courses/SATQuiz'
 import SATDashboard from './pages/SATDashboard'
 
 import DBMS from './pages/courses/DBMS'
-import DBMSQuiz from './pages/courses/DBMS/DBMSQuiz'
+import DBMSQuiz from './pages/courses/DBMSQuiz'
 
 import ProgrammingCourses from './pages/courses/Programming'
 import CoursePage from './pages/courses/Language_Courses/CoursePage'
