@@ -145,6 +145,25 @@ const Home = () => {
               </div>
             </div>
 
+            {/*  Course Card */}
+            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
+              <div className="course-item">
+                <img src="/img/programming.png" className="img-fluid" alt="Database Management Systems Course" />
+                <div className="course-content">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <Link to="/programming/courses"><button className="category">Programming Courses</button></Link>
+                  </div>
+                  <p className="description">
+                  </p>
+                  <div className="trainer d-flex justify-content-between align-items-center">
+                    <div className="trainer-rank d-flex align-items-center">
+                      <i className="bi bi-heart heart-icon"></i>&nbsp;89
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Competitive Exam Foundation Course Card */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
               <div className="course-item">
@@ -190,24 +209,7 @@ const Home = () => {
               </div>
             </div>
 
-            {/*  Course Card */}
-            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
-              <div className="course-item">
-                <img src="/img/programming.png" className="img-fluid" alt="Database Management Systems Course" />
-                <div className="course-content">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Link to="/programming/courses"><button className="category">Programming Courses</button></Link>
-                  </div>
-                  <p className="description">
-                  </p>
-                  <div className="trainer d-flex justify-content-between align-items-center">
-                    <div className="trainer-rank d-flex align-items-center">
-                      <i className="bi bi-heart heart-icon"></i>&nbsp;89
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          
 
             {/* Programming Course Card */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="200">
