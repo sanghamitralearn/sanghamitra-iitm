@@ -69,6 +69,9 @@ import SAT from './pages/courses/SAT'
 import SATQuiz from './pages/courses/SATQuiz'
 import SATDashboard from './pages/SATDashboard'
 
+import DBMS from './pages/courses/DBMS'
+import DBMSQuiz from './pages/courses/DBMS/DBMSQuiz'
+
 import ProgrammingCourses from './pages/courses/Programming'
 import CoursePage from './pages/courses/Language_Courses/CoursePage'
 import QuizPage from './pages/courses/Language_Courses/QuizPage'
@@ -166,6 +169,10 @@ function App() {
             {/* SAT — module-based quizzes */}
             <Route path="/courses/sat" element={<SAT />} />
             <Route path="/courses/sat/quiz/:section/:module" element={<SATQuiz />} />
+
+             {/* DBMS COURSE */}
+            <Route path="/courses/DBMS" element={<DBMS />} />
+            <Route path="/courses/DBMS/:weekId" element={<DBMSQuiz />} />
             
           </Routes>
         </main>
