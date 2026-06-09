@@ -15,23 +15,12 @@ const SATDashboard = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get(`${VITE_API_URL}/api/sat_scores`, { withCredentials: true });
-      const byEmail = {};
-      (res.data || []).forEach(entry => {
-        if (!byEmail[entry.email]) {
-          byEmail[entry.email] = { email: entry.email, name: entry.name, subjects: [] };
-        }
-        byEmail[entry.email].subjects.push({
-          subject:        entry.subject,
-          attemptCount:   entry.attemptCount,
-          score:          entry.score,
-          maxScore:       entry.maxScore,
-          correctAnswers: entry.correctAnswers,
-          totalQuestions: entry.totalQuestions,
-          dateAttempted:  entry.dateAttempted,
-        });
-      });
-      setSatData(Object.values(byEmail));
+      const res = await axios.get(`${VITE_API_URL}/api/sat_admin_scores`, { withCredentials: true });
+      if (res.data.success && res.data.data) {
+        setSatData(Array.isArray(res.data.data) ? res.data.data : [res.data.data]);
+      } else {
+        setSatData([]);
+      }
     } catch (err) {
       setError('Unable to fetch SAT data');
       setSatData([]);
@@ -48,30 +37,53 @@ const SATDashboard = () => {
     if (!satData.length) return { totalStudents: 0, avgScore: 0, totalSubmissions: 0 };
     let totalScore = 0, totalMaxScore = 0, totalSubmissions = 0;
     satData.forEach(student => {
-      student.subjects.forEach(s => {
-        totalScore += s.score || 0;
-        totalMaxScore += s.maxScore || 1;
-        totalSubmissions++;
-      });
+      if (student.quizScores && student.quizScores.length) {
+        student.quizScores.forEach(quiz => {
+          totalScore += quiz.score || 0;
+          totalMaxScore += quiz.maxScore || 100;
+          totalSubmissions++;
+        });
+      }
     });
+    const avgScore = totalMaxScore > 0 ? (totalScore / totalMaxScore) * 100 : 0;
     return {
       totalStudents: satData.length,
-      avgScore: totalMaxScore > 0 ? Math.round((totalScore / totalMaxScore) * 10000) / 100 : 0,
+      avgScore: Math.round(avgScore * 100) / 100,
       totalSubmissions,
     };
   };
 
   const stats = calculateStats();
 
-  const getScoreColor = (pct) => {
-    if (pct >= 80) return '#28a745';
-    if (pct >= 60) return '#ffc107';
+  const getScoreColor = (percentage) => {
+    if (percentage >= 80) return '#28a745';
+    if (percentage >= 60) return '#ffc107';
     return '#dc3545';
   };
 
-  const getLatestDate = (student) => {
-    const dates = student.subjects.map(s => new Date(s.dateAttempted || 0));
-    return dates.reduce((max, d) => (d > max ? d : max), new Date(0));
+  const handleStudentClick = (student) => setSelectedStudent(student);
+  const handleBackToDashboard = () => setSelectedStudent(null);
+
+  const handleGenerateAnalysis = (student) => {
+    navigate(`/admin/analysis/sat/${student._id || student.email}`, {
+      state: { student },
+    });
+  };
+
+  const getTopicProgress = (student) => {
+    if (!student.quizScores || student.quizScores.length === 0) return [];
+    const topicMap = new Map();
+    student.quizScores.forEach(quiz => {
+      const topic = quiz.topic || 'Unknown Section';
+      if (!topicMap.has(topic)) {
+        topicMap.set(topic, { topic, correctAnswers: 0, totalQuestions: 0, progress: 0 });
+      }
+      const t = topicMap.get(topic);
+      t.correctAnswers += quiz.score || 0;
+      t.totalQuestions += quiz.maxScore || 100;
+      t.progress = t.totalQuestions > 0 ? (t.correctAnswers / t.totalQuestions) * 100 : 0;
+    });
+    return Array.from(topicMap.values());
   };
 
   if (loading) {
@@ -109,6 +121,7 @@ const SATDashboard = () => {
 
           {!selectedStudent ? (
             <>
+              {/* Statistics Overview */}
               <div className="row mb-4">
                 <div className="col-md-4 mb-3">
                   <div className="card h-100">
@@ -123,7 +136,9 @@ const SATDashboard = () => {
                   <div className="card h-100">
                     <div className="card-body text-center">
                       <i className="bi bi-bar-chart text-info" style={{ fontSize: '2rem' }}></i>
-                      <h4 className="mt-2" style={{ color: getScoreColor(stats.avgScore) }}>{stats.avgScore}%</h4>
+                      <h4 className="mt-2" style={{ color: getScoreColor(stats.avgScore) }}>
+                        {stats.avgScore}%
+                      </h4>
                       <p className="text-muted">Average Score</p>
                     </div>
                   </div>
@@ -139,9 +154,10 @@ const SATDashboard = () => {
                 </div>
               </div>
 
+              {/* Students List */}
               <div className="card">
                 <div className="card-header bg-primary text-white">
-                  <h5 className="mb-0">SAT Exam Activity</h5>
+                  <h5 className="mb-0">Recent Exam Activity</h5>
                 </div>
                 <div className="card-body">
                   {satData.length === 0 ? (
@@ -153,47 +169,70 @@ const SATDashboard = () => {
                           <tr>
                             <th>Student Name</th>
                             <th>Email</th>
-                            <th>Sections Attempted</th>
-                            <th>Best Score %</th>
-                            <th>Last Attempt</th>
+                            <th>Recent Section</th>
+                            <th>Score</th>
+                            <th>Date</th>
                             <th>Actions</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {[...satData]
-                            .sort((a, b) => getLatestDate(b) - getLatestDate(a))
-                            .map((student, idx) => {
-                              const bestPct = student.subjects.reduce((max, s) => {
-                                const pct = s.maxScore ? (s.score / s.maxScore) * 100 : 0;
-                                return pct > max ? pct : max;
-                              }, 0);
-                              const latestDate = getLatestDate(student);
-                              return (
-                                <tr key={idx} style={{ cursor: 'pointer' }} onClick={() => setSelectedStudent(student)}>
-                                  <td><strong>{student.name || 'Unknown'}</strong></td>
-                                  <td>{student.email}</td>
-                                  <td>
-                                    {student.subjects.map((s, i) => (
-                                      <span key={i} className="badge bg-info text-dark me-1">{s.subject}</span>
-                                    ))}
-                                  </td>
-                                  <td>
-                                    <span style={{ color: getScoreColor(bestPct), fontWeight: 'bold' }}>
-                                      {Math.round(bestPct)}%
+                          {[...satData].sort((a, b) => {
+                            const aLatest = (a.quizScores || []).reduce((max, q) => Math.max(max, new Date(q.timestamp || 0)), 0);
+                            const bLatest = (b.quizScores || []).reduce((max, q) => Math.max(max, new Date(q.timestamp || 0)), 0);
+                            return bLatest - aLatest;
+                          }).map((student, index) => {
+                            const scores = student.quizScores || [];
+                            const recentExam = scores.length > 0
+                              ? scores.reduce((latest, current) =>
+                                  new Date(current.timestamp) > new Date(latest.timestamp) ? current : latest)
+                              : null;
+
+                            return (
+                              <tr key={index} style={{ cursor: 'pointer' }} onClick={() => handleStudentClick(student)}>
+                                <td><strong>{student.name || 'Unknown'}</strong></td>
+                                <td>{student.email || 'N/A'}</td>
+                                <td>
+                                  {recentExam ? (
+                                    <span className="badge bg-primary">
+                                      {recentExam.topic || 'SAT Section'}
                                     </span>
-                                  </td>
-                                  <td>{latestDate.getTime() > 0 ? latestDate.toLocaleDateString() : 'N/A'}</td>
-                                  <td>
+                                  ) : (
+                                    <span className="text-muted">No exams</span>
+                                  )}
+                                </td>
+                                <td>
+                                  {recentExam ? (
+                                    <span style={{ color: getScoreColor(recentExam.percentage || 0), fontWeight: 'bold' }}>
+                                      {recentExam.score || 0}/{recentExam.maxScore || 200} ({Math.round(recentExam.percentage || 0)}%)
+                                    </span>
+                                  ) : (
+                                    <span className="text-muted">-</span>
+                                  )}
+                                </td>
+                                <td>
+                                  {recentExam ? new Date(recentExam.timestamp).toLocaleDateString() : (
+                                    <span className="text-muted">-</span>
+                                  )}
+                                </td>
+                                <td>
+                                  <div className="btn-group" role="group">
                                     <button
                                       className="btn btn-outline-primary btn-sm"
-                                      onClick={(e) => { e.stopPropagation(); setSelectedStudent(student); }}
+                                      onClick={(e) => { e.stopPropagation(); handleStudentClick(student); }}
                                     >
                                       View Details
                                     </button>
-                                  </td>
-                                </tr>
-                              );
-                            })}
+                                    <button
+                                      className="btn btn-outline-success btn-sm"
+                                      onClick={(e) => { e.stopPropagation(); handleGenerateAnalysis(student); }}
+                                    >
+                                      AI Analysis
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -202,64 +241,106 @@ const SATDashboard = () => {
               </div>
             </>
           ) : (
+            /* Student Detail View */
             <div className="card">
               <div className="card-header bg-info text-white d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">Student Details: {selectedStudent.name || selectedStudent.email}</h5>
-                <button className="btn btn-light btn-sm" onClick={() => setSelectedStudent(null)}>
+                <h5 className="mb-0">Student Details: {selectedStudent.name || 'Unknown'}</h5>
+                <button className="btn btn-light btn-sm" onClick={handleBackToDashboard}>
                   ← Back to List
                 </button>
               </div>
               <div className="card-body">
-                <div className="row mb-3">
+                <div className="row">
                   <div className="col-md-6">
                     <h6>Student Information</h6>
-                    <p><strong>Email:</strong> {selectedStudent.email}</p>
+                    <p><strong>Email:</strong> {selectedStudent.email || 'N/A'}</p>
                     <p><strong>Name:</strong> {selectedStudent.name || 'N/A'}</p>
                   </div>
                   <div className="col-md-6">
                     <h6>Performance Summary</h6>
-                    <p><strong>Sections Attempted:</strong> {selectedStudent.subjects.length}</p>
-                    <p><strong>Total Attempts:</strong> {selectedStudent.subjects.reduce((sum, s) => sum + (s.attemptCount || 0), 0)}</p>
+                    {selectedStudent.quizScores && selectedStudent.quizScores.length > 0 ? (
+                      <>
+                        <p><strong>Total Submissions:</strong> {selectedStudent.quizScores.length}</p>
+                        <p><strong>Total Score:</strong> {selectedStudent.quizScores.reduce((sum, q) => sum + (q.score || 0), 0)}</p>
+                        <p><strong>Maximum Possible:</strong> {selectedStudent.quizScores.reduce((sum, q) => sum + (q.maxScore || 200), 0)}</p>
+                      </>
+                    ) : (
+                      <p>No submissions yet.</p>
+                    )}
                   </div>
                 </div>
 
-                <h6>Section-wise Performance</h6>
-                <div className="table-responsive">
-                  <table className="table table-striped">
-                    <thead>
-                      <tr>
-                        <th>Section</th>
-                        <th>Attempts</th>
-                        <th>Score</th>
-                        <th>Correct / Total</th>
-                        <th>Percentage</th>
-                        <th>Last Attempt</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedStudent.subjects.map((s, i) => {
-                        const pct = s.maxScore ? Math.round((s.score / s.maxScore) * 100) : 0;
-                        return (
-                          <tr key={i}>
-                            <td><strong>{s.subject}</strong></td>
-                            <td>{s.attemptCount}</td>
-                            <td>{s.score ?? '-'} / {s.maxScore ?? '-'}</td>
-                            <td>{s.correctAnswers ?? '-'} / {s.totalQuestions ?? '-'}</td>
-                            <td>
-                              <span style={{ color: getScoreColor(pct), fontWeight: 'bold' }}>
-                                {pct}%
-                              </span>
-                            </td>
-                            <td>{s.dateAttempted ? new Date(s.dateAttempted).toLocaleDateString() : 'N/A'}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                {/* Section-wise progress */}
+                {getTopicProgress(selectedStudent).length > 0 && (
+                  <div className="mt-3 mb-3">
+                    <h6>Section Progress</h6>
+                    <div className="row">
+                      {getTopicProgress(selectedStudent).map((t, i) => (
+                        <div key={i} className="col-md-6 mb-2">
+                          <div className="d-flex justify-content-between mb-1">
+                            <small><strong>{t.topic}</strong></small>
+                            <small style={{ color: getScoreColor(t.progress) }}>{Math.round(t.progress)}%</small>
+                          </div>
+                          <div className="progress" style={{ height: '8px' }}>
+                            <div
+                              className="progress-bar"
+                              style={{ width: `${t.progress}%`, backgroundColor: getScoreColor(t.progress) }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-                <div className="mt-3">
-                  <button className="btn btn-outline-secondary" onClick={() => setSelectedStudent(null)}>
+                {/* Exam-wise Data */}
+                {selectedStudent.quizScores && selectedStudent.quizScores.length > 0 && (
+                  <div className="mt-4">
+                    <h6>Exam-wise Performance</h6>
+                    <div className="table-responsive">
+                      <table className="table table-striped">
+                        <thead>
+                          <tr>
+                            <th>Section</th>
+                            <th>Attempt</th>
+                            <th>Score</th>
+                            <th>Correct / Total</th>
+                            <th>Percentage</th>
+                            <th>Date</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[...selectedStudent.quizScores]
+                            .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
+                            .map((quiz, index) => (
+                              <tr key={index}>
+                                <td><strong>{quiz.topic || 'SAT Section'}</strong></td>
+                                <td>#{quiz.attemptNumber || index + 1}</td>
+                                <td>{quiz.score || 0}/{quiz.maxScore || 200}</td>
+                                <td>{quiz.correctAnswers ?? '-'} / {quiz.totalQuestions ?? '-'}</td>
+                                <td>
+                                  <span style={{ color: getScoreColor(quiz.percentage || 0), fontWeight: 'bold' }}>
+                                    {Math.round(quiz.percentage || 0)}%
+                                  </span>
+                                </td>
+                                <td>{quiz.timestamp ? new Date(quiz.timestamp).toLocaleDateString() : 'N/A'}</td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="mt-4">
+                  <button
+                    className="btn btn-success me-2"
+                    onClick={() => handleGenerateAnalysis(selectedStudent)}
+                  >
+                    <i className="bi bi-magic"></i> Generate AI Analysis
+                  </button>
+                  <button className="btn btn-outline-secondary" onClick={handleBackToDashboard}>
                     ← Back to List
                   </button>
                 </div>
