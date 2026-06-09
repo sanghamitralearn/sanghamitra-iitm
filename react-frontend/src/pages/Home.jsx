@@ -154,6 +154,9 @@ const Home = () => {
                     <Link to="/programming/courses"><button className="category">Programming Courses</button></Link>
                   </div>
                   <p className="description">
+                    Our comprehensive programming courses are designed to equip learners with essential coding skills and prepare 
+                    them for successful careers in software development. 
+                    This complete package covers the most in-demand programming languages and fundamental computer science concepts.
                   </p>
                   <div className="trainer d-flex justify-content-between align-items-center">
                     <div className="trainer-rank d-flex align-items-center">
