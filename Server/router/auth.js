@@ -75,7 +75,7 @@ const SatScore = require('../model/sat_scores')
 
 // programming course models
 const QuizQuestion = require('../model/Questions');  
-const QuizAttempt = require('../model/QuizAttemptSchema');
+const McqQuizAttempt = require('../model/QuizAttemptSchema');
 const QuizResult = require('../model/QuizResultSchema');
 
 
@@ -4944,7 +4944,7 @@ router.post('/quiz/submit', async (req, res) => {
     const finalPercentage = maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0;
 
     // ── 3. Save attempt summary ────────────────────────────────────
-    const [attempt] = await QuizAttempt.create([{
+    const [attempt] = await McqQuizAttempt.create([{
       email,
       username: username || email.split('@')[0],
       course,
@@ -5024,7 +5024,7 @@ router.get('/quiz/attempts', async (req, res) => {
     const filter = { email };
     if (course) filter.course = course;
 
-    const attempts = await QuizAttempt.find(filter)
+    const attempts = await McqQuizAttempt.find(filter)
       .sort({ submitted_at: -1 })
       .lean();
 
@@ -5048,7 +5048,7 @@ router.get('/quiz/attempts', async (req, res) => {
     if (course) filter.course = course;
     if (week) filter.week = parseInt(week);
 
-    const attempts = await QuizAttempt.find(filter)
+    const attempts = await McqQuizAttempt.find(filter)
       .sort({ submitted_at: -1 })
       .limit(parseInt(limit))
       .lean();
@@ -5101,7 +5101,7 @@ router.get('/quiz/attempts/:attemptId', async (req, res) => {
     const { attemptId } = req.params;
 
     // Get attempt summary
-    const attempt = await QuizAttempt.findById(attemptId).lean();
+    const attempt = await McqQuizAttempt.findById(attemptId).lean();
     if (!attempt) {
       return res.status(404).json({ error: 'Attempt not found' });
     }
