@@ -73,7 +73,6 @@ const SatQuestion = require('../model/sat_questions')
 const SatScore = require('../model/sat_scores')
 
 
-
 require('../db/conn');
 const User = require('../model/userSchema');
 
@@ -4389,7 +4388,7 @@ router.get('/admin-notifications', async (req, res) => {
     const [
       math1Users, stats1Users, ctUsers,
       math2Users, stats2Users,
-      codingUsers, pdsaUsers
+      codingUsers, pdsaUsers, satDocs
     ] = await Promise.all([
       iitm_math_score.find({}, { email:1, username:1, name:1,
         'quizScores.topic':1, 'quizScores.score':1, 'quizScores.percentage':1,
@@ -4413,6 +4412,10 @@ router.get('/admin-notifications', async (req, res) => {
       }).lean(),
       CodingSubmission.find({}, { email:1, username:1, name:1, topic:1, percentage:1, score:1, maxScore:1, timestamp:1 }).lean(),
       pdsaSubmission.find({}, { email:1, username:1, name:1, topic:1, percentage:1, score:1, maxScore:1, timestamp:1 }).lean(),
+      SatScore.find({}, { email:1, name:1, subject:1,
+        'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
+        'attempts.totalQuestions':1, 'attempts.dateAttempted':1
+      }).lean(),
     ])
 
     const all = []
@@ -4492,8 +4495,55 @@ router.get('/admin-notifications', async (req, res) => {
         timestamp: s.timestamp
       }))
 
+    // SAT
+    satDocs.forEach(doc => {
+      ;(doc.attempts || []).forEach(attempt => {
+        const pct = attempt.totalQuestions > 0
+          ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
+          : (attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0)
+        all.push({
+          userName: doc.name || doc.email,
+          subject: 'SAT', subjectKey: 'sat', icon: 'bi-pencil-fill', iconClass: 'sat',
+          topic: doc.subject || 'SAT Section',
+          score: pct,
+          timestamp: attempt.dateAttempted
+        })
+      })
+    })
+
     all.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
     res.json({ success: true, data: all.slice(0, 50) })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// GET /api/sat_admin_scores — all attempts per student, grouped by email (for admin dashboard)
+router.get('/sat_admin_scores', async (req, res) => {
+  try {
+    const docs = await SatScore.find({}).lean()
+    const byEmail = {}
+    docs.forEach(doc => {
+      if (!byEmail[doc.email]) {
+        byEmail[doc.email] = { email: doc.email, name: doc.name, quizScores: [] }
+      }
+      ;(doc.attempts || []).forEach((attempt, i) => {
+        const pct = attempt.totalQuestions > 0
+          ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
+          : (attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0)
+        byEmail[doc.email].quizScores.push({
+          topic: doc.subject,
+          score: attempt.score,
+          maxScore: attempt.maxScore,
+          correctAnswers: attempt.correctAnswers,
+          totalQuestions: attempt.totalQuestions,
+          percentage: pct,
+          timestamp: attempt.dateAttempted,
+          attemptNumber: i + 1,
+        })
+      })
+    })
+    res.json({ success: true, data: Object.values(byEmail) })
   } catch (err) {
     res.status(500).json({ success: false, error: err.message })
   }
@@ -4572,7 +4622,7 @@ router.get('/jee_scores', async (req, res) => {
   }
 })
 
-// ─── SAT Debug ────────────────────────────────────────────────────────────────
+// ─── SAT Debug — returns total count + distinct subjects in the collection ────
 router.get('/sat_debug', async (req, res) => {
   try {
     const totalQuestions = await SatQuestion.countDocuments()
@@ -4584,17 +4634,20 @@ router.get('/sat_debug', async (req, res) => {
 })
 
 // ─── SAT Questions ────────────────────────────────────────────────────────────
+// GET /api/sat_questions?subject=Reading %26 Writing&paper=Module 1&difficulty=easy&limit=30
 router.get('/sat_questions', async (req, res) => {
   try {
     const { subject, difficulty, paper, limit } = req.query
     const filter = {}
     if (subject) {
+      // Normalise: treat "Reading & Writing" and "Reading and Writing" as the same.
+      // Build both forms and match either one, case-insensitively.
       const withAmpersand = subject.replace(/\s+and\s+/gi, ' & ')
-      const withAnd = subject.replace(/\s*&\s*/g, ' and ')
+      const withAnd       = subject.replace(/\s*&\s*/g, ' and ')
       const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       filter.$or = [
         { subject: { $regex: new RegExp('^' + esc(withAmpersand) + '$', 'i') } },
-        { subject: { $regex: new RegExp('^' + esc(withAnd) + '$', 'i') } },
+        { subject: { $regex: new RegExp('^' + esc(withAnd)       + '$', 'i') } },
       ]
     }
     if (difficulty) filter.difficulty = difficulty
@@ -4611,7 +4664,7 @@ router.get('/sat_questions', async (req, res) => {
   }
 })
 
-// ─── SAT Scores ───────────────────────────────────────────────────────────────
+// POST /api/sat_scores — upsert: one doc per (email+subject), keep last 5 attempts
 router.post('/sat_scores', async (req, res) => {
   try {
     const { email, name, subject, totalQuestions, correctAnswers, wrongAnswers,
@@ -4644,16 +4697,17 @@ router.post('/sat_scores', async (req, res) => {
   }
 })
 
+// GET /api/sat_scores?email=x@y.com  — returns latest attempt summary per subject
 router.get('/sat_scores', async (req, res) => {
   try {
     const { email } = req.query
     const filter = email ? { email } : {}
     const docs = await SatScore.find(filter).lean()
     const result = docs.map(doc => ({
-      email:        doc.email,
-      name:         doc.name,
-      subject:      doc.subject,
-      attemptCount: doc.attempts?.length || 0,
+      email:          doc.email,
+      name:           doc.name,
+      subject:        doc.subject,
+      attemptCount:   doc.attempts?.length || 0,
       ...(doc.attempts?.[0] || {}),
     }))
     res.json(result)
