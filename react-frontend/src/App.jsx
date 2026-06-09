@@ -65,6 +65,10 @@ import JavaQuiz from './pages/courses/JAVA/JavaQuiz'
 import JEE from './pages/courses/JEE'
 import JEEQuiz from './pages/courses/JEEQuiz'
 
+import SAT from './pages/courses/SAT'
+import SATQuiz from './pages/courses/SATQuiz'
+
+
 
 function App() {
   return (
@@ -147,6 +151,10 @@ function App() {
             {/* JEE Advanced — subject-wise quizzes */}
             <Route path="/courses/jee" element={<JEE />} />
             <Route path="/courses/jee/quiz/:subject" element={<JEEQuiz />} />
+
+            {/* SAT — module-based quizzes */}
+            <Route path="/courses/sat" element={<SAT />} />
+            <Route path="/courses/sat/quiz/:section/:module" element={<SATQuiz />} />
             
           </Routes>
         </main>
