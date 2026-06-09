@@ -69,6 +69,10 @@ const JavaQuestions = require('../model/Java_Questions');
 const JeeQuestion = require('../model/jee_questions')
 const JeeScore = require('../model/jee_scores')
 
+const SatQuestion = require('../model/sat_questions')
+const SatScore = require('../model/sat_scores')
+
+
 
 require('../db/conn');
 const User = require('../model/userSchema');
