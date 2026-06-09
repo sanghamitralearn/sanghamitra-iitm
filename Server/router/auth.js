@@ -4572,6 +4572,96 @@ router.get('/jee_scores', async (req, res) => {
   }
 })
 
+// ─── SAT Debug ────────────────────────────────────────────────────────────────
+router.get('/sat_debug', async (req, res) => {
+  try {
+    const totalQuestions = await SatQuestion.countDocuments()
+    const distinctSubjects = await SatQuestion.distinct('subject')
+    res.json({ totalQuestions, distinctSubjects })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── SAT Questions ────────────────────────────────────────────────────────────
+router.get('/sat_questions', async (req, res) => {
+  try {
+    const { subject, difficulty, paper, limit } = req.query
+    const filter = {}
+    if (subject) {
+      const withAmpersand = subject.replace(/\s+and\s+/gi, ' & ')
+      const withAnd = subject.replace(/\s*&\s*/g, ' and ')
+      const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      filter.$or = [
+        { subject: { $regex: new RegExp('^' + esc(withAmpersand) + '$', 'i') } },
+        { subject: { $regex: new RegExp('^' + esc(withAnd) + '$', 'i') } },
+      ]
+    }
+    if (difficulty) filter.difficulty = difficulty
+    if (paper) {
+      const escapedPaper = paper.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      filter.paper = { $regex: new RegExp('^' + escapedPaper + '$', 'i') }
+    }
+    const qs = await SatQuestion.find(filter)
+      .limit(limit ? parseInt(limit) : 0)
+      .lean()
+    res.json(qs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── SAT Scores ───────────────────────────────────────────────────────────────
+router.post('/sat_scores', async (req, res) => {
+  try {
+    const { email, name, subject, totalQuestions, correctAnswers, wrongAnswers,
+            unattempted, score, maxScore, responses } = req.body
+    if (!email || !subject) return res.status(400).json({ error: 'email and subject are required' })
+
+    const newAttempt = {
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore,
+      responses: (responses || []).map(r => ({
+        questionId:   r.questionId,
+        userResponse: r.userResponse,
+        isCorrect:    r.isCorrect,
+        marksAwarded: r.marksAwarded,
+      })),
+      dateAttempted: new Date(),
+    }
+
+    const doc = await SatScore.findOneAndUpdate(
+      { email, subject },
+      {
+        $set:  { name },
+        $push: { attempts: { $each: [newAttempt], $position: 0, $slice: 5 } },
+      },
+      { upsert: true, new: true }
+    )
+    res.json({ success: true, data: { email: doc.email, subject: doc.subject, attemptCount: doc.attempts.length } })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+router.get('/sat_scores', async (req, res) => {
+  try {
+    const { email } = req.query
+    const filter = email ? { email } : {}
+    const docs = await SatScore.find(filter).lean()
+    const result = docs.map(doc => ({
+      email:        doc.email,
+      name:         doc.name,
+      subject:      doc.subject,
+      attemptCount: doc.attempts?.length || 0,
+      ...(doc.attempts?.[0] || {}),
+    }))
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 module.exports = router
 
 
