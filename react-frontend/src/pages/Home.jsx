@@ -31,28 +31,7 @@ const Home = () => {
 
         <div className="container">
           <div className="row">
-            {/* English Course Card */}
-            <div className="col-lg-6 col-md-6 d-flex align-items-stretch" data-aos="zoom-in" data-aos-delay="100">
-              <div className="course-item">
-                <img src="/img/english.index.png" className="img-fluid" alt="English Course" />
-                <div className="course-content">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Link to="/english"><button className="category">English</button></Link>
-                  </div>
-                  <p className="description">
-                    Welcome to our English Learning Hub, where language mastery meets personalized learning. 
-                    Whether you're a beginner or an advanced learner, our comprehensive resources and interactive 
-                    lessons are designed to enhance your English proficiency. Join our community of learners and 
-                    embark on an enriching journey towards fluency and confidence in English communication.
-                  </p>
-                  <div className="trainer d-flex justify-content-between align-items-center">
-                    <div className="trainer-rank d-flex align-items-center">
-                      <i className="bi bi-heart heart-icon"></i>&nbsp;65
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            
 
             {/* Mathematics Course Card */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="200">
@@ -60,7 +39,7 @@ const Home = () => {
                 <img src="/img/maths.index.png" className="img-fluid" alt="Mathematics Course" />
                 <div className="course-content">
                   <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Link to="/math"><button className="category">Mathematics</button></Link>
+                    <Link to="/math"><button className="category">Mathematics </button></Link>
                   </div>
                   <p className="description">
                     Welcome to our Mathematics Hub, where numbers come alive and logic reigns supreme. 
@@ -83,7 +62,7 @@ const Home = () => {
                 <img src="/img/Math_2.png" className="img-fluid" alt="Math 2 Course" />
                 <div className="course-content">
                   <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Link to="/math2"><button className="category">Maths 2</button></Link>
+                    <Link to="/math2"><button className="category">Mathematics II</button></Link>
                   </div>
                   <p className="description">
                     This section is for testing and validating IITM Math 2 quiz questions. 
@@ -143,6 +122,50 @@ const Home = () => {
               </div>
             </div>
 
+            {/* English Course Card */}
+            <div className="col-lg-6 col-md-6 d-flex align-items-stretch" data-aos="zoom-in" data-aos-delay="100">
+              <div className="course-item">
+                <img src="/img/english.index.png" className="img-fluid" alt="English Course" />
+                <div className="course-content">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <Link to="/english"><button className="category">English</button></Link>
+                  </div>
+                  <p className="description">
+                    Welcome to our English Learning Hub, where language mastery meets personalized learning. 
+                    Whether you're a beginner or an advanced learner, our comprehensive resources and interactive 
+                    lessons are designed to enhance your English proficiency. Join our community of learners and 
+                    embark on an enriching journey towards fluency and confidence in English communication.
+                  </p>
+                  <div className="trainer d-flex justify-content-between align-items-center">
+                    <div className="trainer-rank d-flex align-items-center">
+                      <i className="bi bi-heart heart-icon"></i>&nbsp;65
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Competitive Exam Foundation Course Card */}
+            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
+              <div className="course-item">
+                <img src="/img/competitive-exam-foundation.png" className="img-fluid" alt="Competitive Exam Foundation Course" />
+                <div className="course-content">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <Link to="/competitive-exam-foundation"><button className="category">Competitive Exam Foundation</button></Link>
+                  </div>
+                  <p className="description">
+                    Master the fundamentals required for various competitive exams including banking, SSC, railways, and state-level examinations. Our comprehensive course covers quantitative aptitude, logical reasoning, verbal ability, and general awareness. Get access to topic-wise modules, practice tests, time management strategies, and exam-specific preparation techniques designed to help you crack competitive exams with confidence.
+                  </p>
+                  <div className="trainer d-flex justify-content-between align-items-center">
+                    <div className="trainer-rank d-flex align-items-center">
+                      <i className="bi bi-heart heart-icon"></i>&nbsp;56
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
             {/* CT Course Card */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
               <div className="course-item">
@@ -157,6 +180,25 @@ const Home = () => {
                     that can be executed by a computer. It includes key skills such as decomposition 
                     (dividing problems), pattern recognition (finding similarities), abstraction 
                     (focusing on important details), and algorithm design (creating clear instructions).
+                  </p>
+                  <div className="trainer d-flex justify-content-between align-items-center">
+                    <div className="trainer-rank d-flex align-items-center">
+                      <i className="bi bi-heart heart-icon"></i>&nbsp;89
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/*  Course Card */}
+            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
+              <div className="course-item">
+                <img src="/img/programming.png" className="img-fluid" alt="Database Management Systems Course" />
+                <div className="course-content">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <Link to="/programming/courses"><button className="category">Programming Courses</button></Link>
+                  </div>
+                  <p className="description">
                   </p>
                   <div className="trainer d-flex justify-content-between align-items-center">
                     <div className="trainer-rank d-flex align-items-center">
@@ -257,26 +299,7 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Competitive Exam Foundation Course Card */}
-            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
-              <div className="course-item">
-                <img src="/img/competitive-exam-foundation.png" className="img-fluid" alt="Competitive Exam Foundation Course" />
-                <div className="course-content">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Link to="/competitive-exam-foundation"><button className="category">Competitive Exam Foundation</button></Link>
-                  </div>
-                  <p className="description">
-                    Master the fundamentals required for various competitive exams including banking, SSC, railways, and state-level examinations. Our comprehensive course covers quantitative aptitude, logical reasoning, verbal ability, and general awareness. Get access to topic-wise modules, practice tests, time management strategies, and exam-specific preparation techniques designed to help you crack competitive exams with confidence.
-                  </p>
-                  <div className="trainer d-flex justify-content-between align-items-center">
-                    <div className="trainer-rank d-flex align-items-center">
-                      <i className="bi bi-heart heart-icon"></i>&nbsp;56
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
+            
             {/* JEE Advanced Course Card */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4" data-aos="zoom-in" data-aos-delay="300">
               <div className="course-item" style={{ width: '100%' }}>
