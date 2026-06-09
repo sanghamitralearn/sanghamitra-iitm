@@ -67,6 +67,8 @@ import JEEQuiz from './pages/courses/JEEQuiz'
 
 import SAT from './pages/courses/SAT'
 import SATQuiz from './pages/courses/SATQuiz'
+import SATDashboard from './pages/SATDashboard'
+
 
 
 
@@ -104,6 +106,7 @@ function App() {
             <Route path="/admin/iitm-ct" element={<CTDashboard />} />
             <Route path="/admin/python" element={<PythonDashboard />} />
             <Route path="/admin/dsa" element={<PDSADashboard />} />
+            <Route path="/admin/sat" element={<SATDashboard />} />
             <Route path="/algebra" element={<Algebra />} />
             <Route path="/math2" element={<Math2 />} />
             <Route path="/statistics2" element={<Statistics2 />} />
