@@ -69,6 +69,9 @@ import SAT from './pages/courses/SAT'
 import SATQuiz from './pages/courses/SATQuiz'
 import SATDashboard from './pages/SATDashboard'
 
+import ProgrammingCourses from './pages/courses/Programming'
+import CoursePage from './pages/courses/Language_Courses/CoursePage'
+import QuizPage from './pages/courses/Language_Courses/QuizPage'
 
 
 
@@ -150,6 +153,11 @@ function App() {
             {/* JAVA COURSE */}
             <Route path="/courses/JAVA" element={<JAVA />} />
             <Route path="/courses/JAVA/:weekId" element={<JavaQuiz />} />
+
+            {/* programming COURSE */}
+            <Route path="/programming/courses" element={<ProgrammingCourses />} />
+            <Route path="/programming/courses/:course" element={<CoursePage />} />
+            <Route path="/quiz/:course/week/:week" element={<QuizPage />} />
 
             {/* JEE Advanced — subject-wise quizzes */}
             <Route path="/courses/jee" element={<JEE />} />
