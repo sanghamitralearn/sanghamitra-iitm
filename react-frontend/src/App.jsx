@@ -53,7 +53,6 @@ import PdsaInterviewQuiz from './pages/courses/PDSA/PdsaInterviewQuiz'
 
 // Statistics - II
 
-import StatisticsQuiz from './pages/courses/StatisticsQuiz'
 import Stats2Quiz from './pages/courses/Stats2Quiz'
 import Stats2Review from './pages/courses/Stats2Review'
 
