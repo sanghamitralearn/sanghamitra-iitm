@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
+
 const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+
 
 const Stats2Dashboard = () => {
   const navigate = useNavigate()
@@ -11,11 +13,12 @@ const Stats2Dashboard = () => {
   const [error, setError] = useState(null)
   const [selectedStudent, setSelectedStudent] = useState(null)
 
+
   const load = async () => {
     setLoading(true)
     setError(null)
     try {
-      const res = await axios.get(`${VITE_API_URL}/api/iitm_stats2_scores`, { withCredentials: true })
+      const res = await axios.get(`${VITE_API_URL}/api/iitm_stats2_scores_databases`, { withCredentials: true })
       const arr = Array.isArray(res.data) ? res.data
         : res.data?.success && res.data?.data ? (Array.isArray(res.data.data) ? res.data.data : [res.data.data])
         : []
@@ -27,13 +30,16 @@ const Stats2Dashboard = () => {
     }
   }
 
+
   useEffect(() => { load() }, [])
+
 
   const getScoreColor = (pct) => {
     if (pct >= 80) return '#28a745'
     if (pct >= 60) return '#ffc107'
     return '#dc3545'
   }
+
 
   const stats = (() => {
     let totalSubmissions = 0, totalCorrect = 0, totalQ = 0
@@ -49,17 +55,20 @@ const Stats2Dashboard = () => {
     }
   })()
 
+
   const sortedData = [...data].sort((a, b) => {
     const aLatest = (a.scores || []).reduce((max, s) => Math.max(max, new Date(s.dateAttempted || 0)), 0)
     const bLatest = (b.scores || []).reduce((max, s) => Math.max(max, new Date(s.dateAttempted || 0)), 0)
     return bLatest - aLatest
   })
 
+
   if (loading) return (
     <div className="container my-4 d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
       <div className="spinner-border text-primary" role="status"><span className="visually-hidden">Loading...</span></div>
     </div>
   )
+
 
   return (
     <div className="container my-4">
@@ -74,7 +83,9 @@ const Stats2Dashboard = () => {
         </div>
       </div>
 
+
       {error && <div className="alert alert-danger">{error}</div>}
+
 
       {!selectedStudent ? (
         <>
@@ -107,6 +118,7 @@ const Stats2Dashboard = () => {
               </div>
             </div>
           </div>
+
 
           <div className="card">
             <div className="card-header bg-warning text-dark">
@@ -195,6 +207,7 @@ const Stats2Dashboard = () => {
               </div>
             </div>
 
+
             {selectedStudent.scores?.length > 0 && (
               <div className="table-responsive">
                 <table className="table table-striped">
@@ -235,4 +248,8 @@ const Stats2Dashboard = () => {
   )
 }
 
+
 export default Stats2Dashboard
+
+
+
