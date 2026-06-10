@@ -51,6 +51,11 @@ import PdsaTestQuiz from './pages/courses/PDSA/PdsaTestQuiz'
 import PdsaCodingQuiz from './pages/courses/PDSA/PdsaCodingQuiz'
 import PdsaInterviewQuiz from './pages/courses/PDSA/PdsaInterviewQuiz'
 
+// Statistics - II
+
+import StatisticsQuiz from './pages/courses/StatisticsQuiz'
+import Stats2Quiz from './pages/courses/Stats2Quiz'
+import Stats2Review from './pages/courses/Stats2Review'
 
 import CompetitiveExamFoundation from './pages/courses/CompetitiveExamFoundation';
 import MathQuiz from './pages/courses/Competitive/MathQuiz'
@@ -139,6 +144,11 @@ function App() {
       
             {/* Math 2 Quiz — week-based, DB-driven */}
             <Route path="/courses/math2/quiz/:week" element={<Math2Quiz />} />
+
+
+            {/* Statistics 2 Quiz — week-based, DB-driven */}
+            <Route path="/courses/statistics2/quiz/:week" element={<Stats2Quiz />} />
+            <Route path="/courses/statistics2/review" element={<Stats2Review />} />
 
             {/* competitive-exam-foundation */}
             <Route path="/competitive-exam-foundation" element={<CompetitiveExamFoundation />} />
