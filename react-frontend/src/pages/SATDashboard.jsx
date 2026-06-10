@@ -307,6 +307,7 @@ const SATDashboard = () => {
                             <th>Correct / Total</th>
                             <th>Percentage</th>
                             <th>Date</th>
+                            <th>Action</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -324,6 +325,17 @@ const SATDashboard = () => {
                                   </span>
                                 </td>
                                 <td>{quiz.timestamp ? new Date(quiz.timestamp).toLocaleDateString() : 'N/A'}</td>
+                                <td>
+                                  <button
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() => navigate(
+                                      `/admin/sat/exam/${encodeURIComponent(selectedStudent.email)}/${encodeURIComponent(quiz.topic)}/${quiz.attemptNumber || index + 1}`,
+                                      { state: { studentName: selectedStudent.name || selectedStudent.email } }
+                                    )}
+                                  >
+                                    <i className="bi bi-bar-chart-line me-1"></i>Analyze
+                                  </button>
+                                </td>
                               </tr>
                             ))}
                         </tbody>
