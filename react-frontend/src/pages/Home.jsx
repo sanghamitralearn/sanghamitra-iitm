@@ -265,7 +265,7 @@ const Home = () => {
                 <img src="/img/DBMS.png" className="img-fluid" alt="Database Management Systems Course" />
                 <div className="course-content">
                   <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Link to="/dbms"><button className="category">Database Management Systems</button></Link>
+                    <Link to="/courses/dbms"><button className="category">Database Management Systems</button></Link>
                   </div>
                   <p className="description">
                     Welcome to our Database Management Systems Hub, where you learn how data is stored,
