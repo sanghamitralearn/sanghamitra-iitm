@@ -68,14 +68,7 @@ import JEEQuiz from './pages/courses/JEEQuiz'
 import SAT from './pages/courses/SAT'
 import SATQuiz from './pages/courses/SATQuiz'
 import SATDashboard from './pages/SATDashboard'
-
-import DBMS from './pages/courses/DBMS'
-import DBMSQuiz from './pages/courses/DBMSQuiz'
-
-import ProgrammingCourses from './pages/courses/Programming'
-import CoursePage from './pages/courses/Language_Courses/CoursePage'
-import QuizPage from './pages/courses/Language_Courses/QuizPage'
-
+import SATExamAnalysis from './pages/SATExamAnalysis'
 
 
 function App() {
@@ -113,6 +106,7 @@ function App() {
             <Route path="/admin/python" element={<PythonDashboard />} />
             <Route path="/admin/dsa" element={<PDSADashboard />} />
             <Route path="/admin/sat" element={<SATDashboard />} />
+            <Route path="/admin/sat/exam/:email/:subject/:attemptNumber" element={<SATExamAnalysis />} />
             <Route path="/algebra" element={<Algebra />} />
             <Route path="/math2" element={<Math2 />} />
             <Route path="/statistics2" element={<Statistics2 />} />
@@ -157,11 +151,6 @@ function App() {
             <Route path="/courses/JAVA" element={<JAVA />} />
             <Route path="/courses/JAVA/:weekId" element={<JavaQuiz />} />
 
-            {/* programming COURSE */}
-            <Route path="/programming/courses" element={<ProgrammingCourses />} />
-            <Route path="/programming/courses/:course" element={<CoursePage />} />
-            <Route path="/quiz/:course/week/:week" element={<QuizPage />} />
-
             {/* JEE Advanced — subject-wise quizzes */}
             <Route path="/courses/jee" element={<JEE />} />
             <Route path="/courses/jee/quiz/:subject" element={<JEEQuiz />} />
@@ -169,10 +158,6 @@ function App() {
             {/* SAT — module-based quizzes */}
             <Route path="/courses/sat" element={<SAT />} />
             <Route path="/courses/sat/quiz/:section/:module" element={<SATQuiz />} />
-
-             {/* DBMS COURSE */}
-            <Route path="/courses/DBMS" element={<DBMS />} />
-            <Route path="/courses/DBMS/:weekId" element={<DBMSQuiz />} />
             
           </Routes>
         </main>
