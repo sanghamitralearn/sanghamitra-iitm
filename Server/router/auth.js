@@ -42,8 +42,11 @@ const iitm_ct_questions = require('../model/iitm_ct_questions');
 const iitm_ct_scores = require('../model/iitm_ct_scores');
 const IITM_Maths_2_Question = require('../model/iitm_math2_questions')
 const IITM_Maths_2_Score = require('../model/iitm_math2_scores')
-const IITM_Stats_2_Question = require('../model/iitm_stats2_questions')
-const IITM_Stats_2_Score = require('../model/iitm_stats2_scores')
+
+const IITStats2Question = require('../model/iitmstats2questionschema')
+const IITStats2Scores = require('../model/iitmstats2questionresult')
+const QuizAttemptstats2 = require('../model/iitmstats2quizattempt');
+
 
 const Question = require('../model/pdsa_Questions');
 const pdsaSubmission = require('../model/pdsa_Submission');
@@ -3592,101 +3595,315 @@ router.get("/iitm_math2_scores", async (req, res) => {
 });
 
 
-router.get("/iitm_stats2_questions", async (req, res) => {
+
+// statistics - II 
+
+
+
+router.get('/iitm_stats2_questions_databases', async (req, res) => {
   try {
-    const { week, subtopic } = req.query;
-    const filter = {};
+    const { week, email, count = 25, difficulty, type, topic } = req.query;
 
-    if (week) filter.week = Number(week);
-    if (subtopic) filter.subtopic = subtopic;
 
-    const questions = await IITM_Stats_2_Question.find(filter);
-
-    if (questions.length === 0) {
-      return res.status(404).json({ message: "No questions found for the given criteria" });
+    if (!week || !email) {
+      return res.status(400).json({
+        error: 'week and email are required',
+        example: '/math2/questions?week=7&email=user@example.com&count=10'
+      });
     }
 
-    res.status(200).json(questions);
-  } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
+
+    const weekNum = parseInt(week);
+    if (isNaN(weekNum) || weekNum < 1 || weekNum > 12) {
+      return res.status(400).json({ error: 'week must be between 1 and 12' });
+    }
+
+
+    const filter = {
+      week:      weekNum,
+      is_active: true
+    };
+    if (difficulty) filter.difficulty = difficulty;
+    if (type)       filter.type       = type;
+    if (topic)      filter.topic      = topic;
+
+
+    let pool = await IITStats2Question.find(filter).lean();
+
+
+    if (pool.length === 0) {
+      return res.status(404).json({ error: 'No questions found for this week' });
+    }
+
+
+    // Fisher-Yates shuffle
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+
+
+    const requestedCount = Math.min(parseInt(count), pool.length);
+    const selected = pool.slice(0, requestedCount);
+
+
+    return res.status(200).json({
+      questions: selected,
+      metadata: {
+        week:      weekNum,
+        pool_size: pool.length,
+        returned:  selected.length,
+        requested: requestedCount
+      }
+    });
+
+
+  } catch (error) {
+    console.error('❌ Error fetching questions:', error);
+    return res.status(500).json({ error: 'Failed to fetch questions', details: error.message });
   }
 });
 
-router.post("/iitm_stats2_scores", async (req, res) => {
+
+
+
+
+
+
+
+
+router.post('/iitm_stats2_quiz_attempt', async (req, res) => {
   try {
-    const { email, name, week, subtopic, totalQuestions, correctAnswers, score, responses } = req.body;
-    if (!email || !name || !week || !subtopic || !responses)
-      return res.status(400).json({ message: "Missing required fields" });
-    
-    let user = await IITM_Stats_2_Score.findOne({ email });
-    const newEntry = { week, subtopic, totalQuestions, correctAnswers, score, responses };
-    if (user) {
-      user.scores.push(newEntry);
-      await user.save();
-    } else {
-      user = new IITM_Stats_2_Score({ email, name, scores: [newEntry] });
-      await user.save();
-    }
-    res.status(201).json({ message: "Score and responses saved successfully", user });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+    const { email, username, quizData } = req.body;
 
-router.get("/iitm_stats2_scores", async (req, res) => {
-  try {
-    const { email, week } = req.query;
 
-    // Case 1: No filters — return all user scores
-    if (!email && !week) {
-      const allScores = await IITM_Stats_2_Score.find();
-      if (!allScores.length)
-        return res.status(404).json({ message: "No scores found" });
-      return res.status(200).json(allScores);
+    if (!email || !quizData) {
+      return res.status(400).json({ error: 'email and quizData are required' });
     }
 
-    // Case 2: Filter by email only
-    if (email && !week) {
-      const user = await IITM_Stats_2_Score.findOne({ email });
-      if (!user) return res.status(404).json({ message: "User not found" });
-      return res.status(200).json(user);
-    }
 
-    // Case 3: Filter by week only (across all users)
-    if (week && !email) {
-      const all = await IITM_Stats_2_Score.find({ "scores.week": Number(week) });
-      if (!all.length)
-        return res
-          .status(404)
-          .json({ message: "No scores found for the given week" });
+    const {
+      week,
+      topic,
+      score,
+      maxPossibleScore,
+      percentage,
+      totalQuestions,
+      correctAnswers,
+      difficultyBreakdown,
+      questionResults,
+      startTime,
+      endTime,
+      totalTimeTaken,
+      cheatCount
+    } = quizData;
 
-      // Flatten week-specific entries
-      const weekData = all.map((u) => ({
-        email: u.email,
-        name: u.name,
-        scores: u.scores.filter((s) => s.week === Number(week)),
+
+    // ── 1. Save attempt summary ────────────────────────────────────
+    const attempt = await QuizAttemptstats2.create({
+      email,
+      username:           username || email,
+      week:               Number(week) || 1,
+      topic:              topic    || '',
+      score:              score    ?? 0,
+      max_possible_score: maxPossibleScore ?? 0,
+      percentage:         Math.round(percentage ?? 0),
+      total_questions:    totalQuestions ?? 0,
+      correct_answers:    correctAnswers ?? 0,
+
+
+      easy_attempted:   difficultyBreakdown?.easy?.attempted   || 0,
+      easy_correct:     difficultyBreakdown?.easy?.correct     || 0,
+      medium_attempted: difficultyBreakdown?.medium?.attempted || 0,
+      medium_correct:   difficultyBreakdown?.medium?.correct   || 0,
+      hard_attempted:   difficultyBreakdown?.hard?.attempted   || 0,
+      hard_correct:     difficultyBreakdown?.hard?.correct     || 0,
+
+
+      total_time_seconds: totalTimeTaken || 0,
+      started_at:         startTime ? new Date(startTime) : new Date(),
+      submitted_at:       endTime   ? new Date(endTime)   : new Date(),
+      is_completed:       true,
+      cheat_count:        cheatCount || 0
+    });
+
+
+    // ── 2. Save individual question results ────────────────────────
+    if (Array.isArray(questionResults) && questionResults.length > 0) {
+      const resultDocs = questionResults.map(qr => ({
+        attempt_id:         attempt._id,
+        email,
+        week:               Number(week) || 1,
+        question_id:        qr.questionId,
+        user_answer:        qr.userAnswer      ?? null,
+        is_correct:         qr.isCorrect,
+        marks_awarded:      qr.marksAwarded    ?? qr.partialScore ?? 0,
+        time_taken_seconds: qr.timeTaken       || 0,
+        difficulty:         qr.difficulty      || 'medium',
+        topic:              topic              || '',
+        subtopic:           qr.subtopic        || '',
+        question_type:      qr.questionType    || '',
+        concept_tags:       qr.conceptTags     || [],
+        bloom_level:        qr.bloomLevel      || 'apply'
       }));
 
-      return res.status(200).json(weekData);
+
+      await IITStats2Scores.insertMany(resultDocs);
     }
 
-    // Case 4: Filter by both email & week
-    if (email && week) {
-      const user = await IITM_Stats_2_Score.findOne({ email });
-      if (!user) return res.status(404).json({ message: "User not found" });
 
-      const weekScores = user.scores.filter((s) => s.week === Number(week));
-      if (!weekScores.length)
-        return res
-          .status(404)
-          .json({ message: "No scores found for this week for the user" });
+    return res.status(201).json({
+      success:    true,
+      attempt_id: attempt._id,
+      message:    'Quiz attempt saved successfully'
+    });
 
-      return res.status(200).json({ email: user.email, name: user.name, scores: weekScores });
-    }
-  } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
+
+  } catch (error) {
+    console.error('❌ Error saving quiz attempt:', JSON.stringify(error.message));
+    if (error.errors) console.error('❌ Validation errors:', JSON.stringify(error.errors, null, 2));
+    return res.status(500).json({
+      error:   'Failed to save quiz attempt',
+      details: error.message
+    });
   }
 });
+
+
+
+
+
+
+router.get('/iitm_stats2_scores_databases', async (req, res) => {
+  try {
+    const { email } = req.query;
+
+
+    if (!email) {
+      // Admin: group all attempts by email
+      const attempts = await QuizAttemptstats2.find().lean();
+      const byEmail = {}
+      attempts.forEach(a => {
+        if (!byEmail[a.email]) byEmail[a.email] = { email: a.email, name: a.username || a.email, scores: [] }
+        byEmail[a.email].scores.push({
+          week:           a.week,
+          topic:          a.topic,
+          subtopic:       a.topic,
+          score:          a.score,
+          correctAnswers: a.correct_answers,
+          totalQuestions: a.total_questions,
+          percentage:     a.percentage,
+          dateAttempted:  a.submitted_at,
+          timestamp:      a.submitted_at,
+        })
+      })
+      return res.status(200).json(Object.values(byEmail));
+    }
+
+
+    // Student: return all attempts for this email formatted for Statistics2.jsx
+    const attempts = await QuizAttemptstats2.find({ email }).lean();
+    const quizScores = attempts.map(a => ({
+      _id:            a._id,
+      topic:          a.topic,
+      week:           a.week,
+      percentage:     a.percentage,
+      score:          a.score,
+      correctAnswers: a.correct_answers,
+      totalQuestions: a.total_questions,
+      timestamp:      a.submitted_at,
+      dateAttempted:  a.submitted_at,
+    }))
+    return res.status(200).json({ success: true, data: { quizScores } });
+
+
+  } catch (error) {
+    console.error('❌ Error fetching scores:', error);
+    return res.status(500).json({ error: 'Failed to fetch scores', details: error.message });
+  }
+});
+
+
+// ── Fetch single attempt with full question results (review page) ──
+router.get('/iitm_stats2_scores_databases/:attemptId', async (req, res) => {
+  try {
+    const { attemptId } = req.params;
+
+
+    // Get attempt summary
+    const attempt = await QuizAttemptstats2.findById(attemptId).lean();
+    if (!attempt) {
+      return res.status(404).json({ error: 'Attempt not found' });
+    }
+
+
+    // Get question results and populate full question data
+    const questionResults = await IITStats2Scores.find({ attempt_id: attemptId })
+      .populate({
+        path:   'question_id',
+        select: 'question_text options correct_answer explanation difficulty type points has_latex subtopic'
+      })
+      .lean();
+
+
+    // Shape data for review page
+    const reviewQuestions = questionResults.map(qr => ({
+      // Full question content
+      question_text:  qr.question_id?.question_text  || '',
+      type:           qr.question_id?.type           || qr.question_type,
+      difficulty:     qr.question_id?.difficulty     || qr.difficulty,
+      points:         qr.question_id?.points         || 1,
+      has_latex:      qr.question_id?.has_latex      || false,
+      explanation:    qr.question_id?.explanation    || '',
+      options:        qr.question_id?.options        || [],
+      correct_answer: qr.question_id?.correct_answer,
+
+
+      // What the user did
+      user_answer:        qr.user_answer,
+      is_correct:         qr.is_correct,
+      marks_awarded:      qr.marks_awarded,
+      time_taken_seconds: qr.time_taken_seconds,
+      subtopic:           qr.subtopic,
+      concept_tags:       qr.concept_tags,
+      bloom_level:        qr.bloom_level
+    }));
+
+
+    return res.status(200).json({
+      success: true,
+      attempt: {
+        _id:                attempt._id,
+        week:               attempt.week,
+        topic:              attempt.topic,
+        score:              attempt.score,
+        max_possible_score: attempt.max_possible_score,
+        percentage:         attempt.percentage,
+        total_questions:    attempt.total_questions,
+        correct_answers:    attempt.correct_answers,
+        total_time_seconds: attempt.total_time_seconds,
+        submitted_at:       attempt.submitted_at,
+        easy_attempted:     attempt.easy_attempted,
+        easy_correct:       attempt.easy_correct,
+        medium_attempted:   attempt.medium_attempted,
+        medium_correct:     attempt.medium_correct,
+        hard_attempted:     attempt.hard_attempted,
+        hard_correct:       attempt.hard_correct
+      },
+      questions: reviewQuestions
+    });
+
+
+  } catch (error) {
+    console.error('❌ Error fetching review:', error);
+    return res.status(500).json({
+      error:   'Failed to fetch review data',
+      details: error.message
+    });
+  }
+});
+
+
 
 
 
