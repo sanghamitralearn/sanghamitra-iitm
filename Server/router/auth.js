@@ -72,17 +72,6 @@ const JeeScore = require('../model/jee_scores')
 const SatQuestion = require('../model/sat_questions')
 const SatScore = require('../model/sat_scores')
 
-const DBMSSubmission = require('../model/DBMS_Submission');
-const DBMSQuestions = require('../model/DBMS_Questions');
-
-
-
-// programming course models
-const QuizQuestion = require('../model/Questions');  
-const McqQuizAttempt = require('../model/QuizAttemptSchema');
-const QuizResult = require('../model/QuizResultSchema');
-
-
 
 require('../db/conn');
 const User = require('../model/userSchema');
@@ -4560,6 +4549,95 @@ router.get('/sat_admin_scores', async (req, res) => {
   }
 })
 
+// GET /api/sat_exam_detail?email=...&subject=...&attemptNumber=... — question-by-question breakdown for one attempt
+router.get('/sat_exam_detail', async (req, res) => {
+  try {
+    const { email, subject, attemptNumber } = req.query
+    if (!email || !subject || !attemptNumber) {
+      return res.status(400).json({ success: false, message: 'email, subject, and attemptNumber are required' })
+    }
+
+    const doc = await SatScore.findOne({ email, subject }).lean()
+    if (!doc) return res.status(404).json({ success: false, message: 'Score record not found' })
+
+    const idx = parseInt(attemptNumber) - 1
+    const attempt = (doc.attempts || [])[idx]
+    if (!attempt) return res.status(404).json({ success: false, message: 'Attempt not found' })
+
+    const questionIds = (attempt.responses || []).map(r => r.questionId).filter(Boolean)
+    const questionMeta = await SatQuestion.find({ _id: { $in: questionIds } }).lean()
+    const metaMap = {}
+    questionMeta.forEach(q => { metaMap[String(q._id)] = q })
+
+    const enrichedResults = (attempt.responses || []).map((r, i) => {
+      const meta = metaMap[String(r.questionId)] || {}
+      return {
+        questionId:     r.questionId,
+        questionNumber: meta.question_number || i + 1,
+        questionText:   meta.question_text || '',
+        userAnswer:     r.userResponse,
+        correctAnswer:  meta.correct_answer,
+        isCorrect:      r.isCorrect,
+        marksAwarded:   r.marksAwarded,
+        difficulty:     meta.difficulty || null,
+        type:           meta.type || null,
+        options:        meta.options || [],
+        explanation:    meta.explanation || null,
+        points:         meta.points || 1,
+      }
+    })
+
+    const totalQuestions = attempt.totalQuestions || enrichedResults.length
+    const correctAnswers = attempt.correctAnswers || 0
+
+    // Compute difficulty breakdown
+    const difficultyStats = { easy: { total: 0, correct: 0 }, medium: { total: 0, correct: 0 }, hard: { total: 0, correct: 0 }, unknown: { total: 0, correct: 0 } }
+    enrichedResults.forEach(r => {
+      const d = r.difficulty || 'unknown'
+      difficultyStats[d].total++
+      if (r.isCorrect) difficultyStats[d].correct++
+    })
+
+    // Compute type breakdown
+    const typeStats = {}
+    enrichedResults.forEach(r => {
+      const t = r.type || 'unknown'
+      if (!typeStats[t]) typeStats[t] = { total: 0, correct: 0 }
+      typeStats[t].total++
+      if (r.isCorrect) typeStats[t].correct++
+    })
+
+    res.json({
+      success: true,
+      data: {
+        student: { email: doc.email, name: doc.name },
+        attempt: {
+          subject:        doc.subject,
+          attemptNumber:  parseInt(attemptNumber),
+          dateAttempted:  attempt.dateAttempted,
+          score:          attempt.score,
+          maxScore:       attempt.maxScore,
+          totalQuestions,
+          correctAnswers,
+          wrongAnswers:   attempt.wrongAnswers,
+          unattempted:    attempt.unattempted,
+          percentage:     totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0,
+        },
+        enrichedResults,
+        insights: {
+          difficultyStats,
+          typeStats,
+          hardestQuestions: enrichedResults
+            .filter(r => !r.isCorrect && r.difficulty === 'hard')
+            .map(r => ({ questionNumber: r.questionNumber, questionText: r.questionText, explanation: r.explanation })),
+        },
+      }
+    })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
 // ─── JEE Questions ────────────────────────────────────────────────────────────
 // GET /api/jee_questions?subject=Physics&difficulty=easy&limit=30
 router.get('/jee_questions', async (req, res) => {
@@ -4727,581 +4805,33 @@ router.get('/sat_scores', async (req, res) => {
   }
 })
 
-
-// GET QUESTIONS for quiz
-// ============================================
-router.get('/questions', async (req, res) => {
-  try {
-    const { 
-      course,      // Required: 'java', 'python', 'sql', etc.
-      week,        // Required: week number
-      email,       // Optional: for logging/analytics
-      count = 10,  // Number of questions to return
-      difficulty,  // Optional: 'easy', 'medium', 'hard'
-      question_type, // Optional: 'mcq', 'msq', 'true-false'
-      topic,       // Optional: filter by topic
-      subtopic     // Optional: filter by subtopic
-    } = req.query;
-
-    // Validation
-    if (!course || !week) {
-      return res.status(400).json({
-        error: 'course and week are required',
-        example: '/api/questions?course=java&week=3&count=10'
-      });
-    }
-
-    const weekNum = parseInt(week);
-    if (isNaN(weekNum) || weekNum < 1) {
-      return res.status(400).json({ error: 'week must be a positive number' });
-    }
-
-    // Build filter
-    const filter = {
-      course: course,
-      week: weekNum,
-      is_active: true
-    };
-    
-    if (difficulty) filter.difficulty = difficulty;
-    if (question_type) filter.question_type = question_type;
-    if (topic) filter.topic = topic;
-    if (subtopic) filter.subtopic = subtopic;
-
-    // Get questions pool
-    let pool = await QuizQuestion.find(filter).lean();
-
-    if (pool.length === 0) {
-      return res.status(404).json({ 
-        error: `No active questions found for ${course} week ${weekNum}`,
-        filter_used: filter
-      });
-    }
-
-    // Fisher-Yates shuffle
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
-    }
-
-    // Select requested number of questions
-    const requestedCount = Math.min(parseInt(count), pool.length);
-    const selected = pool.slice(0, requestedCount);
-
-    // Remove answer data before sending to client
-    const questionsForClient = selected.map(q => ({
-      _id: q._id,
-      question_text: q.question_text,
-      question_type: q.question_type,
-      options: q.options,
-      has_latex: q.has_latex,
-      image_url: q.image_url,
-      code_snippet: q.code_snippet,
-      points: q.points,
-      difficulty: q.difficulty,
-      topic: q.topic,
-      subtopic: q.subtopic,
-      concept_tags: q.concept_tags,
-      bloom_level: q.bloom_level
-      // Note: answers field is NOT sent to client
-    }));
-
-    return res.status(200).json({
-      success: true,
-      questions: questionsForClient,
-      metadata: {
-        course: course,
-        week: weekNum,
-        pool_size: pool.length,
-        returned: questionsForClient.length,
-        requested: requestedCount,
-        filters_applied: {
-          difficulty: difficulty || 'all',
-          question_type: question_type || 'all',
-          topic: topic || 'all',
-          subtopic: subtopic || 'all'
-        }
-      }
-    });
-
-  } catch (error) {
-    console.error('❌ Error fetching questions:', error);
-    return res.status(500).json({ 
-      error: 'Failed to fetch questions', 
-      details: error.message 
-    });
-  }
-});
-
-// ============================================
-// SUBMIT QUIZ ANSWERS (server-side grading)
-// ============================================
-router.post('/quiz/submit', async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    const { email, username, quizData } = req.body;
-
-    if (!email || !quizData) {
-      return res.status(400).json({ error: 'email and quizData are required' });
-    }
-
-    const {
-      course,
-      week,
-      topic,
-      questionResults: clientResults,
-      startTime,
-      endTime,
-      totalTimeTaken,
-      cheatCount
-    } = quizData;
-
-    if (!course || !week) {
-      return res.status(400).json({ error: 'course and week are required in quizData' });
-    }
-
-    if (!Array.isArray(clientResults) || clientResults.length === 0) {
-      return res.status(400).json({ error: 'questionResults array is required' });
-    }
-
-    // ── 1. Fetch correct answers from DB ───────────────────────────
-    const questionIds = clientResults.map(qr => qr.questionId).filter(Boolean);
-    const questions = await QuizQuestion.find({ _id: { $in: questionIds } }).lean();
-    const questionMap = {};
-    questions.forEach(q => { questionMap[String(q._id)] = q; });
-
-    // ── 2. Grade each question server-side ─────────────────────────
-    let totalScore = 0;
-    let correctCount = 0;
-    const difficultyBreakdown = {
-      easy:   { attempted: 0, correct: 0 },
-      medium: { attempted: 0, correct: 0 },
-      hard:   { attempted: 0, correct: 0 }
-    };
-
-    const gradedResults = clientResults.map(cr => {
-      const q = questionMap[String(cr.questionId)];
-      if (!q) return {
-        questionId: cr.questionId, isCorrect: false, marksAwarded: 0,
-        userAnswer: cr.userAnswer, timeTaken: cr.timeTaken || 0,
-        difficulty: 'medium', topic: topic || '', subtopic: '',
-        question_type: 'mcq', concept_tags: [], bloom_level: 'apply'
-      };
-
-      const userAns = cr.userAnswer;
-      const correct = q.answers?.correct;
-      let isCorrect = false;
-
-      if (q.question_type === 'mcq') {
-        // options are {id, text}; correct is an option id or text
-        const correctOpt = q.options?.find(o => o.id === correct || o.text === correct);
-        const userOpt = q.options?.find(o => o.id === userAns || o.text === userAns);
-        isCorrect = !!(correctOpt && userOpt && correctOpt.id === userOpt.id);
-      } else if (q.question_type === 'msq') {
-        const correctArr = (Array.isArray(correct) ? correct : [correct]).map(String).sort();
-        const userArr = (Array.isArray(userAns) ? userAns : (userAns ? [userAns] : [])).map(String).sort();
-        isCorrect = JSON.stringify(correctArr) === JSON.stringify(userArr);
-      } else if (q.question_type === 'numeric') {
-        const tolerance = q.answers?.tolerance || 0;
-        const userNum = parseFloat(userAns);
-        const correctNum = parseFloat(correct);
-        isCorrect = !isNaN(userNum) && Math.abs(userNum - correctNum) <= tolerance;
-      } else if (q.question_type === 'true-false') {
-        isCorrect = String(userAns).toLowerCase() === String(correct).toLowerCase();
-      }
-
-      const marksAwarded = isCorrect ? (q.points || 1) : 0;
-      if (isCorrect) { correctCount++; totalScore += marksAwarded; }
-
-      const diff = q.difficulty || 'medium';
-      if (difficultyBreakdown[diff]) {
-        difficultyBreakdown[diff].attempted++;
-        if (isCorrect) difficultyBreakdown[diff].correct++;
-      }
-
-      return {
-        questionId: cr.questionId,
-        isCorrect,
-        marksAwarded,
-        userAnswer: userAns ?? null,
-        timeTaken: cr.timeTaken || 0,
-        // Question metadata (for review)
-        question_text: q.question_text,
-        question_type: q.question_type,
-        options: q.options,
-        correct_answer: q.answers?.correct,
-        code_snippet: q.code_snippet || null,
-        image_url: q.image_url || null,
-        solution: q.solution || null,
-        points: q.points || 1,
-        difficulty: q.difficulty || 'medium',
-        topic: q.topic || topic || '',
-        subtopic: q.subtopic || '',
-        concept_tags: q.concept_tags || [],
-        bloom_level: q.bloom_level || 'apply'
-      };
-    });
-
-    const maxPossibleScore = questions.reduce((sum, q) => sum + (q.points || 1), 0);
-    const finalPercentage = maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0;
-
-    // ── 3. Save attempt summary ────────────────────────────────────
-    const [attempt] = await McqQuizAttempt.create([{
-      email,
-      username: username || email.split('@')[0],
-      course,
-      week: parseInt(week),
-      topic: topic || '',
-      score: totalScore,
-      max_possible_score: maxPossibleScore,
-      percentage: finalPercentage,
-      total_questions: clientResults.length,
-      correct_answers: correctCount,
-      easy_attempted:   difficultyBreakdown.easy.attempted,
-      easy_correct:     difficultyBreakdown.easy.correct,
-      medium_attempted: difficultyBreakdown.medium.attempted,
-      medium_correct:   difficultyBreakdown.medium.correct,
-      hard_attempted:   difficultyBreakdown.hard.attempted,
-      hard_correct:     difficultyBreakdown.hard.correct,
-      total_time_seconds: totalTimeTaken || 0,
-      started_at: new Date(startTime),
-      submitted_at: new Date(endTime),
-      is_completed: true,
-      cheat_count: cheatCount || 0
-    }], { session });
-
-    // ── 4. Save per-question results ───────────────────────────────
-    const resultDocs = gradedResults.map(gr => ({
-      attempt_id: attempt._id,
-      email,
-      course,
-      week: parseInt(week),
-      question_id: gr.questionId,
-      user_answer: gr.userAnswer,
-      is_correct: gr.isCorrect,
-      marks_awarded: gr.marksAwarded,
-      time_taken_seconds: gr.timeTaken,
-      difficulty: gr.difficulty,
-      topic: gr.topic,
-      subtopic: gr.subtopic,
-      question_type: gr.question_type,
-      concept_tags: gr.concept_tags,
-      bloom_level: gr.bloom_level
-    }));
-
-    await QuizResult.insertMany(resultDocs, { session });
-    await session.commitTransaction();
-
-    return res.status(201).json({
-      success: true,
-      attempt_id: attempt._id,
-      message: 'Quiz saved successfully',
-      stats: {
-        score: totalScore,
-        maxPossibleScore,
-        percentage: finalPercentage,
-        correct: correctCount,
-        total: clientResults.length
-      },
-      question_results: gradedResults  // Full review data returned to client
-    });
-
-  } catch (error) {
-    await session.abortTransaction();
-    console.error('❌ Error saving quiz attempt:', error);
-    return res.status(500).json({ error: 'Failed to save quiz attempt', details: error.message });
-  } finally {
-    session.endSession();
-  }
-});
-
-// ============================================
-// GET ALL ATTEMPTS for a user (with filters)
-// ============================================
-router.get('/quiz/attempts', async (req, res) => {
-  try {
-    const { email, course } = req.query;
-    if (!email) return res.status(400).json({ error: 'email is required' });
-
-    const filter = { email };
-    if (course) filter.course = course;
-
-    const attempts = await McqQuizAttempt.find(filter)
-      .sort({ submitted_at: -1 })
-      .lean();
-
-    return res.status(200).json({ success: true, attempts });
-  } catch (error) {
-    console.error('❌ Error fetching attempts:', error);
-    return res.status(500).json({ error: 'Failed to fetch attempts', details: error.message });
-  }
-});
-
-router.get('/quiz/attempts', async (req, res) => {
-  try {
-    const { email, course, week, limit = 20 } = req.query;
-
-    if (!email) {
-      return res.status(400).json({ error: 'email is required' });
-    }
-
-    // Build filter
-    const filter = { email };
-    if (course) filter.course = course;
-    if (week) filter.week = parseInt(week);
-
-    const attempts = await McqQuizAttempt.find(filter)
-      .sort({ submitted_at: -1 })
-      .limit(parseInt(limit))
-      .lean();
-
-    // Get additional stats for each attempt
-    const attemptsWithStats = await Promise.all(attempts.map(async (attempt) => {
-      // Get question results summary for this attempt
-      const questionResults = await QuizResult.find({ 
-        attempt_id: attempt._id 
-      }).lean();
-      
-      const topicBreakdown = {};
-      questionResults.forEach(qr => {
-        if (!topicBreakdown[qr.topic]) {
-          topicBreakdown[qr.topic] = { total: 0, correct: 0 };
-        }
-        topicBreakdown[qr.topic].total++;
-        if (qr.is_correct) topicBreakdown[qr.topic].correct++;
-      });
-
-      return {
-        ...attempt,
-        topic_breakdown: topicBreakdown,
-        detailed_results_available: questionResults.length > 0
-      };
-    }));
-
-    return res.status(200).json({
-      success: true,
-      count: attemptsWithStats.length,
-      data: {
-        attempts: attemptsWithStats
-      }
-    });
-
-  } catch (error) {
-    console.error('❌ Error fetching attempts:', error);
-    return res.status(500).json({
-      error: 'Failed to fetch attempts',
-      details: error.message
-    });
-  }
-});
-
-// ============================================
-// GET SINGLE ATTEMPT with full details (for review)
-// ============================================
-router.get('/quiz/attempts/:attemptId', async (req, res) => {
-  try {
-    const { attemptId } = req.params;
-
-    // Get attempt summary
-    const attempt = await McqQuizAttempt.findById(attemptId).lean();
-    if (!attempt) {
-      return res.status(404).json({ error: 'Attempt not found' });
-    }
-
-    // Get question results and populate full question data
-    const questionResults = await QuizResult.find({ attempt_id: attemptId })
-      .populate({
-        path: 'question_id',
-        select: 'question_text options solution explanation points has_latex image_url code_snippet'
-      })
-      .lean();
-
-    // Shape data for review page
-    const reviewQuestions = questionResults.map(qr => ({
-      // Question content
-      question_text: qr.question_id?.question_text || '',
-      question_type: qr.question_type,
-      options: qr.question_id?.options || [],
-      has_latex: qr.question_id?.has_latex || false,
-      image_url: qr.question_id?.image_url || null,
-      code_snippet: qr.question_id?.code_snippet || null,
-      points: qr.question_id?.points || 1,
-      
-      // Correct answer (for review only)
-      correct_answer: qr.question_id?.answers?.correct || null,
-      solution: qr.question_id?.solution || null,
-      
-      // Question metadata
-      difficulty: qr.difficulty,
-      topic: qr.topic,
-      subtopic: qr.subtopic,
-      concept_tags: qr.concept_tags,
-      bloom_level: qr.bloom_level,
-      
-      // User's response
-      user_answer: qr.user_answer,
-      is_correct: qr.is_correct,
-      marks_awarded: qr.marks_awarded,
-      time_taken_seconds: qr.time_taken_seconds
-    }));
-
-    // Calculate additional stats
-    const totalPossible = reviewQuestions.reduce((sum, q) => sum + q.points, 0);
-    const earnedPoints = reviewQuestions.reduce((sum, q) => sum + q.marks_awarded, 0);
-    const correctCount = reviewQuestions.filter(q => q.is_correct).length;
-
-    return res.status(200).json({
-      success: true,
-      attempt: {
-        _id: attempt._id,
-        course: attempt.course,
-        week: attempt.week,
-        topic: attempt.topic,
-        score: attempt.score,
-        max_possible_score: attempt.max_possible_score,
-        percentage: attempt.percentage,
-        total_questions: attempt.total_questions,
-        correct_answers: attempt.correct_answers,
-        total_time_seconds: attempt.total_time_seconds,
-        submitted_at: attempt.submitted_at,
-        started_at: attempt.started_at,
-        
-        // Recalculate to ensure accuracy
-        recalculated_stats: {
-          total_questions: reviewQuestions.length,
-          correct_answers: correctCount,
-          earned_points: earnedPoints,
-          max_points: totalPossible,
-          percentage: totalPossible > 0 ? Math.round((earnedPoints / totalPossible) * 100) : 0
-        },
-        
-        difficulty_breakdown: {
-          easy: { attempted: attempt.easy_attempted, correct: attempt.easy_correct },
-          medium: { attempted: attempt.medium_attempted, correct: attempt.medium_correct },
-          hard: { attempted: attempt.hard_attempted, correct: attempt.hard_correct }
-        }
-      },
-      questions: reviewQuestions
-    });
-
-  } catch (error) {
-    console.error('❌ Error fetching review:', error);
-    return res.status(500).json({
-      error: 'Failed to fetch review data',
-      details: error.message
-    });
-  }
-});
-
-// GET all DBMS submissions — merges test, coding, and interview quiz submissions
-router.get('/dbms-submission', async (req, res) => {
-  try {
-    const { email } = req.query;
-    const filter = email ? { email } : {};
-
-    const [testSubs, codingSubs, interviewSubs] = await Promise.all([
-      DBMSSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
-      CodingSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
-      InterviewSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
-    ]);
-
-    const normalize = (sub, quizType) => ({
-      _id: sub._id,
-      email: sub.email,
-      username: sub.username,
-      topic: sub.topic,
-      score: sub.score,
-      maxScore: sub.maxScore,
-      percentage: sub.percentage,
-      timestamp: sub.timestamp,
-      quizType,
-    });
-
-    const merged = [
-      ...testSubs.map(s => normalize(s, 'test')),
-      ...codingSubs.map(s => normalize(s, 'coding')),
-      ...interviewSubs.map(s => normalize(s, 'interview')),
-    ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-    res.json({ success: true, data: merged });
-
-  } catch (error) {
-    console.error('Error fetching DBMS submissions:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// POST — save DBMS quiz submission
-router.post('/dbms-submission', async (req, res) => {
-  try {
-    const submissionData = req.body;
-    const submission = new DBMSSubmission(submissionData);
-    await submission.save();
-    res.status(201).json({
-      success: true,
-      message: 'Quiz results saved successfully',
-      submissionId: submission._id
-    });
-  } catch (error) {
-    console.error('❌ Error saving DBMS submission:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to save quiz results',
-      error: error.message
-    });
-  }
-});
-
-// GET — fetch DBMS questions by week number
-router.get('/dbms/questions/week/:week', async (req, res) => {
-  try {
-    const { week } = req.params;
-    const { topic, subtopic, type, difficulty, limit } = req.query;
-
-    if (week < 1 || week > 11) {
-      return res.status(400).json({ success: false, message: 'Week must be between 1 and 11' });
-    }
-
-    let filter = { week: parseInt(week) };
-    if (topic) filter.topic = topic;
-    if (subtopic) filter.subtopic = subtopic;
-    if (type) filter.type = type;
-    if (difficulty) filter.difficulty = difficulty;
-
-    let query = DBMSQuestions.find(filter).sort({ questionId: 1 });
-    if (limit) query = query.limit(parseInt(limit));
-
-    const questions = await query.lean();
-
-    if (questions.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: `No questions found for week ${week}`,
-        filters: filter
-      });
-    }
-
-    const stats = {
-      totalQuestions: questions.length,
-      byType: {}, byDifficulty: {}, byTopic: {},
-      totalMaxScore: questions.reduce((sum, q) => sum + (q.maxScore || 0), 0)
-    };
-    questions.forEach(q => {
-      stats.byType[q.type] = (stats.byType[q.type] || 0) + 1;
-      stats.byDifficulty[q.difficulty] = (stats.byDifficulty[q.difficulty] || 0) + 1;
-      stats.byTopic[q.topic] = (stats.byTopic[q.topic] || 0) + 1;
-    });
-
-    res.json({ success: true, week: parseInt(week), count: questions.length, statistics: stats, questions });
-
-  } catch (error) {
-    console.error('❌ Error fetching questions by week:', error);
-    res.status(500).json({ success: false, message: 'Failed to fetch questions', error: error.message });
-  }
-});
-
-
 module.exports = router
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
