@@ -175,7 +175,7 @@ function App() {
             {/* SAT — module-based quizzes */}
             <Route path="/courses/sat" element={<SAT />} />
             <Route path="/courses/sat/quiz/:section/:module" element={<SATQuiz />} />
-            <Route path="/courses/sat/full-test" element={<SATFullTest />}
+            <Route path="/courses/sat/full-test" element={<SATFullTest />} />
 
             {/* DBMS COURSE */}
             <Route path="/courses/DBMS" element={<DBMS />} />
