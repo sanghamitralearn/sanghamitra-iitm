@@ -100,6 +100,3 @@ module.exports = mongoose.model(
   questionResultSchema,
   'iitm_stats2_question_results'
 );
-
-
-
