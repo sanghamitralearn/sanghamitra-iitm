@@ -78,6 +78,7 @@ import JEEQuiz from './pages/courses/JEEQuiz'
 
 import SAT from './pages/courses/SAT'
 import SATQuiz from './pages/courses/SATQuiz'
+import SATFullTest from './pages/courses/SATFullTest'
 import SATDashboard from './pages/SATDashboard'
 import SATExamAnalysis from './pages/SATExamAnalysis'
 
@@ -174,6 +175,7 @@ function App() {
             {/* SAT — module-based quizzes */}
             <Route path="/courses/sat" element={<SAT />} />
             <Route path="/courses/sat/quiz/:section/:module" element={<SATQuiz />} />
+            <Route path="/courses/sat/full-test" element={<SATFullTest />}
 
             {/* DBMS COURSE */}
             <Route path="/courses/DBMS" element={<DBMS />} />
