@@ -44,6 +44,9 @@ const IITM_Maths_2_Question = require('../model/iitm_math2_questions')
 const IITM_Maths_2_Score = require('../model/iitm_math2_scores')
 const IITM_Stats_2_Question = require('../model/iitm_stats2_questions')
 const IITM_Stats_2_Score = require('../model/iitm_stats2_scores')
+const IITStats2Question = require('../model/iitmstats2questionschema')
+
+
 
 const Question = require('../model/pdsa_Questions');
 const pdsaSubmission = require('../model/pdsa_Submission');
@@ -689,6 +692,70 @@ router.post('/algebra_score_add', async (req, res) => {
   }
 });
 
+
+router.get('/iitm_stats2_questions_databases', async (req, res) => {
+  try {
+    const { week, email, count = 25, difficulty, type, topic } = req.query;
+
+
+    if (!week || !email) {
+      return res.status(400).json({
+        error: 'week and email are required',
+        example: '/math2/questions?week=7&email=user@example.com&count=10'
+      });
+    }
+
+
+    const weekNum = parseInt(week);
+    if (isNaN(weekNum) || weekNum < 1 || weekNum > 12) {
+      return res.status(400).json({ error: 'week must be between 1 and 12' });
+    }
+
+
+    const filter = {
+      week:      weekNum,
+      is_active: true
+    };
+    if (difficulty) filter.difficulty = difficulty;
+    if (type)       filter.type       = type;
+    if (topic)      filter.topic      = topic;
+
+
+    let pool = await IITStats2Question.find(filter).lean();
+
+
+    if (pool.length === 0) {
+      return res.status(404).json({ error: 'No questions found for this week' });
+    }
+
+
+    // Fisher-Yates shuffle
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+
+
+    const requestedCount = Math.min(parseInt(count), pool.length);
+    const selected = pool.slice(0, requestedCount);
+
+
+    return res.status(200).json({
+      questions: selected,
+      metadata: {
+        week:      weekNum,
+        pool_size: pool.length,
+        returned:  selected.length,
+        requested: requestedCount
+      }
+    });
+
+
+  } catch (error) {
+    console.error('❌ Error fetching questions:', error);
+    return res.status(500).json({ error: 'Failed to fetch questions', details: error.message });
+  }
+});
 
 router.get('/algebra_scores', async (req, res) => {
   try {
