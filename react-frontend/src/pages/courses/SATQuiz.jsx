@@ -22,7 +22,7 @@ const SECTION_CONFIG = {
 }
 
 // ─── KaTeX ───────────────────────────────────────────────────────────────────
-function loadKaTeX() {
+export function loadKaTeX() {
   if (window.renderMathInElement) return Promise.resolve()
   return new Promise((resolve) => {
     if (!document.querySelector('link[href*="katex"]')) {
@@ -80,7 +80,7 @@ function latexTabularToHtml(text) {
 }
 
 // ─── MathText: renders $...$ LaTeX, tabular tables, and (structure) markers ──
-const MathText = ({ text, style, className }) => {
+export const MathText = ({ text, style, className }) => {
   const ref = useRef(null)
   useEffect(() => { if (ref.current) renderMathContent(ref.current) }, [text])
 
@@ -104,17 +104,17 @@ const MathText = ({ text, style, className }) => {
 }
 
 // ─── Image helper ─────────────────────────────────────────────────────────────
-const imgSrc = (filename) =>
+export const imgSrc = (filename) =>
   filename ? `/img/Graph_questions/${filename}` : null
 
 // ─── Subject accent colours ───────────────────────────────────────────────────
-const SUBJECT_STYLE = {
+export const SUBJECT_STYLE = {
   'Reading & Writing': { gradient: 'linear-gradient(135deg,#198754,#20c997)', badge: '#198754' },
   'Mathematics':       { gradient: 'linear-gradient(135deg,#003D8F,#0d6efd)', badge: '#003D8F' },
 }
 
 // ─── Normalise question type ──────────────────────────────────────────────────
-function resolveType(q) {
+export function resolveType(q) {
   if (q.type === 'integer') return 'numeric'
   const hasOptions = Array.isArray(q.options) && q.options.length > 0
   const hasImageOptions = q.option_images && Object.keys(q.option_images).length > 0
@@ -184,7 +184,7 @@ function PassageBlock({ text }) {
 }
 
 // ─── Question content renderer ────────────────────────────────────────────────
-function QuestionContent({ q }) {
+export function QuestionContent({ q }) {
   const parsed = parseMatchingLists(q.question_text)
 
   if (parsed) {
@@ -261,7 +261,7 @@ function QuestionContent({ q }) {
 }
 
 // ─── SAT marking (+1 correct, 0 wrong — no negative marking) ─────────────────
-function calcMarks(q, userAns) {
+export function calcMarks(q, userAns) {
   const scheme = q.marking_scheme || { full: 1, negative: 0, zero: 0 }
   const type = resolveType(q)
 
@@ -303,12 +303,231 @@ function calcMarks(q, userAns) {
   return { isCorrect: false, marksAwarded: 0 }
 }
 
+// ─── Score summary card (used by ReviewPage and SATFullTest combined report) ─
+export const ScoreSummaryCard = ({ results, style, title, actions }) => {
+  const scoreColor = results.percentage >= 60 ? '#28a745' : '#dc3545'
+
+  return (
+    <div className="card border-0 shadow-sm mb-4 text-center" style={{ borderRadius: 16 }}>
+      <div style={{ height: 6, background: style.gradient, borderRadius: '16px 16px 0 0' }} />
+      <div className="card-body py-4">
+        {title && <h5 className="mb-3">{title}</h5>}
+        <div className="row justify-content-center g-4 align-items-center">
+          <div className="col-auto">
+            <div style={{
+              width: 130, height: 130, borderRadius: '50%',
+              background: results.percentage >= 60
+                ? 'linear-gradient(135deg,#28a745,#20c997)'
+                : 'linear-gradient(135deg,#dc3545,#c82333)',
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+            }}>
+              <span style={{ fontSize: 30, fontWeight: 700, color: '#fff' }}>{results.percentage}%</span>
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>
+                {results.score}/{results.maxScore} pts
+              </span>
+            </div>
+          </div>
+          <div className="col-auto d-flex flex-column justify-content-center text-start">
+            <h4 className="mb-2">
+              {results.percentage >= 80 ? '🏆 Excellent!'
+                : results.percentage >= 60 ? '👍 Good job!'
+                : '📚 Keep practicing!'}
+            </h4>
+            <p className="mb-1 text-muted">
+              Correct: <strong className="text-success">{results.correctAnswers}</strong> &nbsp;|&nbsp;
+              Wrong: <strong className="text-danger">{results.wrongAnswers}</strong> &nbsp;|&nbsp;
+              Unattempted: <strong className="text-secondary">{results.unattempted}</strong>
+            </p>
+            <p className="mb-0 text-muted">
+              Net Score: <strong style={{ color: scoreColor }}>{results.score}</strong> / {results.maxScore}
+              &nbsp;|&nbsp;Time: {Math.floor(results.totalTime / 60)}m {results.totalTime % 60}s
+            </p>
+          </div>
+        </div>
+
+        {actions && (
+          <div className="d-flex gap-2 justify-content-center mt-4">
+            {actions}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Per-question review item (used by ReviewPage and SATFullTest combined report) ─
+export const QuestionReviewItem = ({ q, idx, answer, res, isOpen, onToggle }) => {
+  const borderColor = res?.unattempted ? '#6c757d' : res?.isCorrect ? '#28a745' : '#dc3545'
+
+  return (
+    <div
+      className="card border-0 shadow-sm mb-3"
+      style={{ borderRadius: 12, borderLeft: `4px solid ${borderColor}` }}
+    >
+      <div
+        className="card-body"
+        style={{ cursor: 'pointer' }}
+        onClick={onToggle}
+      >
+        <div className="d-flex align-items-start gap-3">
+          <div style={{
+            width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+            background: res?.unattempted ? '#6c757d' : res?.isCorrect ? '#28a745' : '#dc3545',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <i className={`bi ${res?.unattempted ? 'bi-dash' : res?.isCorrect ? 'bi-check-lg' : 'bi-x-lg'} text-white`} style={{ fontSize: 13 }} />
+          </div>
+
+          <div className="flex-grow-1">
+            <div className="d-flex justify-content-between">
+              <p className="mb-1 fw-semibold" style={{ fontSize: '0.95rem' }}>
+                Q{idx + 1}.{' '}
+                {!isOpen
+                  ? (q.question_text.replace(/\$[^$]*\$/g, '…').slice(0, 120) + (q.question_text.length > 120 ? '…' : ''))
+                  : <MathText text={q.question_text} />}
+              </p>
+              <i className={`bi bi-chevron-${isOpen ? 'up' : 'down'} ms-2 text-muted`} style={{ flexShrink: 0 }} />
+            </div>
+            <div className="d-flex gap-2 flex-wrap mt-1">
+              <span className="badge bg-secondary">{q.type}</span>
+              {q.subtopic && <span className="badge bg-info text-dark">{q.subtopic}</span>}
+              <span className="badge bg-light text-dark border">{q.points || 1} pt</span>
+              {res?.marksAwarded > 0 && (
+                <span className="badge bg-success">+{res.marksAwarded} earned</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {isOpen && (
+          <div className="mt-3 ms-5 ps-2">
+            {/* Passage (SAT Reading & Writing) */}
+            {q.passage && (
+              <div style={{
+                background: '#f8f9ff',
+                border: '1px solid #d0d9f0',
+                borderLeft: '4px solid #003D8F',
+                borderRadius: 10,
+                padding: '14px 18px',
+                marginBottom: 14,
+              }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '1px', color: '#003D8F', marginBottom: 8, textTransform: 'uppercase' }}>
+                  Passage
+                </div>
+                <p style={{ fontSize: '0.92rem', lineHeight: 1.8, whiteSpace: 'pre-wrap', margin: 0, color: '#1a1a2e' }}
+                  dangerouslySetInnerHTML={{ __html: q.passage }}
+                />
+              </div>
+            )}
+            {q.image_url && (
+              <div className="mb-3">
+                <img
+                  src={imgSrc(q.image_url)}
+                  alt="Question diagram"
+                  style={{ width: '100%', maxHeight: 500, objectFit: 'contain', borderRadius: 8, border: '1px solid #dee2e6' }}
+                  onError={e => { e.target.style.display = 'none' }}
+                />
+              </div>
+            )}
+
+            {resolveType(q) === 'multiple_choice' && (
+              <div className="mb-3">
+                {q.options.map((opt, oi) => {
+                  const corrAns = String(q.correct_answer ?? '').trim()
+                  const isCorrectOpt = corrAns === opt.option_id
+                  const userPicked = String(answer ?? '').trim() === opt.option_id
+                  const bg = isCorrectOpt ? '#d4edda' : userPicked ? '#f8d7da' : 'transparent'
+                  return (
+                    <div
+                      key={oi}
+                      className="d-flex align-items-start gap-2 mb-2 px-3 py-2 rounded"
+                      style={{ background: bg }}
+                    >
+                      <span className="fw-bold text-muted" style={{ minWidth: 24 }}>{opt.option_id}.</span>
+                      {isCorrectOpt && <i className="bi bi-check-circle-fill text-success mt-1" />}
+                      {userPicked && !isCorrectOpt && <i className="bi bi-x-circle-fill text-danger mt-1" />}
+                      <div>
+                        <MathText text={opt.text} style={{ fontSize: '0.9rem' }} />
+                        {q.option_images?.[opt.option_id] && (
+                          <div className="mt-1">
+                            <img
+                              src={imgSrc(q.option_images[opt.option_id])}
+                              alt={`Option ${opt.option_id}`}
+                              style={{ maxWidth: 280, borderRadius: 6, border: '1px solid #dee2e6' }}
+                              onError={e => { e.target.style.display = 'none' }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {resolveType(q) === 'multiple_select' && (
+              <div className="mb-3">
+                {q.options.map((opt, oi) => {
+                  const corrArr = Array.isArray(q.correct_answer)
+                    ? q.correct_answer.map(String)
+                    : [String(q.correct_answer)]
+                  const isCorrectOpt = corrArr.includes(opt.option_id)
+                  const userPicked = Array.isArray(answer)
+                    ? answer.includes(opt.option_id)
+                    : false
+                  const bg = isCorrectOpt ? '#d4edda' : userPicked ? '#f8d7da' : 'transparent'
+                  return (
+                    <div
+                      key={oi}
+                      className="d-flex align-items-start gap-2 mb-2 px-3 py-2 rounded"
+                      style={{ background: bg }}
+                    >
+                      <span className="fw-bold text-muted" style={{ minWidth: 24 }}>{opt.option_id}.</span>
+                      {isCorrectOpt && <i className="bi bi-check-circle-fill text-success mt-1" />}
+                      {userPicked && !isCorrectOpt && <i className="bi bi-x-circle-fill text-danger mt-1" />}
+                      <MathText text={opt.text} style={{ fontSize: '0.9rem' }} />
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {resolveType(q) === 'numeric' && (
+              <div className="d-flex gap-2 flex-wrap mb-3">
+                <span className="badge bg-light text-dark border fs-6">
+                  Your answer: <strong>{answer ?? '(not answered)'}</strong>
+                </span>
+                <span className="badge bg-success fs-6">
+                  Correct:{' '}
+                  <strong>
+                    {q.correct_answer !== null && typeof q.correct_answer === 'object' && 'min' in q.correct_answer
+                      ? `${q.correct_answer.min} – ${q.correct_answer.max}`
+                      : String(q.correct_answer)}
+                  </strong>
+                </span>
+              </div>
+            )}
+
+            {q.concept_tags?.length > 0 && (
+              <div className="mt-2">
+                <small className="text-muted me-1">Topics:</small>
+                {q.concept_tags.map(t => (
+                  <span key={t} className="badge bg-light text-dark border me-1" style={{ fontSize: '0.75rem' }}>{t}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Review Page ──────────────────────────────────────────────────────────────
 const ReviewPage = ({ questions, answers, results, label, moduleNum, onRetake }) => {
   const [expanded, setExpanded] = useState(null)
   const style = SUBJECT_STYLE[label] || SUBJECT_STYLE['Mathematics']
-
-  const scoreColor = results.percentage >= 60 ? '#28a745' : '#dc3545'
 
   return (
     <main className="main">
@@ -334,227 +553,296 @@ const ReviewPage = ({ questions, answers, results, label, moduleNum, onRetake })
       </div>
 
       <div className="container mb-5">
-        {/* Score card */}
-        <div className="card border-0 shadow-sm mb-4 text-center" style={{ borderRadius: 16 }}>
-          <div style={{ height: 6, background: style.gradient, borderRadius: '16px 16px 0 0' }} />
-          <div className="card-body py-4">
-            <div className="row justify-content-center g-4 align-items-center">
-              <div className="col-auto">
-                <div style={{
-                  width: 130, height: 130, borderRadius: '50%',
-                  background: results.percentage >= 60
-                    ? 'linear-gradient(135deg,#28a745,#20c997)'
-                    : 'linear-gradient(135deg,#dc3545,#c82333)',
-                  display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <span style={{ fontSize: 30, fontWeight: 700, color: '#fff' }}>{results.percentage}%</span>
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>
-                    {results.score}/{results.maxScore} pts
-                  </span>
-                </div>
-              </div>
-              <div className="col-auto d-flex flex-column justify-content-center text-start">
-                <h4 className="mb-2">
-                  {results.percentage >= 80 ? '🏆 Excellent!'
-                    : results.percentage >= 60 ? '👍 Good job!'
-                    : '📚 Keep practicing!'}
-                </h4>
-                <p className="mb-1 text-muted">
-                  Correct: <strong className="text-success">{results.correctAnswers}</strong> &nbsp;|&nbsp;
-                  Wrong: <strong className="text-danger">{results.wrongAnswers}</strong> &nbsp;|&nbsp;
-                  Unattempted: <strong className="text-secondary">{results.unattempted}</strong>
-                </p>
-                <p className="mb-0 text-muted">
-                  Net Score: <strong style={{ color: scoreColor }}>{results.score}</strong> / {results.maxScore}
-                  &nbsp;|&nbsp;Time: {Math.floor(results.totalTime / 60)}m {results.totalTime % 60}s
-                </p>
-              </div>
-            </div>
-
-            <div className="d-flex gap-2 justify-content-center mt-4">
+        <ScoreSummaryCard
+          results={results}
+          style={style}
+          actions={
+            <>
               <button className="btn btn-primary" onClick={onRetake}>
                 <i className="bi bi-arrow-clockwise me-1" />Retake
               </button>
               <Link to="/courses/sat" className="btn btn-outline-secondary">
                 <i className="bi bi-arrow-left me-1" />Back to SAT
               </Link>
+            </>
+          }
+        />
+
+        {/* Per-question review */}
+        {questions.map((q, idx) => (
+          <QuestionReviewItem
+            key={q._id || idx}
+            q={q}
+            idx={idx}
+            answer={answers[idx]}
+            res={results.responses[idx]}
+            isOpen={expanded === idx}
+            onToggle={() => setExpanded(expanded === idx ? null : idx)}
+          />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+// ─── Tab-switch warning banner ────────────────────────────────────────────────
+export const TabWarningBanner = ({ show, onDismiss }) => {
+  if (!show) return null
+  return (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10000,
+      background: '#dc3545', color: '#fff', textAlign: 'center',
+      padding: '8px', fontWeight: 600,
+    }}>
+      ⚠️ Tab switching detected! Please stay on this page.
+      <button
+        onClick={onDismiss}
+        style={{ marginLeft: 16, background: 'none', border: '1px solid #fff', color: '#fff', borderRadius: 4, padding: '2px 10px', cursor: 'pointer' }}
+      >
+        Dismiss
+      </button>
+    </div>
+  )
+}
+
+// ─── Quiz panel: question card + sidebar (used by SATQuiz and SATFullTest) ───
+export const QuizPanel = ({
+  questions, currentIndex, answers, setAnswer, toggleMSQ, goTo,
+  style, moduleNum, saving, onSubmit,
+  submitLabel = 'Submit Quiz', exitTo = '/courses/sat', exitLabel = 'Exit',
+}) => {
+  const q = questions[currentIndex]
+  const userAns = answers[currentIndex]
+  const isAnswered =
+    userAns !== undefined && userAns !== null && userAns !== '' &&
+    !(Array.isArray(userAns) && !userAns.length)
+  const answeredCount = questions.filter((_, i) => {
+    const a = answers[i]
+    return a !== undefined && a !== null && a !== '' && !(Array.isArray(a) && !a.length)
+  }).length
+
+  return (
+    <div className="container mb-5">
+      <div className="row g-4">
+        {/* ── Question panel ── */}
+        <div className="col-lg-8">
+          <div className="card border-0 shadow-sm" style={{ borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ height: 5, background: style.gradient }} />
+            <div className="card-body p-4">
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <span className="text-muted small">Question {currentIndex + 1} of {questions.length}</span>
+                <div className="d-flex gap-2 flex-wrap">
+                  <span className={`badge ${isAnswered ? 'bg-success' : 'bg-secondary'}`}>
+                    {isAnswered ? 'Answered' : 'Not answered'}
+                  </span>
+                  <span className="badge" style={{ background: style.badge }}>{q.type}</span>
+                  {q.difficulty && (
+                    <span className={`badge ${q.difficulty === 'hard' ? 'bg-danger' : q.difficulty === 'medium' ? 'bg-warning text-dark' : 'bg-success'}`}>
+                      {q.difficulty}
+                    </span>
+                  )}
+                  <span className="badge bg-light text-dark border">{q.points || 1} pt</span>
+                </div>
+              </div>
+
+              <div className="progress mb-4" style={{ height: 5 }}>
+                <div
+                  className="progress-bar"
+                  style={{ width: `${((currentIndex + 1) / questions.length) * 100}%`, background: style.gradient }}
+                />
+              </div>
+
+              {q.topic && <p className="text-muted small mb-1">{q.topic}{q.subtopic ? ` › ${q.subtopic}` : ''}</p>}
+              <QuestionContent q={q} />
+
+              {/* ── MCQ ── */}
+              {resolveType(q) === 'multiple_choice' && (
+                <div>
+                  {(Array.isArray(q.options) && q.options.length > 0
+                    ? q.options
+                    : Object.keys(q.option_images || {}).sort().map(id => ({ option_id: id, text: '' }))
+                  ).map((opt, oi) => {
+                    const selected = String(userAns ?? '') === opt.option_id
+                    return (
+                      <div
+                        key={oi}
+                        onClick={() => setAnswer(currentIndex, opt.option_id)}
+                        className={`d-flex align-items-start gap-3 mb-2 p-3 rounded border ${selected ? 'border-primary bg-primary bg-opacity-10' : ''}`}
+                        style={{ cursor: 'pointer', transition: 'all 0.15s' }}
+                      >
+                        <div style={{
+                          width: 20, height: 20, borderRadius: '50%', flexShrink: 0, marginTop: 2,
+                          border: `2px solid ${selected ? style.badge : '#adb5bd'}`,
+                          background: selected ? style.badge : 'transparent',
+                        }} />
+                        <div>
+                          <span className="fw-semibold me-2">{opt.option_id}.</span>
+                          {opt.text && <MathText text={opt.text} style={{ fontSize: '0.95rem' }} />}
+                          {q.option_images?.[opt.option_id] && (
+                            <div className="mt-2">
+                              <img
+                                src={imgSrc(q.option_images[opt.option_id])}
+                                alt={`Option ${opt.option_id}`}
+                                style={{ maxWidth: 280, borderRadius: 6, border: '1px solid #dee2e6' }}
+                                onError={e => { e.target.style.display = 'none' }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* ── MSQ ── */}
+              {resolveType(q) === 'multiple_select' && (
+                <div>
+                  <p className="text-muted small mb-2">Select one or more correct options</p>
+                  {q.options.map((opt, oi) => {
+                    const selected = Array.isArray(userAns) && userAns.includes(opt.option_id)
+                    return (
+                      <div
+                        key={oi}
+                        onClick={() => toggleMSQ(currentIndex, opt.option_id)}
+                        className={`d-flex align-items-start gap-3 mb-2 p-3 rounded border ${selected ? 'border-primary bg-primary bg-opacity-10' : ''}`}
+                        style={{ cursor: 'pointer', transition: 'all 0.15s' }}
+                      >
+                        <div style={{
+                          width: 20, height: 20, borderRadius: 4, flexShrink: 0, marginTop: 2,
+                          border: `2px solid ${selected ? style.badge : '#adb5bd'}`,
+                          background: selected ? style.badge : 'transparent',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          {selected && <i className="bi bi-check text-white" style={{ fontSize: 12 }} />}
+                        </div>
+                        <div>
+                          <span className="fw-semibold me-2">{opt.option_id}.</span>
+                          <MathText text={opt.text} style={{ fontSize: '0.95rem' }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* ── Numeric ── */}
+              {resolveType(q) === 'numeric' && (
+                <div>
+                  <p className="text-muted small mb-2">
+                    Enter your numeric answer
+                    {q.correct_answer !== null && typeof q.correct_answer === 'object' && 'min' in q.correct_answer
+                      ? ' (answer accepted within a range)'
+                      : ''}
+                  </p>
+                  <input
+                    type="number"
+                    step="any"
+                    className="form-control form-control-lg"
+                    placeholder="Enter answer…"
+                    value={userAns ?? ''}
+                    onChange={e => setAnswer(currentIndex, e.target.value)}
+                    style={{ maxWidth: 260, fontFamily: 'monospace', fontSize: '1.1rem' }}
+                  />
+                </div>
+              )}
+
+              <div className="d-flex justify-content-between align-items-center mt-4">
+                <button
+                  className="btn btn-outline-secondary"
+                  onClick={() => goTo(currentIndex - 1)}
+                  disabled={currentIndex === 0}
+                >
+                  <i className="bi bi-arrow-left me-1" />Prev
+                </button>
+                <span className="text-muted small">{answeredCount}/{questions.length} answered</span>
+                {currentIndex < questions.length - 1
+                  ? (
+                    <button className="btn btn-primary" onClick={() => goTo(currentIndex + 1)}>
+                      Next<i className="bi bi-arrow-right ms-1" />
+                    </button>
+                  ) : (
+                    <button
+                      className="btn btn-success"
+                      onClick={onSubmit}
+                      disabled={saving}
+                    >
+                      {saving
+                        ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</>
+                        : <><i className="bi bi-check-lg me-1" />Submit</>}
+                    </button>
+                  )}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Per-question review */}
-        {questions.map((q, idx) => {
-          const res = results.responses[idx]
-          const isOpen = expanded === idx
-          const borderColor = res?.unattempted ? '#6c757d' : res?.isCorrect ? '#28a745' : '#dc3545'
-
-          return (
-            <div
-              key={q._id || idx}
-              className="card border-0 shadow-sm mb-3"
-              style={{ borderRadius: 12, borderLeft: `4px solid ${borderColor}` }}
-            >
-              <div
-                className="card-body"
-                style={{ cursor: 'pointer' }}
-                onClick={() => setExpanded(isOpen ? null : idx)}
-              >
-                <div className="d-flex align-items-start gap-3">
-                  <div style={{
-                    width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                    background: res?.unattempted ? '#6c757d' : res?.isCorrect ? '#28a745' : '#dc3545',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <i className={`bi ${res?.unattempted ? 'bi-dash' : res?.isCorrect ? 'bi-check-lg' : 'bi-x-lg'} text-white`} style={{ fontSize: 13 }} />
-                  </div>
-
-                  <div className="flex-grow-1">
-                    <div className="d-flex justify-content-between">
-                      <p className="mb-1 fw-semibold" style={{ fontSize: '0.95rem' }}>
-                        Q{idx + 1}.{' '}
-                        {!isOpen
-                          ? (q.question_text.replace(/\$[^$]*\$/g, '…').slice(0, 120) + (q.question_text.length > 120 ? '…' : ''))
-                          : <MathText text={q.question_text} />}
-                      </p>
-                      <i className={`bi bi-chevron-${isOpen ? 'up' : 'down'} ms-2 text-muted`} style={{ flexShrink: 0 }} />
-                    </div>
-                    <div className="d-flex gap-2 flex-wrap mt-1">
-                      <span className="badge bg-secondary">{q.type}</span>
-                      {q.subtopic && <span className="badge bg-info text-dark">{q.subtopic}</span>}
-                      <span className="badge bg-light text-dark border">{q.points || 1} pt</span>
-                      {res?.marksAwarded > 0 && (
-                        <span className="badge bg-success">+{res.marksAwarded} earned</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {isOpen && (
-                  <div className="mt-3 ms-5 ps-2">
-                    {/* Passage (SAT Reading & Writing) */}
-                    {q.passage && (
-                      <div style={{
-                        background: '#f8f9ff',
-                        border: '1px solid #d0d9f0',
-                        borderLeft: '4px solid #003D8F',
-                        borderRadius: 10,
-                        padding: '14px 18px',
-                        marginBottom: 14,
-                      }}>
-                        <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '1px', color: '#003D8F', marginBottom: 8, textTransform: 'uppercase' }}>
-                          Passage
-                        </div>
-                        <p style={{ fontSize: '0.92rem', lineHeight: 1.8, whiteSpace: 'pre-wrap', margin: 0, color: '#1a1a2e' }}
-                          dangerouslySetInnerHTML={{ __html: q.passage }}
-                        />
-                      </div>
-                    )}
-                    {q.image_url && (
-                      <div className="mb-3">
-                        <img
-                          src={imgSrc(q.image_url)}
-                          alt="Question diagram"
-                          style={{ width: '100%', maxHeight: 500, objectFit: 'contain', borderRadius: 8, border: '1px solid #dee2e6' }}
-                          onError={e => { e.target.style.display = 'none' }}
-                        />
-                      </div>
-                    )}
-
-                    {resolveType(q) === 'multiple_choice' && (
-                      <div className="mb-3">
-                        {q.options.map((opt, oi) => {
-                          const corrAns = String(q.correct_answer ?? '').trim()
-                          const isCorrectOpt = corrAns === opt.option_id
-                          const userPicked = String(answers[idx] ?? '').trim() === opt.option_id
-                          const bg = isCorrectOpt ? '#d4edda' : userPicked ? '#f8d7da' : 'transparent'
-                          return (
-                            <div
-                              key={oi}
-                              className="d-flex align-items-start gap-2 mb-2 px-3 py-2 rounded"
-                              style={{ background: bg }}
-                            >
-                              <span className="fw-bold text-muted" style={{ minWidth: 24 }}>{opt.option_id}.</span>
-                              {isCorrectOpt && <i className="bi bi-check-circle-fill text-success mt-1" />}
-                              {userPicked && !isCorrectOpt && <i className="bi bi-x-circle-fill text-danger mt-1" />}
-                              <div>
-                                <MathText text={opt.text} style={{ fontSize: '0.9rem' }} />
-                                {q.option_images?.[opt.option_id] && (
-                                  <div className="mt-1">
-                                    <img
-                                      src={imgSrc(q.option_images[opt.option_id])}
-                                      alt={`Option ${opt.option_id}`}
-                                      style={{ maxWidth: 280, borderRadius: 6, border: '1px solid #dee2e6' }}
-                                      onError={e => { e.target.style.display = 'none' }}
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-
-                    {resolveType(q) === 'multiple_select' && (
-                      <div className="mb-3">
-                        {q.options.map((opt, oi) => {
-                          const corrArr = Array.isArray(q.correct_answer)
-                            ? q.correct_answer.map(String)
-                            : [String(q.correct_answer)]
-                          const isCorrectOpt = corrArr.includes(opt.option_id)
-                          const userPicked = Array.isArray(answers[idx])
-                            ? answers[idx].includes(opt.option_id)
-                            : false
-                          const bg = isCorrectOpt ? '#d4edda' : userPicked ? '#f8d7da' : 'transparent'
-                          return (
-                            <div
-                              key={oi}
-                              className="d-flex align-items-start gap-2 mb-2 px-3 py-2 rounded"
-                              style={{ background: bg }}
-                            >
-                              <span className="fw-bold text-muted" style={{ minWidth: 24 }}>{opt.option_id}.</span>
-                              {isCorrectOpt && <i className="bi bi-check-circle-fill text-success mt-1" />}
-                              {userPicked && !isCorrectOpt && <i className="bi bi-x-circle-fill text-danger mt-1" />}
-                              <MathText text={opt.text} style={{ fontSize: '0.9rem' }} />
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-
-                    {resolveType(q) === 'numeric' && (
-                      <div className="d-flex gap-2 flex-wrap mb-3">
-                        <span className="badge bg-light text-dark border fs-6">
-                          Your answer: <strong>{answers[idx] ?? '(not answered)'}</strong>
-                        </span>
-                        <span className="badge bg-success fs-6">
-                          Correct:{' '}
-                          <strong>
-                            {q.correct_answer !== null && typeof q.correct_answer === 'object' && 'min' in q.correct_answer
-                              ? `${q.correct_answer.min} – ${q.correct_answer.max}`
-                              : String(q.correct_answer)}
-                          </strong>
-                        </span>
-                      </div>
-                    )}
-
-                    {q.concept_tags?.length > 0 && (
-                      <div className="mt-2">
-                        <small className="text-muted me-1">Topics:</small>
-                        {q.concept_tags.map(t => (
-                          <span key={t} className="badge bg-light text-dark border me-1" style={{ fontSize: '0.75rem' }}>{t}</span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+        {/* ── Sidebar ── */}
+        <div className="col-lg-4">
+          <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 16 }}>
+            <div className="card-body p-3">
+              <h6 className="fw-bold mb-3">Question Navigator</h6>
+              <div className="d-flex flex-wrap gap-2">
+                {questions.map((qn, i) => {
+                  const a = answers[i]
+                  const done = a !== undefined && a !== null && a !== '' && !(Array.isArray(a) && !a.length)
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => goTo(i)}
+                      className={`btn btn-sm ${i === currentIndex ? 'btn-primary' : done ? 'btn-success' : 'btn-outline-secondary'}`}
+                      style={{ width: 36, height: 36, padding: 0, fontWeight: 600 }}
+                    >
+                      {i + 1}
+                    </button>
+                  )
+                })}
+              </div>
+              <hr />
+              <div className="d-flex justify-content-between small text-muted">
+                <span><span className="badge bg-success me-1">■</span>Answered</span>
+                <span><span className="badge bg-secondary me-1">■</span>Skipped</span>
+                <span><span className="badge bg-primary me-1">■</span>Current</span>
               </div>
             </div>
-          )
-        })}
+          </div>
+
+          <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 16 }}>
+            <div className="card-body p-3">
+              <h6 className="fw-bold mb-2">Marking Scheme</h6>
+              <div className="d-flex flex-column gap-1" style={{ fontSize: '0.85rem' }}>
+                <span className="text-success fw-semibold">✓ Correct: +1</span>
+                <span className="text-secondary">✗ Wrong: 0 (no penalty)</span>
+                <span className="text-secondary">— Unattempted: 0</span>
+              </div>
+              <hr className="my-2" />
+              <div style={{ fontSize: '0.8rem', color: '#6c757d' }}>
+                <i className="bi bi-info-circle me-1" />
+                Module {moduleNum} · {questions.length} questions
+              </div>
+            </div>
+          </div>
+
+          <div className="card border-0 shadow-sm" style={{ borderRadius: 16 }}>
+            <div className="card-body p-3 text-center">
+              <p className="text-muted small mb-2">{answeredCount}/{questions.length} answered</p>
+              <button
+                className="btn btn-success w-100"
+                onClick={onSubmit}
+                disabled={saving}
+              >
+                {saving
+                  ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</>
+                  : <><i className="bi bi-check-lg me-1" />{submitLabel}</>}
+              </button>
+              <Link to={exitTo} className="btn btn-outline-secondary w-100 mt-2 btn-sm">
+                <i className="bi bi-arrow-left me-1" />{exitLabel}
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
-    </main>
+    </div>
   )
 }
 
@@ -818,33 +1106,9 @@ const SATQuiz = () => {
     />
   )
 
-  const q = questions[currentIndex]
-  const userAns = answers[currentIndex]
-  const isAnswered =
-    userAns !== undefined && userAns !== null && userAns !== '' &&
-    !(Array.isArray(userAns) && !userAns.length)
-  const answeredCount = questions.filter((_, i) => {
-    const a = answers[i]
-    return a !== undefined && a !== null && a !== '' && !(Array.isArray(a) && !a.length)
-  }).length
-
   return (
     <main className="main">
-      {tabWarning && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10000,
-          background: '#dc3545', color: '#fff', textAlign: 'center',
-          padding: '8px', fontWeight: 600,
-        }}>
-          ⚠️ Tab switching detected! Please stay on this page.
-          <button
-            onClick={() => setTabWarning(false)}
-            style={{ marginLeft: 16, background: 'none', border: '1px solid #fff', color: '#fff', borderRadius: 4, padding: '2px 10px', cursor: 'pointer' }}
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
+      <TabWarningBanner show={tabWarning} onDismiss={() => setTabWarning(false)} />
 
       <div className="page-title" data-aos="fade" style={{ marginBottom: '2rem' }}>
         <div className="heading">
@@ -871,227 +1135,21 @@ const SATQuiz = () => {
         </nav>
       </div>
 
-      <div className="container mb-5">
-        <div className="row g-4">
-          {/* ── Question panel ── */}
-          <div className="col-lg-8">
-            <div className="card border-0 shadow-sm" style={{ borderRadius: 16, overflow: 'hidden' }}>
-              <div style={{ height: 5, background: style.gradient }} />
-              <div className="card-body p-4">
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <span className="text-muted small">Question {currentIndex + 1} of {questions.length}</span>
-                  <div className="d-flex gap-2 flex-wrap">
-                    <span className={`badge ${isAnswered ? 'bg-success' : 'bg-secondary'}`}>
-                      {isAnswered ? 'Answered' : 'Not answered'}
-                    </span>
-                    <span className="badge" style={{ background: style.badge }}>{q.type}</span>
-                    {q.difficulty && (
-                      <span className={`badge ${q.difficulty === 'hard' ? 'bg-danger' : q.difficulty === 'medium' ? 'bg-warning text-dark' : 'bg-success'}`}>
-                        {q.difficulty}
-                      </span>
-                    )}
-                    <span className="badge bg-light text-dark border">{q.points || 1} pt</span>
-                  </div>
-                </div>
-
-                <div className="progress mb-4" style={{ height: 5 }}>
-                  <div
-                    className="progress-bar"
-                    style={{ width: `${((currentIndex + 1) / questions.length) * 100}%`, background: style.gradient }}
-                  />
-                </div>
-
-                {q.topic && <p className="text-muted small mb-1">{q.topic}{q.subtopic ? ` › ${q.subtopic}` : ''}</p>}
-                <QuestionContent q={q} />
-
-                {/* ── MCQ ── */}
-                {resolveType(q) === 'multiple_choice' && (
-                  <div>
-                    {(Array.isArray(q.options) && q.options.length > 0
-                      ? q.options
-                      : Object.keys(q.option_images || {}).sort().map(id => ({ option_id: id, text: '' }))
-                    ).map((opt, oi) => {
-                      const selected = String(userAns ?? '') === opt.option_id
-                      return (
-                        <div
-                          key={oi}
-                          onClick={() => setAnswer(currentIndex, opt.option_id)}
-                          className={`d-flex align-items-start gap-3 mb-2 p-3 rounded border ${selected ? 'border-primary bg-primary bg-opacity-10' : ''}`}
-                          style={{ cursor: 'pointer', transition: 'all 0.15s' }}
-                        >
-                          <div style={{
-                            width: 20, height: 20, borderRadius: '50%', flexShrink: 0, marginTop: 2,
-                            border: `2px solid ${selected ? style.badge : '#adb5bd'}`,
-                            background: selected ? style.badge : 'transparent',
-                          }} />
-                          <div>
-                            <span className="fw-semibold me-2">{opt.option_id}.</span>
-                            {opt.text && <MathText text={opt.text} style={{ fontSize: '0.95rem' }} />}
-                            {q.option_images?.[opt.option_id] && (
-                              <div className="mt-2">
-                                <img
-                                  src={imgSrc(q.option_images[opt.option_id])}
-                                  alt={`Option ${opt.option_id}`}
-                                  style={{ maxWidth: 280, borderRadius: 6, border: '1px solid #dee2e6' }}
-                                  onError={e => { e.target.style.display = 'none' }}
-                                />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-
-                {/* ── MSQ ── */}
-                {resolveType(q) === 'multiple_select' && (
-                  <div>
-                    <p className="text-muted small mb-2">Select one or more correct options</p>
-                    {q.options.map((opt, oi) => {
-                      const selected = Array.isArray(userAns) && userAns.includes(opt.option_id)
-                      return (
-                        <div
-                          key={oi}
-                          onClick={() => toggleMSQ(currentIndex, opt.option_id)}
-                          className={`d-flex align-items-start gap-3 mb-2 p-3 rounded border ${selected ? 'border-primary bg-primary bg-opacity-10' : ''}`}
-                          style={{ cursor: 'pointer', transition: 'all 0.15s' }}
-                        >
-                          <div style={{
-                            width: 20, height: 20, borderRadius: 4, flexShrink: 0, marginTop: 2,
-                            border: `2px solid ${selected ? style.badge : '#adb5bd'}`,
-                            background: selected ? style.badge : 'transparent',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          }}>
-                            {selected && <i className="bi bi-check text-white" style={{ fontSize: 12 }} />}
-                          </div>
-                          <div>
-                            <span className="fw-semibold me-2">{opt.option_id}.</span>
-                            <MathText text={opt.text} style={{ fontSize: '0.95rem' }} />
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-
-                {/* ── Numeric ── */}
-                {resolveType(q) === 'numeric' && (
-                  <div>
-                    <p className="text-muted small mb-2">
-                      Enter your numeric answer
-                      {q.correct_answer !== null && typeof q.correct_answer === 'object' && 'min' in q.correct_answer
-                        ? ' (answer accepted within a range)'
-                        : ''}
-                    </p>
-                    <input
-                      type="number"
-                      step="any"
-                      className="form-control form-control-lg"
-                      placeholder="Enter answer…"
-                      value={userAns ?? ''}
-                      onChange={e => setAnswer(currentIndex, e.target.value)}
-                      style={{ maxWidth: 260, fontFamily: 'monospace', fontSize: '1.1rem' }}
-                    />
-                  </div>
-                )}
-
-                <div className="d-flex justify-content-between align-items-center mt-4">
-                  <button
-                    className="btn btn-outline-secondary"
-                    onClick={() => goTo(currentIndex - 1)}
-                    disabled={currentIndex === 0}
-                  >
-                    <i className="bi bi-arrow-left me-1" />Prev
-                  </button>
-                  <span className="text-muted small">{answeredCount}/{questions.length} answered</span>
-                  {currentIndex < questions.length - 1
-                    ? (
-                      <button className="btn btn-primary" onClick={() => goTo(currentIndex + 1)}>
-                        Next<i className="bi bi-arrow-right ms-1" />
-                      </button>
-                    ) : (
-                      <button
-                        className="btn btn-success"
-                        onClick={() => handleSubmit(false)}
-                        disabled={saving}
-                      >
-                        {saving
-                          ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</>
-                          : <><i className="bi bi-check-lg me-1" />Submit</>}
-                      </button>
-                    )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Sidebar ── */}
-          <div className="col-lg-4">
-            <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 16 }}>
-              <div className="card-body p-3">
-                <h6 className="fw-bold mb-3">Question Navigator</h6>
-                <div className="d-flex flex-wrap gap-2">
-                  {questions.map((qn, i) => {
-                    const a = answers[i]
-                    const done = a !== undefined && a !== null && a !== '' && !(Array.isArray(a) && !a.length)
-                    return (
-                      <button
-                        key={i}
-                        onClick={() => goTo(i)}
-                        className={`btn btn-sm ${i === currentIndex ? 'btn-primary' : done ? 'btn-success' : 'btn-outline-secondary'}`}
-                        style={{ width: 36, height: 36, padding: 0, fontWeight: 600 }}
-                      >
-                        {i + 1}
-                      </button>
-                    )
-                  })}
-                </div>
-                <hr />
-                <div className="d-flex justify-content-between small text-muted">
-                  <span><span className="badge bg-success me-1">■</span>Answered</span>
-                  <span><span className="badge bg-secondary me-1">■</span>Skipped</span>
-                  <span><span className="badge bg-primary me-1">■</span>Current</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 16 }}>
-              <div className="card-body p-3">
-                <h6 className="fw-bold mb-2">Marking Scheme</h6>
-                <div className="d-flex flex-column gap-1" style={{ fontSize: '0.85rem' }}>
-                  <span className="text-success fw-semibold">✓ Correct: +1</span>
-                  <span className="text-secondary">✗ Wrong: 0 (no penalty)</span>
-                  <span className="text-secondary">— Unattempted: 0</span>
-                </div>
-                <hr className="my-2" />
-                <div style={{ fontSize: '0.8rem', color: '#6c757d' }}>
-                  <i className="bi bi-info-circle me-1" />
-                  Module {moduleNum} · {questions.length} questions
-                </div>
-              </div>
-            </div>
-
-            <div className="card border-0 shadow-sm" style={{ borderRadius: 16 }}>
-              <div className="card-body p-3 text-center">
-                <p className="text-muted small mb-2">{answeredCount}/{questions.length} answered</p>
-                <button
-                  className="btn btn-success w-100"
-                  onClick={() => handleSubmit(false)}
-                  disabled={saving}
-                >
-                  {saving
-                    ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</>
-                    : <><i className="bi bi-check-lg me-1" />Submit Quiz</>}
-                </button>
-                <Link to="/courses/sat" className="btn btn-outline-secondary w-100 mt-2 btn-sm">
-                  <i className="bi bi-arrow-left me-1" />Exit
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <QuizPanel
+        questions={questions}
+        currentIndex={currentIndex}
+        answers={answers}
+        setAnswer={setAnswer}
+        toggleMSQ={toggleMSQ}
+        goTo={goTo}
+        style={style}
+        moduleNum={moduleNum}
+        saving={saving}
+        onSubmit={() => handleSubmit(false)}
+        submitLabel="Submit Quiz"
+        exitTo="/courses/sat"
+        exitLabel="Exit"
+      />
     </main>
   )
 }
