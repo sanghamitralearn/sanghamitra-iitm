@@ -269,6 +269,46 @@ const SAT = () => {
           )
         })}
 
+        {/* Full SAT Test — combined RW + Math, all 4 modules back-to-back */}
+        <div
+          className="card border-0 shadow-sm mb-4"
+          style={{ borderRadius: 18, overflow: 'hidden' }}
+        >
+          <div style={{ height: 6, background: 'linear-gradient(135deg, #198754, #0d6efd)' }} />
+          <div className="card-body p-4">
+            <div className="d-flex align-items-center gap-3 flex-wrap">
+              <div
+                className="text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                style={{ width: 52, height: 52, background: 'linear-gradient(135deg, #198754, #0d6efd)' }}
+              >
+                <i className="bi bi-stopwatch-fill fs-4" />
+              </div>
+              <div className="flex-grow-1">
+                <div className="d-flex align-items-center gap-2 flex-wrap">
+                  <h4 className="mb-0">Full SAT Test</h4>
+                  <span className="badge text-white" style={{ background: '#0d6efd', fontSize: '0.75rem' }}>
+                    98 questions total
+                  </span>
+                  <span className="badge bg-light text-dark border" style={{ fontSize: '0.75rem' }}>
+                    4 modules
+                  </span>
+                </div>
+                <p className="text-muted mb-0 mt-1" style={{ fontSize: '0.88rem' }}>
+                  The complete Digital SAT experience — Reading &amp; Writing Module 1 &amp; 2, then Mathematics Module 1 &amp; 2,
+                  back-to-back. Get one combined score report covering both sections.
+                </p>
+              </div>
+              <Link
+                to="/courses/sat/full-test"
+                className="btn text-white flex-shrink-0"
+                style={{ background: 'linear-gradient(135deg, #198754, #0d6efd)', borderRadius: 8, padding: '0.6rem 1.5rem' }}
+              >
+                <i className="bi bi-play-fill me-1" />Start Full SAT Test
+              </Link>
+            </div>
+          </div>
+        </div>
+
         {/* Info strip */}
         <div className="row g-3 mt-2">
           {[
