@@ -176,7 +176,6 @@ iitmstats2questionschema.pre('save', function(next) {
 });
 
 
-module.exports = mongoose.model('iitm_stats2_questions', iitmstats2questionschema, 'iitm_stats2_questions');
 
 
 
