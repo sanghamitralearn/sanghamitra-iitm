@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
-
 const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
-
 
 const Stats2Dashboard = () => {
   const navigate = useNavigate()
@@ -12,7 +10,6 @@ const Stats2Dashboard = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [selectedStudent, setSelectedStudent] = useState(null)
-
 
   const load = async () => {
     setLoading(true)
@@ -30,16 +27,13 @@ const Stats2Dashboard = () => {
     }
   }
 
-
   useEffect(() => { load() }, [])
-
 
   const getScoreColor = (pct) => {
     if (pct >= 80) return '#28a745'
     if (pct >= 60) return '#ffc107'
     return '#dc3545'
   }
-
 
   const stats = (() => {
     let totalSubmissions = 0, totalCorrect = 0, totalQ = 0
@@ -55,20 +49,17 @@ const Stats2Dashboard = () => {
     }
   })()
 
-
-  const sortedData = [...data].sort((a, b) => {
-    const aLatest = (a.scores || []).reduce((max, s) => Math.max(max, new Date(s.dateAttempted || 0)), 0)
-    const bLatest = (b.scores || []).reduce((max, s) => Math.max(max, new Date(s.dateAttempted || 0)), 0)
-    return bLatest - aLatest
-  })
-
+  // Flatten every attempt from every student into one list, most recent first
+  const recentAttempts = data
+    .flatMap(student => (student.scores || []).map(s => ({ ...s, email: student.email, name: student.name })))
+    .sort((a, b) => new Date(b.dateAttempted || 0) - new Date(a.dateAttempted || 0))
+    .slice(0, 5)
 
   if (loading) return (
     <div className="container my-4 d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
       <div className="spinner-border text-primary" role="status"><span className="visually-hidden">Loading...</span></div>
     </div>
   )
-
 
   return (
     <div className="container my-4">
@@ -83,9 +74,7 @@ const Stats2Dashboard = () => {
         </div>
       </div>
 
-
       {error && <div className="alert alert-danger">{error}</div>}
-
 
       {!selectedStudent ? (
         <>
@@ -119,13 +108,12 @@ const Stats2Dashboard = () => {
             </div>
           </div>
 
-
           <div className="card">
             <div className="card-header bg-warning text-dark">
-              <h5 className="mb-0">Recent Activity</h5>
+              <h5 className="mb-0">Recent Activity (Last 5 Attempts)</h5>
             </div>
             <div className="card-body">
-              {sortedData.length === 0 ? (
+              {recentAttempts.length === 0 ? (
                 <div className="text-center text-muted py-4">No Statistics 2 data available yet.</div>
               ) : (
                 <div className="table-responsive">
@@ -134,42 +122,35 @@ const Stats2Dashboard = () => {
                       <tr>
                         <th>Student Name</th>
                         <th>Email</th>
-                        <th>Recent Week</th>
+                        <th>Week</th>
                         <th>Score</th>
                         <th>Date</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {sortedData.map((student, i) => {
-                        const scores = student.scores || []
-                        const recent = scores.length > 0
-                          ? scores.reduce((a, b) => new Date(a.dateAttempted || 0) > new Date(b.dateAttempted || 0) ? a : b)
-                          : null
-                        const pct = recent && recent.totalQuestions
-                          ? Math.round((recent.correctAnswers / recent.totalQuestions) * 100)
-                          : 0
+                      {recentAttempts.map((attempt, i) => {
+                        const pct = attempt.percentage ?? (attempt.totalQuestions
+                          ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
+                          : 0)
+                        const student = data.find(s => s.email === attempt.email)
                         return (
-                          <tr key={i} style={{ cursor: 'pointer' }} onClick={() => setSelectedStudent(student)}>
-                            <td><strong>{student.name || student.email}</strong></td>
-                            <td>{student.email}</td>
+                          <tr key={i} style={{ cursor: 'pointer' }} onClick={() => student && setSelectedStudent(student)}>
+                            <td><strong>{attempt.name || attempt.email}</strong></td>
+                            <td>{attempt.email}</td>
                             <td>
-                              {recent
-                                ? <span className="badge bg-warning text-dark">Week {recent.week} — {recent.subtopic || ''}</span>
-                                : <span className="text-muted">No attempts</span>}
+                              <span className="badge bg-warning text-dark">Week {attempt.week} — {attempt.subtopic || ''}</span>
                             </td>
                             <td>
-                              {recent
-                                ? <span style={{ color: getScoreColor(pct), fontWeight: 'bold' }}>
-                                    {recent.correctAnswers}/{recent.totalQuestions} ({pct}%)
-                                  </span>
-                                : <span className="text-muted">—</span>}
+                              <span style={{ color: getScoreColor(pct), fontWeight: 'bold' }}>
+                                {attempt.correctAnswers}/{attempt.totalQuestions} ({pct}%)
+                              </span>
                             </td>
-                            <td>{recent?.dateAttempted ? new Date(recent.dateAttempted).toLocaleDateString() : '—'}</td>
+                            <td>{attempt.dateAttempted ? new Date(attempt.dateAttempted).toLocaleDateString() : '—'}</td>
                             <td>
                               <button
                                 className="btn btn-outline-warning btn-sm"
-                                onClick={e => { e.stopPropagation(); setSelectedStudent(student) }}
+                                onClick={e => { e.stopPropagation(); student && setSelectedStudent(student) }}
                               >
                                 View Details
                               </button>
@@ -207,7 +188,6 @@ const Stats2Dashboard = () => {
               </div>
             </div>
 
-
             {selectedStudent.scores?.length > 0 && (
               <div className="table-responsive">
                 <table className="table table-striped">
@@ -225,7 +205,7 @@ const Stats2Dashboard = () => {
                     {[...selectedStudent.scores]
                       .sort((a, b) => new Date(b.dateAttempted || 0) - new Date(a.dateAttempted || 0))
                       .map((s, i) => {
-                        const pct = Math.round((s.correctAnswers / (s.totalQuestions || 1)) * 100)
+                        const pct = s.percentage ?? Math.round((s.correctAnswers / (s.totalQuestions || 1)) * 100)
                         return (
                           <tr key={i}>
                             <td><strong>Week {s.week}</strong></td>
@@ -248,8 +228,4 @@ const Stats2Dashboard = () => {
   )
 }
 
-
 export default Stats2Dashboard
-
-
-
