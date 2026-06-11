@@ -1358,6 +1358,7 @@ const Stats2Quiz = () => {
   )
 }
 
+
 export default Stats2Quiz
 
 
