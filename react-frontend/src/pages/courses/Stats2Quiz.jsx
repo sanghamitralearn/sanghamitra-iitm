@@ -46,7 +46,12 @@ function renderMathContent(element) {
   const run = () => {
     if (typeof window.renderMathInElement === 'undefined') return
     window.renderMathInElement(element, {
-      delimiters: [{ left: '$', right: '$', display: false }],
+      delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '\\[', right: '\\]', display: true },
+        { left: '$', right: '$', display: false },
+        { left: '\\(', right: '\\)', display: false },
+      ],
       throwOnError: false,
       trust: true,
       strict: false,
@@ -277,9 +282,9 @@ const MathText = ({ text, style, className }) => {
   const ref = useRef(null)
   useEffect(() => { renderMathContent(ref.current) }, [text])
 
-  // If text already has $ delimiters, it's proper LaTeX — don't run formatMathText
+  // If text already has $ or \( \) / \[ \] delimiters, it's proper LaTeX — don't run formatMathText
   // formatMathText is only for plain text that needs auto-detection
-  const formatted = (text && text.includes('$')) ? text : formatMathText(text || '')
+  const formatted = (text && (text.includes('$') || text.includes('\\('))) ? text : formatMathText(text || '')
 
   return (
     <span
