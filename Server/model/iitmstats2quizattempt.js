@@ -47,6 +47,3 @@ module.exports = mongoose.model(
   quizAttemptSchema,
   'iitm_stats2_quiz_attempt'
 );
-
-
-
