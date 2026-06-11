@@ -46,6 +46,13 @@ import MathReview from './pages/MathReview'
 import Math2Quiz from './pages/courses/Math2Quiz'
 import MathExamReview from './pages/MathReview'
 
+import DBMS from './pages/courses/DBMS'
+import DBMSQuiz from './pages/courses/DBMSQuiz'
+
+import ProgrammingCourses from './pages/courses/Programming'
+import CoursePage from './pages/courses/Language_Courses/CoursePage'
+import QuizPage from './pages/courses/Language_Courses/QuizPage'
+
 // PDSA quiz type imports
 import PdsaTestQuiz from './pages/courses/PDSA/PdsaTestQuiz'
 import PdsaCodingQuiz from './pages/courses/PDSA/PdsaCodingQuiz'
@@ -167,6 +174,15 @@ function App() {
             {/* SAT — module-based quizzes */}
             <Route path="/courses/sat" element={<SAT />} />
             <Route path="/courses/sat/quiz/:section/:module" element={<SATQuiz />} />
+
+            {/* DBMS COURSE */}
+            <Route path="/courses/DBMS" element={<DBMS />} />
+            <Route path="/courses/DBMS/:weekId" element={<DBMSQuiz />} />
+
+            {/* programming COURSE */}
+            <Route path="/programming/courses" element={<ProgrammingCourses />} />
+            <Route path="/programming/courses/:course" element={<CoursePage />} />
+            <Route path="/quiz/:course/week/:week" element={<QuizPage />} />
             
           </Routes>
         </main>
