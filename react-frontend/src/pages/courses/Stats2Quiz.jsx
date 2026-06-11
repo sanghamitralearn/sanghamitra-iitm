@@ -254,7 +254,7 @@ const Stats2Quiz = () => {
 
   const fetchQuestions = async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/iitm_stats2_questions?week=${weekNum}`, { withCredentials: true })
+      const res = await axios.get(`${API_URL}/api/iitm_stats2_questions_databases?week=${weekNum}`, { withCredentials: true })
       const data = res.data
       const qs = Array.isArray(data) ? data : (data.questions || [])
       if (!qs.length) { setError('No questions found for this week.'); setLoading(false); return }
