@@ -246,7 +246,7 @@ const QuizPage = () => {
     try {
       setLoading(true)
       const res = await axios.get(
-        `${API}/api/questions?course=${course}&week=${weekNum}&count=15`,
+        `${API}/api/mcq-questions?course=${course}&week=${weekNum}&count=15`,
         { withCredentials: true }
       )
       const qs = res.data.questions || []
@@ -344,7 +344,7 @@ const QuizPage = () => {
     }))
 
     try {
-      const res = await axios.post(`${API}/api/quiz/submit`, {
+      const res = await axios.post(`${API}/api/mcq-quiz/submit`, {
         email: u.email,
         username: u.username || u.name || u.email,
         quizData: {
