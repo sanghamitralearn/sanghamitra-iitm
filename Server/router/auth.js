@@ -49,8 +49,8 @@ const QuizAttemptstats2 = require('../model/iitmstats2quizattempt');
 
 const Question = require('../model/pdsa_Questions');
 const pdsaSubmission = require('../model/pdsa_Submission');
-const CodingQuestion = require('../model/coding_Questions'); 
-const CodingSubmission = require('../model/coding_Submission'); 
+const CodingQuestion = require('../model/pdsa_Coding_Questions'); 
+const CodingSubmission = require('../model/pdsa_Coding_Submission'); 
 const InterviewSubmission = require('../model/interview_Submission'); 
 
 const QuizAttempt     = require('../model/iitmMaths2QuizAttempt');
