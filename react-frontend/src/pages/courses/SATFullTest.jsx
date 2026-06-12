@@ -3,8 +3,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import {
   loadKaTeX, SUBJECT_STYLE, calcMarks,
-  ScoreSummaryCard, QuestionReviewItem, TabWarningBanner, QuizPanel,
+  QuestionReviewItem, TabWarningBanner, QuizPanel,
 } from './SATQuiz'
+import SATScoreDashboard, { buildChapterItems } from './SATScoreDashboard'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
@@ -493,6 +494,11 @@ const SATFullTest = () => {
       'Mathematics':       mergeResults([stageResults.math1, stageResults.math2]),
     }
 
+    const sections = Object.entries(sectionResults).map(([label, result]) => ({ label, result }))
+    const chapterItems = STAGES.flatMap(s =>
+      buildChapterItems(stageQuestions[s.key], stageResults[s.key]?.responses, s.label)
+    )
+
     return (
       <main className="main">
         <div className="page-title" style={{ marginBottom: '2rem' }}>
@@ -517,48 +523,19 @@ const SATFullTest = () => {
         </div>
 
         <div className="container mb-5">
-          <ScoreSummaryCard
+          <SATScoreDashboard
             results={combinedResults}
-            style={FULL_TEST_STYLE}
-            title="Overall Score — Full SAT Test"
-            actions={
-              <>
-                <button className="btn btn-primary" onClick={handleRetake} disabled={saving}>
-                  <i className="bi bi-arrow-clockwise me-1" />Retake Full Test
-                </button>
-                <Link to="/courses/sat" className="btn btn-outline-secondary">
-                  <i className="bi bi-arrow-left me-1" />Back to SAT
-                </Link>
-              </>
-            }
+            sections={sections}
+            chapterItems={chapterItems}
+            onRetake={handleRetake}
+            saving={saving}
+            dateAttempted={new Date().toLocaleDateString()}
+            heroTitle="Full Test Completed!"
+            retakeLabel="Retake Full Test"
           />
 
-          {/* Section breakdown */}
-          <div className="row g-3 mb-4">
-            {STAGES.filter(s => s.module === 1).map(s => {
-              const r = sectionResults[s.label]
-              const pct = r.maxScore > 0 ? Math.round(Math.max(0, r.score / r.maxScore) * 100) : 0
-              const sStyle = SUBJECT_STYLE[s.label] || FULL_TEST_STYLE
-              return (
-                <div className="col-md-6" key={s.label}>
-                  <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 14, overflow: 'hidden' }}>
-                    <div style={{ height: 4, background: sStyle.gradient }} />
-                    <div className="card-body p-3 d-flex justify-content-between align-items-center">
-                      <div>
-                        <h6 className="fw-bold mb-1">{s.label}</h6>
-                        <small className="text-muted">
-                          {r.correctAnswers}/{r.totalQuestions} correct &nbsp;·&nbsp; {r.score}/{r.maxScore} pts
-                        </small>
-                      </div>
-                      <span className="badge text-white fs-6" style={{ background: sStyle.gradient }}>{pct}%</span>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
           {/* Per-question review, grouped by module in exam order */}
+          <h5 className="fw-bold mb-3 mt-4">Question-by-Question Review</h5>
           {STAGES.map(s => (
             <div key={s.key} className="mb-4">
               <h5 className="mb-3">
