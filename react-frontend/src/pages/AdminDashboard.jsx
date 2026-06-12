@@ -251,7 +251,6 @@ const dashboardCards = [
   { key: 'py',   icon: 'bi-filetype-py', iconStyle: { background: 'rgba(46,204,113,0.1)',   color: '#2ecc71' }, title: 'Python',                  to: '/admin/python' },
   { key: 'ct',   icon: 'bi-cpu',         iconStyle: { background: 'rgba(155,89,182,0.1)',   color: '#9b59b6' }, title: 'Computational Thinking',  to: '/admin/iitm-ct' },
   { key: 'pdsa', icon: 'bi-diagram-3',   iconStyle: { background: 'rgba(102,126,234,0.1)',  color: '#667eea' }, title: 'PDSA',                    to: '/admin/dsa' },
-  { key: 'sat',  icon: 'bi-pencil-fill', iconStyle: { background: 'rgba(0,123,255,0.1)',    color: '#007bff' }, title: 'SAT',                     to: '/admin/sat' },
 ]
 
 const LAST_SEEN_KEY = 'admin_notif_last_seen'
@@ -264,7 +263,6 @@ const subjectApis = [
   { key: 'py',   url: '/api/coding-submissions',              countFn: d => (Array.isArray(d) ? d : (d.submissions || d.data || [])).length },
   { key: 'ct',   url: '/api/iitm_ct_scores',                  countFn: d => (d.data || d || []).length },
   { key: 'pdsa', url: '/api/pdsa-submissions',                countFn: d => (Array.isArray(d) ? d : (d.submissions || d.data || [])).length },
-  { key: 'sat',  url: '/api/sat_scores',                     countFn: d => new Set((Array.isArray(d) ? d : []).map(e => e.email).filter(Boolean)).size },
 ]
 
 const AdminDashboard = () => {
@@ -385,7 +383,6 @@ const AdminDashboard = () => {
     { to: '/admin/python',     icon: 'bi-filetype-py',  label: 'Python' },
     { to: '/admin/iitm-ct',    icon: 'bi-cpu',          label: 'Computational Thinking' },
     { to: '/admin/dsa',        icon: 'bi-diagram-3',    label: 'PDSA' },
-    { to: '/admin/sat',        icon: 'bi-pencil-fill',  label: 'SAT' },
   ]
 
   return (
@@ -659,11 +656,6 @@ const AdminDashboard = () => {
                       <div className="col-md-3 mb-2">
                         <Link to="/admin/iitm-ct" className="btn btn-secondary w-100">
                           <i className="bi bi-cpu me-2"></i>Comp. Thinking
-                        </Link>
-                      </div>
-                      <div className="col-md-3 mb-2">
-                        <Link to="/admin/sat" className="btn btn-primary w-100">
-                          <i className="bi bi-pencil-fill me-2"></i>SAT
                         </Link>
                       </div>
                     </div>
