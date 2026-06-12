@@ -1,4 +1,4 @@
-//model/QuizAttemptSchema.js
+//model/Programming_QuizAttempt.js
 
 const mongoose = require('mongoose');
 
@@ -60,6 +60,6 @@ QuizAttemptSchema.index({ course: 1, week: 1, percentage: -1 });
 
 module.exports = mongoose.model(
   'QuizAttempt',
-  QuizAttemptSchema,
-  'quiz_attempts'
+  Programming_QuizAttempt,
+  'programming_quiz_attempts'
 );
