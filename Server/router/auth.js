@@ -78,11 +78,14 @@ const DBMSSubmission = require('../model/DBMS_Submission');
 const DBMSQuestions = require('../model/DBMS_Questions');
 
 
+// NEW programming course models
+const ProgrammingQuizQuestion = require('../model/Programming_Questions');  
+const ProgrammingQuizAttempt = require('../model/Programming_QuizAttempt');
+const ProgrammingQuizResult = require('../model/Programming_QuizResult');
 
-// programming course models
-const QuizQuestion = require('../model/Questions');  
-const McqQuizAttempt = require('../model/QuizAttemptSchema');
-const QuizResult = require('../model/QuizResultSchema');
+const CodingQuestion = require('../model/CodingQuestions'); 
+const CodingSubmission = require('../model/CodingSubmission'); 
+const CodingTestCase = require('../model/CodingTestCase'); 
 
 
 require('../db/conn');
@@ -5024,7 +5027,7 @@ router.get('/sat_scores', async (req, res) => {
 
 // GET QUESTIONS for quiz
 // ============================================
-router.get('/questions', async (req, res) => {
+router.get('/mcq-questions', async (req, res) => {
   try {
     const { 
       course,      // Required: 'java', 'python', 'sql', etc.
@@ -5063,7 +5066,7 @@ router.get('/questions', async (req, res) => {
     if (subtopic) filter.subtopic = subtopic;
 
     // Get questions pool
-    let pool = await QuizQuestion.find(filter).lean();
+    let pool = await ProgrammingQuizQuestion.find(filter).lean();
 
     if (pool.length === 0) {
       return res.status(404).json({ 
@@ -5130,7 +5133,7 @@ router.get('/questions', async (req, res) => {
 // ============================================
 // SUBMIT QUIZ ANSWERS (server-side grading)
 // ============================================
-router.post('/quiz/submit', async (req, res) => {
+router.post('/mcq-quiz/submit', async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -5162,7 +5165,7 @@ router.post('/quiz/submit', async (req, res) => {
 
     // ── 1. Fetch correct answers from DB ───────────────────────────
     const questionIds = clientResults.map(qr => qr.questionId).filter(Boolean);
-    const questions = await QuizQuestion.find({ _id: { $in: questionIds } }).lean();
+    const questions = await ProgrammingQuizQuestion.find({ _id: { $in: questionIds } }).lean();
     const questionMap = {};
     questions.forEach(q => { questionMap[String(q._id)] = q; });
 
@@ -5242,7 +5245,7 @@ router.post('/quiz/submit', async (req, res) => {
     const finalPercentage = maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0;
 
     // ── 3. Save attempt summary ────────────────────────────────────
-    const [attempt] = await McqQuizAttempt.create([{
+    const [attempt] = await ProgrammingQuizAttempt.create([{
       email,
       username: username || email.split('@')[0],
       course,
@@ -5285,7 +5288,7 @@ router.post('/quiz/submit', async (req, res) => {
       bloom_level: gr.bloom_level
     }));
 
-    await QuizResult.insertMany(resultDocs, { session });
+    await ProgrammingQuizResult.insertMany(resultDocs, { session });
     await session.commitTransaction();
 
     return res.status(201).json({
@@ -5314,7 +5317,7 @@ router.post('/quiz/submit', async (req, res) => {
 // ============================================
 // GET ALL ATTEMPTS for a user (with filters)
 // ============================================
-router.get('/quiz/attempts', async (req, res) => {
+router.get('/mcq-quiz/attempts', async (req, res) => {
   try {
     const { email, course } = req.query;
     if (!email) return res.status(400).json({ error: 'email is required' });
@@ -5322,7 +5325,7 @@ router.get('/quiz/attempts', async (req, res) => {
     const filter = { email };
     if (course) filter.course = course;
 
-    const attempts = await McqQuizAttempt.find(filter)
+    const attempts = await ProgrammingQuizAttempt.find(filter)
       .sort({ submitted_at: -1 })
       .lean();
 
@@ -5333,161 +5336,187 @@ router.get('/quiz/attempts', async (req, res) => {
   }
 });
 
-router.get('/quiz/attempts', async (req, res) => {
-  try {
-    const { email, course, week, limit = 20 } = req.query;
 
-    if (!email) {
-      return res.status(400).json({ error: 'email is required' });
+
+// ============================================
+// CODING QUIZ ROUTES (CodingQuestions / CodingSubmission / CodingTestCase)
+// ============================================
+
+// GET /api/coding-questions?course=&week=&topic=&difficulty=&language=
+router.get('/coding-questions', async (req, res) => {
+  try {
+    const { course, week, topic, difficulty, language } = req.query;
+    if (!course || !week) {
+      return res.status(400).json({ error: 'course and week are required' });
     }
 
-    // Build filter
+    const filter = { course, week: Number(week), is_active: true };
+    if (topic) filter.topic = topic;
+    if (difficulty) filter.difficulty = difficulty;
+    if (language) filter.language = language;
+
+    const questions = await CodingQuestion.find(filter).sort({ difficulty: 1 }).lean();
+    if (questions.length === 0) {
+      return res.status(200).json({ success: true, questions: [] });
+    }
+
+    const questionIds = questions.map(q => q._id);
+    const testCases = await CodingTestCase.find({
+      question_id: { $in: questionIds },
+      is_active: true
+    }).sort({ testcase_number: 1 }).lean();
+
+    const testCasesByQuestion = {};
+    testCases.forEach(tc => {
+      const qid = String(tc.question_id);
+      if (!testCasesByQuestion[qid]) testCasesByQuestion[qid] = [];
+      testCasesByQuestion[qid].push({
+        testcase_number: tc.testcase_number,
+        input: tc.input,
+        expected_output: tc.expected_output,
+        explanation: tc.explanation,
+        is_hidden: tc.is_hidden,
+        is_sample: tc.is_sample,
+        weightage: tc.weightage
+      });
+    });
+
+    const result = questions.map(q => {
+      const { solution, ...rest } = q;
+      return {
+        ...rest,
+        testCases: testCasesByQuestion[String(q._id)] || []
+      };
+    });
+
+    return res.status(200).json({ success: true, questions: result });
+  } catch (error) {
+    console.error('❌ Error fetching coding questions:', error);
+    return res.status(500).json({ error: 'Failed to fetch coding questions', details: error.message });
+  }
+});
+
+// POST /api/coding-submit
+// body: { email, username, course, week, topic, results: [{ questionId, language, sourceCode, verdict, passed_testcases, total_testcases, score, percentage, execution_time_ms }] }
+router.post('/coding-submit', async (req, res) => {
+  try {
+    const { email, username, course, week, topic, results } = req.body;
+    if (!email || !course || !week || !Array.isArray(results) || results.length === 0) {
+      return res.status(400).json({ error: 'email, course, week and results are required' });
+    }
+
+    const docs = [];
+    for (const r of results) {
+      const { questionId, language, sourceCode, verdict, passed_testcases, total_testcases, score, percentage, execution_time_ms } = r;
+      if (!questionId || !language || sourceCode === undefined) continue;
+
+      const submissionCount = await CodingSubmission.countDocuments({ email, question_id: questionId });
+
+      docs.push({
+        email,
+        username,
+        question_id: questionId,
+        course,
+        week: Number(week),
+        topic: r.topic || topic,
+        language,
+        source_code: sourceCode,
+        verdict: verdict || 'Wrong Answer',
+        passed_testcases: passed_testcases || 0,
+        total_testcases: total_testcases || 0,
+        score: score || 0,
+        percentage: percentage || 0,
+        execution_time_ms: execution_time_ms ?? null,
+        submission_number: submissionCount + 1
+      });
+    }
+
+    if (docs.length === 0) {
+      return res.status(400).json({ error: 'No valid submission results provided' });
+    }
+
+    const saved = await CodingSubmission.insertMany(docs);
+
+    return res.status(201).json({ success: true, message: 'Submissions saved', count: saved.length, submissions: saved });
+  } catch (error) {
+    console.error('❌ Error saving coding submission:', error);
+    return res.status(500).json({ error: 'Failed to save submission', details: error.message });
+  }
+});
+
+// GET /api/coding-submissions?email=&course=&week=
+router.get('/coding-submissions', async (req, res) => {
+  try {
+    const { email, course, week } = req.query;
+    if (!email) return res.status(400).json({ error: 'email is required' });
+
     const filter = { email };
     if (course) filter.course = course;
-    if (week) filter.week = parseInt(week);
+    if (week) filter.week = Number(week);
 
-    const attempts = await McqQuizAttempt.find(filter)
-      .sort({ submitted_at: -1 })
-      .limit(parseInt(limit))
+    const submissions = await CodingSubmission.find(filter)
+      .sort({ createdAt: -1 })
       .lean();
 
-    // Get additional stats for each attempt
-    const attemptsWithStats = await Promise.all(attempts.map(async (attempt) => {
-      // Get question results summary for this attempt
-      const questionResults = await QuizResult.find({ 
-        attempt_id: attempt._id 
-      }).lean();
-      
-      const topicBreakdown = {};
-      questionResults.forEach(qr => {
-        if (!topicBreakdown[qr.topic]) {
-          topicBreakdown[qr.topic] = { total: 0, correct: 0 };
-        }
-        topicBreakdown[qr.topic].total++;
-        if (qr.is_correct) topicBreakdown[qr.topic].correct++;
-      });
+    return res.status(200).json({ success: true, submissions });
+  } catch (error) {
+    console.error('❌ Error fetching coding submissions:', error);
+    return res.status(500).json({ error: 'Failed to fetch coding submissions', details: error.message });
+  }
+});
 
-      return {
-        ...attempt,
-        topic_breakdown: topicBreakdown,
-        detailed_results_available: questionResults.length > 0
-      };
-    }));
+// GET /api/coding-progress?email=&course=
+// Returns per-week best-attempt progress, used by CoursePage to show coding progress
+router.get('/coding-progress', async (req, res) => {
+  try {
+    const { email, course } = req.query;
+    if (!email) return res.status(400).json({ error: 'email is required' });
 
-    return res.status(200).json({
-      success: true,
-      count: attemptsWithStats.length,
-      data: {
-        attempts: attemptsWithStats
+    const filter = { email };
+    if (course) filter.course = course;
+
+    const submissions = await CodingSubmission.find(filter).lean();
+
+    // Keep only the best (highest percentage) submission per question
+    const bestByQuestion = {};
+    submissions.forEach(s => {
+      const qid = String(s.question_id);
+      if (!bestByQuestion[qid] || s.percentage > bestByQuestion[qid].percentage) {
+        bestByQuestion[qid] = s;
       }
     });
 
-  } catch (error) {
-    console.error('❌ Error fetching attempts:', error);
-    return res.status(500).json({
-      error: 'Failed to fetch attempts',
-      details: error.message
+    // Aggregate per course/week
+    const weekMap = {};
+    Object.values(bestByQuestion).forEach(s => {
+      const key = `${s.course}_${s.week}`;
+      if (!weekMap[key]) {
+        weekMap[key] = {
+          course: s.course,
+          week: s.week,
+          topic: s.topic,
+          totalQuestions: 0,
+          solvedQuestions: 0,
+          totalPercentage: 0
+        };
+      }
+      weekMap[key].totalQuestions += 1;
+      weekMap[key].totalPercentage += s.percentage;
+      if (s.verdict === 'Accepted') weekMap[key].solvedQuestions += 1;
     });
-  }
-});
 
-// ============================================
-// GET SINGLE ATTEMPT with full details (for review)
-// ============================================
-router.get('/quiz/attempts/:attemptId', async (req, res) => {
-  try {
-    const { attemptId } = req.params;
-
-    // Get attempt summary
-    const attempt = await McqQuizAttempt.findById(attemptId).lean();
-    if (!attempt) {
-      return res.status(404).json({ error: 'Attempt not found' });
-    }
-
-    // Get question results and populate full question data
-    const questionResults = await QuizResult.find({ attempt_id: attemptId })
-      .populate({
-        path: 'question_id',
-        select: 'question_text options solution explanation points has_latex image_url code_snippet'
-      })
-      .lean();
-
-    // Shape data for review page
-    const reviewQuestions = questionResults.map(qr => ({
-      // Question content
-      question_text: qr.question_id?.question_text || '',
-      question_type: qr.question_type,
-      options: qr.question_id?.options || [],
-      has_latex: qr.question_id?.has_latex || false,
-      image_url: qr.question_id?.image_url || null,
-      code_snippet: qr.question_id?.code_snippet || null,
-      points: qr.question_id?.points || 1,
-      
-      // Correct answer (for review only)
-      correct_answer: qr.question_id?.answers?.correct || null,
-      solution: qr.question_id?.solution || null,
-      
-      // Question metadata
-      difficulty: qr.difficulty,
-      topic: qr.topic,
-      subtopic: qr.subtopic,
-      concept_tags: qr.concept_tags,
-      bloom_level: qr.bloom_level,
-      
-      // User's response
-      user_answer: qr.user_answer,
-      is_correct: qr.is_correct,
-      marks_awarded: qr.marks_awarded,
-      time_taken_seconds: qr.time_taken_seconds
+    const progress = Object.values(weekMap).map(w => ({
+      ...w,
+      averagePercentage: w.totalQuestions > 0 ? Math.round(w.totalPercentage / w.totalQuestions) : 0
     }));
 
-    // Calculate additional stats
-    const totalPossible = reviewQuestions.reduce((sum, q) => sum + q.points, 0);
-    const earnedPoints = reviewQuestions.reduce((sum, q) => sum + q.marks_awarded, 0);
-    const correctCount = reviewQuestions.filter(q => q.is_correct).length;
-
-    return res.status(200).json({
-      success: true,
-      attempt: {
-        _id: attempt._id,
-        course: attempt.course,
-        week: attempt.week,
-        topic: attempt.topic,
-        score: attempt.score,
-        max_possible_score: attempt.max_possible_score,
-        percentage: attempt.percentage,
-        total_questions: attempt.total_questions,
-        correct_answers: attempt.correct_answers,
-        total_time_seconds: attempt.total_time_seconds,
-        submitted_at: attempt.submitted_at,
-        started_at: attempt.started_at,
-        
-        // Recalculate to ensure accuracy
-        recalculated_stats: {
-          total_questions: reviewQuestions.length,
-          correct_answers: correctCount,
-          earned_points: earnedPoints,
-          max_points: totalPossible,
-          percentage: totalPossible > 0 ? Math.round((earnedPoints / totalPossible) * 100) : 0
-        },
-        
-        difficulty_breakdown: {
-          easy: { attempted: attempt.easy_attempted, correct: attempt.easy_correct },
-          medium: { attempted: attempt.medium_attempted, correct: attempt.medium_correct },
-          hard: { attempted: attempt.hard_attempted, correct: attempt.hard_correct }
-        }
-      },
-      questions: reviewQuestions
-    });
-
+    return res.status(200).json({ success: true, progress });
   } catch (error) {
-    console.error('❌ Error fetching review:', error);
-    return res.status(500).json({
-      error: 'Failed to fetch review data',
-      details: error.message
-    });
+    console.error('❌ Error fetching coding progress:', error);
+    return res.status(500).json({ error: 'Failed to fetch coding progress', details: error.message });
   }
 });
+
 
 // GET all DBMS submissions — merges test, coding, and interview quiz submissions
 router.get('/dbms-submission', async (req, res) => {
