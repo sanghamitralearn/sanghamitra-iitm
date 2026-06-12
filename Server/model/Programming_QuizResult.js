@@ -65,6 +65,6 @@ QuestionResultSchema.index({ email: 1, concept_tags: 1 });
 
 module.exports = mongoose.model(
   'QuizResult',
-  Programming_QuizResult,
+  QuestionResultSchema,
   'programming_quiz_result'
 );
