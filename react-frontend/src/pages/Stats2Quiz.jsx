@@ -1,561 +1,559 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom'
 import axios from 'axios'
 
-
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
-const DIFF_COLORS = { easy: 'success', medium: 'warning', hard: 'danger' }
-const TOPIC_PALETTE = ['#4e73df','#1cc88a','#36b9cc','#f6c23e','#e74a3b','#6f42c1','#fd7e14','#858796']
 
-
-function resolveOptionText(question, idxOrText) {
-  if (idxOrText === undefined || idxOrText === null) return ''
-  const opts = question.options || []
-  const idx = typeof idxOrText === 'number' ? idxOrText : parseInt(idxOrText)
-  if (!isNaN(idx) && idx >= 0 && idx < opts.length) return opts[idx]
-  return String(idxOrText)
+// Topic map: each week number maps to the exact topic string the backend expects.
+const WEEK_TOPIC_MAP = {
+  1:  'Multiple Random Variables',
+  2:  'Independence and Variable Functions',
+  3:  'Expectations Variance and Bivariate Data',
+  4:  'Discrete vs Continuous Random Variables',
+  5:  'Jointly Gaussian Random Variables',
+  6:  'Marginal and Conditional Densities',
+  7:  'Empirical Distribution',
+  8:  'Moment Generating Functions',
+  9:  'Parameter Estimation',
+  10: 'Bayesian Estimation',
+  11: 'Hypotheses Testing',
+  100: 'Midterm Assessment',
 }
 
-
-function loadMathJax() {
-  if (window.MathJax) return
-  window.MathJax = {
-    tex: {
-      inlineMath: [['$','$'],['\\(','\\)']],
-      displayMath: [['$$','$$'],['\\[','\\]']],
-      processEscapes: true,
-    },
-    options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
-  }
-  const s = document.createElement('script')
-  s.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js'
-  s.async = true
-  document.head.appendChild(s)
-}
-
-
-function typesetEl(el) {
-  if (!el) return
-  if (window.MathJax?.typesetPromise) {
-    window.MathJax.typesetPromise([el]).catch(() => {})
-  } else {
-    setTimeout(() => {
-      if (window.MathJax?.typesetPromise) window.MathJax.typesetPromise([el]).catch(() => {})
-    }, 800)
-  }
-}
-
-
-function toTeX(raw) {
-  let s = raw.trim()
-  if (!s) return ''
-  s = s.replace(/\bpi\b/gi, '\\pi')
-  s = s.replace(/\binf(inity)?\b/gi, '\\infty')
-  s = s.replace(/sqrt\(([^)]+)\)/g, (_, inner) => `\\sqrt{${toTeX(inner)}}`)
-  s = s.replace(/sqrt(\d+)/g, (_, n) => `\\sqrt{${n}}`)
-  s = s.replace(/\babs\(([^)]+)\)/g, (_, inner) => `|${inner}|`)
-  s = s.replace(/\b(sin|cos|tan|cot|sec|csc|log|ln|exp)\(([^)]+)\)/g,
-    (_, fn, arg) => `\\${fn}(${toTeX(arg)})`)
-  s = s.replace(/([a-zA-Z0-9)]+)\^(\(([^)]+)\)|[a-zA-Z0-9]+)/g, (_, base, exp, grp) =>
-    `${base}^{${toTeX(grp || exp)}}`)
-  s = s.replace(/(-?[a-zA-Z0-9\\.]+|\([^)]+\))\s*\/\s*(-?[a-zA-Z0-9\\.]+|\([^)]+\))/g,
-    (_, num, den) => `\\frac{${toTeX(num)}}{${toTeX(den)}}`)
-  s = s.replace(/!=|≠/g, '\\neq').replace(/>=|≥/g, '\\geq').replace(/<=|≤/g, '\\leq')
-  s = s.replace(/\*/g, '\\cdot')
-  return s
-}
-
-
-// ─── MathPreviewInput ─────────────────────────────────────────────────────────
-const MathPreviewInput = ({ value, onChange, placeholder, type = 'text', questionType, formatHint, style = {} }) => {
-  const [showGuide, setShowGuide] = useState(false)
-  const [localValue, setLocalValue] = useState(value || '')
-
-
-  const getFormattedPreview = (input) => {
-    if (!input) return ''
-    let str = String(input)
-    str = str.replace(/sqrt\(([^)]+)\)/g, '√$1')
-    str = str.replace(/pi/gi, 'π')
-    str = str.replace(/inf/gi, '∞')
-    str = str.replace(/(\w+)\^(\d+)/g, (_, b, e) => b + (e === '2' ? '²' : e === '3' ? '³' : `^${e}`))
-    return str
-  }
-
-
-  const handleChange = (newValue) => {
-    setLocalValue(newValue)
-    onChange(newValue)
-  }
-
-
-  useEffect(() => { setLocalValue(value || '') }, [value])
-
-
-  const quickInsert = (val) => { setLocalValue(val); onChange(val) }
-
-
-  return (
-    <div className="mt-3">
-      <input
-        type={type === 'numeric' ? 'number' : 'text'}
-        className="form-control"
-        style={{ maxWidth: 420, background: '#E6F1FB', borderColor: '#85B7EB', color: '#042C53', ...style }}
-        value={localValue}
-        placeholder={placeholder || 'Type your answer here'}
-        onChange={e => handleChange(e.target.value)}
-        autoComplete="off"
-        spellCheck="false"
-      />
-
-
-      {localValue && localValue.trim() && (
-        <div style={{ marginTop: 8, padding: '10px 14px', background: '#fff',
-          border: '1px solid #85B7EB', borderRadius: 10, minHeight: 44 }}>
-          <span style={{ fontSize: 11, color: '#888', marginRight: 10 }}>Preview:</span>
-          <span style={{ fontSize: 18, color: '#042C53' }}>{getFormattedPreview(localValue)}</span>
-        </div>
-      )}
-
-
-      {localValue && localValue.trim() && (
-        <div style={{ marginTop: 12, padding: '12px 16px', background: '#f8f9fa',
-          border: '2px solid #e9ecef', borderRadius: 8 }}>
-          <h4 style={{ margin: '0 0 10px 0', fontSize: 14, textTransform: 'uppercase' }}>Answer Preview</h4>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontWeight: 600, minWidth: 100 }}>Formatted view:</span>
-            <div style={{ flex: 1, padding: '8px 12px', background: 'white', borderRadius: 4,
-              border: '1px solid #dee2e6', minHeight: 40 }}>
-              <span style={{ fontSize: 16, color: '#2c3e50' }}>{getFormattedPreview(localValue)}</span>
-            </div>
-          </div>
-          {formatHint && <div style={{ fontSize: 12, color: '#6c757d', marginTop: 8 }}>{formatHint}</div>}
-        </div>
-      )}
-
-
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-        {['sqrt(2)', 'sqrt(3)', 'pi', 'x^2', '1/3', 'inf', 'sin(x)'].map(ins => (
-          <button key={ins} type="button" onClick={() => quickInsert(ins)}
-            style={{ fontSize: 12, padding: '3px 10px', background: '#B5D4F4',
-              color: '#0C447C', border: '1px solid #85B7EB', borderRadius: 99, cursor: 'pointer' }}>
-            {ins}
-          </button>
-        ))}
-      </div>
-
-
-      <button type="button" onClick={() => setShowGuide(v => !v)}
-        style={{ marginTop: 8, background: 'none', border: 'none', color: '#378ADD',
-          fontSize: 13, cursor: 'pointer', padding: 0, fontWeight: 500 }}>
-        {showGuide ? '▲' : '▼'} Typing guide
-      </button>
-
-
-      {showGuide && (
-        <div style={{ marginTop: 6, background: '#EEEDFE', borderRadius: 10, padding: '12px 14px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px' }}>
-            {[
-              { type: 'sqrt(2)', label: '√2' }, { type: 'sqrt(x+1)', label: '√(x+1)' },
-              { type: 'x^2', label: 'x²' },     { type: 'x^(n+1)', label: 'xⁿ⁺¹' },
-              { type: '3/4', label: '¾' },       { type: '(a+b)/c', label: '(a+b)/c' },
-              { type: 'pi', label: 'π' },        { type: 'inf', label: '∞' },
-              { type: 'sin(x)', label: 'sin x' },{ type: 'cos(x)', label: 'cos x' },
-            ].map(({ type: t, label }) => (
-              <div key={t} onClick={() => quickInsert(t)}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 4px',
-                  cursor: 'pointer', borderRadius: 4 }}>
-                <code style={{ fontSize: 12, background: '#E6F1FB', padding: '1px 6px', borderRadius: 4 }}>{t}</code>
-                <span>→</span>
-                <span>{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-
-// ─── Inline styles ────────────────────────────────────────────────────────────
-const S = {
-  qCard: { background: '#E6F1FB', borderRadius: 16, border: '0.5px solid #85B7EB', overflow: 'hidden' },
-  badgeStrip: { background: '#B5D4F4', borderBottom: '0.5px solid #85B7EB', padding: '8px 18px',
-    display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' },
-  qNumBadge: { background: '#E6F1FB', color: '#0C447C', border: '1.5px solid #85B7EB', borderRadius: 99,
-    fontSize: '0.72rem', fontWeight: 700, padding: '3px 12px', whiteSpace: 'nowrap',
-    marginLeft: 'auto', letterSpacing: '0.02em' },
-  qBody: { padding: '1.2rem 1.4rem' },
-  qText: { fontSize: '1rem', fontWeight: 600, color: '#042C53', lineHeight: 1.75, marginBottom: '1rem' },
-  optBase: { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 10,
-    border: '1.5px solid #85B7EB', background: '#E6F1FB', cursor: 'pointer',
-    transition: 'all 0.15s ease', marginBottom: 0 },
-  optSelected: { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 10,
-    border: '2px solid #378ADD', background: '#B5D4F4', cursor: 'pointer',
-    transition: 'all 0.15s ease', marginBottom: 0 },
-  optHovered: { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 10,
-    border: '1.5px solid #378ADD', background: '#d0e7f8', cursor: 'pointer',
-    transition: 'all 0.15s ease', marginBottom: 0 },
-  optLabel: (selected) => ({ fontSize: '0.94rem', fontWeight: selected ? 600 : 400,
-    color: selected ? '#042C53' : '#185FA5', lineHeight: 1.5, cursor: 'pointer', margin: 0 }),
-  sidebar: { background: '#EEEDFE', borderRadius: 14, border: '0.5px solid #CECBF6',
-    padding: 14, position: 'sticky', top: 20 },
-  sbHead: { fontSize: '0.72rem', fontWeight: 700, color: '#3C3489', marginBottom: 10,
-    letterSpacing: '0.04em', textTransform: 'uppercase' },
-  navGrid: { display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 5, marginBottom: 12 },
-  navBtn: (state) => {
-    const base = { width: 32, height: 32, padding: 0, fontSize: '0.75rem', fontWeight: 600,
-      border: 'none', borderRadius: 6, cursor: 'pointer', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', transition: 'transform 0.1s' }
-    if (state === 'current')  return { ...base, background: '#7F77DD', color: '#EEEDFE' }
-    if (state === 'answered') return { ...base, background: '#1D9E75', color: '#E1F5EE' }
-    return { ...base, background: '#D3D1C7', color: '#444441' }
-  },
-  legend: { borderTop: '0.5px solid #CECBF6', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 5 },
-  legendRow: { display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.7rem', color: '#5F5E5A' },
-  legendDot: (color) => ({ width: 10, height: 10, borderRadius: 3, background: color, flexShrink: 0 }),
-  infoPill: { background: '#CECBF6', borderRadius: 8, padding: '7px 12px', marginTop: 12,
-    fontSize: '0.72rem', color: '#3C3489', display: 'flex', justifyContent: 'space-between', fontWeight: 500 },
-  progBar: { height: 5, background: '#D3D1C7', borderRadius: 3, marginBottom: 16 },
-  progFill: (pct) => ({ height: '100%', width: `${pct}%`, background: '#7F77DD', borderRadius: 3, transition: 'width 0.3s' }),
-  navPrev: { padding: '7px 18px', borderRadius: 8, border: '1.5px solid #AFA9EC', background: 'transparent',
-    color: '#534AB7', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 500 },
-  navNext: { padding: '7px 18px', borderRadius: 8, border: '1.5px solid #AFA9EC', background: 'transparent',
-    color: '#534AB7', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 500 },
-  navSubmit: { padding: '7px 18px', borderRadius: 8, border: 'none', background: '#1D9E75',
-    color: '#E1F5EE', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600 },
-}
-
-
-// ─── GraphImage ───────────────────────────────────────────────────────────────
-const GraphImage = ({ imageFile }) => {
-  const [src, setSrc] = useState(null)
-
-
-  useEffect(() => {
-    if (!imageFile) { setSrc(null); return }
-    const lower = `/img/Graph_questions/${imageFile.replace(/\.[^.]+$/, '.png')}`
-    const upper = `/img/Graph_questions/${imageFile.replace(/\.[^.]+$/, '.PNG')}`
-    const img = new Image()
-    img.onload = () => setSrc(lower)
-    img.onerror = () => {
-      const img2 = new Image()
-      img2.onload = () => setSrc(upper)
-      img2.onerror = () => setSrc(null)
-      img2.src = upper
+// KaTeX loader
+function loadKaTeX() {
+  if (window.renderMathInElement) return Promise.resolve()
+  return new Promise((resolve) => {
+    if (!document.querySelector('link[href*="katex"]')) {
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css'
+      document.head.appendChild(link)
     }
-    img.src = lower
-  }, [imageFile])
-
-
-  if (!src) return null
-  return (
-    <div style={{ marginBottom: '1.2rem' }}>
-      <img src={src} alt="Question graph"
-        style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 10,
-          border: '1.5px solid #85B7EB', background: '#fff', display: 'block', objectFit: 'contain' }} />
-    </div>
-  )
+    const core = document.createElement('script')
+    core.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js'
+    core.onload = () => {
+      const ar = document.createElement('script')
+      ar.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js'
+      ar.onload = () => resolve()
+      document.head.appendChild(ar)
+    }
+    document.head.appendChild(core)
+  })
 }
 
+function renderMathContent(element) {
+  if (!element) return
+  const run = () => {
+    if (typeof window.renderMathInElement === 'undefined') return
+    window.renderMathInElement(element, {
+      delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '\\[', right: '\\]', display: true },
+        { left: '$', right: '$', display: false },
+        { left: '\\(', right: '\\)', display: false },
+      ],
+      throwOnError: false,
+      trust: true,
+      strict: false,
+    })
+  }
+  setTimeout(run, 100)
+}
 
-// ─── Calculator ───────────────────────────────────────────────────────────────
+function formatMathText(text) {
+  if (!text) return text
+
+  let result = text
+
+  const matrices = []
+  result = result.replace(/\[\s*\[([\s\S]*?)\]\s*\]/g, (match) => {
+    try {
+      let inner = match.slice(1, -1).trim()
+      let rowsRaw = inner.split(/\]\s*,\s*\[/)
+      let rows = rowsRaw.map(row =>
+        row.replace(/^\[|\]$/g, '').trim().split(',').map(x => x.trim()).join(' & ')
+      )
+      const matrixCode = `\\begin{bmatrix} ${rows.join(' \\\\ ')} \\end{bmatrix}`
+      matrices.push(matrixCode)
+      return ` __MATRIX${matrices.length - 1}__ `
+    } catch { return match }
+  })
+
+  result = result.replace(/detdet/g, 'det')
+  result = result.replace(/det\(/g, '__DET__(')
+  result = result.replace(/trace\(/g, '__TRACE__(')
+
+  result = result.replace(/\(([^)]*,[^)]*)\)\^([A-Za-z])/g, '__PARENCOMMA_$1_EXP_$2__')
+  result = result.replace(/\(([A-Za-z\s+\-*/]+)\)\^([A-Za-z])/g, '__PARENEXPR_$1_EXP_$2__')
+  result = result.replace(/\(([A-Za-z]{2,})\)\^([A-Za-z])/g, '__PARENVAR_$1_EXP_$2__')
+  result = result.replace(/\(([A-Za-z\s+\-*/]+)\)\^(\d+)/g, '__PARENEXPR_$1_EXP_$2__')
+  result = result.replace(/\(([^)]+)\)\^(\d+)/g, '__PAREN_$1_EXP_$2__')
+  result = result.replace(/([A-Za-z])\^([A-Za-z])/g, '__VAR_$1_EXP_$2__')
+  result = result.replace(/([A-Za-z])\^(-?\d+)/g, '__VAR_$1_EXP_$2__')
+  result = result.replace(/([A-Za-z])\^\{([^}]+)\}/g, '__VAR_$1_EXP_$2__')
+  result = result.replace(/([A-Za-z])\^\(([^)]+)\)/g, '__VAR_$1_EXP_$2__')
+
+  const words = result.split(/(\s+)/)
+  const processed = words.map(word => {
+    if (/^\s+$/.test(word)) return word
+    if (word.includes('__')) return word
+    if (/^[A-Z]$/.test(word)) return `$${word}$`
+    if (/^[b-z]$/.test(word)) return `$${word}$`
+    if (/^\([A-Za-z0-9\s+\-]+\)$/.test(word)) return `$${word}$`
+    return word
+  })
+  result = processed.join('')
+
+  result = result.replace(/__DET__/g, '$\\det$')
+  result = result.replace(/__TRACE__/g, '$\\text{trace}$')
+  result = result.replace(/__PARENCOMMA_([^_]+)_EXP_([A-Za-z])__/g, '$$($1)^{$2}$$')
+  result = result.replace(/__PARENEXPR_([^_]+)_EXP_([A-Za-z0-9]+)__/g, '$$($1)^{$2}$$')
+  result = result.replace(/__PARENVAR_([^_]+)_EXP_([A-Za-z])__/g, '$$($1)^{$2}$$')
+  result = result.replace(/__PAREN_([^_]+)_EXP_(\d+)__/g, '$$($1)^{$2}$$')
+  result = result.replace(/__VAR_([A-Za-z])_EXP_([A-Za-z0-9\-]+)__/g, '$$$1^{$2}$$')
+  matrices.forEach((matrix, i) => {
+    result = result.replace(`__MATRIX${i}__`, `$$${matrix}$$`)
+  })
+
+  result = result.replace(/\$\$\s*\$\$/g, ' ')
+  result = result.replace(/\$\s+\$/g, ' ')
+
+  return result
+}
+
+const answerNormalizer = {
+  normalizeInterval: (answer) =>
+    (answer || '').toString().trim()
+      .replace(/\s+/g, '')
+      .replace(/infinity|Infinity|INFINITY|∞/gi, 'inf')
+      .replace(/\+inf/gi, 'inf')
+      .replace(/-\s*inf/gi, '-inf')
+      .replace(/union|∪/gi, '∪')
+      .toLowerCase(),
+
+  normalizeSetNotation: (answer) =>
+    (answer || '').toString().trim()
+      .replace(/\s+/g, '')
+      .replace(/[{}]/g, '')
+      .replace(/x∈R|x∈ℝ/gi, 'ℝ')
+      .replace(/R|ℝ/gi, 'ℝ')
+      .replace(/[|:]/g, ',')
+      .toLowerCase(),
+
+  normalizeNumeric: (num) => {
+    const str = (num || '').toString().trim().toLowerCase()
+    if (['inf', 'infinity', '+inf', '+infinity', '∞', '+∞'].includes(str)) return Infinity
+    if (['-inf', '-infinity', '-∞'].includes(str)) return -Infinity
+    const cleaned = str.replace(/[^\d.\-]/g, '')
+    return cleaned ? parseFloat(cleaned) : NaN
+  },
+
+  normalizeGeneral: (text) =>
+    (text || '').toString()
+      .replace(/\s+/g, '')
+      .replace(/infinity|Infinity|INFINITY|∞/gi, 'inf')
+      .replace(/√(\d+)/g, 'sqrt($1)')
+      .replace(/√\(([^)]+)\)/g, 'sqrt($1)')
+      .replace(/≠/g, '!=')
+      .replace(/≤/g, '<=')
+      .replace(/≥/g, '>=')
+      .toLowerCase(),
+
+  normalizeAnswer(answer, type) {
+    if (!answer) return ''
+    const str = answer.toString().trim()
+    if (type === 'interval_input') return this.normalizeInterval(str)
+    if (type === 'set_notation')   return this.normalizeSetNotation(str)
+    if (type === 'numeric' || type === 'numeric_input') {
+      const n = this.normalizeNumeric(str)
+      return isFinite(n) ? n.toString() : n === Infinity ? 'inf' : n === -Infinity ? '-inf' : this.normalizeGeneral(str)
+    }
+    return this.normalizeGeneral(str)
+  },
+}
+
+function gradeQuestion(question, userAnswer) {
+  if (userAnswer === undefined || userAnswer === null) return false
+
+  const type = question.type
+  const normUser = answerNormalizer.normalizeAnswer(userAnswer, type)
+  const normCorrect = answerNormalizer.normalizeAnswer(question.correct_answer, type)
+
+  if (type === 'interval_input' || type === 'set_notation') {
+    if (normUser === normCorrect) return true
+    return (question.alternative_answers || []).some(alt =>
+      answerNormalizer.normalizeAnswer(alt, type) === normUser
+    )
+  }
+
+  if (type === 'multiple_choice' || type === 'text_input') {
+    return normUser === normCorrect
+  }
+
+  if (type === 'multiple_select') {
+    if (!Array.isArray(userAnswer) || !Array.isArray(question.correct_answer)) return false
+    const ua = userAnswer.map(a => answerNormalizer.normalizeGeneral(a)).sort()
+    const ca = question.correct_answer.map(a => answerNormalizer.normalizeGeneral(a)).sort()
+    return ua.length === ca.length && ua.every((a, i) => a === ca[i])
+  }
+
+  if (type === 'numeric' || type === 'numeric_input' || type === 'coordinate_input') {
+    const uNum = answerNormalizer.normalizeNumeric(userAnswer)
+    const cNum = answerNormalizer.normalizeNumeric(question.correct_answer)
+    if (!isNaN(uNum) && !isNaN(cNum)) {
+      if (uNum === cNum) return true
+      if (isFinite(uNum) && isFinite(cNum)) {
+        const tolerance = Math.max(Math.abs(cNum) * 0.01, 0.01)
+        if (Math.abs(uNum - cNum) <= tolerance) return true
+      }
+    }
+    if ((question.alternative_answers || []).some(alt => {
+      const aNum = answerNormalizer.normalizeNumeric(alt)
+      if (!isNaN(uNum) && !isNaN(aNum)) {
+        if (uNum === aNum) return true
+        if (isFinite(uNum) && isFinite(aNum)) {
+          const tol = Math.max(Math.abs(aNum) * 0.01, 0.01)
+          return Math.abs(uNum - aNum) <= tol
+        }
+      }
+      return false
+    })) return true
+    return normUser === normCorrect
+  }
+
+  return normUser === normCorrect
+}
+
 const Calculator = ({ onClose }) => {
   const [display, setDisplay] = useState('0')
   const [prev, setPrev] = useState(null)
   const [op, setOp] = useState(null)
   const [fresh, setFresh] = useState(true)
 
-
   const pressNum = v => { if (fresh) { setDisplay(String(v)); setFresh(false) } else setDisplay(d => d === '0' ? String(v) : d + v) }
   const pressOp  = o => { setPrev(parseFloat(display)); setOp(o); setFresh(true) }
   const pressDot = () => setDisplay(d => d.includes('.') ? d : d + '.')
-  const del      = () => setDisplay(d => d.length > 1 ? d.slice(0,-1) : '0')
+  const del      = () => setDisplay(d => d.length > 1 ? d.slice(0, -1) : '0')
   const clear    = () => { setDisplay('0'); setPrev(null); setOp(null); setFresh(true) }
   const equals   = () => {
     const cur = parseFloat(display); if (prev === null || !op) return
-    const res = { '+': prev+cur, '-': prev-cur, '*': prev*cur, '/': prev/cur, '^': Math.pow(prev,cur) }[op]
+    const res = { '+': prev + cur, '-': prev - cur, '*': prev * cur, '/': prev / cur, '^': Math.pow(prev, cur) }[op]
     setDisplay(String(parseFloat(res.toFixed(10)))); setPrev(null); setOp(null); setFresh(true)
   }
   const fn = f => {
     const v = parseFloat(display)
-    const m = { sqrt: Math.sqrt(v), log: Math.log10(v), ln: Math.log(v),
-      sin: Math.sin(v*Math.PI/180), cos: Math.cos(v*Math.PI/180), tan: Math.tan(v*Math.PI/180),
-      '1/x': 1/v, 'x²': v*v, 'π': Math.PI, 'e': Math.E }
+    const m = { sqrt: Math.sqrt(v), log: Math.log10(v), ln: Math.log(v), sin: Math.sin(v * Math.PI / 180), cos: Math.cos(v * Math.PI / 180), tan: Math.tan(v * Math.PI / 180), '1/x': 1 / v, 'x²': v * v, 'π': Math.PI, 'e': Math.E }
     setDisplay(String(parseFloat(m[f].toFixed(10)))); setFresh(true)
   }
-  const B = (label, action, color='#495057') => (
-    <button key={label} onClick={action}
-      style={{ padding:'7px 4px', border:'none', borderRadius:6, fontSize:'0.8rem',
-        fontWeight:600, cursor:'pointer', background:color, color:'#fff' }}>{label}</button>
+  const B = (label, action, color = '#495057') => (
+    <button key={label} onClick={action} style={{ padding: '7px 4px', border: 'none', borderRadius: 6, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', background: color, color: '#fff' }}>{label}</button>
   )
-
-
   return (
-    <div style={{ position:'fixed', bottom:80, right:20, width:260, background:'#1a1a2e',
-      borderRadius:12, boxShadow:'0 8px 32px rgba(0,0,0,0.5)', zIndex:9999, padding:12 }}
-      onContextMenu={e=>e.stopPropagation()} onMouseDown={e=>e.stopPropagation()}>
+    <div style={{ position: 'fixed', bottom: 80, right: 20, width: 260, background: '#1a1a2e', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', zIndex: 9999, padding: 12 }}
+      onContextMenu={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}>
       <div className="d-flex justify-content-between align-items-center mb-2">
-        <span style={{color:'#aaa', fontSize:'0.78rem'}}>🧮 Calculator</span>
-        <button onClick={onClose} style={{background:'none',border:'none',color:'#aaa',fontSize:18,cursor:'pointer',lineHeight:1}}>×</button>
+        <span style={{ color: '#aaa', fontSize: '0.78rem' }}>🧮 Calculator</span>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#aaa', fontSize: 18, cursor: 'pointer', lineHeight: 1 }}>×</button>
       </div>
-      <div style={{background:'#0f0f1a',borderRadius:8,padding:'8px 12px',marginBottom:8,textAlign:'right',minHeight:42}}>
-        {op && <div style={{fontSize:'0.68rem',color:'#888'}}>{prev} {op}</div>}
-        <div style={{fontSize:'1.2rem',fontWeight:700,color:'#fff',wordBreak:'break-all'}}>{display}</div>
+      <div style={{ background: '#0f0f1a', borderRadius: 8, padding: '8px 12px', marginBottom: 8, textAlign: 'right', minHeight: 42 }}>
+        {op && <div style={{ fontSize: '0.68rem', color: '#888' }}>{prev} {op}</div>}
+        <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fff', wordBreak: 'break-all' }}>{display}</div>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:4,marginBottom:4}}>
-        {B('sin',()=>fn('sin'),'#6f42c1')} {B('cos',()=>fn('cos'),'#6f42c1')}
-        {B('tan',()=>fn('tan'),'#6f42c1')} {B('log',()=>fn('log'),'#6f42c1')}
-        {B('ln',()=>fn('ln'),'#6f42c1')}   {B('√',()=>fn('sqrt'),'#6f42c1')}
-        {B('x²',()=>fn('x²'),'#6f42c1')}  {B('1/x',()=>fn('1/x'),'#6f42c1')}
-        {B('π',()=>fn('π'),'#0d6efd')}    {B('e',()=>fn('e'),'#0d6efd')}
-        {B('^',()=>pressOp('^'),'#fd7e14')} {B('C',clear,'#dc3545')}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 4, marginBottom: 4 }}>
+        {B('sin', () => fn('sin'), '#6f42c1')} {B('cos', () => fn('cos'), '#6f42c1')}
+        {B('tan', () => fn('tan'), '#6f42c1')} {B('log', () => fn('log'), '#6f42c1')}
+        {B('ln', () => fn('ln'), '#6f42c1')} {B('√', () => fn('sqrt'), '#6f42c1')}
+        {B('x²', () => fn('x²'), '#6f42c1')} {B('1/x', () => fn('1/x'), '#6f42c1')}
+        {B('π', () => fn('π'), '#0d6efd')} {B('e', () => fn('e'), '#0d6efd')}
+        {B('^', () => pressOp('^'), '#fd7e14')} {B('C', clear, '#dc3545')}
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:4}}>
-        {B('7',()=>pressNum('7'))} {B('8',()=>pressNum('8'))} {B('9',()=>pressNum('9'))} {B('÷',()=>pressOp('/'),'#343a40')}
-        {B('4',()=>pressNum('4'))} {B('5',()=>pressNum('5'))} {B('6',()=>pressNum('6'))} {B('×',()=>pressOp('*'),'#343a40')}
-        {B('1',()=>pressNum('1'))} {B('2',()=>pressNum('2'))} {B('3',()=>pressNum('3'))} {B('−',()=>pressOp('-'),'#343a40')}
-        {B('0',()=>pressNum('0'))} {B('.',pressDot)}            {B('+',()=>pressOp('+'),'#343a40')} {B('⌫',del,'#6c757d')}
-        <button onClick={equals} style={{gridColumn:'1/-1',padding:'8px',border:'none',borderRadius:6,
-          fontWeight:700,cursor:'pointer',background:'#28a745',color:'#fff',fontSize:'0.9rem'}}>=</button>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 4 }}>
+        {B('7', () => pressNum('7'))} {B('8', () => pressNum('8'))} {B('9', () => pressNum('9'))} {B('÷', () => pressOp('/'), '#343a40')}
+        {B('4', () => pressNum('4'))} {B('5', () => pressNum('5'))} {B('6', () => pressNum('6'))} {B('×', () => pressOp('*'), '#343a40')}
+        {B('1', () => pressNum('1'))} {B('2', () => pressNum('2'))} {B('3', () => pressNum('3'))} {B('−', () => pressOp('-'), '#343a40')}
+        {B('0', () => pressNum('0'))} {B('.', pressDot)} {B('+', () => pressOp('+'), '#343a40')} {B('⌫', del, '#6c757d')}
+        <button onClick={equals} style={{ gridColumn: '1/-1', padding: '8px', border: 'none', borderRadius: 6, fontWeight: 700, cursor: 'pointer', background: '#28a745', color: '#fff', fontSize: '0.9rem' }}>=</button>
       </div>
     </div>
   )
 }
 
+const MathText = ({ text, style, className }) => {
+  const ref = useRef(null)
+  useEffect(() => { renderMathContent(ref.current) }, [text])
 
-// ─── QuestionNav ──────────────────────────────────────────────────────────────
-const QuestionNav = ({ questions, answers, currentIndex, goTo }) => {
-  const answeredCount = Object.keys(answers).filter(k => {
-    const a = answers[k]; return a !== undefined && a !== '' && !(Array.isArray(a) && a.length === 0)
-  }).length
+  // If text already has $ or \( \) / \[ \] delimiters, it's proper LaTeX — don't run formatMathText
+  // formatMathText is only for plain text that needs auto-detection
+  const formatted = (text && (text.includes('$') || text.includes('\\('))) ? text : formatMathText(text || '')
+
   return (
-    <div style={S.sidebar}>
-      <div style={S.sbHead}>Navigator</div>
-      <div style={S.navGrid}>
-        {questions.map((qItem, i) => {
-          const ans = answers[qItem._id]
-          const answered = ans !== undefined && ans !== '' && !(Array.isArray(ans) && ans.length === 0)
-          const state = i === currentIndex ? 'current' : answered ? 'answered' : 'default'
-          return <button key={qItem._id} onClick={() => goTo(i)} style={S.navBtn(state)}>{i+1}</button>
-        })}
-      </div>
-      <div style={S.legend}>
-        {[['#7F77DD','Current'],['#1D9E75','Answered'],['#D3D1C7','Unanswered']].map(([c,l]) => (
-          <div key={l} style={S.legendRow}><div style={S.legendDot(c)}/>{l}</div>
-        ))}
-      </div>
-      <div style={S.infoPill}><span>Answered</span><strong>{answeredCount} / {questions.length}</strong></div>
-    </div>
+    <span
+      ref={ref}
+      className={className}
+      style={style}
+      dangerouslySetInnerHTML={{ __html: formatted }}
+    />
   )
 }
 
+// ─── Pipe-table detection/rendering ───────────────────────────────────────────
+// Recognizes both standard markdown tables (with a |---|---| separator row)
+// and plain pipe-delimited tables like:
+//   X \ Y | Y=1 | Y=2 | Y=3
+//   X=1   | 0.10 | 0.15 | 0.05
+function splitCells(line) {
+  let l = line.trim()
+  if (l.startsWith('|')) l = l.slice(1)
+  if (l.endsWith('|')) l = l.slice(0, -1)
+  return l.split('|').map(c => c.trim())
+}
 
-// ─── ReviewPage ───────────────────────────────────────────────────────────────
-const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColorMap }) => {
+function isSeparatorRow(line) {
+  const t = line.trim()
+  return /^[\s|:-]+$/.test(t) && t.includes('-')
+}
+
+function looksLikeTableRow(line) {
+  const t = line.trim()
+  if (!t.includes('|')) return false
+  if (isSeparatorRow(t)) return true
+  return splitCells(t).filter(c => c.length).length >= 2
+}
+
+function parseTable(lines) {
+  const dataLines = lines.filter(l => !isSeparatorRow(l))
+  if (dataLines.length < 2) return null
+  const header = splitCells(dataLines[0])
+  const cols = header.length
+  if (cols < 2) return null
+  const rows = dataLines.slice(1).map(splitCells)
+  if (!rows.every(r => r.length === cols)) return null
+  return { header, rows }
+}
+
+const QuestionRenderer = ({ text, style }) => {
+  if (!text) return null
+  const lines = text.split('\n')
+  const segments = []
+  let buffer = []
+  let i = 0
+  while (i < lines.length) {
+    if (looksLikeTableRow(lines[i])) {
+      let j = i
+      while (j < lines.length && looksLikeTableRow(lines[j])) j++
+      if (j - i >= 2) {
+        const table = parseTable(lines.slice(i, j))
+        if (table) {
+          if (buffer.length) { segments.push({ type: 'text', content: buffer.join('\n') }); buffer = [] }
+          segments.push({ type: 'table', table })
+          i = j
+          continue
+        }
+      }
+    }
+    buffer.push(lines[i])
+    i++
+  }
+  if (buffer.length) segments.push({ type: 'text', content: buffer.join('\n') })
+
+  return (
+    <span style={style}>
+      {segments.map((seg, idx) => {
+        if (seg.type === 'text') {
+          return seg.content.trim()
+            ? <MathText key={idx} text={seg.content} style={{ whiteSpace: 'pre-wrap' }} />
+            : null
+        }
+        return (
+          <div key={idx} className="table-responsive my-3">
+            <table className="table table-bordered table-sm text-center w-auto">
+              <thead className="table-light">
+                <tr>{seg.table.header.map((h, hi) => <th key={hi}><MathText text={h} /></th>)}</tr>
+              </thead>
+              <tbody>
+                {seg.table.rows.map((row, ri) => (
+                  <tr key={ri}>
+                    {row.map((cell, ci) => (
+                      ci === 0
+                        ? <th key={ci} className="table-light"><MathText text={cell} /></th>
+                        : <td key={ci}><MathText text={cell} /></td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      })}
+    </span>
+  )
+}
+
+const ReviewPage = ({ questions, answers, results, quizName, onRetake }) => {
   const [expanded, setExpanded] = useState(null)
-  const reviewRef = useRef(null)
-  useEffect(() => { if (reviewRef.current) typesetEl(reviewRef.current) }, [expanded])
-
-
-  const getDisplayAnswer = (q, answer) => {
-    if (answer === null || answer === undefined || answer === '') return '(no answer)'
-    if (q.type === 'multiple_choice') {
-      const idx = typeof answer === 'string' ? parseInt(answer) : answer
-      return q.options?.[idx] ?? String(answer)
-    }
-    if (q.type === 'multiple_select') {
-      const arr = Array.isArray(answer) ? answer : [answer]
-      return arr.map(i => q.options?.[i] ?? String(i)).join(', ')
-    }
-    if ((q.type === 'numeric' || q.type === 'numeric_input') && !isNaN(parseFloat(answer))) {
-      const num = parseFloat(answer)
-      return num % 1 === 0 ? num.toString() : num.toFixed(4).replace(/\.?0+$/, '')
-    }
-    return String(answer)
-  }
-
-
-  const getCorrectDisplay = (q) => {
-    const ca = q.correct_answer
-    if (q.type === 'multiple_choice') return resolveOptionText(q, ca)
-    if (q.type === 'multiple_select') {
-      const arr = Array.isArray(ca) ? ca : [ca]
-      return arr.map(i => resolveOptionText(q, i)).join(', ')
-    }
-    if ((q.type === 'numeric' || q.type === 'numeric_input') && !isNaN(parseFloat(ca))) {
-      const num = parseFloat(ca)
-      return num % 1 === 0 ? num.toString() : num.toFixed(4).replace(/\.?0+$/, '')
-    }
-    return String(ca)
-  }
-
 
   return (
-    <main className="main" ref={reviewRef}>
-      <div className="page-title" style={{marginBottom:'2rem'}}>
+    <main className="main">
+      <div className="page-title" style={{ marginBottom: '2rem' }}>
         <div className="heading"><div className="container">
           <div className="row d-flex justify-content-center text-center">
-            <div className="col-lg-8"><h1>{quizName} — Review</h1></div>
+            <div className="col-lg-8">
+              <h1>{quizName} — Review</h1>
+            </div>
           </div>
         </div></div>
         <nav className="breadcrumbs"><div className="container"><ol>
           <li><Link to="/">Home</Link></li>
-          <li><Link to="/courses/statistics2">Statistics 2</Link></li>
+          <li><Link to="/courses/statistics2">IITM Statistics 2</Link></li>
           <li className="current">Review</li>
         </ol></div></nav>
       </div>
 
-
       <div className="container mb-5">
-        <div className="card border-0 shadow-sm mb-4 text-center" style={{borderRadius:16}}>
+        <div className="card border-0 shadow-sm mb-4 text-center" style={{ borderRadius: 16 }}>
           <div className="card-body py-4">
             <div className="row justify-content-center g-4">
               <div className="col-auto">
-                <div style={{width:120,height:120,borderRadius:'50%',
-                  background: results.percentage>=60 ? 'linear-gradient(135deg,#28a745,#20c997)' : 'linear-gradient(135deg,#dc3545,#c82333)',
-                  display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
-                  <span style={{fontSize:28,fontWeight:700,color:'#fff'}}>{results.percentage}%</span>
-                  <span style={{fontSize:12,color:'rgba(255,255,255,0.85)'}}>
-                    {Number.isInteger(results.score) ? results.score : results.score.toFixed(2)}/{results.totalPossible}
+                <div style={{
+                  width: 120, height: 120, borderRadius: '50%',
+                  background: results.percentage >= 60
+                    ? 'linear-gradient(135deg,#28a745,#20c997)'
+                    : 'linear-gradient(135deg,#dc3545,#c82333)',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <span style={{ fontSize: 28, fontWeight: 700, color: '#fff' }}>{results.percentage}%</span>
+                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>
+                    {results.correctCount}/{questions.length}
                   </span>
                 </div>
               </div>
               <div className="col-auto d-flex flex-column justify-content-center text-start">
-                <h4 className="mb-1">{results.percentage>=80?'Excellent!':results.percentage>=60?'Good job!':'Keep practicing!'}</h4>
+                <h4 className="mb-1">
+                  {results.percentage >= 80 ? 'Excellent!' : results.percentage >= 60 ? 'Good job!' : 'Keep practicing!'}
+                </h4>
                 <p className="text-muted mb-1">
-                  Correct: <strong className="text-success">{results.questionResults.filter(r=>r.isCorrect).length} Q ({Number.isInteger(results.score)?results.score:results.score.toFixed(1)} pts)</strong> &nbsp;|&nbsp;
-                  Wrong: <strong className="text-danger">{results.questionResults.filter(r=>!r.isCorrect).length} Q</strong>
+                  Score: <strong>{results.score}/{results.maxPossibleScore}</strong> points
                 </p>
-                <p className="text-muted mb-0">Total time: {Math.floor(results.totalTime/60)}m {results.totalTime%60}s</p>
+                <p className="text-muted mb-1">
+                  Correct: <strong className="text-success">{results.correctCount}</strong> &nbsp;|&nbsp;
+                  Wrong: <strong className="text-danger">{questions.length - results.correctCount}</strong>
+                </p>
+                <p className="text-muted mb-0">
+                  Time: {Math.floor(results.totalTime / 60)}m {results.totalTime % 60}s
+                </p>
               </div>
             </div>
             <div className="d-flex gap-2 justify-content-center mt-3">
-              <button className="btn btn-primary" onClick={onRetake}><i className="bi bi-arrow-clockwise me-1"/>Retake</button>
-              <Link to="/courses/statistics2" className="btn btn-outline-secondary"><i className="bi bi-arrow-left me-1"/>Back</Link>
+              <button className="btn btn-primary" onClick={onRetake}>
+                <i className="bi bi-arrow-clockwise me-1" />Retake
+              </button>
+              <Link to="/courses/statistics2" className="btn btn-outline-secondary">
+                <i className="bi bi-arrow-left me-1" />Back
+              </Link>
             </div>
           </div>
         </div>
 
-
         {questions.map((q, idx) => {
-          const res = results.questionResults[idx]
+          const res = results.responses[idx]
           const isOpen = expanded === idx
-          const topicColor = topicColorMap?.[q.originalTopic||q.topic] || '#6c757d'
-          const borderColor = res?.isCorrect ? '#28a745' : (res?.isMSQ && res?.partialScore > 0) ? '#f6c23e' : '#dc3545'
-
+          const diffColor = { easy: '#28a745', medium: '#ffc107', hard: '#dc3545' }
 
           return (
-            <div key={q._id} className="card border-0 shadow-sm mb-3"
-              style={{borderRadius:12, borderLeft:`4px solid ${borderColor}`}}>
-              <div className="card-body" style={{cursor:'pointer'}} onClick={()=>setExpanded(isOpen?null:idx)}>
+            <div key={q._id || idx} className="card border-0 shadow-sm mb-3"
+              style={{ borderRadius: 12, borderLeft: `4px solid ${res?.isCorrect ? '#28a745' : '#dc3545'}` }}>
+              <div className="card-body" style={{ cursor: 'pointer' }} onClick={() => setExpanded(isOpen ? null : idx)}>
                 <div className="d-flex align-items-start gap-3">
-                  <div style={{width:30,height:30,borderRadius:'50%',flexShrink:0,
-                    background: res?.isCorrect ? '#28a745' : (res?.isMSQ && res?.partialScore>0) ? '#f6c23e' : '#dc3545',
-                    display:'flex',alignItems:'center',justifyContent:'center'}}>
-                    <i className={`bi ${res?.isCorrect ? 'bi-check-lg' : (res?.isMSQ && res?.partialScore>0) ? 'bi-dash-lg' : 'bi-x-lg'} text-white`} style={{fontSize:13}}/>
+                  <div style={{
+                    width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
+                    background: res?.isCorrect ? '#28a745' : '#dc3545',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    <i className={`bi ${res?.isCorrect ? 'bi-check-lg' : 'bi-x-lg'} text-white`} style={{ fontSize: 13 }} />
                   </div>
                   <div className="flex-grow-1">
-                    <div className="d-flex justify-content-between align-items-start gap-2">
-                      <p className="mb-1 fw-semibold" style={{fontSize:'0.95rem', flex:1}}>
-                        {!isOpen && q.question_text.length>100 ? q.question_text.slice(0,100)+'…' : q.question_text}
+                    <div className="d-flex justify-content-between">
+                      <p className="mb-1 fw-semibold" style={{ fontSize: '0.95rem' }}>
+                        Q{idx + 1}.&nbsp;
+                        {isOpen
+                          ? <QuestionRenderer text={q.question_text} />
+                          : <MathText text={
+                              (q.question_text || '').length > 100
+                                ? q.question_text.slice(0, 100) + '…'
+                                : q.question_text
+                            } />
+                        }
                       </p>
-                      <div className="d-flex align-items-center gap-2" style={{flexShrink:0}}>
-                        <span style={{fontSize:'0.72rem',fontWeight:600,color:'#0C447C',
-                          background:'#E6F1FB',border:'1.5px solid #85B7EB',
-                          borderRadius:99,padding:'2px 10px',whiteSpace:'nowrap'}}>Q{idx+1}</span>
-                        <i className={`bi bi-chevron-${isOpen?'up':'down'} text-muted`}/>
-                      </div>
+                      <i className={`bi bi-chevron-${isOpen ? 'up' : 'down'} ms-2 text-muted`} style={{ flexShrink: 0 }} />
                     </div>
                     <div className="d-flex gap-2 flex-wrap mt-1">
-                      <span className={`badge bg-${DIFF_COLORS[q.difficulty]||'secondary'}`}>{q.difficulty}</span>
-                      <span className="badge" style={{background:topicColor}}>{q.originalTopic||q.topic}</span>
-                      {res?.timeTaken>0 && <span className="badge bg-light text-dark"><i className="bi bi-clock me-1"/>{res.timeTaken}s</span>}
-                      {res?.isMSQ && (
-                        <span className="badge" style={{
-                          background: res.isCorrect ? '#28a745' : res.partialScore>0 ? '#f6c23e' : '#dc3545',
-                          color:'#fff'
-                        }}>{res.partialScore}/{res.maxScore} pts</span>
-                      )}
+                      <span className="badge bg-secondary">{q.type}</span>
+                      <span className="badge" style={{ background: diffColor[q.difficulty] || '#6c757d', color: q.difficulty === 'medium' ? '#333' : '#fff' }}>
+                        {q.difficulty}
+                      </span>
+                      <span className="badge bg-light text-dark border">{q.points || 1} pt{(q.points || 1) !== 1 ? 's' : ''}</span>
+                      {res?.marksAwarded > 0 && <span className="badge bg-success">+{res.marksAwarded} earned</span>}
                     </div>
                   </div>
                 </div>
 
-
                 {isOpen && (
                   <div className="mt-3 ms-5 ps-2">
-                    <GraphImage imageFile={q.image_file} />
-
-
-                    {(q.type==='multiple_choice'||q.type==='multiple_select') && q.options && (
+                    {q.type === 'multiple_choice' && Array.isArray(q.options) && (
                       <div className="mb-3">
                         {q.options.map((opt, oi) => {
-                          const isCorrectOpt = q.type==='multiple_select'
-                            ? (() => {
-                                const ca = q.correct_answer
-                                const toOptText = val => {
-                                  const asInt = typeof val==='number' ? val : parseInt(String(val).trim())
-                                  if (!isNaN(asInt) && asInt>=0 && asInt<(q.options||[]).length) return q.options[asInt]
-                                  return String(val)
-                                }
-                                if (Array.isArray(ca)) return ca.map(toOptText)
-                                if (typeof ca==='string') {
-                                  try { const p=JSON.parse(ca); if(Array.isArray(p)) return p.map(toOptText) } catch{}
-                                  return ca.split(',').map(v=>toOptText(v.trim()))
-                                }
-                                if (typeof ca==='number') return [toOptText(ca)]
-                                return []
-                              })() : []
-
-
-                          const resolvedCorrectIdx = q.type==='multiple_choice'
-                            ? (typeof q.correct_answer==='number' ? q.correct_answer
-                                : !isNaN(parseInt(String(q.correct_answer).trim())) ? parseInt(String(q.correct_answer).trim())
-                                : q.options?.findIndex(o=>o?.toLowerCase().trim()===String(q.correct_answer).toLowerCase().trim())??-1)
-                            : -1
-
-
-                          const isCorrectOpt2 = q.type==='multiple_choice'
-                            ? (resolvedCorrectIdx!==-1 && oi===resolvedCorrectIdx)
-                            : isCorrectOpt.includes(opt)
-
-
-                          const userPicked = q.type==='multiple_choice'
-                            ? (typeof answers[q._id]==='number' ? answers[q._id]===oi : parseInt(answers[q._id])===oi)
-                            : (() => { const a=answers[q._id]; return !!(a&&Array.isArray(a)&&a.includes(opt)) })()
-
-
-                          let bg = 'transparent'
-                          if (isCorrectOpt2) bg = '#d4edda'
-                          else if (userPicked && !isCorrectOpt2) bg = '#f8d7da'
-
-
+                          const isCorrectOpt = opt.option_id === q.correct_answer
+                          const userPicked   = answers[idx] === opt.option_id
+                          const bg = isCorrectOpt ? '#d4edda' : userPicked ? '#f8d7da' : 'transparent'
                           return (
-                            <div key={oi} className="d-flex align-items-center gap-2 mb-1 px-2 py-1 rounded" style={{background:bg}}>
-                              {isCorrectOpt2 && userPicked  && <i className="bi bi-check-circle-fill text-success"/>}
-                              {isCorrectOpt2 && !userPicked && <i className="bi bi-check-circle text-success"/>}
-                              {!isCorrectOpt2 && userPicked && <i className="bi bi-x-circle-fill text-danger"/>}
-                              {!isCorrectOpt2 && !userPicked && <i className="bi bi-circle text-muted"/>}
-                              <span style={{fontSize:'0.9rem'}}>{opt}</span>
+                            <div key={oi} className="d-flex align-items-center gap-2 mb-1 px-2 py-1 rounded" style={{ background: bg }}>
+                              {isCorrectOpt && <i className="bi bi-check-circle-fill text-success" />}
+                              {userPicked && !isCorrectOpt && <i className="bi bi-x-circle-fill text-danger" />}
+                              {!isCorrectOpt && !userPicked && <i className="bi bi-circle text-muted" />}
+                              <strong className="me-1">{opt.option_id}.</strong>
+                              <MathText text={opt.text} style={{ fontSize: '0.9rem' }} />
                             </div>
                           )
                         })}
                       </div>
                     )}
 
-
-                    {q.type!=='multiple_choice' && q.type!=='multiple_select' && (
-                      <div className="d-flex gap-2 flex-wrap mb-3">
-                        <span className="badge bg-light text-dark border">Your answer: <strong>{getDisplayAnswer(q, answers[q._id])}</strong></span>
-                        <span className="badge bg-success">Correct: <strong>{getCorrectDisplay(q)}</strong></span>
+                    {q.type === 'multiple_select' && Array.isArray(q.options) && (
+                      <div className="mb-3">
+                        {q.options.map((opt, oi) => {
+                          const correctArr   = Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer]
+                          const isCorrectOpt = correctArr.includes(opt.option_id)
+                          const userPicked   = Array.isArray(answers[idx]) && answers[idx].includes(opt.option_id)
+                          const bg = isCorrectOpt ? '#d4edda' : userPicked ? '#f8d7da' : 'transparent'
+                          return (
+                            <div key={oi} className="d-flex align-items-center gap-2 mb-1 px-2 py-1 rounded" style={{ background: bg }}>
+                              {isCorrectOpt && <i className="bi bi-check-circle-fill text-success" />}
+                              {userPicked && !isCorrectOpt && <i className="bi bi-x-circle-fill text-danger" />}
+                              {!isCorrectOpt && !userPicked && <i className="bi bi-circle text-muted" />}
+                              <strong className="me-1">{opt.option_id}.</strong>
+                              <MathText text={opt.text} style={{ fontSize: '0.9rem' }} />
+                            </div>
+                          )
+                        })}
                       </div>
                     )}
 
+                    {['numeric', 'numeric_input', 'interval_input', 'coordinate_input', 'set_notation', 'text_input'].includes(q.type) && (
+                      <div className="d-flex gap-2 flex-wrap mb-3">
+                        <span className="badge bg-light text-dark border">
+                          Your answer: <strong><MathText text={String(answers[idx] || '(no answer)')} /></strong>
+                        </span>
+                        <span className="badge bg-success">
+                          Correct: <strong><MathText text={String(q.correct_answer)} /></strong>
+                        </span>
+                      </div>
+                    )}
 
                     {q.explanation && (
-                      <div className="alert alert-info py-2 mb-0" style={{fontSize:'0.88rem'}}>
-                        <i className="bi bi-lightbulb me-2"/><strong>Explanation:</strong> {q.explanation}
+                      <div className="mt-2 p-2 rounded" style={{ background: '#f0f4ff', fontSize: '0.88rem' }}>
+                        <strong>Explanation: </strong>
+                        <MathText text={q.explanation} />
                       </div>
                     )}
                   </div>
@@ -569,797 +567,528 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake, topicColo
   )
 }
 
-
-// ─── norm helper ──────────────────────────────────────────────────────────────
-const norm = t => {
-  if (t === undefined || t === null) return ''
-  let str = String(t).trim()
-  str = str.replace(/\s+/g,'').replace(/\\\(/g,'').replace(/\\\)/g,'')
-    .replace(/\\\[/g,'').replace(/\\\]/g,'').replace(/\$/g,'')
-    .replace(/infinity|∞/gi,'inf').replace(/√\(([^)]+)\)/g,'sqrt($1)')
-    .replace(/√(\d+)/g,'sqrt($1)').replace(/≠/g,'!=').replace(/≤/g,'<=')
-    .replace(/≥/g,'>=').replace(/×/g,'*').replace(/÷/g,'/')
-    .replace(/∪/g,'U').replace(/∩/g,'n').replace(/∈/g,'in')
-    .replace(/⊂/g,'subset').replace(/⊆/g,'subseteq')
-  if (str.includes('/') && !str.includes('sqrt')) {
-    const parts = str.split('/')
-    if (parts.length===2 && !isNaN(parts[0]) && !isNaN(parts[1]))
-      str = String(parseFloat(parts[0]) / parseFloat(parts[1]))
-  }
-  return str.replace(/\.0$/,'').toLowerCase()
-}
-
-
-// ─── scoreQuestion: returns { partialScore, isCorrect, isMSQ } ───────────────
-const scoreQuestion = (question, userAnswer) => {
-  const ca     = question.correct_answer
-  const alts   = question.alternative_answers || []
-  const points = question.points || 1
-  const type   = question.type
-
-
-  const empty = userAnswer === undefined || userAnswer === null || userAnswer === ''
-                || (Array.isArray(userAnswer) && userAnswer.length === 0)
-  if (empty) return { partialScore: 0, isCorrect: false, isMSQ: type === 'multiple_select' }
-
-
-  if (type === 'multiple_choice') {
-    const resolveToIndex = val => {
-      if (val === undefined || val === null) return -1
-      if (typeof val === 'number' && !isNaN(val)) return val
-      const asInt = parseInt(String(val).trim())
-      if (!isNaN(asInt)) return asInt
-      return (question.options || []).findIndex(o => norm(o) === norm(String(val)))
-    }
-    const userIdx    = resolveToIndex(userAnswer)
-    const correctIdx = resolveToIndex(ca)
-    let correct = userIdx !== -1 && correctIdx !== -1 && userIdx === correctIdx
-    if (!correct) {
-      const uText = norm(question.options?.[userIdx] ?? userAnswer)
-      const cText = norm(question.options?.[correctIdx] ?? ca)
-      correct = !!(uText && cText && uText === cText)
-    }
-    if (!correct) correct = alts.some(alt => resolveToIndex(alt) === userIdx)
-    return { partialScore: correct ? points : 0, isCorrect: correct, isMSQ: false }
-  }
-
-
-  if (type === 'multiple_select') {
-    if (!Array.isArray(userAnswer) || userAnswer.length === 0)
-      return { partialScore: 0, isCorrect: false, isMSQ: true }
-
-
-    const toText = val => {
-      if (val === undefined || val === null) return ''
-      const asInt = typeof val === 'number' ? val : parseInt(String(val).trim())
-      if (!isNaN(asInt) && asInt >= 0 && asInt < (question.options || []).length)
-        return norm(question.options[asInt])
-      return norm(String(val))
-    }
-
-
-    let correctTexts = []
-    if (Array.isArray(ca)) {
-      correctTexts = ca.map(toText)
-    } else if (typeof ca === 'string') {
-      try {
-        const parsed = JSON.parse(ca)
-        correctTexts = Array.isArray(parsed) ? parsed.map(toText) : [toText(ca)]
-      } catch { correctTexts = ca.split(',').map(v => toText(v.trim())) }
-    } else {
-      correctTexts = [toText(ca)]
-    }
-
-
-    const n = correctTexts.length
-    if (n === 0) return { partialScore: 0, isCorrect: false, isMSQ: true }
-
-
-    const perCorrect = points / n
-    const perWrong   = points / 3
-    const userTexts  = userAnswer.map(v => norm(String(v)))
-
-
-    let raw = 0
-    userTexts.forEach(ut => {
-      if (correctTexts.includes(ut)) raw += perCorrect
-      else                           raw -= perWrong
-    })
-
-
-    const partialScore = parseFloat(Math.max(0, Math.min(points, raw)).toFixed(4))
-    const isCorrect    = partialScore === points
-    return { partialScore, isCorrect, isMSQ: true }
-  }
-
-
-  if (type === 'numeric' || type === 'numeric_input') {
-    const uNum = parseFloat(String(userAnswer).trim())
-    const cNum = parseFloat(String(ca).trim())
-    if (isNaN(uNum) || isNaN(cNum)) return { partialScore: 0, isCorrect: false, isMSQ: false }
-    const tolerance = question.has_tolerance && question.tolerance_value > 0
-      ? question.tolerance_value
-      : Math.max(Math.abs(cNum) * 0.01, 0.0001)
-    let correct = Math.abs(uNum - cNum) <= tolerance
-    if (!correct) correct = alts.some(alt => {
-      const altNum = parseFloat(String(alt).trim())
-      return !isNaN(altNum) && Math.abs(uNum - altNum) <= Math.max(Math.abs(altNum)*0.01, 0.0001)
-    })
-    return { partialScore: correct ? points : 0, isCorrect: correct, isMSQ: false }
-  }
-
-
-  const nUser = norm(String(userAnswer).trim())
-  const nCorr = norm(String(ca).trim())
-  let correct = nUser === nCorr
-  if (!correct) {
-    const uNum = parseFloat(nUser), cNum = parseFloat(nCorr)
-    if (!isNaN(uNum) && !isNaN(cNum))
-      correct = Math.abs(uNum - cNum) <= Math.max(Math.abs(cNum)*0.01, 0.0001)
-  }
-  if (!correct) correct = alts.some(a => norm(String(a).trim()) === nUser)
-  return { partialScore: correct ? points : 0, isCorrect: correct, isMSQ: false }
-}
-
-
 // ─── Main Quiz Component ───────────────────────────────────────────────────────
 const Stats2Quiz = () => {
-  const { week: weekParam } = useParams()
-  const navigate  = useNavigate()
-  const location  = useLocation()
-  const weekNum   = parseInt(weekParam, 10)
+  const { week } = useParams()  // Now using 'week' parameter from route
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  // Parse week number from URL parameter
+  const weekNum = week ? parseInt(week, 10) : 1
+
+  // Validate week number (1-11, or 100 for the Midterm Assessment), default to 1 if invalid
+  const validWeekNum = !isNaN(weekNum) && ((weekNum >= 1 && weekNum <= 11) || weekNum === 100) ? weekNum : 1
+
+  // Get topic from the mapping
+  const topic = WEEK_TOPIC_MAP[validWeekNum] || `Week_${validWeekNum}`
+
   const { quizName } = location.state || {}
-  const displayName = quizName || `Week ${weekNum}`
+  const displayName = quizName || `Week ${validWeekNum} — ${topic.replace(/_/g, ' ')}`
 
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [questions, setQuestions] = useState([])
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [answers, setAnswers] = useState({})
+  const [submitted, setSubmitted] = useState(false)
+  const [results, setResults] = useState(null)
+  const [error, setError] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [showCalc, setShowCalc] = useState(false)
+  const [tabWarning, setTabWarning] = useState(false)
 
-  const [user, setUser]                     = useState(null)
-  const [loading, setLoading]               = useState(true)
-  const [questions, setQuestions]           = useState([])
-  const [currentIndex, setCurrentIndex]     = useState(0)
-  const [answers, setAnswers]               = useState({})
-  const [submitted, setSubmitted]           = useState(false)
-  const [results, setResults]               = useState(null)
-  const [error, setError]                   = useState(null)
-  const [saving, setSaving]                 = useState(false)
-  const [showCalc, setShowCalc]             = useState(false)
-  const showCalcRef                         = useRef(false)
-  const [warningOverlay, setWarningOverlay] = useState(false)
-  const [topicColorMap, setTopicColorMap]   = useState({})
-  const [hoveredOpt, setHoveredOpt]         = useState(null)
-  const [showMobileNav, setShowMobileNav]   = useState(false)
+  const questionStartRef = useRef(Date.now())
+  const quizStartRef = useRef(Date.now())
+  const timesRef = useRef({})
+  const cheatingRef = useRef(0)
+  const userRef = useRef(null)
+  const questionRef = useRef(null)
 
+  // Load KaTeX once on mount
+  useEffect(() => { loadKaTeX() }, [])
 
-  const questionStartRef    = useRef(Date.now())
-  const timesRef            = useRef({})
-  const cheatingRef         = useRef(0)
-  const devToolsWarnedRef   = useRef(false)
-  const userRef             = useRef(null)
-  const questionRef         = useRef(null)
-  const devToolsIntervalRef = useRef(null)
-  const lastCheatTimeRef    = useRef({})
-  const baseWindowRef       = useRef({ outerHeight:0, outerWidth:0, innerHeight:0, innerWidth:0 })
-
-
-  const doSubmitRef = useRef(null)
-  const cleanupRef  = useRef(null)
-
-
-  const CHEAT_COOLDOWN_MS = 30_000
-  const CHEAT_THRESHOLD   = 5
-
-
-  useEffect(() => { loadMathJax() }, [])
-  useEffect(() => { if (questionRef.current) typesetEl(questionRef.current) }, [currentIndex, questions])
-  useEffect(() => { checkAuth() }, [])
+  // Re-render math whenever the displayed question changes
   useEffect(() => {
-    baseWindowRef.current = {
-      outerHeight: window.outerHeight, outerWidth: window.outerWidth,
-      innerHeight: window.innerHeight, innerWidth: window.innerWidth,
-    }
-  }, [])
+    if (questionRef.current) renderMathContent(questionRef.current)
+  }, [currentIndex, questions])
 
+  // Reset quiz state when week parameter changes
+  useEffect(() => {
+    if (!userRef.current?.email) return
+
+    setQuestions([])
+    setAnswers({})
+    setCurrentIndex(0)
+    setSubmitted(false)
+    setResults(null)
+    setError(null)
+    timesRef.current = {}
+    cheatingRef.current = 0
+    quizStartRef.current = Date.now()
+
+    fetchQuestions()
+  }, [week])  // Re-run when week parameter changes
+
+  // Auth - runs once on mount
+  useEffect(() => { checkAuth() }, [])
 
   const checkAuth = async () => {
     try {
       const res = await axios.get(`${API_URL}/api/session-info`, { withCredentials: true })
-      if (res.data?.email) { setUser(res.data); userRef.current = res.data; await fetchQuestions() }
-      else navigate('/login', { replace: true })
-    } catch { navigate('/login', { replace: true }) }
-  }
-
-
-  const fetchQuestions = async () => {
-    try {
-      const u = userRef.current
-      const params = new URLSearchParams({ week: weekNum })
-      if (u?.email) params.append('email', u.email)
-      const res = await axios.get(`${API_URL}/api/iitm_stats2_questions_databases?${params}`, { withCredentials: true })
-      const data = res.data
-      // Backend can return either an array (lean docs) OR { questions: [...] }
-      const qs = Array.isArray(data) ? data : (Array.isArray(data?.questions) ? data.questions : [])
-      if (!qs.length) {
-        setError(`No questions found for week ${weekNum}.`)
-        setLoading(false)
-        return
+      if (res.data?.email) {
+        setUser(res.data)
+        userRef.current = res.data
+        fetchQuestions()
+      } else {
+        navigate('/login', { replace: true })
       }
-
-
-      // Normalize options: backend may return [{option_id, text}] or [string]
-      const normalizeOptions = (options) => {
-        if (!Array.isArray(options)) return options
-        return options.map(o => {
-          if (typeof o === 'string') return o
-          return o.text ?? o.option_text ?? o.label ?? o.value ?? String(o.option_id ?? '')
-        })
-      }
-
-
-      const normalized = qs.map(q => ({ ...q, options: normalizeOptions(q.options) }))
-
-
-      const shuffled = [...normalized]
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-      }
-      setQuestions(shuffled)
-      const colorMap = {}
-      TOPIC_PALETTE.forEach((col, i) => { colorMap[`topic_${i}`] = col })
-      setTopicColorMap(colorMap)
     } catch {
-      setError('Failed to load questions. Please try again.')
+      navigate('/login', { replace: true })
     } finally {
       setLoading(false)
     }
   }
 
+  const fetchQuestions = async () => {
+    setLoading(true);
+    try {
+      const url = `${API_URL}/api/iitm_stats2_questions_databases?week=${validWeekNum}&email=${encodeURIComponent(userRef.current.email)}&count=25`;
+      const res  = await axios.get(url, { withCredentials: true });
+      const qs   = res.data.questions || [];
 
-  const recordCheat = useCallback(async (type, skipCooldown = false) => {
-    const now = Date.now()
-    const lastTime = lastCheatTimeRef.current[type] || 0
-    if (!skipCooldown && now - lastTime < CHEAT_COOLDOWN_MS) return
-    lastCheatTimeRef.current[type] = now
-
-
-    cheatingRef.current += 1
-    const u = userRef.current
-    if (u?.email) {
-      axios.post(`${API_URL}/api/log-cheating`, {
-        username: u.username || u.email, email: u.email,
-        cheatingType: type, timestamp: new Date(),
-        currentQuestion: cheatingRef.current, quizType: `Week ${weekNum}`
-      }, { withCredentials: true }).catch(() => {})
+      if (!qs.length) {
+        setError('No questions found for this week.');
+        setLoading(false);
+        return;
+      }
+      setQuestions(qs);
+      quizStartRef.current = Date.now();
+    } catch (e) {
+      console.error('Fetch questions error:', e);
+      setError('Failed to load questions. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    if (cheatingRef.current >= CHEAT_THRESHOLD) {
-      alert('Too many suspicious activities detected. Quiz will be auto-submitted.')
-      doSubmitRef.current?.()
+  };
+
+  const resetUserProgress = async (email, currentTopic) => {
+    try {
+      await axios.post(`${API_URL}/api/reset-user-progress`,
+        { email, topic: currentTopic },
+        { withCredentials: true }
+      )
+    } catch (e) {
+      console.error('Failed to reset progress:', e)
     }
-  }, [weekNum])
+  }
 
-
+  // Anti-cheat
   useEffect(() => {
-    const onCtx = e => { e.preventDefault(); recordCheat('right_click'); return false }
-
-
+    if (submitted || loading) return
+    const onContext = e => e.preventDefault()
     const onKey = e => {
-      if (
-        e.keyCode === 123 ||
-        (e.ctrlKey && e.shiftKey && e.keyCode === 73) ||
-        (e.ctrlKey && e.keyCode === 85) ||
-        (e.ctrlKey && e.keyCode === 83)
-      ) {
-        e.preventDefault(); recordCheat('keyboard_shortcut'); return false
+      if (e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['I', 'i', 'J', 'j', 'C', 'c'].includes(e.key)) ||
+        (e.ctrlKey && ['U', 'u'].includes(e.key))) {
+        e.preventDefault()
+        logCheat('keyboard_shortcut')
       }
-      if (e.ctrlKey && (e.keyCode===65||e.keyCode===67||e.keyCode===86)) {
-        e.preventDefault(); recordCheat('copy_paste'); return false
-      }
+      if (e.ctrlKey && ['A', 'a', 'C', 'c', 'V', 'v'].includes(e.key)) e.preventDefault()
     }
-
-
-    document.onselectstart = () => false
-
-
-    let blurTimer = null
-    let visTimer  = null
-    let visibilityFired = false
-
-
-    const onVisibility = () => {
-      if (document.hidden) {
-        if (showCalcRef.current) return
-        visibilityFired = true
-        clearTimeout(blurTimer)
-        visTimer = setTimeout(() => {
-          if (document.hidden) {
-            recordCheat('tab_switch', true)
-            setWarningOverlay(true)
-          }
-        }, 3_000)
-      } else {
-        clearTimeout(visTimer)
-        visibilityFired = false
-        setWarningOverlay(false)
-      }
-    }
-
-
-    const onBlur = () => {
-      if (showCalcRef.current) return
-      blurTimer = setTimeout(() => {
-        if (!document.hasFocus() && !visibilityFired && !showCalcRef.current) {
-          recordCheat('tab_switch', true)
-          setWarningOverlay(true)
-        }
-      }, 5_000)
-    }
-
-
-    const onFocus = () => {
-      clearTimeout(blurTimer)
-      clearTimeout(visTimer)
-      visibilityFired = false
-      setWarningOverlay(false)
-    }
-
-
-    document.addEventListener('contextmenu', onCtx)
+    const onBlur = () => { setTabWarning(true); logCheat('tab_switch') }
+    const onFocus = () => setTabWarning(false)
+    document.addEventListener('contextmenu', onContext)
     document.addEventListener('keydown', onKey)
-    window.addEventListener('focus', onFocus)
     window.addEventListener('blur', onBlur)
-    document.addEventListener('visibilitychange', onVisibility)
-
-
-    const onKeyUp = e => {
-      if (e.keyCode === 44 || e.key === 'PrintScreen') {
-        recordCheat('screenshot_attempt', true)
-        alert('Screenshots are not allowed during the quiz!')
+    window.addEventListener('focus', onFocus)
+    const interval = setInterval(() => {
+      if (window.outerWidth - window.innerWidth > 160 || window.outerHeight - window.innerHeight > 160) {
+        logCheat('devtools_open')
       }
-      if (e.key === 's' && e.metaKey && e.shiftKey) {
-        recordCheat('snipping_tool', true)
-        alert('Snippets are not allowed during the quiz!')
-      }
-      if (e.key === 's' && e.ctrlKey && e.shiftKey) {
-        recordCheat('screenshot_attempt', true)
-        alert('Screenshots are not allowed during the quiz!')
-      }
-    }
-
-
-    const onPaste = e => {
-      const items = e.clipboardData?.items
-      if (items) {
-        for (let i = 0; i < items.length; i++) {
-          if (items[i].type.indexOf('image') !== -1) {
-            recordCheat('screenshot_paste', true)
-            alert('Pasting screenshots is not allowed!')
-            e.preventDefault(); return
-          }
-        }
-      }
-    }
-
-
-    const onCopy = e => { recordCheat('copy_attempt'); e.preventDefault(); return false }
-
-
-    document.addEventListener('keyup', onKeyUp)
-    document.addEventListener('paste', onPaste)
-    document.addEventListener('copy', onCopy)
-
-
-    devToolsIntervalRef.current = setInterval(() => {
-      const base = baseWindowRef.current
-      const heightDiff = window.outerHeight - window.innerHeight
-      const widthDiff  = window.outerWidth  - window.innerWidth
-      const outerUnchanged =
-        Math.abs(window.outerHeight - base.outerHeight) < 10 &&
-        Math.abs(window.outerWidth  - base.outerWidth)  < 10
-      if (outerUnchanged && (heightDiff > 300 || widthDiff > 300)) {
-        if (!devToolsWarnedRef.current) {
-          devToolsWarnedRef.current = true
-          recordCheat('developer_tools')
-          alert('Developer tools detected! This attempt has been logged.')
-        }
-      } else {
-        devToolsWarnedRef.current = false
-        if (Math.abs(window.outerHeight-base.outerHeight)>=10 || Math.abs(window.outerWidth-base.outerWidth)>=10) {
-          baseWindowRef.current = {
-            outerHeight: window.outerHeight, outerWidth: window.outerWidth,
-            innerHeight: window.innerHeight, innerWidth: window.innerWidth,
-          }
-        }
-      }
-    }, 500)
-
-
-    const cleanup = () => {
-      document.removeEventListener('contextmenu', onCtx)
+    }, 2000)
+    return () => {
+      document.removeEventListener('contextmenu', onContext)
       document.removeEventListener('keydown', onKey)
-      document.removeEventListener('keyup', onKeyUp)
-      document.removeEventListener('paste', onPaste)
-      document.removeEventListener('copy', onCopy)
-      document.removeEventListener('visibilitychange', onVisibility)
-      document.onselectstart = null
-      window.removeEventListener('focus', onFocus)
       window.removeEventListener('blur', onBlur)
-      clearTimeout(blurTimer)
-      clearTimeout(visTimer)
-      clearInterval(devToolsIntervalRef.current)
+      window.removeEventListener('focus', onFocus)
+      clearInterval(interval)
     }
-    cleanupRef.current = cleanup
-    return cleanup
-  }, [recordCheat])
+  }, [submitted, loading])
 
+  const logCheat = async (type) => {
+    cheatingRef.current += 1
+    try {
+      await axios.post(`${API_URL}/api/log-cheating`,
+        { email: userRef.current?.email, type, quiz: displayName, timestamp: new Date().toISOString() },
+        { withCredentials: true }
+      )
+    } catch {}
+    if (cheatingRef.current >= 5) handleSubmit(true)
+  }
 
-  const saveCurrentTime = qId => {
+  const setAnswer = (idx, val) => setAnswers(prev => ({ ...prev, [idx]: val }))
+  const toggleMSQ = (idx, opt) => {
+    setAnswers(prev => {
+      const cur = Array.isArray(prev[idx]) ? prev[idx] : []
+      return { ...prev, [idx]: cur.includes(opt) ? cur.filter(x => x !== opt) : [...cur, opt] }
+    })
+  }
+
+  const recordTime = () => {
     const elapsed = Math.round((Date.now() - questionStartRef.current) / 1000)
-    timesRef.current[qId] = (timesRef.current[qId] || 0) + elapsed
+    timesRef.current[currentIndex] = elapsed
     questionStartRef.current = Date.now()
   }
+  const goTo = (idx) => { recordTime(); setCurrentIndex(idx) }
 
+  const handleSubmit = async (forced = false) => {
+    if (!forced) {
+      const unanswered = questions.filter((_, i) => {
+        const a = answers[i]
+        return a === undefined || a === null || a === '' || (Array.isArray(a) && !a.length)
+      }).length
+      if (unanswered > 0 && !window.confirm(`${unanswered} question(s) unanswered. Submit anyway?`)) return
+    }
+    recordTime()
 
-  const toggleCalc = () => {
-    setShowCalc(v => { const nv = !v; showCalcRef.current = nv; return nv })
-  }
+    let score = 0
+    let maxPossibleScore = 0
+    const difficultyBreakdown = {
+      easy:   { attempted: 0, correct: 0, points: 0 },
+      medium: { attempted: 0, correct: 0, points: 0 },
+      hard:   { attempted: 0, correct: 0, points: 0 },
+    }
+    const questionResults = []
 
+    questions.forEach((q, i) => {
+      const userAnswer = answers[i]
+      const isCorrect  = gradeQuestion(q, userAnswer)
+      const pts        = q.points || 1
+      maxPossibleScore += pts
+      if (isCorrect) score += pts
 
-  const goTo = newIdx => {
-    const q = questions[currentIndex]; if (q) saveCurrentTime(q._id)
-    setCurrentIndex(newIdx); setHoveredOpt(null); setShowMobileNav(false)
-  }
-
-
-  const handleAnswer = (qId, value) => setAnswers(p => ({ ...p, [qId]: value }))
-
-
-  const handleMultiSelect = (qId, optIdx, checked, optText) => {
-    setAnswers(p => {
-      const cur = p[qId] || []
-      return { ...p, [qId]: checked ? [...cur, optText] : cur.filter(t => t !== optText) }
-    })
-  }
-
-
-  const doSubmit = async () => {
-    cleanupRef.current?.()
-
-
-    const q = questions[currentIndex]; if (q) saveCurrentTime(q._id)
-
-
-    const questionResults = questions.map(question => {
-      const ua = answers[question._id]
-      const fmt = a => Array.isArray(a) ? a.join(', ') : String(a ?? '')
-      const { partialScore, isCorrect, isMSQ } = scoreQuestion(question, ua)
-      return {
-        questionId: question._id,
-        questionNumber: question.question_number,
-        questionText: question.question_text,
-        userAnswer: fmt(ua),
-        correctAnswer: fmt(question.correct_answer),
-        isCorrect,
-        isMSQ,
-        partialScore: Math.round(partialScore * 100) / 100,
-        maxScore: question.points || 1,
-        timeTaken: timesRef.current[question._id] || 0,
+      const diff = q.difficulty || 'medium'
+      difficultyBreakdown[diff].attempted++
+      if (isCorrect) {
+        difficultyBreakdown[diff].correct++
+        difficultyBreakdown[diff].points += pts
       }
+
+      questionResults.push({
+        questionId:   q._id,
+        questionText: q.question_text,
+        difficulty:   diff,
+        points:       pts,
+        userAnswer:   userAnswer != null ? userAnswer : null,  // keep original type — arrays stay arrays
+        correctAnswer:q.correct_answer,                        // keep original type — don't stringify
+        explanation:  q.explanation  || '',
+        isCorrect,
+        timeTaken:    timesRef.current[i] || 0,
+        marksAwarded: isCorrect ? pts : 0,
+        subtopic:     q.subtopic     || '',
+        questionType: q.type         || '',
+        conceptTags:  q.concept_tags || [],
+        bloomLevel:   q.bloom_level  || 'apply'
+      })
     })
 
+    const endTime   = new Date()
+    const startTime = new Date(quizStartRef.current)
+    const totalTime = Math.round((endTime - startTime) / 1000)
+    const correctCount = questionResults.filter(r => r.isCorrect).length
+    const percentage   = maxPossibleScore > 0 ? Math.round((score / maxPossibleScore) * 100) : 0
 
-    const rawScore      = questionResults.reduce((sum, r) => sum + r.partialScore, 0)
-    const score         = Math.round(rawScore * 100) / 100
-    const totalPossible = questions.reduce((sum, q) => sum + (q.points || 1), 0)
-    const percentage    = totalPossible > 0 ? Math.round((score / totalPossible) * 100) : 0
-    const totalTime     = Object.values(timesRef.current).reduce((s, t) => s + t, 0)
-
-
-    setSaving(true)
-    try {
-      const u = userRef.current
-      const topicName = questions[0]?.topic || `Week ${weekNum} Mixed Topics`
-      await axios.post(`${API_URL}/api/iitm_stats2_scores_databases`, {
-        email: u.email, username: u.username || u.name || u.email,
-        week: weekNum,
-        topic: topicName,
-        quizData: { week: weekNum, topic: topicName, score, maxScore: totalPossible, totalQuestions: questions.length,
-          totalPossible, percentage, timestamp: new Date(), questionResults }
-      }, { withCredentials: true })
-    } catch (err) { console.error('Score save failed:', err) }
-    finally { setSaving(false) }
-
-
-    setResults({ score, percentage, totalTime, totalPossible, questionResults })
+    setResults({
+      score,
+      maxPossibleScore,
+      percentage,
+      correctCount,
+      totalTime,
+      responses: questionResults,
+    })
     setSubmitted(true)
+
+    const u = userRef.current
+    if (!u?.email) return
+    setSaving(true)
+
+    try {
+      const quizData = {
+        week:            validWeekNum,        // ✅ inside quizData where route expects it
+        topic,
+        quizType:        'practice',
+        score,
+        maxPossibleScore,
+        totalQuestions:  questions.length,
+        correctAnswers:  correctCount,
+        percentage,
+        difficultyBreakdown,
+        questionResults,
+        startTime,
+        endTime,
+        totalTimeTaken:  totalTime,
+        cheatCount:      cheatingRef.current,
+        isCompleted:     true,
+      }
+
+      await axios.post(`${API_URL}/api/iitm_stats2_quiz_attempt`, {
+        email:    u.email,
+        username: u.username || u.name || u.email,
+        quizData  // ✅ week is inside quizData, not at root level
+      }, { withCredentials: true })
+
+    } catch (e) {
+      console.error('Failed to save score:', e)
+    } finally {
+      setSaving(false)
+    }
   }
-
-
-  useEffect(() => { doSubmitRef.current = doSubmit })
-
 
   const handleRetake = () => {
-    setAnswers({}); setCurrentIndex(0); setSubmitted(false); setResults(null)
-    timesRef.current = {}; cheatingRef.current = 0; devToolsWarnedRef.current = false
-    lastCheatTimeRef.current = {}
-    questionStartRef.current = Date.now()
-    if (userRef.current) { fetchQuestions(); setLoading(true) }
+    setAnswers({})
+    setSubmitted(false)
+    setResults(null)
+    setCurrentIndex(0)
+    timesRef.current = {}
+    cheatingRef.current = 0
+    quizStartRef.current = Date.now()
+    if (userRef.current?.email) fetchQuestions()
   }
 
-
-  const renderInput = question => {
-    const { _id, type, options, format_hint } = question
-    const answer = answers[_id]
-
-
-    if (type === 'multiple_choice') {
-      return (
-        <div className="mt-3" style={{display:'flex', flexDirection:'column', gap:9}}>
-          {options?.map((opt, idx) => {
-            const isSelected = (typeof answer==='string' ? parseInt(answer) : answer) === idx
-            const isHovered  = hoveredOpt === `${_id}-${idx}`
-            const style      = isSelected ? S.optSelected : isHovered ? S.optHovered : S.optBase
-            return (
-              <div key={idx} style={style}
-                onClick={() => handleAnswer(_id, idx)}
-                onMouseEnter={() => setHoveredOpt(`${_id}-${idx}`)}
-                onMouseLeave={() => setHoveredOpt(null)}>
-                <input className="form-check-input" type="radio" name={`q-${_id}`}
-                  id={`opt-${_id}-${idx}`} checked={isSelected}
-                  onChange={() => handleAnswer(_id, idx)}
-                  style={{ flexShrink:0, accentColor:'#378ADD', marginTop:0 }}/>
-                <label htmlFor={`opt-${_id}-${idx}`} style={S.optLabel(isSelected)}>{opt}</label>
-              </div>
-            )
-          })}
-        </div>
-      )
-    }
-
-
-    if (type === 'multiple_select') {
-      const sel = answer || []
-      return (
-        <div className="mt-3">
-          <small className="text-muted d-block mb-2">
-            <i className="bi bi-info-circle me-1"/>Select all that apply
-            <span className="ms-2 badge" style={{background:'#f6c23e',color:'#6d4c00',fontSize:'0.7rem'}}>
-              Partial marks apply
-            </span>
-          </small>
-          <div style={{display:'flex', flexDirection:'column', gap:9}}>
-            {options?.map((opt, idx) => {
-              const isSelected = sel.includes(opt)
-              const isHovered  = hoveredOpt === `${_id}-${idx}`
-              const style      = isSelected ? S.optSelected : isHovered ? S.optHovered : S.optBase
-              return (
-                <div key={idx} style={style}
-                  onClick={() => handleMultiSelect(_id, idx, !sel.includes(opt), opt)}
-                  onMouseEnter={() => setHoveredOpt(`${_id}-${idx}`)}
-                  onMouseLeave={() => setHoveredOpt(null)}>
-                  <input className="form-check-input" type="checkbox"
-                    id={`opt-${_id}-${idx}`} checked={isSelected}
-                    onChange={e => e.stopPropagation()}
-                    onClick={e => e.stopPropagation()}
-                    style={{ flexShrink:0, accentColor:'#378ADD', marginTop:0 }}/>
-                  <label htmlFor={`opt-${_id}-${idx}`} style={S.optLabel(isSelected)}>{opt}</label>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )
-    }
-
-
-    if (type === 'numeric' || type === 'numeric_input') {
-      return (
-        <>
-          {format_hint && <small className="text-muted d-block mt-3 mb-1">{format_hint}</small>}
-          <MathPreviewInput
-            type="numeric"
-            value={answer}
-            onChange={v => handleAnswer(_id, v)}
-            placeholder="e.g. 3.14, −5, sqrt(2)"
-            questionType={type}
-            formatHint={format_hint}
-          />
-        </>
-      )
-    }
-
-
-    const placeholders = {
-      interval_input:   'e.g. (-inf, 3] or [1,5)',
-      coordinate_input: 'e.g. (2, 3) or (-1/2, sqrt(2))',
-      equation_input:   'e.g. f(x) = x^2 + 1',
-      set_notation:     'e.g. x != 0',
-    }
-    return (
-      <>
-        {format_hint && <small className="text-muted d-block mt-3 mb-1">{format_hint}</small>}
-        <MathPreviewInput
-          value={answer}
-          onChange={v => handleAnswer(_id, v)}
-          placeholder={placeholders[type] || 'Type your answer here'}
-          questionType={type}
-          formatHint={format_hint}
-        />
-      </>
-    )
-  }
-
-
+  // Loading / error states
   if (loading) return (
-    <div className="d-flex justify-content-center align-items-center" style={{height:'50vh'}}>
+    <div className="d-flex justify-content-center align-items-center" style={{ height: '60vh' }}>
       <div className="text-center">
-        <div className="spinner-border mb-3" style={{color:'#7F77DD'}} role="status"/>
-        <p className="text-muted">Loading Week {weekNum} questions…</p>
+        <div className="spinner-border text-primary mb-3" role="status" />
+        <p className="text-muted">Loading {displayName}…</p>
       </div>
     </div>
   )
 
-
   if (error) return (
-    <div className="container mt-5 text-center">
-      <div className="alert alert-warning">{error}</div>
-      <Link to="/courses/statistics2" className="btn btn-primary">Back to Statistics 2</Link>
+    <div className="container py-5 text-center">
+      <i className="bi bi-exclamation-triangle fs-1 text-danger" />
+      <h4 className="mt-3">{error}</h4>
+      <button className="btn btn-primary mt-3" onClick={() => userRef.current?.email && fetchQuestions()}>Retry</button>
+      <Link to="/courses/statistics2" className="btn btn-outline-secondary mt-3 ms-2">Back</Link>
     </div>
   )
 
-
   if (submitted && results) return (
-    <ReviewPage questions={questions} answers={answers} results={results}
-      quizName={displayName} onRetake={handleRetake} topicColorMap={topicColorMap}/>
+    <ReviewPage
+      questions={questions} answers={answers} results={results}
+      quizName={displayName} onRetake={handleRetake}
+    />
   )
 
+  // Quiz render
+  const q = questions[currentIndex]
+  if (!q) return null
 
-  const q            = questions[currentIndex]
-  const answeredCount = Object.keys(answers).filter(k => {
-    const a = answers[k]; return a !== undefined && a !== '' && !(Array.isArray(a) && a.length===0)
+  const userAns = answers[currentIndex]
+  const isAnswered = userAns !== undefined && userAns !== null && userAns !== '' && !(Array.isArray(userAns) && !userAns.length)
+  const answeredCount = questions.filter((_, i) => {
+    const a = answers[i]
+    return a !== undefined && a !== null && a !== '' && !(Array.isArray(a) && !a.length)
   }).length
-  const progress     = Math.round(((currentIndex+1) / questions.length) * 100)
-  const topicColor   = topicColorMap?.[q.originalTopic||q.topic] || '#6c757d'
 
+  const diffColor = { easy: '#28a745', medium: '#ffc107', hard: '#dc3545' }
 
   return (
-    <main className="main" style={{userSelect:'none', WebkitUserSelect:'none'}}>
-      {warningOverlay && (
-        <div style={{position:'fixed',inset:0,background:'rgba(220,53,69,0.96)',zIndex:10000,
-          display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',color:'#fff'}}>
-          <i className="bi bi-exclamation-triangle-fill" style={{fontSize:64,marginBottom:16}}/>
-          <h2>Focus Lost!</h2>
-          <p style={{fontSize:'1.2rem'}}>Please return to the quiz. This has been logged.</p>
-          <button className="btn btn-light btn-lg mt-3" onClick={()=>setWarningOverlay(false)}>Return to Quiz</button>
+    <main className="main">
+      {tabWarning && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10000, background: '#dc3545', color: '#fff', textAlign: 'center', padding: '8px', fontWeight: 600 }}>
+          ⚠️ Tab switching detected!
+          <button onClick={() => setTabWarning(false)} style={{ marginLeft: 16, background: 'none', border: '1px solid #fff', color: '#fff', borderRadius: 4, padding: '2px 10px', cursor: 'pointer' }}>Dismiss</button>
         </div>
       )}
 
-
-      {showCalc && <Calculator onClose={toggleCalc}/>}
-
-
-      <button onClick={toggleCalc}
-        style={{position:'fixed',bottom:20,right:20,width:52,height:52,borderRadius:'50%',
-          background:'#7F77DD',border:'none',color:'#fff',fontSize:20,cursor:'pointer',zIndex:9998,
-          display:'flex',alignItems:'center',justifyContent:'center',
-          boxShadow:'0 2px 8px rgba(127,119,221,0.4)'}}>
-        🧮
-      </button>
-
-
-      <button className="d-md-none" onClick={()=>setShowMobileNav(v=>!v)}
-        style={{position:'fixed',bottom:82,right:20,width:52,height:52,borderRadius:'50%',
-          background:'#378ADD',border:'none',color:'#fff',fontSize:11,fontWeight:700,
-          cursor:'pointer',zIndex:9997,display:'flex',flexDirection:'column',
-          alignItems:'center',justifyContent:'center',lineHeight:1.2,
-          boxShadow:'0 2px 8px rgba(55,138,221,0.4)'}}>
-        <span style={{fontSize:16}}>≡</span>
-        <span>Qs</span>
-      </button>
-
-
-      {showMobileNav && (
-        <div className="d-md-none" style={{position:'fixed',inset:0,zIndex:10001,background:'rgba(4,44,83,0.5)'}}
-          onClick={()=>setShowMobileNav(false)}>
-          <div style={{position:'absolute',bottom:0,left:0,right:0,background:'#fff',
-            borderRadius:'16px 16px 0 0',padding:'20px 16px 30px'}}
-            onClick={e=>e.stopPropagation()}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
-              <span style={{fontWeight:700,color:'#042C53',fontSize:'0.9rem'}}>Question Navigator</span>
-              <button onClick={()=>setShowMobileNav(false)}
-                style={{background:'none',border:'none',fontSize:22,color:'#888',cursor:'pointer',lineHeight:1}}>×</button>
-            </div>
-            <div style={{...S.navGrid, gridTemplateColumns:'repeat(8,1fr)'}}>
-              {questions.map((qItem,i) => {
-                const ans = answers[qItem._id]
-                const answered = ans!==undefined && ans!=='' && !(Array.isArray(ans)&&ans.length===0)
-                const state = i===currentIndex ? 'current' : answered ? 'answered' : 'default'
-                return <button key={qItem._id} onClick={()=>goTo(i)} style={S.navBtn(state)}>{i+1}</button>
-              })}
-            </div>
-            <div style={{display:'flex',gap:16,marginTop:12,flexWrap:'wrap'}}>
-              {[['#7F77DD','Current'],['#1D9E75','Answered'],['#D3D1C7','Unanswered']].map(([c,l])=>(
-                <div key={l} style={{display:'flex',alignItems:'center',gap:5,fontSize:'0.72rem',color:'#5F5E5A'}}>
-                  <div style={{width:10,height:10,borderRadius:3,background:c,flexShrink:0}}/>{l}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-
-      <div className="page-title" style={{marginBottom:'2rem'}}>
+      <div className="page-title" data-aos="fade" style={{ marginBottom: '2rem' }}>
         <div className="heading"><div className="container">
           <div className="row d-flex justify-content-center text-center">
             <div className="col-lg-8">
               <h1>{displayName}</h1>
-              <p className="mb-0">IITM Statistics 2 — Week {weekNum} Assessment ({questions.length} questions)</p>
+              <p className="mb-0">IITM Statistics II Assessment</p>
             </div>
           </div>
         </div></div>
         <nav className="breadcrumbs"><div className="container"><ol>
           <li><Link to="/">Home</Link></li>
-          <li><Link to="/courses/statistics2">Statistics 2</Link></li>
+          <li><Link to="/courses/statistics2">IITM Statistics 2</Link></li>
           <li className="current">{displayName}</li>
         </ol></div></nav>
       </div>
 
-
       <div className="container mb-5">
-        <div className="row justify-content-center">
-          <div className="col-12 col-md-8 col-lg-8">
-            <div className="mb-3">
-              <div className="d-flex justify-content-between mb-1">
-                <small className="text-muted">Question {currentIndex+1} of {questions.length}</small>
-                <small className="text-muted">{answeredCount} answered</small>
-              </div>
-              <div style={S.progBar}><div style={S.progFill(progress)}/></div>
-            </div>
+        <div className="row g-4">
+          <div className="col-lg-8">
+            <div className="card border-0 shadow-sm" style={{ borderRadius: 16 }}>
+              <div className="card-body p-4" ref={questionRef}>
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <span className="text-muted small">Question {currentIndex + 1} of {questions.length}</span>
+                  <div className="d-flex gap-2 align-items-center flex-wrap">
+                    <span className={`badge ${isAnswered ? 'bg-success' : 'bg-secondary'}`}>
+                      {isAnswered ? 'Answered' : 'Unanswered'}
+                    </span>
+                    <span className="badge bg-secondary">{q.type}</span>
+                    <span className="badge"
+                      style={{ background: diffColor[q.difficulty] || '#6c757d', color: q.difficulty === 'medium' ? '#333' : '#fff' }}>
+                      {q.difficulty}
+                    </span>
+                    <span className="badge bg-light text-dark border">{q.points || 1} pt{(q.points || 1) !== 1 ? 's' : ''}</span>
+                  </div>
+                </div>
 
+                <div className="progress mb-4" style={{ height: 6 }}>
+                  <div className="progress-bar bg-primary" style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }} />
+                </div>
 
-            <div style={S.qCard} ref={questionRef}>
-              <div style={S.badgeStrip}>
-                <span className={`badge bg-${DIFF_COLORS[q.difficulty]||'secondary'}`} style={{fontSize:'0.75rem'}}>{q.difficulty}</span>
-                <span className="badge" style={{background:topicColor,fontSize:'0.75rem'}}>{q.originalTopic||q.topic||`Week ${weekNum}`}</span>
-                <span className="badge" style={{background:'#CECBF6',color:'#3C3489',fontSize:'0.75rem',textTransform:'capitalize'}}>
-                  {q.type?.replace(/_/g,' ')}
-                </span>
-                {q.points > 1 && <span className="badge" style={{background:'#CECBF6',color:'#3C3489',fontSize:'0.75rem'}}>{q.points} pts</span>}
-                <span style={S.qNumBadge}>Q {currentIndex+1}</span>
-              </div>
-              <div style={S.qBody}>
-                <h5 style={S.qText} dangerouslySetInnerHTML={{ __html: q.question_text }}/>
-                <GraphImage imageFile={q.image_file}/>
-                {renderInput(q)}
-              </div>
-            </div>
+                <p className="mb-4" style={{ fontSize: '1.05rem', lineHeight: 1.75 }}>
+                  <QuestionRenderer text={q.question_text} />
+                </p>
 
+                {q.type === 'multiple_choice' && Array.isArray(q.options) && (
+                  <div>
+                    {q.options.map((opt, oi) => (
+                      <div key={oi}
+                        onClick={() => setAnswer(currentIndex, opt.option_id)}
+                        className={`d-flex align-items-center gap-2 mb-2 p-3 rounded border ${userAns === opt.option_id ? 'border-primary bg-primary bg-opacity-10' : ''}`}
+                        style={{ cursor: 'pointer', transition: 'all 0.15s' }}>
+                        <div style={{
+                          width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                          border: `2px solid ${userAns === opt.option_id ? '#0d6efd' : '#adb5bd'}`,
+                          background: userAns === opt.option_id ? '#0d6efd' : 'transparent',
+                        }} />
+                        <strong className="me-1" style={{ minWidth: 20 }}>{opt.option_id}.</strong>
+                        <MathText text={opt.text} style={{ fontSize: '0.95rem' }} />
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-            <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
-              <button style={{...S.navPrev, opacity:currentIndex===0?0.4:1, cursor:currentIndex===0?'not-allowed':'pointer'}}
-                onClick={()=>currentIndex>0&&goTo(currentIndex-1)} disabled={currentIndex===0}>
-                <i className="bi bi-chevron-left me-1"/>Prev
-              </button>
-              {currentIndex < questions.length-1
-                ? <button style={S.navNext} onClick={()=>goTo(currentIndex+1)}>Next<i className="bi bi-chevron-right ms-1"/></button>
-                : <button style={S.navSubmit} onClick={doSubmit} disabled={saving}>
-                    {saving ? <><span className="spinner-border spinner-border-sm me-1"/>Saving…</> : <><i className="bi bi-check-circle me-1"/>Submit</>}
+                {q.type === 'multiple_select' && Array.isArray(q.options) && (
+                  <div>
+                    <p className="text-muted small mb-2">Select all that apply</p>
+                    {q.options.map((opt, oi) => {
+                      const selected = Array.isArray(userAns) && userAns.includes(opt.option_id)
+                      return (
+                        <div key={oi}
+                          onClick={() => toggleMSQ(currentIndex, opt.option_id)}
+                          className={`d-flex align-items-center gap-2 mb-2 p-3 rounded border ${selected ? 'border-primary bg-primary bg-opacity-10' : ''}`}
+                          style={{ cursor: 'pointer', transition: 'all 0.15s' }}>
+                          <div style={{
+                            width: 20, height: 20, borderRadius: 4, flexShrink: 0,
+                            border: `2px solid ${selected ? '#0d6efd' : '#adb5bd'}`,
+                            background: selected ? '#0d6efd' : 'transparent',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            {selected && <i className="bi bi-check text-white" style={{ fontSize: 12 }} />}
+                          </div>
+                          <strong className="me-1" style={{ minWidth: 20 }}>{opt.option_id}.</strong>
+                          <MathText text={opt.text} style={{ fontSize: '0.95rem' }} />
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {['numeric', 'numeric_input', 'interval_input', 'coordinate_input', 'set_notation', 'text_input'].includes(q.type) && (
+                  <div>
+                    <p className="text-muted small mb-2">
+                      {q.type === 'interval_input' ? 'Enter interval notation, e.g. (-∞, 3] or (-inf, 3]'
+                        : q.type === 'set_notation' ? 'Enter set notation, e.g. {x ∈ ℝ | x ≠ 0}'
+                        : q.type === 'coordinate_input' ? 'Enter coordinates, e.g. (2, 3)'
+                        : 'Enter your numeric answer'}
+                    </p>
+                    <input
+                      type="text"
+                      className="form-control form-control-lg"
+                      placeholder={
+                        q.type === 'interval_input' ? 'e.g., (-inf, 3], [1,5)∪(5,∞)'
+                          : q.type === 'set_notation' ? 'e.g., {x | x != 0}'
+                          : q.type === 'coordinate_input' ? 'e.g., (2, 3) or (-1/2, sqrt(2))'
+                          : 'e.g., 3.14, -5, sqrt(2), 1/3'
+                      }
+                      value={String(userAns ?? '')}
+                      onChange={e => setAnswer(currentIndex, e.target.value)}
+                      style={{ maxWidth: 320, fontFamily: 'monospace', fontSize: '1.1rem' }}
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                  </div>
+                )}
+
+                <div className="d-flex justify-content-between align-items-center mt-4">
+                  <button className="btn btn-outline-secondary" onClick={() => goTo(currentIndex - 1)} disabled={currentIndex === 0}>
+                    <i className="bi bi-arrow-left me-1" />Prev
                   </button>
-              }
+                  <span className="text-muted small">{answeredCount}/{questions.length} answered</span>
+                  {currentIndex < questions.length - 1
+                    ? <button className="btn btn-primary" onClick={() => goTo(currentIndex + 1)}>
+                        Next<i className="bi bi-arrow-right ms-1" />
+                      </button>
+                    : <button className="btn btn-success" onClick={() => handleSubmit(false)} disabled={saving}>
+                        {saving ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</> : <><i className="bi bi-check-lg me-1" />Submit</>}
+                      </button>
+                  }
+                </div>
+              </div>
             </div>
           </div>
 
+          <div className="col-lg-4">
+            <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 16 }}>
+              <div className="card-body p-3">
+                <h6 className="fw-bold mb-3">Question Navigator</h6>
+                <div className="d-flex flex-wrap gap-2">
+                  {questions.map((_, i) => {
+                    const a = answers[i]
+                    const done = a !== undefined && a !== null && a !== '' && !(Array.isArray(a) && !a.length)
+                    return (
+                      <button key={i} onClick={() => goTo(i)}
+                        className={`btn btn-sm ${i === currentIndex ? 'btn-primary' : done ? 'btn-success' : 'btn-outline-secondary'}`}
+                        style={{ width: 36, height: 36, padding: 0, fontWeight: 600 }}>
+                        {i + 1}
+                      </button>
+                    )
+                  })}
+                </div>
+                <hr />
+                <div className="d-flex justify-content-between small text-muted">
+                  <span><span className="badge bg-success me-1">■</span>Answered</span>
+                  <span><span className="badge bg-secondary me-1">■</span>Skipped</span>
+                  <span><span className="badge bg-primary me-1">■</span>Current</span>
+                </div>
+              </div>
+            </div>
 
-          <div className="col-md-4 col-lg-3 d-none d-md-block">
-            <QuestionNav questions={questions} answers={answers} currentIndex={currentIndex} goTo={goTo}/>
+            <div className="card border-0 shadow-sm" style={{ borderRadius: 16 }}>
+              <div className="card-body p-3 text-center">
+                <p className="text-muted small mb-2">{answeredCount}/{questions.length} answered</p>
+                <button className="btn btn-success w-100" onClick={() => handleSubmit(false)} disabled={saving}>
+                  {saving ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</> : <><i className="bi bi-check-lg me-1" />Submit Quiz</>}
+                </button>
+                <Link to="/courses/statistics2" className="btn btn-outline-secondary w-100 mt-2 btn-sm">
+                  <i className="bi bi-arrow-left me-1" />Exit
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      <button onClick={() => setShowCalc(v => !v)}
+        style={{
+          position: 'fixed', bottom: 20, right: 20, width: 48, height: 48,
+          borderRadius: '50%', background: 'linear-gradient(135deg,#667eea,#764ba2)',
+          border: 'none', color: '#fff', fontSize: 22, cursor: 'pointer',
+          boxShadow: '0 4px 12px rgba(102,126,234,0.5)', zIndex: 9998,
+        }}>
+        🧮
+      </button>
+      {showCalc && <Calculator onClose={() => setShowCalc(false)} />}
     </main>
   )
 }
 
-
 export default Stats2Quiz
-
-
-
