@@ -1599,7 +1599,7 @@ router.get('/algorithm-submissions', async (req, res) => {
 //This are PDSA routes:
 
 // GET coding submissions - FIXED: using pdsaCodingSubmission
-router.get('/coding-submissions', async (req, res) => {
+router.get('/pdsa/coding-submissions', async (req, res) => {
   try {
     const { username, email, topic, date } = req.query;
 
@@ -1687,7 +1687,7 @@ router.get('/pdsa-submissions', async (req, res) => {
 });
 
 // GET interview submissions
-router.get('/interview-submissions', async (req, res) => {
+router.get('/pdsa/interview-submissions', async (req, res) => {
     try {
         const { username, email, topic, type, date } = req.query;
         
@@ -1738,7 +1738,7 @@ router.get('/interview-submissions', async (req, res) => {
 });
 
 // POST interview submission
-router.post('/interview-submission', async (req, res) => {
+router.post('/pdsa/interview-submission', async (req, res) => {
     try {
         const submissionData = req.body;
         
@@ -1795,7 +1795,7 @@ router.post('/interview-submission', async (req, res) => {
 });
 
 // Fetching questions with type interview from collection
-router.get('/interview', async (req, res) => {
+router.get('/pdsa/interview', async (req, res) => {
     try {
         const { topic, type, codingCount = 3, pdsaCount = 2 } = req.query;
 
@@ -1848,7 +1848,7 @@ router.get('/interview', async (req, res) => {
 });
 
 // POST submit coding quiz results - FIXED: using pdsaCodingSubmission
-router.post('/coding-submission', async (req, res) => {
+router.post('/pdsa/coding-submission', async (req, res) => {
     try {
         const submissionData = req.body;
         
@@ -1920,7 +1920,7 @@ router.post('/coding-submission', async (req, res) => {
 });
 
 // GET random coding questions by difficulty and topic - FIXED: using pdsaCodingQuestion
-router.get('/coding-questions', async (req, res) => {
+router.get('/pdsa/coding-questions', async (req, res) => {
     try {
         const { difficulty, topic, limit = 5 } = req.query;
         
@@ -2031,7 +2031,7 @@ function shuffleArray(array) {
     return shuffled;
 }
 
-router.get('/questions/:topic', async (req, res) => {
+router.get('/pdsa/questions/:topic', async (req, res) => {
     try {
         const { topic } = req.params;
         const limit = parseInt(req.query.limit) || 50;
