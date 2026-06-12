@@ -138,7 +138,7 @@ const ReviewPage = ({ results, onRetake, course, week }) => {
                   <div className="mt-3 ms-5 ps-2">
                     {/* Code snippet */}
                     {qr.code_snippet && (
-                      <pre className="bg-dark text-light rounded p-3 mb-3" style={{ fontSize: '0.85rem', overflowX: 'auto' }}>
+                      <pre className="bg-light text-dark rounded p-3 mb-4" style={{ fontSize: '0.85rem', overflowX: 'auto' }}>
                         <code>{qr.code_snippet}</code>
                       </pre>
                     )}
@@ -479,7 +479,7 @@ const QuizPage = () => {
 
                 {/* Code snippet */}
                 {q.code_snippet && (
-                  <pre className="bg-dark text-light rounded p-3 mb-4" style={{ fontSize: '0.85rem', overflowX: 'auto' }}>
+                  <pre className="bg-light text-dark rounded p-3 mb-4" style={{ fontSize: '0.85rem', overflowX: 'auto' }}>
                     <code>{q.code_snippet}</code>
                   </pre>
                 )}
