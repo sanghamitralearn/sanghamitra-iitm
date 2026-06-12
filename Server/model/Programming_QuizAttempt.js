@@ -57,9 +57,5 @@ QuizAttemptSchema.index({ email: 1, course: 1, week: 1 });
 QuizAttemptSchema.index({ email: 1, submitted_at: -1 });
 QuizAttemptSchema.index({ course: 1, week: 1, percentage: -1 });
 
+module.exports = mongoose.model('ProgrammingQuizAttempt', QuizAttemptSchema, 'programming_quiz_attempts');
 
-module.exports = mongoose.model(
-  'QuizAttempt',
-  QuizAttemptSchema,
-  'programming_quiz_attempts'
-);
