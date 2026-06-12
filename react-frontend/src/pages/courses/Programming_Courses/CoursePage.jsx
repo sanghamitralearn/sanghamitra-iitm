@@ -152,6 +152,7 @@ const CoursePage = () => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [attempts, setAttempts] = useState([])
+  const [codingProgress, setCodingProgress] = useState([])
 
   const config = COURSE_CONFIG[course?.toLowerCase()]
 
@@ -163,6 +164,7 @@ const CoursePage = () => {
         if (res.data?.email) {
           setUser(res.data)
           fetchAttempts(res.data.email)
+          fetchCodingProgress(res.data.email)
         }
       } catch {
         // not logged in
@@ -185,11 +187,28 @@ const CoursePage = () => {
     }
   }
 
+  const fetchCodingProgress = async (email) => {
+    try {
+      const res = await axios.get(
+        `${API}/api/coding-progress?email=${encodeURIComponent(email)}&course=${course.toLowerCase()}`,
+        { withCredentials: true }
+      )
+      if (res.data?.progress) setCodingProgress(res.data.progress)
+    } catch {
+      // progress unavailable
+    }
+  }
+
   // Get best attempt for a given week
   const getBestAttempt = (weekNum) => {
     const weekAttempts = attempts.filter(a => a.week === weekNum)
     if (!weekAttempts.length) return null
     return weekAttempts.sort((a, b) => b.percentage - a.percentage)[0]
+  }
+
+  // Get coding progress for a given week
+  const getCodingProgress = (weekNum) => {
+    return codingProgress.find(p => p.week === weekNum) || null
   }
 
   if (loading) return (
@@ -269,6 +288,7 @@ const CoursePage = () => {
             const best = user ? getBestAttempt(w.week) : null
             const pct = best ? Math.round(best.percentage) : 0
             const attempted = !!best
+            const codingAttempted = user ? !!getCodingProgress(w.week) : false
             const lastDate = best?.submitted_at
               ? new Date(best.submitted_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
               : null
@@ -325,22 +345,36 @@ const CoursePage = () => {
                         </div>
                       )}
 
-                      {/* Button */}
-                      <div className="col-auto">
+                      {/* Buttons */}
+                      <div className="col-auto d-flex flex-column gap-2">
                         {user
-                          ? <Link
-                              to={`/quiz/${course}/week/${w.week}`}
-                              state={{ quizName: `Week ${w.week}: ${w.topic}`, course, week: w.week }}
-                              className="btn btn-sm"
-                              style={{
-                                background: attempted ? config.color : 'transparent',
-                                color: attempted ? '#fff' : config.color,
-                                border: `1px solid ${config.color}`,
-                                borderRadius: 8, minWidth: 110,
-                              }}>
-                              {attempted ? <><i className="bi bi-arrow-clockwise me-1"></i>Retake</> : <><i className="bi bi-play-fill me-1"></i>Take Quiz</>}
-                            </Link>
-                          : <Link to="/login" className="btn btn-sm btn-outline-secondary" style={{ minWidth: 110, opacity: 0.7 }}>
+                          ? <>
+                              <Link
+                                to={`/quiz/${course}/week/${w.week}`}
+                                state={{ quizName: `Week ${w.week}: ${w.topic}`, course, week: w.week }}
+                                className="btn btn-sm"
+                                style={{
+                                  background: attempted ? config.color : 'transparent',
+                                  color: attempted ? '#fff' : config.color,
+                                  border: `1px solid ${config.color}`,
+                                  borderRadius: 8, minWidth: 130,
+                                }}>
+                                {attempted ? <><i className="bi bi-arrow-clockwise me-1"></i>Retake MCQ</> : <><i className="bi bi-play-fill me-1"></i>Take MCQ Quiz</>}
+                              </Link>
+                              <Link
+                                to={`/coding/${course}/week/${w.week}`}
+                                state={{ quizName: `Week ${w.week}: ${w.topic}`, course, week: w.week }}
+                                className="btn btn-sm"
+                                style={{
+                                  background: codingAttempted ? '#343a40' : 'transparent',
+                                  color: codingAttempted ? '#fff' : '#343a40',
+                                  border: '1px solid #343a40',
+                                  borderRadius: 8, minWidth: 130,
+                                }}>
+                                {codingAttempted ? <><i className="bi bi-arrow-clockwise me-1"></i>Retake Coding</> : <><i className="bi bi-code-slash me-1"></i>Take Coding Quiz</>}
+                              </Link>
+                            </>
+                          : <Link to="/login" className="btn btn-sm btn-outline-secondary" style={{ minWidth: 130, opacity: 0.7 }}>
                               <i className="bi bi-lock me-1"></i>Login
                             </Link>
                         }
