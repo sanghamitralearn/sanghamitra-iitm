@@ -1,4 +1,4 @@
-// model/Questions.js
+// model/Programming_Questions.js
 const mongoose = require('mongoose');
 
 
@@ -125,4 +125,4 @@ QuestionSchema.index({
   bloom_level: 1
 });
 
-module.exports = mongoose.model('questions',  QuestionSchema);
+module.exports = mongoose.model('programming_mcq_questions',  QuestionSchema);
