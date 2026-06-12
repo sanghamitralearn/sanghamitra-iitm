@@ -7,7 +7,7 @@ const QuestionResultSchema = new mongoose.Schema({
   // ── Links back to the attempt ───────────────────────────────────
   attempt_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'programming_quiz_attempts',
+    ref: 'ProgrammingQuizAttempt',
     required: true,
     index: true
   },
@@ -18,7 +18,7 @@ const QuestionResultSchema = new mongoose.Schema({
   // ── Links to the question ───────────────────────────────────────
   question_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'programming_questions',  // Your existing questions collection
+    ref: 'ProgrammingQuestion',  // Your existing questions collection
     required: true,
     index: true
   },
@@ -62,9 +62,4 @@ QuestionResultSchema.index({ email: 1, subtopic: 1 });
 QuestionResultSchema.index({ question_id: 1, is_correct: 1 });
 QuestionResultSchema.index({ email: 1, concept_tags: 1 });
 
-
-module.exports = mongoose.model(
-  'QuizResult',
-  QuestionResultSchema,
-  'programming_quiz_result'
-);
+module.exports = mongoose.model('ProgrammingQuizResult', QuestionResultSchema, 'programming_quiz_result');
