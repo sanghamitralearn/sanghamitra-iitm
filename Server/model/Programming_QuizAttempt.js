@@ -60,6 +60,6 @@ QuizAttemptSchema.index({ course: 1, week: 1, percentage: -1 });
 
 module.exports = mongoose.model(
   'QuizAttempt',
-  Programming_QuizAttempt,
+  QuizAttemptSchema,
   'programming_quiz_attempts'
 );
