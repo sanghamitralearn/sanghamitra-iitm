@@ -18,7 +18,7 @@ const QuestionResultSchema = new mongoose.Schema({
   // ── Links to the question ───────────────────────────────────────
   question_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'programming_mcq_questions',  // Your existing questions collection
+    ref: 'programming_questions',  // Your existing questions collection
     required: true,
     index: true
   },
