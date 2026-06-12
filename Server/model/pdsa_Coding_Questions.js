@@ -47,4 +47,4 @@ const questionSchema = new mongoose.Schema({
     }
 });
 
-module.exports = mongoose.model('coding_Question', questionSchema);
+module.exports = mongoose.model('pdsa_coding_questions', questionSchema);
