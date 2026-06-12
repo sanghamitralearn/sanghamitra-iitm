@@ -716,8 +716,8 @@ router.get('/iitm_stats2_questions_databases', async (req, res) => {
 
 
     const weekNum = parseInt(week);
-    if (isNaN(weekNum) || weekNum < 1 || weekNum > 12) {
-      return res.status(400).json({ error: 'week must be between 1 and 12' });
+    if (isNaN(weekNum) || ((weekNum < 1 || weekNum > 12) && weekNum !== 100)) {
+      return res.status(400).json({ error: 'week must be between 1 and 12, or 100 for the Midterm Assessment' });
     }
 
 
