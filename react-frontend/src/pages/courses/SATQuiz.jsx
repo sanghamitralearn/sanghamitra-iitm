@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import { SUBJECT_STYLE } from './subjectStyle'
+import SATScoreDashboard, { buildChapterItems } from './SATScoreDashboard'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
@@ -107,11 +109,8 @@ export const MathText = ({ text, style, className }) => {
 export const imgSrc = (filename) =>
   filename ? `/img/Graph_questions/${filename}` : null
 
-// ─── Subject accent colours ───────────────────────────────────────────────────
-export const SUBJECT_STYLE = {
-  'Reading & Writing': { gradient: 'linear-gradient(135deg,#198754,#20c997)', badge: '#198754' },
-  'Mathematics':       { gradient: 'linear-gradient(135deg,#003D8F,#0d6efd)', badge: '#003D8F' },
-}
+// ─── Subject accent colours (re-exported for backwards compatibility) ────────
+export { SUBJECT_STYLE }
 
 // ─── Normalise question type ──────────────────────────────────────────────────
 export function resolveType(q) {
@@ -303,59 +302,6 @@ export function calcMarks(q, userAns) {
   return { isCorrect: false, marksAwarded: 0 }
 }
 
-// ─── Score summary card (used by ReviewPage and SATFullTest combined report) ─
-export const ScoreSummaryCard = ({ results, style, title, actions }) => {
-  const scoreColor = results.percentage >= 60 ? '#28a745' : '#dc3545'
-
-  return (
-    <div className="card border-0 shadow-sm mb-4 text-center" style={{ borderRadius: 16 }}>
-      <div style={{ height: 6, background: style.gradient, borderRadius: '16px 16px 0 0' }} />
-      <div className="card-body py-4">
-        {title && <h5 className="mb-3">{title}</h5>}
-        <div className="row justify-content-center g-4 align-items-center">
-          <div className="col-auto">
-            <div style={{
-              width: 130, height: 130, borderRadius: '50%',
-              background: results.percentage >= 60
-                ? 'linear-gradient(135deg,#28a745,#20c997)'
-                : 'linear-gradient(135deg,#dc3545,#c82333)',
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center',
-            }}>
-              <span style={{ fontSize: 30, fontWeight: 700, color: '#fff' }}>{results.percentage}%</span>
-              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>
-                {results.score}/{results.maxScore} pts
-              </span>
-            </div>
-          </div>
-          <div className="col-auto d-flex flex-column justify-content-center text-start">
-            <h4 className="mb-2">
-              {results.percentage >= 80 ? '🏆 Excellent!'
-                : results.percentage >= 60 ? '👍 Good job!'
-                : '📚 Keep practicing!'}
-            </h4>
-            <p className="mb-1 text-muted">
-              Correct: <strong className="text-success">{results.correctAnswers}</strong> &nbsp;|&nbsp;
-              Wrong: <strong className="text-danger">{results.wrongAnswers}</strong> &nbsp;|&nbsp;
-              Unattempted: <strong className="text-secondary">{results.unattempted}</strong>
-            </p>
-            <p className="mb-0 text-muted">
-              Net Score: <strong style={{ color: scoreColor }}>{results.score}</strong> / {results.maxScore}
-              &nbsp;|&nbsp;Time: {Math.floor(results.totalTime / 60)}m {results.totalTime % 60}s
-            </p>
-          </div>
-        </div>
-
-        {actions && (
-          <div className="d-flex gap-2 justify-content-center mt-4">
-            {actions}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
 // ─── Per-question review item (used by ReviewPage and SATFullTest combined report) ─
 export const QuestionReviewItem = ({ q, idx, answer, res, isOpen, onToggle }) => {
   const borderColor = res?.unattempted ? '#6c757d' : res?.isCorrect ? '#28a745' : '#dc3545'
@@ -527,7 +473,7 @@ export const QuestionReviewItem = ({ q, idx, answer, res, isOpen, onToggle }) =>
 // ─── Review Page ──────────────────────────────────────────────────────────────
 const ReviewPage = ({ questions, answers, results, label, moduleNum, onRetake }) => {
   const [expanded, setExpanded] = useState(null)
-  const style = SUBJECT_STYLE[label] || SUBJECT_STYLE['Mathematics']
+  const chapterItems = buildChapterItems(questions, results.responses, label)
 
   return (
     <main className="main">
@@ -553,22 +499,15 @@ const ReviewPage = ({ questions, answers, results, label, moduleNum, onRetake })
       </div>
 
       <div className="container mb-5">
-        <ScoreSummaryCard
+        <SATScoreDashboard
           results={results}
-          style={style}
-          actions={
-            <>
-              <button className="btn btn-primary" onClick={onRetake}>
-                <i className="bi bi-arrow-clockwise me-1" />Retake
-              </button>
-              <Link to="/courses/sat" className="btn btn-outline-secondary">
-                <i className="bi bi-arrow-left me-1" />Back to SAT
-              </Link>
-            </>
-          }
+          chapterItems={chapterItems}
+          onRetake={onRetake}
+          heroTitle={`Module ${moduleNum} Completed!`}
         />
 
         {/* Per-question review */}
+        <h5 className="fw-bold mb-3 mt-4">Question-by-Question Review</h5>
         {questions.map((q, idx) => (
           <QuestionReviewItem
             key={q._id || idx}
