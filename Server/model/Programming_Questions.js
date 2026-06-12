@@ -126,3 +126,6 @@ QuestionSchema.index({
 });
 
 module.exports = mongoose.model('ProgrammingQuestion', QuestionSchema, 'programming_questions');
+
+// ✅ Model name: 'ProgrammingQuestion'
+// ✅ Collection name: 'programming_questions'
