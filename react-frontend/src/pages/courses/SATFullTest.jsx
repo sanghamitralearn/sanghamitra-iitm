@@ -9,7 +9,8 @@ import SATScoreDashboard, { buildChapterItems } from './SATScoreDashboard'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
-// Official Digital SAT structure: RW Module 1 → RW Module 2 → Math Module 1 → Math Module 2
+// Official Digital SAT structure: RW Module 1 & 2, then Math Module 1 & 2
+// (students may now attempt these in any order)
 const STAGES = [
   { key: 'rw1',   subject: 'Reading and Writing', scoreSubject: 'Reading & Writing', label: 'Reading & Writing', module: 1, questionCount: 27, timeMin: 32 },
   { key: 'rw2',   subject: 'Reading and Writing', scoreSubject: 'Reading & Writing', label: 'Reading & Writing', module: 2, questionCount: 27, timeMin: 32 },
@@ -24,6 +25,11 @@ const FULL_TEST_STYLE = { gradient: 'linear-gradient(135deg, #198754, #0d6efd)',
 
 const EMPTY_ANSWERS = { rw1: {}, rw2: {}, math1: {}, math2: {} }
 const EMPTY_TIMES = () => ({ rw1: {}, rw2: {}, math1: {}, math2: {} })
+const EMPTY_INDEXES = { rw1: 0, rw2: 0, math1: 0, math2: 0 }
+
+function isAnswered(a) {
+  return a !== undefined && a !== null && a !== '' && !(Array.isArray(a) && !a.length)
+}
 
 function shuffle(arr) {
   const a = [...arr]
@@ -51,7 +57,7 @@ function mergeResults(results) {
 const SATFullTest = () => {
   const navigate = useNavigate()
 
-  // phase: loading | error | intro | quiz | transition | review
+  // phase: loading | error | overview | quiz | review
   const [phase, setPhase] = useState('loading')
   const [error, setError] = useState(null)
   const [debugInfo, setDebugInfo] = useState(null)
@@ -59,9 +65,9 @@ const SATFullTest = () => {
   const [stageIndex, setStageIndex] = useState(0)
   const [stageQuestions, setStageQuestions] = useState(null)
   const [stageAnswers, setStageAnswers] = useState(EMPTY_ANSWERS)
+  const [currentIndexByStage, setCurrentIndexByStage] = useState(EMPTY_INDEXES)
   const [stageResults, setStageResults] = useState({})
   const [combinedResults, setCombinedResults] = useState(null)
-  const [currentIndex, setCurrentIndex] = useState(0)
   const [expanded, setExpanded] = useState(null)
   const [saving, setSaving] = useState(false)
   const [tabWarning, setTabWarning] = useState(false)
@@ -129,7 +135,7 @@ const SATFullTest = () => {
         math1: math.slice(0, mathHalf).slice(0, STAGES[2].questionCount),
         math2: math.slice(mathHalf).slice(0, STAGES[3].questionCount),
       })
-      setPhase('intro')
+      setPhase('overview')
     } catch {
       setError('Failed to load questions. Please try again.')
       setPhase('error')
@@ -139,6 +145,7 @@ const SATFullTest = () => {
   const stage = STAGES[stageIndex]
   const questions = stageQuestions ? stageQuestions[stage.key] : []
   const answers = stageAnswers[stage.key]
+  const currentIndex = currentIndexByStage[stage.key]
 
   const setAnswer = (idx, val) => setStageAnswers(prev => ({
     ...prev, [stage.key]: { ...prev[stage.key], [idx]: val },
@@ -155,24 +162,37 @@ const SATFullTest = () => {
     }
   })
 
+  // Only meaningful while actively viewing a question in the quiz phase
   const recordTime = () => {
+    if (phase !== 'quiz') return
     const elapsed = Math.round((Date.now() - questionStartRef.current) / 1000)
     timesRef.current[stage.key][currentIndex] = elapsed
     questionStartRef.current = Date.now()
   }
 
-  const goTo = (idx) => { recordTime(); setCurrentIndex(idx) }
+  const goTo = (idx) => {
+    recordTime()
+    setCurrentIndexByStage(prev => ({ ...prev, [stage.key]: idx }))
+    questionStartRef.current = Date.now()
+  }
 
-  const startStage = (idx) => {
+  // Jump to any module, from the overview or from another module — preserves
+  // each module's progress and last-viewed question.
+  const selectStage = (idx) => {
+    recordTime()
     setStageIndex(idx)
-    setCurrentIndex(0)
     questionStartRef.current = Date.now()
     setPhase('quiz')
   }
 
-  const computeStageResult = () => {
-    const qs = stageQuestions[stage.key]
-    const ans = stageAnswers[stage.key]
+  const backToOverview = () => {
+    recordTime()
+    setPhase('overview')
+  }
+
+  const computeStageResult = (stageKey) => {
+    const qs = stageQuestions[stageKey]
+    const ans = stageAnswers[stageKey]
     let correctCount = 0, wrongCount = 0, unattemptedCount = 0, totalScore = 0
     const maxScore = qs.reduce((s, q) => s + (q.points || 1), 0)
     const responses = []
@@ -193,7 +213,7 @@ const SATFullTest = () => {
       })
     })
 
-    const totalTime = Object.values(timesRef.current[stage.key]).reduce((a, b) => a + b, 0)
+    const totalTime = Object.values(timesRef.current[stageKey]).reduce((a, b) => a + b, 0)
     const percentage = maxScore > 0 ? Math.round(Math.max(0, totalScore / maxScore) * 100) : 0
 
     return {
@@ -202,27 +222,22 @@ const SATFullTest = () => {
     }
   }
 
-  const handleStageSubmit = async (forced = false) => {
-    if (!forced) {
-      const qs = stageQuestions[stage.key]
-      const ans = stageAnswers[stage.key]
-      const unanswered = qs.filter((_, i) => {
-        const a = ans[i]
-        return a === undefined || a === null || a === '' || (Array.isArray(a) && !a.length)
-      }).length
-      if (unanswered > 0 && !window.confirm(`${unanswered} question(s) unanswered in this module. Submit anyway?`)) return
-    }
+  const finishTest = async () => {
+    const totalUnanswered = STAGES.reduce((sum, s) => {
+      const qs = stageQuestions[s.key]
+      const ans = stageAnswers[s.key]
+      return sum + qs.filter((_, i) => !isAnswered(ans[i])).length
+    }, 0)
+    if (totalUnanswered > 0 && !window.confirm(
+      `${totalUnanswered} question(s) across all modules are unanswered. Finish the test anyway?`
+    )) return
+
     recordTime()
 
-    const result = computeStageResult()
-    const newStageResults = { ...stageResults, [stage.key]: result }
-    setStageResults(newStageResults)
-
-    if (stageIndex < STAGES.length - 1) {
-      setPhase('transition')
-    } else {
-      await finalizeTest(newStageResults)
-    }
+    const allResults = {}
+    STAGES.forEach(s => { allResults[s.key] = computeStageResult(s.key) })
+    setStageResults(allResults)
+    await finalizeTest(allResults)
   }
 
   const finalizeTest = async (allResults) => {
@@ -261,7 +276,7 @@ const SATFullTest = () => {
 
   const handleRetake = () => {
     setStageIndex(0)
-    setCurrentIndex(0)
+    setCurrentIndexByStage(EMPTY_INDEXES)
     setStageAnswers(EMPTY_ANSWERS)
     setStageResults({})
     setCombinedResults(null)
@@ -317,12 +332,13 @@ const SATFullTest = () => {
     </div>
   )
 
-  // ── Intro / Transition between modules ──────────────────────────────────
-  if (phase === 'intro' || phase === 'transition') {
-    const nextIndex = phase === 'intro' ? 0 : stageIndex + 1
-    const nextStage = STAGES[nextIndex]
-    const nextStyle = SUBJECT_STYLE[nextStage.label] || FULL_TEST_STYLE
-    const prevStage = phase === 'transition' ? STAGES[stageIndex] : null
+  // ── Module overview / hub ────────────────────────────────────────────────
+  if (phase === 'overview') {
+    const totalAnswered = STAGES.reduce((sum, s) => {
+      const qs = stageQuestions[s.key]
+      const ans = stageAnswers[s.key]
+      return sum + qs.filter((_, i) => isAnswered(ans[i])).length
+    }, 0)
 
     return (
       <main className="main">
@@ -351,57 +367,84 @@ const SATFullTest = () => {
         </div>
 
         <div className="container mb-5">
-          <div className="card border-0 shadow-sm mx-auto text-center" style={{ maxWidth: 600, borderRadius: 18, overflow: 'hidden' }}>
+          <div className="card border-0 shadow-sm mx-auto mb-4" style={{ maxWidth: 900, borderRadius: 18, overflow: 'hidden' }}>
             <div style={{ height: 6, background: FULL_TEST_STYLE.gradient }} />
-            <div className="card-body p-4 p-md-5">
-              {phase === 'intro' ? (
-                <>
-                  <h3 className="mb-2">Ready to begin?</h3>
-                  <p className="text-muted mb-4">
-                    You'll complete all four modules back-to-back, just like the real Digital SAT:
-                    Reading &amp; Writing Module 1 &amp; 2, then Mathematics Module 1 &amp; 2.
-                    Your combined score report will be shown at the end.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <h3 className="mb-2">
-                    <i className="bi bi-check-circle-fill text-success me-2" />
-                    Module Complete
-                  </h3>
-                  <p className="text-muted mb-4">
-                    {prevStage.label} — Module {prevStage.module} submitted ({stageQuestions[prevStage.key].length} questions).
-                  </p>
-                </>
-              )}
-
-              <hr />
-
-              <p className="text-muted text-uppercase small fw-bold mb-2" style={{ letterSpacing: 1 }}>Up Next</p>
-              <div className="d-flex align-items-center justify-content-center gap-3 mb-4">
-                <span className="badge text-white" style={{ background: nextStyle.gradient, fontSize: '0.85rem', padding: '0.5rem 0.9rem' }}>
-                  MODULE {nextIndex + 1} / {STAGES.length}
-                </span>
-                <div className="text-start">
-                  <div className="fw-bold">{nextStage.label} — Module {nextStage.module}</div>
-                  <small className="text-muted">{nextStage.questionCount} questions · {nextStage.timeMin} min</small>
-                </div>
+            <div className="card-body p-4 text-center">
+              <h3 className="mb-2">Choose any module to begin</h3>
+              <p className="text-muted mb-3">
+                Attempt the modules in any order you like, switch between them freely, skip and revisit
+                questions, and finish whenever you're ready. Your progress is saved automatically as you go.
+              </p>
+              <div className="progress mx-auto" style={{ height: 8, maxWidth: 480 }}>
+                <div
+                  className="progress-bar"
+                  style={{ width: `${(totalAnswered / TOTAL_QUESTIONS) * 100}%`, background: FULL_TEST_STYLE.gradient }}
+                />
               </div>
-
-              <div className="d-flex gap-2 justify-content-center">
-                <button
-                  className="btn text-white"
-                  style={{ background: nextStyle.gradient, borderRadius: 8, padding: '0.5rem 1.75rem' }}
-                  onClick={() => startStage(nextIndex)}
-                >
-                  <i className="bi bi-play-fill me-1" />
-                  {phase === 'intro' ? 'Start Full Test' : `Continue to Module ${nextIndex + 1}`}
-                </button>
-                <Link to="/courses/sat" className="btn btn-outline-secondary">
-                  <i className="bi bi-arrow-left me-1" />Exit
-                </Link>
-              </div>
+              <p className="text-muted small mt-2 mb-0">{totalAnswered}/{TOTAL_QUESTIONS} questions answered</p>
             </div>
+          </div>
+
+          <div className="row g-3 justify-content-center">
+            {STAGES.map((s, i) => {
+              const qs = stageQuestions[s.key]
+              const ans = stageAnswers[s.key]
+              const answered = qs.filter((_, idx) => isAnswered(ans[idx])).length
+              const total = qs.length
+              const sStyle = SUBJECT_STYLE[s.label] || FULL_TEST_STYLE
+              const status = answered === 0 ? 'Not Started' : answered === total ? 'Completed' : 'In Progress'
+              const statusBg = answered === 0 ? '#f8f9fa' : answered === total ? '#d4edda' : '#fff3cd'
+              const statusColor = answered === 0 ? '#6c757d' : answered === total ? '#155724' : '#856404'
+
+              return (
+                <div className="col-md-6 col-lg-5" key={s.key}>
+                  <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 16, overflow: 'hidden' }}>
+                    <div style={{ height: 5, background: sStyle.gradient }} />
+                    <div className="card-body p-4">
+                      <div className="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                          <h5 className="mb-0">{s.label}</h5>
+                          <small className="text-muted">Module {s.module}</small>
+                        </div>
+                        <span className="badge" style={{ background: statusBg, color: statusColor }}>{status}</span>
+                      </div>
+                      <p className="text-muted small mb-2">{total} questions · {s.timeMin} min</p>
+                      <div className="progress mb-3" style={{ height: 6 }}>
+                        <div
+                          className="progress-bar"
+                          style={{ width: `${(answered / total) * 100}%`, background: sStyle.gradient }}
+                        />
+                      </div>
+                      <p className="text-muted small mb-3">{answered}/{total} answered</p>
+                      <button
+                        className="btn text-white w-100"
+                        style={{ background: sStyle.gradient, borderRadius: 8 }}
+                        onClick={() => selectStage(i)}
+                      >
+                        <i className="bi bi-play-fill me-1" />
+                        {answered === 0 ? 'Start Module' : answered === total ? 'Review / Edit' : 'Continue'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="d-flex gap-2 justify-content-center mt-4">
+            <button
+              className="btn text-white"
+              style={{ background: FULL_TEST_STYLE.gradient, borderRadius: 8, padding: '0.6rem 2rem' }}
+              onClick={finishTest}
+              disabled={saving}
+            >
+              {saving
+                ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</>
+                : <><i className="bi bi-flag-fill me-1" />Finish Test &amp; View Score Report</>}
+            </button>
+            <Link to="/courses/sat" className="btn btn-outline-secondary">
+              <i className="bi bi-arrow-left me-1" />Exit
+            </Link>
           </div>
         </div>
       </main>
@@ -411,7 +454,6 @@ const SATFullTest = () => {
   // ── Active quiz module ───────────────────────────────────────────────────
   if (phase === 'quiz') {
     const style = SUBJECT_STYLE[stage.label] || FULL_TEST_STYLE
-    const isLastStage = stageIndex === STAGES.length - 1
 
     return (
       <main className="main">
@@ -442,27 +484,32 @@ const SATFullTest = () => {
           </nav>
         </div>
 
-        {/* Stage progress strip */}
+        {/* Module switcher — jump to any module at any time */}
         <div className="container mb-3">
           <div className="d-flex gap-2 flex-wrap justify-content-center">
             {STAGES.map((s, i) => {
               const sStyle = SUBJECT_STYLE[s.label] || FULL_TEST_STYLE
-              const done = i < stageIndex
               const current = i === stageIndex
+              const qs = stageQuestions[s.key]
+              const ans = stageAnswers[s.key]
+              const answered = qs.filter((_, idx) => isAnswered(ans[idx])).length
+              const done = answered === qs.length
               return (
-                <span
+                <button
                   key={s.key}
-                  className="badge"
+                  type="button"
+                  className="badge border-0"
+                  onClick={() => selectStage(i)}
                   style={{
                     background: current ? sStyle.gradient : done ? '#e9ecef' : '#f8f9fa',
                     color: current ? '#fff' : done ? '#495057' : '#adb5bd',
                     border: current ? 'none' : '1px solid #e8ecf0',
-                    fontSize: '0.75rem', padding: '0.4rem 0.7rem',
+                    fontSize: '0.75rem', padding: '0.4rem 0.7rem', cursor: 'pointer',
                   }}
                 >
                   {done && <i className="bi bi-check-lg me-1" />}
-                  {i + 1}. {s.label} — M{s.module}
-                </span>
+                  {i + 1}. {s.label} — M{s.module} ({answered}/{qs.length})
+                </button>
               )
             })}
           </div>
@@ -478,10 +525,9 @@ const SATFullTest = () => {
           style={style}
           moduleNum={stage.module}
           saving={saving}
-          onSubmit={() => handleStageSubmit(false)}
-          submitLabel={isLastStage ? 'Submit Full Test' : 'Submit Module'}
-          exitTo="/courses/sat"
-          exitLabel="Exit Full Test"
+          mode="full"
+          onBackToOverview={backToOverview}
+          onFinishTest={finishTest}
         />
       </main>
     )
