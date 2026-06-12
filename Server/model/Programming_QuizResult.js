@@ -1,5 +1,5 @@
 
-// model/QuizResultSchema.js
+// model/Programming_QuizResult.js
 
 const mongoose = require('mongoose');
 
@@ -7,7 +7,7 @@ const QuestionResultSchema = new mongoose.Schema({
   // ── Links back to the attempt ───────────────────────────────────
   attempt_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'QuizAttempt',
+    ref: 'programming_quiz_attempts',
     required: true,
     index: true
   },
@@ -18,7 +18,7 @@ const QuestionResultSchema = new mongoose.Schema({
   // ── Links to the question ───────────────────────────────────────
   question_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'questions',  // Your existing questions collection
+    ref: 'programming_mcq_questions',  // Your existing questions collection
     required: true,
     index: true
   },
@@ -65,6 +65,6 @@ QuestionResultSchema.index({ email: 1, concept_tags: 1 });
 
 module.exports = mongoose.model(
   'QuizResult',
-  QuestionResultSchema,
-  'quiz_result'
+  Programming_QuizResult,
+  'programming_quiz_result'
 );
