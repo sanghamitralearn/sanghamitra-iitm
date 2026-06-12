@@ -125,4 +125,4 @@ QuestionSchema.index({
   bloom_level: 1
 });
 
-module.exports = mongoose.model('programming_mcq_questions',  QuestionSchema);
+module.exports = mongoose.model('ProgrammingQuestion', QuestionSchema, 'programming_questions');
