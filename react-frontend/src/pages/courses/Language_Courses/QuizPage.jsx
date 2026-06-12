@@ -4,6 +4,13 @@ import axios from 'axios'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
+// ─── Helper function to format multi-line text ───────────────────────────────
+const formatMultiLineText = (text) => {
+  if (!text) return ''
+  // Handle both actual newlines and escaped \n
+  return text.replace(/\\n/g, '\n')
+}
+
 // ─── Review Page ──────────────────────────────────────────────────────────────
 const ReviewPage = ({ results, onRetake, course, week }) => {
   const { stats, question_results: qrs } = results
@@ -136,7 +143,7 @@ const ReviewPage = ({ results, onRetake, course, week }) => {
                       </pre>
                     )}
 
-                    {/* MCQ / MSQ options */}
+                    {/* MCQ / MSQ options with multi-line support */}
                     {(qr.question_type === 'mcq' || qr.question_type === 'msq') && Array.isArray(qr.options) && (
                       <div className="mb-3">
                         {qr.options.map((opt, oi) => {
@@ -147,11 +154,15 @@ const ReviewPage = ({ results, onRetake, course, week }) => {
                           const userPicked = userIds.includes(opt.id) || userIds.includes(opt.text)
                           const bg = isCorrectOpt ? '#d4edda' : userPicked ? '#f8d7da' : 'transparent'
                           return (
-                            <div key={oi} className="d-flex align-items-center gap-2 mb-1 px-2 py-1 rounded" style={{ background: bg }}>
-                              {isCorrectOpt && <i className="bi bi-check-circle-fill text-success" />}
-                              {userPicked && !isCorrectOpt && <i className="bi bi-x-circle-fill text-danger" />}
-                              {!isCorrectOpt && !userPicked && <i className="bi bi-circle text-muted" />}
-                              <span style={{ fontSize: '0.9rem' }}>{opt.text}</span>
+                            <div key={oi} className="d-flex align-items-start gap-2 mb-1 px-2 py-1 rounded" style={{ background: bg }}>
+                              <div className="mt-1">
+                                {isCorrectOpt && <i className="bi bi-check-circle-fill text-success" />}
+                                {userPicked && !isCorrectOpt && <i className="bi bi-x-circle-fill text-danger" />}
+                                {!isCorrectOpt && !userPicked && <i className="bi bi-circle text-muted" />}
+                              </div>
+                              <span style={{ fontSize: '0.9rem', whiteSpace: 'pre-line', lineHeight: '1.5' }}>
+                                {formatMultiLineText(opt.text)}
+                              </span>
                             </div>
                           )
                         })}
@@ -478,26 +489,28 @@ const QuizPage = () => {
                   <img src={q.image_url} alt="question" className="img-fluid rounded mb-4" style={{ maxHeight: 300 }} />
                 )}
 
-                {/* MCQ */}
+                {/* MCQ with multi-line support */}
                 {q.question_type === 'mcq' && Array.isArray(q.options) && (
                   <div>
                     {q.options.map((opt) => (
                       <div key={opt.id}
                         onClick={() => setAnswer(currentIndex, opt.id)}
-                        className={`d-flex align-items-center gap-2 mb-2 p-3 rounded border ${userAns === opt.id ? 'border-primary bg-primary bg-opacity-10' : ''}`}
+                        className={`d-flex align-items-start gap-2 mb-2 p-3 rounded border ${userAns === opt.id ? 'border-primary bg-primary bg-opacity-10' : ''}`}
                         style={{ cursor: 'pointer', transition: 'all 0.15s' }}>
                         <div style={{
-                          width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                          width: 20, height: 20, borderRadius: '50%', flexShrink: 0, marginTop: '2px',
                           border: `2px solid ${userAns === opt.id ? '#0d6efd' : '#adb5bd'}`,
                           background: userAns === opt.id ? '#0d6efd' : 'transparent'
                         }} />
-                        <span style={{ fontSize: '0.95rem' }}>{opt.text}</span>
+                        <span style={{ fontSize: '0.95rem', whiteSpace: 'pre-line', lineHeight: '1.5', flex: 1 }}>
+                          {formatMultiLineText(opt.text)}
+                        </span>
                       </div>
                     ))}
                   </div>
                 )}
 
-                {/* MSQ */}
+                {/* MSQ with multi-line support */}
                 {q.question_type === 'msq' && Array.isArray(q.options) && (
                   <div>
                     <p className="text-muted small mb-2">Select all that apply</p>
@@ -506,17 +519,19 @@ const QuizPage = () => {
                       return (
                         <div key={opt.id}
                           onClick={() => toggleMSQ(currentIndex, opt.id)}
-                          className={`d-flex align-items-center gap-2 mb-2 p-3 rounded border ${selected ? 'border-primary bg-primary bg-opacity-10' : ''}`}
+                          className={`d-flex align-items-start gap-2 mb-2 p-3 rounded border ${selected ? 'border-primary bg-primary bg-opacity-10' : ''}`}
                           style={{ cursor: 'pointer', transition: 'all 0.15s' }}>
                           <div style={{
-                            width: 20, height: 20, borderRadius: 4, flexShrink: 0,
+                            width: 20, height: 20, borderRadius: 4, flexShrink: 0, marginTop: '2px',
                             border: `2px solid ${selected ? '#0d6efd' : '#adb5bd'}`,
                             background: selected ? '#0d6efd' : 'transparent',
                             display: 'flex', alignItems: 'center', justifyContent: 'center'
                           }}>
                             {selected && <i className="bi bi-check text-white" style={{ fontSize: 12 }} />}
                           </div>
-                          <span style={{ fontSize: '0.95rem' }}>{opt.text}</span>
+                          <span style={{ fontSize: '0.95rem', whiteSpace: 'pre-line', lineHeight: '1.5', flex: 1 }}>
+                            {formatMultiLineText(opt.text)}
+                          </span>
                         </div>
                       )
                     })}
