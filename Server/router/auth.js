@@ -47,10 +47,10 @@ const IITStats2Scores = require('../model/iitmstats2questionresult')
 const QuizAttemptstats2 = require('../model/iitmstats2quizattempt');
 
 
-const Question = require('../model/pdsa_Questions');
+const pdsaQuestion = require('../model/pdsa_Questions');
 const pdsaSubmission = require('../model/pdsa_Submission');
-const CodingQuestion = require('../model/pdsa_Coding_Questions'); 
-const CodingSubmission = require('../model/pdsa_Coding_Submission'); 
+const pdsaCodingQuestion = require('../model/pdsa_Coding_Questions'); 
+const pdsaCodingSubmission = require('../model/pdsa_Coding_Submission'); 
 const InterviewSubmission = require('../model/interview_Submission'); 
 
 const QuizAttempt     = require('../model/iitmMaths2QuizAttempt');
@@ -1598,8 +1598,7 @@ router.get('/algorithm-submissions', async (req, res) => {
 
 //This are PDSA routes:
 
-
-// GET coding submissions
+// GET coding submissions - FIXED: using pdsaCodingSubmission
 router.get('/coding-submissions', async (req, res) => {
   try {
     const { username, email, topic, date } = req.query;
@@ -1622,8 +1621,8 @@ router.get('/coding-submissions', async (req, res) => {
       };
     }
 
-    // Fetch based on filter
-    const submissions = await CodingSubmission.find(filter)
+    // Fetch based on filter - USING pdsaCodingSubmission
+    const submissions = await pdsaCodingSubmission.find(filter)
       .sort({ timestamp: -1 });
 
     // Handle empty results
@@ -1657,7 +1656,7 @@ router.get('/pdsa-submissions', async (req, res) => {
 
     const [testSubs, codingSubs, interviewSubs] = await Promise.all([
       pdsaSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
-      CodingSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
+      pdsaCodingSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(), // FIXED: using pdsaCodingSubmission
       InterviewSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
     ]);
 
@@ -1687,11 +1686,10 @@ router.get('/pdsa-submissions', async (req, res) => {
   }
 });
 
-
-// GET interview submissions - ADDED date filter
-router.get('/interview-submissions', async (req, res) => { // Changed to plural
+// GET interview submissions
+router.get('/interview-submissions', async (req, res) => {
     try {
-        const { username, email, topic, type, date } = req.query; // Added date
+        const { username, email, topic, type, date } = req.query;
         
         const filter = {};
         if (username) filter.username = username;
@@ -1699,7 +1697,7 @@ router.get('/interview-submissions', async (req, res) => { // Changed to plural
         if (topic) filter.topic = topic;
         if (type) filter.type = type;
         
-        // Date filtering (same as other routes)
+        // Date filtering
         if (date) {
           const startDate = new Date(date);
           const endDate = new Date(date);
@@ -1739,7 +1737,7 @@ router.get('/interview-submissions', async (req, res) => { // Changed to plural
     }
 });
 
-// routes/interview.js
+// POST interview submission
 router.post('/interview-submission', async (req, res) => {
     try {
         const submissionData = req.body;
@@ -1796,8 +1794,7 @@ router.post('/interview-submission', async (req, res) => {
     }
 });
 
-
-//fetching questions with type interview from collection. 
+// Fetching questions with type interview from collection
 router.get('/interview', async (req, res) => {
     try {
         const { topic, type, codingCount = 3, pdsaCount = 2 } = req.query;
@@ -1812,14 +1809,14 @@ router.get('/interview', async (req, res) => {
 
         // Fetch questions from both collections in parallel
         const [codingQuestions, pdsaQuestions] = await Promise.all([
-            // Fetch from coding_Question collection
-            CodingQuestion.aggregate([
+            // Fetch from pdsaCodingQuestion collection - FIXED
+            pdsaCodingQuestion.aggregate([
                 { $match: { topic: topic, type: type } },
                 { $sample: { size: parseInt(codingCount) } }
             ]),
             
-            // Fetch from pdsa_questions collection
-            Question.aggregate([
+            // Fetch from pdsaQuestion collection - FIXED
+            pdsaQuestion.aggregate([
                 { $match: { topic: topic, type: type } },
                 { $sample: { size: parseInt(pdsaCount) } }
             ])
@@ -1850,7 +1847,7 @@ router.get('/interview', async (req, res) => {
     }
 });
 
-// POST submit coding quiz results
+// POST submit coding quiz results - FIXED: using pdsaCodingSubmission
 router.post('/coding-submission', async (req, res) => {
     try {
         const submissionData = req.body;
@@ -1889,8 +1886,8 @@ router.post('/coding-submission', async (req, res) => {
             submissionData.timestamp = new Date();
         }
 
-        // Create submission document
-        const submission = new CodingSubmission(submissionData);
+        // Create submission document - USING pdsaCodingSubmission
+        const submission = new pdsaCodingSubmission(submissionData);
         
         // Save to database
         await submission.save();
@@ -1922,9 +1919,7 @@ router.post('/coding-submission', async (req, res) => {
     }
 });
 
-
-
-// GET random coding questions by difficulty and topic
+// GET random coding questions by difficulty and topic - FIXED: using pdsaCodingQuestion
 router.get('/coding-questions', async (req, res) => {
     try {
         const { difficulty, topic, limit = 5 } = req.query;
@@ -1942,8 +1937,8 @@ router.get('/coding-questions', async (req, res) => {
             matchQuery.topic = decodeURIComponent(topic);
         }
         
-        // Fetch random questions
-        const questions = await CodingQuestion.aggregate([
+        // Fetch random questions - USING pdsaCodingQuestion
+        const questions = await pdsaCodingQuestion.aggregate([
             { $match: matchQuery },
             { $sample: { size: parseInt(limit) } },
             { $project: { 
@@ -1990,7 +1985,7 @@ router.get('/coding-questions', async (req, res) => {
     }
 });
 
-// Submit quiz results route
+// Submit quiz results route - using pdsaSubmission (this one is correct)
 router.post('/pdsa-submission', async (req, res) => {
     try {
         const submissionData = req.body;
@@ -2025,8 +2020,8 @@ router.post('/pdsa-submission', async (req, res) => {
         });
     }
 });
-//pdsa questions fetching route
 
+// PDSA questions fetching route - FIXED: using pdsaQuestion
 function shuffleArray(array) {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -2052,10 +2047,10 @@ router.get('/questions/:topic', async (req, res) => {
 
         let allQuestions = [];
         
-        // Fetch questions for each maxScore category
+        // Fetch questions for each maxScore category - USING pdsaQuestion
         for (const category of distribution) {
             try {
-                const questions = await Question.aggregate([
+                const questions = await pdsaQuestion.aggregate([
                     { 
                         $match: { 
                             topic: topic,
@@ -2084,7 +2079,7 @@ router.get('/questions/:topic', async (req, res) => {
             const remainingCount = limit - allQuestions.length;
             const existingIds = allQuestions.map(q => q._id);
             
-            const additionalQuestions = await Question.aggregate([
+            const additionalQuestions = await pdsaQuestion.aggregate([
                 { 
                     $match: { 
                         topic: topic,
@@ -2122,7 +2117,6 @@ router.get('/questions/:topic', async (req, res) => {
             distribution: scoreDistribution,
             questions: shuffledQuestions
         });
-
            
     } catch (error) {
         console.error('❌ Error fetching random questions:', error);
@@ -2132,7 +2126,10 @@ router.get('/questions/:topic', async (req, res) => {
             error: error.message
         });
     }
-})
+});
+
+
+// programming course route 
   router.post('/programming/submit', async (req, res) => {
     try {
       console.log("Received submission request:", req.body);
