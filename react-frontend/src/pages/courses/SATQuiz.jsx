@@ -549,6 +549,7 @@ export const QuizPanel = ({
   questions, currentIndex, answers, setAnswer, toggleMSQ, goTo,
   style, moduleNum, saving, onSubmit,
   submitLabel = 'Submit Quiz', exitTo = '/courses/sat', exitLabel = 'Exit',
+  mode = 'single', onBackToOverview, onFinishTest,
 }) => {
   const q = questions[currentIndex]
   const userAns = answers[currentIndex]
@@ -700,6 +701,10 @@ export const QuizPanel = ({
                     <button className="btn btn-primary" onClick={() => goTo(currentIndex + 1)}>
                       Next<i className="bi bi-arrow-right ms-1" />
                     </button>
+                  ) : mode === 'full' ? (
+                    <button className="btn btn-primary" onClick={onBackToOverview}>
+                      <i className="bi bi-grid me-1" />Module Overview
+                    </button>
                   ) : (
                     <button
                       className="btn btn-success"
@@ -765,18 +770,37 @@ export const QuizPanel = ({
           <div className="card border-0 shadow-sm" style={{ borderRadius: 16 }}>
             <div className="card-body p-3 text-center">
               <p className="text-muted small mb-2">{answeredCount}/{questions.length} answered</p>
-              <button
-                className="btn btn-success w-100"
-                onClick={onSubmit}
-                disabled={saving}
-              >
-                {saving
-                  ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</>
-                  : <><i className="bi bi-check-lg me-1" />{submitLabel}</>}
-              </button>
-              <Link to={exitTo} className="btn btn-outline-secondary w-100 mt-2 btn-sm">
-                <i className="bi bi-arrow-left me-1" />{exitLabel}
-              </Link>
+              {mode === 'full' ? (
+                <>
+                  <button className="btn btn-primary w-100" onClick={onBackToOverview}>
+                    <i className="bi bi-grid me-1" />Module Overview
+                  </button>
+                  <button
+                    className="btn btn-success w-100 mt-2"
+                    onClick={onFinishTest}
+                    disabled={saving}
+                  >
+                    {saving
+                      ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</>
+                      : <><i className="bi bi-flag-fill me-1" />Finish Test</>}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    className="btn btn-success w-100"
+                    onClick={onSubmit}
+                    disabled={saving}
+                  >
+                    {saving
+                      ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</>
+                      : <><i className="bi bi-check-lg me-1" />{submitLabel}</>}
+                  </button>
+                  <Link to={exitTo} className="btn btn-outline-secondary w-100 mt-2 btn-sm">
+                    <i className="bi bi-arrow-left me-1" />{exitLabel}
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
