@@ -49,20 +49,17 @@ import MathExamReview from './pages/MathReview'
 import DBMS from './pages/courses/DBMS'
 import DBMSQuiz from './pages/courses/DBMSQuiz'
 
-import ProgrammingCourses from './pages/courses/Programming'
-import CoursePage from './pages/courses/Language_Courses/CoursePage'
-import QuizPage from './pages/courses/Language_Courses/QuizPage'
-
 // PDSA quiz type imports
 import PdsaTestQuiz from './pages/courses/PDSA/PdsaTestQuiz'
 import PdsaCodingQuiz from './pages/courses/PDSA/PdsaCodingQuiz'
 import PdsaInterviewQuiz from './pages/courses/PDSA/PdsaInterviewQuiz'
 
 // Statistics - II
-
 import Stats2Quiz from './pages/courses/Stats2Quiz'
 import Stats2Review from './pages/courses/Stats2Review'
 
+
+// competitive course
 import CompetitiveExamFoundation from './pages/courses/CompetitiveExamFoundation';
 import MathQuiz from './pages/courses/Competitive/MathQuiz'
 import ReviewPage from './pages/courses/Competitive/MathReview'
@@ -81,6 +78,12 @@ import SATQuiz from './pages/courses/SATQuiz'
 import SATFullTest from './pages/courses/SATFullTest'
 import SATDashboard from './pages/SATDashboard'
 import SATExamAnalysis from './pages/SATExamAnalysis'
+
+// New Programming course 
+import ProgrammingCourses from './pages/courses/Programming'
+import CoursePage from './pages/courses/Programming_Courses/CoursePage'
+import QuizPage from './pages/courses/Programming_Courses/QuizPage'
+import CodingPage from './pages/courses/Programming_Courses/CodingPage'
 
 
 function App() {
@@ -185,6 +188,8 @@ function App() {
             <Route path="/programming/courses" element={<ProgrammingCourses />} />
             <Route path="/programming/courses/:course" element={<CoursePage />} />
             <Route path="/quiz/:course/week/:week" element={<QuizPage />} />
+            <Route path="/coding/:course/week/:week" element={<CodingPage />} />
+
             
           </Routes>
         </main>
