@@ -178,7 +178,7 @@ const CoursePage = () => {
   const fetchAttempts = async (email) => {
     try {
       const res = await axios.get(
-        `${API}/api/quiz/attempts?email=${encodeURIComponent(email)}&course=${course.toLowerCase()}`,
+        `${API}/api/mcq-quiz/attempts?email=${encodeURIComponent(email)}&course=${course.toLowerCase()}`,
         { withCredentials: true }
       )
       if (res.data?.attempts) setAttempts(res.data.attempts)
