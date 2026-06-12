@@ -52,6 +52,15 @@ const availableTopics = [
     url: '/courses/statistics2/quiz/4',
     linkState: { quizName: 'Week 4 - Discrete vs continuous Random Variables' }
   },
+   {
+    id: 'midterm',
+    topicName: 'Midterm Assessment',
+    displayName: 'Midterm Assessment - Weeks 1-4',
+    description: 'Comprehensive assessment covering Multiple Random Variables, Independence, Expectations/Variance, and Discrete vs Continuous Random Variables',
+    icon: 'bi-award',
+    url: '/courses/statistics2/quiz/100',
+    linkState: { quizName: 'Midterm Assessment - Weeks 1-4' }
+  },
   {
     id: 'week5',
     topicName: 'Jointly Gaussian Random Variables',
@@ -120,6 +129,7 @@ const availableTopics = [
 
 // Topic grouping for flexible score matching
 const topicGroups = {
+  Midterm_Assessment: ['Midterm_Assessment', 'Midterm', 'week100'],
   Multiple_Random_Variables: ['Multiple_Random_Variables', 'Week1', 'week1'],
   Independence_and_Variable_Functions: ['Independence_and_Variable_Functions', 'Week2', 'week2'],
   Expectations_Variance_and_Bivariate_Data: ['Expectations_Variance_and_Bivariate_Data', 'Week3', 'week3'],
