@@ -80,6 +80,7 @@ import SATDashboard from './pages/SATDashboard'
 import SATExamAnalysis from './pages/SATExamAnalysis'
 
 // New Programming course 
+import ProgrammingDashboard from './pages/ProgrammingDashboard'
 import ProgrammingCourses from './pages/courses/Programming'
 import CoursePage from './pages/courses/Programming_Courses/CoursePage'
 import QuizPage from './pages/courses/Programming_Courses/QuizPage'
@@ -185,6 +186,7 @@ function App() {
             <Route path="/courses/DBMS/:weekId" element={<DBMSQuiz />} />
 
             {/* programming COURSE */}
+            <Route path="/admin/programming" element={<ProgrammingDashboard />} />
             <Route path="/programming/courses" element={<ProgrammingCourses />} />
             <Route path="/programming/courses/:course" element={<CoursePage />} />
             <Route path="/quiz/:course/week/:week" element={<QuizPage />} />
