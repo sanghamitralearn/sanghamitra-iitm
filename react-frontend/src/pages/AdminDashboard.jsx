@@ -27,7 +27,7 @@ async function fetchFromAPI(url) {
 
 async function loadCoding() {
   try {
-    const data = await fetchFromAPI(`${VITE_API_URL}/api/coding-submissions`)
+    const data = await fetchFromAPI(`${VITE_API_URL}/api/pdsa/coding-submissions`)
     const arr = Array.isArray(data) ? data : (data.submissions || data.data || [])
     return arr.filter(s => s.email && s.email.toLowerCase() !== 'test@example.com').map(s => ({
       userName: s.username || s.name || s.email,
@@ -261,7 +261,7 @@ const subjectApis = [
   { key: 'm2',   url: '/api/iitm_math2_scores',               countFn: d => (d.data || d || []).length },
   { key: 's1',   url: '/api/statistics_scores',               countFn: d => (d.data || d || []).length },
   { key: 's2',   url: '/api/iitm_stats2_scores',              countFn: d => (Array.isArray(d) ? d : (d.data || [])).length },
-  { key: 'py',   url: '/api/coding-submissions',              countFn: d => (Array.isArray(d) ? d : (d.submissions || d.data || [])).length },
+  { key: 'py',   url: '/api/pdsa/coding-submissions',              countFn: d => (Array.isArray(d) ? d : (d.submissions || d.data || [])).length },
   { key: 'ct',   url: '/api/iitm_ct_scores',                  countFn: d => (d.data || d || []).length },
   { key: 'pdsa', url: '/api/pdsa-submissions',                countFn: d => (Array.isArray(d) ? d : (d.submissions || d.data || [])).length },
   { key: 'sat',  url: '/api/sat_scores',                     countFn: d => new Set((Array.isArray(d) ? d : []).map(e => e.email).filter(Boolean)).size },
