@@ -17,7 +17,7 @@ const DBMSDashboard = () => {
     setError(null)
 
     try {
-      const res = await axios.get(`${VITE_API_URL}/api/dbms-submissions`, {
+      const res = await axios.get(`${VITE_API_URL}/api/dbms-submission`, {
         withCredentials: true
       })
 
