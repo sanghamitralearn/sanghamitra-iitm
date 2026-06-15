@@ -53,4 +53,4 @@ const codingSubmissionSchema = new mongoose.Schema({
     }
 });
 
-module.exports = mongoose.model('CodingSubmission', codingSubmissionSchema, 'pdsa_coding_submission');
+module.exports = mongoose.model('pdsa_CodingSubmission', codingSubmissionSchema, 'pdsa_coding_submission');
