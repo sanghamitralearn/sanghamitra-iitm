@@ -55,6 +55,21 @@ async function loadPDSA() {
   } catch { return [] }
 }
 
+async function loadDBMS() {
+  try {
+    const data = await fetchFromAPI(`${VITE_API_URL}/api/dbms-submission`)
+    const arr = Array.isArray(data) ? data : (data.submissions || data.data || [])
+    return arr.filter(s => s.email && s.email.toLowerCase() !== 'test@example.com').map(s => ({
+      userName: s.username || s.name || s.email,
+      subject: 'Quiz Test (DBMS)', subjectKey: 'dbms',
+      topic: s.topic || 'Quiz Test',
+      score: s.percentage || ((s.score / (s.maxScore || 100)) * 100) || 0,
+      timestamp: s.timestamp || new Date().toISOString(),
+      icon: 'bi-database', iconClass: 'dbms',
+    }))
+  } catch { return [] }
+}
+
 async function loadInterview() {
   try {
     const data = await fetchFromAPI(`${VITE_API_URL}/api/interview-submissions`)
@@ -241,6 +256,7 @@ const iconColors = {
   stats2:      { background: 'rgba(231,76,60,0.1)',   color: '#e74c3c' },
   programming: { background: 'rgba(52,152,219,0.1)',  color: '#3498db' },
   interview:   { background: 'rgba(155,89,182,0.1)',  color: '#9b59b6' },
+  dbms:        { background: 'rgba(26,188,156,0.1)',  color: '#1abc9c' },
 }
 
 const dashboardCards = [
@@ -253,6 +269,7 @@ const dashboardCards = [
   { key: 'pdsa', icon: 'bi-diagram-3',   iconStyle: { background: 'rgba(102,126,234,0.1)',  color: '#667eea' }, title: 'PDSA',                    to: '/admin/dsa' },
   { key: 'sat',  icon: 'bi-pencil-fill', iconStyle: { background: 'rgba(0,123,255,0.1)',    color: '#007bff' }, title: 'SAT',                     to: '/admin/sat' },
   { key: 'prog', icon: 'bi-code-square', iconStyle: { background: 'rgba(248,152,32,0.1)',   color: '#f89820' }, title: 'Programming (Java/Python/SQL/DSA)', to: '/admin/programming' },
+  { key: 'dbms', icon: 'bi-diagram-3',   iconStyle: { background: 'rgba(102,126,234,0.1)',  color: '#667eea' }, title: 'DBMS',                    to: '/admin/dbms' },
 ]
 
 const LAST_SEEN_KEY = 'admin_notif_last_seen'
@@ -267,6 +284,7 @@ const subjectApis = [
   { key: 'pdsa', url: '/api/pdsa-submissions',                countFn: d => (Array.isArray(d) ? d : (d.submissions || d.data || [])).length },
   { key: 'sat',  url: '/api/sat_scores',                     countFn: d => new Set((Array.isArray(d) ? d : []).map(e => e.email).filter(Boolean)).size },
   { key: 'prog', url: '/api/mcq-quiz/admin/attempts',        countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
+  { key: 'dbms', url: '/api/dbms-submission',                 countFn: d => (Array.isArray(d) ? d : (d.submissions || d.data || [])).length },
 ]
 
 const AdminDashboard = () => {
@@ -389,6 +407,7 @@ const AdminDashboard = () => {
     { to: '/admin/dsa',        icon: 'bi-diagram-3',    label: 'PDSA' },
     { to: '/admin/sat',        icon: 'bi-pencil-fill',  label: 'SAT' },
     { to: '/admin/programming', icon: 'bi-code-square', label: 'Programming (Java/Python/SQL/DSA)' },
+    { to: '/admin/dbms',       icon: 'bi-diagram-3',    label: 'DBMS' },
   ]
 
   return (
