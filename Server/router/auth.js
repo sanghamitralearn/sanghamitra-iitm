@@ -5336,6 +5336,65 @@ router.get('/mcq-quiz/attempts', async (req, res) => {
   }
 });
 
+// ============================================
+// ADMIN: GET ALL ATTEMPTS ACROSS ALL STUDENTS (optional course filter)
+// ============================================
+router.get('/mcq-quiz/admin/attempts', async (req, res) => {
+  try {
+    const { course } = req.query;
+
+    const filter = {};
+    if (course) filter.course = course;
+
+    const attempts = await ProgrammingQuizAttempt.find(filter)
+      .sort({ submitted_at: -1 })
+      .lean();
+
+    return res.status(200).json({ success: true, attempts });
+  } catch (error) {
+    console.error('❌ Error fetching admin attempts:', error);
+    return res.status(500).json({ error: 'Failed to fetch attempts', details: error.message });
+  }
+});
+
+// ============================================
+// ADMIN: GET PER-QUESTION RESULTS FOR ONE ATTEMPT (with question text/answers)
+// ============================================
+router.get('/mcq-quiz/admin/attempts/:attemptId/results', async (req, res) => {
+  try {
+    const { attemptId } = req.params;
+
+    const results = await ProgrammingQuizResult.find({ attempt_id: attemptId }).lean();
+    if (!results.length) {
+      return res.status(404).json({ error: 'No results found for this attempt' });
+    }
+
+    const questionIds = results.map(r => r.question_id).filter(Boolean);
+    const questions = await ProgrammingQuizQuestion.find({ _id: { $in: questionIds } }).lean();
+    const questionMap = {};
+    questions.forEach(q => { questionMap[String(q._id)] = q; });
+
+    const enriched = results.map(r => {
+      const q = questionMap[String(r.question_id)];
+      return {
+        ...r,
+        question_text: q?.question_text || '',
+        options: q?.options || [],
+        correct_answer: q?.answers?.correct,
+        code_snippet: q?.code_snippet || null,
+        image_url: q?.image_url || null,
+        solution: q?.solution || null,
+        points: q?.points || 1
+      };
+    });
+
+    return res.status(200).json({ success: true, results: enriched });
+  } catch (error) {
+    console.error('❌ Error fetching admin results:', error);
+    return res.status(500).json({ error: 'Failed to fetch results', details: error.message });
+  }
+});
+
 
 
 // ============================================
