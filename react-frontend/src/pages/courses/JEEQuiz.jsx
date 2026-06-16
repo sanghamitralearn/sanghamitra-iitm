@@ -4,8 +4,8 @@ import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
-// Number of questions shown per subject per attempt (matches JEE Advanced per-subject paper count)
-const QUESTIONS_PER_ATTEMPT = 18
+// 17 questions per subject per paper — official JEE Advanced structure (Sections I–IV)
+const QUESTIONS_PER_ATTEMPT = 17
 const FULL_TEST_SUBJECTS = ['Physics', 'Chemistry', 'Mathematics']
 
 // ─── MathJax ─────────────────────────────────────────────────────────────────
@@ -826,7 +826,7 @@ const JEEQuiz = () => {
             <div className="row d-flex justify-content-center text-center">
               <div className="col-lg-8">
                 <h1>JEE Advanced — {isFull ? 'Full Test' : subject}</h1>
-                <p className="mb-0">+3 correct · −1 wrong (MCQ) · 0 unattempted</p>
+                <p className="mb-0">17 questions per subject · MCQ +3/−1 · MSQ +4/−2 · Numeric +3 · Matching +3/−1</p>
               </div>
             </div>
           </div>
@@ -1042,14 +1042,17 @@ const JEEQuiz = () => {
               <div className="card-body p-3">
                 <h6 className="fw-bold mb-2">Marking Scheme</h6>
                 <div className="d-flex flex-column gap-1" style={{ fontSize: '0.85rem' }}>
-                  <span className="text-success fw-semibold">✓ Correct MCQ: +3</span>
-                  <span className="text-danger fw-semibold">✗ Wrong MCQ: −1</span>
-                  <span className="text-success fw-semibold">✓ Correct MSQ (all): +4</span>
-                  <span className="text-success">✓ Partial MSQ: +1 per correct option</span>
-                  <span className="text-danger fw-semibold">✗ MSQ with any wrong option: −2</span>
-                  <span className="text-success fw-semibold">✓ Correct Numeric: +3</span>
-                  <span className="text-danger">✗ Wrong Numeric: 0 or −1 (per question)</span>
-                  <span className="text-secondary">— Unattempted: 0</span>
+                  <span className="text-muted fw-semibold" style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Section I — MCQ (single correct)</span>
+                  <span className="text-success">✓ Correct: +3 &nbsp;|&nbsp; ✗ Wrong: −1</span>
+                  <span className="text-muted fw-semibold mt-1" style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Section II — MSQ (one or more)</span>
+                  <span className="text-success">✓ All correct: +4</span>
+                  <span className="text-success">✓ Partial (no wrong): +1/+2/+3</span>
+                  <span className="text-danger">✗ Any wrong option: −2</span>
+                  <span className="text-muted fw-semibold mt-1" style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Section III — Numeric (integer)</span>
+                  <span className="text-success">✓ Correct: +3 &nbsp;|&nbsp; ✗ Wrong: 0 / −1</span>
+                  <span className="text-muted fw-semibold mt-1" style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Section IV — Matching List</span>
+                  <span className="text-success">✓ Correct: +3 &nbsp;|&nbsp; ✗ Wrong: −1</span>
+                  <span className="text-secondary mt-1">— Unattempted: 0</span>
                 </div>
               </div>
             </div>
