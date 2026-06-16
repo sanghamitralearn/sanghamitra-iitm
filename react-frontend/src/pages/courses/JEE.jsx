@@ -220,6 +220,17 @@ const JEE = () => {
           })}
         </div>
 
+        {/* Full Test */}
+        <div className="text-center mb-4">
+          <Link
+            to="/courses/jee/quiz/Full"
+            className="btn btn-lg text-white"
+            style={{ background: 'linear-gradient(135deg,#6610f2,#0d6efd,#198754)', borderRadius: 8, padding: '0.6rem 2rem' }}
+          >
+            <i className="bi bi-stopwatch-fill me-2" />Start Full Test (All 3 Subjects)
+          </Link>
+        </div>
+
         {/* Info strip */}
         <div className="row g-3 mt-2" style={{ maxWidth: 900, margin: '0 auto' }}>
           {[
