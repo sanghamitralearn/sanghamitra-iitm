@@ -244,7 +244,7 @@ const JEE = () => {
                 <div className="fw-bold">{item.label}</div>
                 <div className="text-muted" style={{ fontSize: '0.82rem' }}>{item.desc}</div>
               </div>
-            </div>
+            </div> 
           ))}
         </div>
       </div>
