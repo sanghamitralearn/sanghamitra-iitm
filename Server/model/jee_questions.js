@@ -9,6 +9,11 @@ const markingSchemeSchema = new mongoose.Schema({
   full: Number,
   negative: Number,
   zero: Number,
+  // partial credit for MSQ: marks awarded for selecting N correct options
+  // (with no incorrect options selected), e.g. partial_1, partial_2, partial_3
+  partial_1: Number,
+  partial_2: Number,
+  partial_3: Number,
 }, { _id: false });
 
 const jeeQuestionSchema = new mongoose.Schema({
