@@ -4,6 +4,10 @@ import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
+// Number of questions shown per subject per attempt (matches JEE Advanced per-subject paper count)
+const QUESTIONS_PER_ATTEMPT = 18
+const FULL_TEST_SUBJECTS = ['Physics', 'Chemistry', 'Mathematics']
+
 // ─── MathJax ─────────────────────────────────────────────────────────────────
 function loadMathJax() {
   if (window.MathJax) return
@@ -38,6 +42,17 @@ const SUBJECT_STYLE = {
   Physics:     { gradient: 'linear-gradient(135deg,#0d6efd,#6610f2)', badge: '#0d6efd' },
   Chemistry:   { gradient: 'linear-gradient(135deg,#198754,#20c997)', badge: '#198754' },
   Mathematics: { gradient: 'linear-gradient(135deg,#dc3545,#fd7e14)', badge: '#dc3545' },
+  Full:        { gradient: 'linear-gradient(135deg,#6610f2,#0d6efd,#198754)', badge: '#6610f2' },
+}
+
+// ─── Shuffle helper ─────────────────────────────────────────────────────────────
+function shuffle(arr) {
+  const out = [...arr]
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]]
+  }
+  return out
 }
 
 // ─── Normalise question type ──────────────────────────────────────────────────
@@ -50,10 +65,33 @@ function resolveType(q) {
   return q.type || 'multiple_choice'
 }
 
+// ─── Preprocess question text: fix literal \n and **bold** safety-net ────────
+function preprocessText(text) {
+  if (!text) return text
+  // Convert literal backslash+n (two chars) to real newline
+  let out = ''
+  for (let i = 0; i < text.length; i++) {
+    if (text.charCodeAt(i) === 92 && i + 1 < text.length && text.charCodeAt(i + 1) === 110) {
+      out += '\n'; i++
+    } else {
+      out += text[i]
+    }
+  }
+  // Strip **bold** markdown
+  out = out.replace(/\*\*([^*]*)\*\*/g, '$1')
+  // Convert literal \times (outside math) → Unicode × as safety net
+  out = out.replace(/\\times/g, '×')
+  // Fix letter^\greek_cmd pattern left by plain-math converter → wrap in $
+  out = out.replace(/\b([A-Za-z][A-Za-z0-9]*)\^\$\\([a-zA-Z]+)\$/g,
+    (_, base, cmd) => `$${base}^{\\${cmd}}$`)
+  return out
+}
+
 // ─── Replace (structure) with styled placeholder ──────────────────────────────
 function renderTextWithStructures(text) {
-  if (!text || !text.includes('(structure)')) return text
-  const parts = text.split('(structure)')
+  const clean = preprocessText(text)
+  if (!clean || !clean.includes('(structure)')) return clean
+  const parts = clean.split('(structure)')
   return parts.map((part, i) => (
     <React.Fragment key={i}>
       {part}
@@ -112,7 +150,7 @@ function parseMatchingLists(text) {
 
 // ─── Question content renderer ────────────────────────────────────────────────
 function QuestionContent({ q }) {
-  const parsed = parseMatchingLists(q.question_text)
+  const parsed = parseMatchingLists(preprocessText(q.question_text))
 
   if (parsed) {
     const hasListIText  = parsed.listI.length > 0
@@ -181,9 +219,11 @@ function QuestionContent({ q }) {
       </p>
       {q.image_url && (
         <div className="mb-4 text-center">
-          <img src={imgSrc(q.image_url)} alt="Question diagram"
-            style={{ maxWidth: '100%', maxHeight: 320, borderRadius: 10, border: '1px solid #dee2e6' }}
-            onError={e => { e.target.style.display = 'none' }} />
+          <a href={imgSrc(q.image_url)} target="_blank" rel="noopener noreferrer">
+            <img src={imgSrc(q.image_url)} alt="Question diagram"
+              style={{ maxWidth: '100%', maxHeight: 700, borderRadius: 10, border: '1px solid #dee2e6' }}
+              onError={e => { e.target.style.display = 'none' }} />
+          </a>
         </div>
       )}
     </>
@@ -215,8 +255,16 @@ function calcMarks(q, userAns) {
     )
     const userSet = new Set((Array.isArray(userAns) ? userAns : [userAns]).map(a => String(a).trim()))
     const ok = corrSet.size === userSet.size && [...corrSet].every(a => userSet.has(a))
-    // MSQ: full marks for perfect match, 0 otherwise (no negative for MSQ in JEE)
-    return { isCorrect: ok, marksAwarded: ok ? (scheme.full ?? 4) : 0 }
+    if (ok) return { isCorrect: true, marksAwarded: scheme.full ?? 4 }
+
+    // JEE Advanced MSQ rule: any wrong option selected -> negative marks
+    const wrongSelected = [...userSet].some(a => !corrSet.has(a))
+    if (wrongSelected) return { isCorrect: false, marksAwarded: scheme.negative ?? -2 }
+
+    // Otherwise: partial credit for the number of correct options selected
+    const correctSelectedCount = [...userSet].filter(a => corrSet.has(a)).length
+    const partial = scheme[`partial_${correctSelectedCount}`]
+    return { isCorrect: false, marksAwarded: partial ?? 0 }
   }
 
   if (type === 'numeric') {
@@ -240,6 +288,7 @@ const ReviewPage = ({ questions, answers, results, subject, onRetake }) => {
   const [expanded, setExpanded] = useState(null)
   const ref = useRef(null)
   const style = SUBJECT_STYLE[subject] || SUBJECT_STYLE.Physics
+  const isFull = subject === 'Full'
 
   useEffect(() => {
     if (ref.current) typesetEl(ref.current)
@@ -254,7 +303,7 @@ const ReviewPage = ({ questions, answers, results, subject, onRetake }) => {
           <div className="container">
             <div className="row d-flex justify-content-center text-center">
               <div className="col-lg-8">
-                <h1>JEE {subject} — Review</h1>
+                <h1>JEE {isFull ? 'Full Test' : subject} — Review</h1>
               </div>
             </div>
           </div>
@@ -357,6 +406,7 @@ const ReviewPage = ({ questions, answers, results, subject, onRetake }) => {
                       <i className={`bi bi-chevron-${isOpen ? 'up' : 'down'} ms-2 text-muted`} style={{ flexShrink: 0 }} />
                     </div>
                     <div className="d-flex gap-2 flex-wrap mt-1">
+                      {isFull && <span className="badge bg-dark">{q.subject}</span>}
                       <span className="badge bg-secondary">{q.type}</span>
                       {q.subtopic && <span className="badge bg-info text-dark">{q.subtopic}</span>}
                       <span className="badge bg-light text-dark border">{q.points || 3} pts</span>
@@ -493,6 +543,7 @@ const ReviewPage = ({ questions, answers, results, subject, onRetake }) => {
 const JEEQuiz = () => {
   const { subject } = useParams()
   const navigate = useNavigate()
+  const isFull = subject === 'Full'
 
   const [user, setUser]           = useState(null)
   const [loading, setLoading]     = useState(true)
@@ -545,6 +596,22 @@ const JEEQuiz = () => {
 
   const fetchQuestions = async () => {
     try {
+      if (isFull) {
+        // Full test: pool QUESTIONS_PER_ATTEMPT questions from each subject
+        const responses = await Promise.all(
+          FULL_TEST_SUBJECTS.map(sub =>
+            axios.get(`${API_URL}/api/jee_questions?subject=${encodeURIComponent(sub)}`, { withCredentials: true })
+          )
+        )
+        const pooled = responses.flatMap(res => {
+          const qs = Array.isArray(res.data) ? res.data : []
+          return shuffle(qs).slice(0, QUESTIONS_PER_ATTEMPT)
+        })
+        if (!pooled.length) { setError('No questions found for the Full Test.'); setLoading(false); return }
+        setQuestions(shuffle(pooled))
+        return
+      }
+
       const res = await axios.get(
         `${API_URL}/api/jee_questions?subject=${encodeURIComponent(subject)}`,
         { withCredentials: true }
@@ -552,13 +619,7 @@ const JEEQuiz = () => {
       const qs = Array.isArray(res.data) ? res.data : []
       if (!qs.length) { setError(`No questions found for ${subject}.`); setLoading(false); return }
 
-      // Shuffle
-      const shuffled = [...qs]
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-      }
-      setQuestions(shuffled)
+      setQuestions(shuffle(qs).slice(0, QUESTIONS_PER_ATTEMPT))
     } catch {
       setError('Failed to load questions. Please try again.')
     } finally {
@@ -643,18 +704,49 @@ const JEEQuiz = () => {
     if (!u?.email) return
     setSaving(true)
     try {
-      await axios.post(`${API_URL}/api/jee_scores`, {
-        email: u.email,
-        name: u.username || u.name || u.email,
-        subject,
-        totalQuestions: questions.length,
-        correctAnswers: correctCount,
-        wrongAnswers: wrongCount,
-        unattempted: unattemptedCount,
-        score: totalScore,
-        maxScore,
-        responses,
-      }, { withCredentials: true })
+      if (isFull) {
+        // Split responses/questions by their actual subject and save one record per subject
+        await Promise.all(FULL_TEST_SUBJECTS.map(async (sub) => {
+          const idxs = questions.map((q, i) => i).filter(i => questions[i].subject === sub)
+          if (!idxs.length) return
+          let subCorrect = 0, subWrong = 0, subUnattempted = 0, subScore = 0, subMax = 0
+          const subResponses = []
+          idxs.forEach(i => {
+            const r = responses[i]
+            if (r.unattempted) subUnattempted++
+            else if (r.isCorrect) subCorrect++
+            else subWrong++
+            subScore += r.marksAwarded
+            subMax += questions[i].points || 3
+            subResponses.push(r)
+          })
+          await axios.post(`${API_URL}/api/jee_scores`, {
+            email: u.email,
+            name: u.username || u.name || u.email,
+            subject: sub,
+            totalQuestions: idxs.length,
+            correctAnswers: subCorrect,
+            wrongAnswers: subWrong,
+            unattempted: subUnattempted,
+            score: subScore,
+            maxScore: subMax,
+            responses: subResponses,
+          }, { withCredentials: true })
+        }))
+      } else {
+        await axios.post(`${API_URL}/api/jee_scores`, {
+          email: u.email,
+          name: u.username || u.name || u.email,
+          subject,
+          totalQuestions: questions.length,
+          correctAnswers: correctCount,
+          wrongAnswers: wrongCount,
+          unattempted: unattemptedCount,
+          score: totalScore,
+          maxScore,
+          responses,
+        }, { withCredentials: true })
+      }
     } catch (e) {
       console.error('Failed to save score:', e)
     } finally {
@@ -665,6 +757,7 @@ const JEEQuiz = () => {
   const handleRetake = () => {
     setAnswers({}); setSubmitted(false); setResults(null)
     setCurrentIndex(0); timesRef.current = {}
+    setLoading(true)
     fetchQuestions()
   }
 
@@ -673,7 +766,7 @@ const JEEQuiz = () => {
     <div className="d-flex justify-content-center align-items-center" style={{ height: '60vh' }}>
       <div className="text-center">
         <div className="spinner-border mb-3" style={{ color: style.badge }} role="status" />
-        <p className="text-muted">Loading JEE {subject} questions…</p>
+        <p className="text-muted">Loading JEE {isFull ? 'Full Test' : `${subject} questions`}…</p>
       </div>
     </div>
   )
@@ -732,7 +825,7 @@ const JEEQuiz = () => {
           <div className="container">
             <div className="row d-flex justify-content-center text-center">
               <div className="col-lg-8">
-                <h1>JEE Advanced — {subject}</h1>
+                <h1>JEE Advanced — {isFull ? 'Full Test' : subject}</h1>
                 <p className="mb-0">+3 correct · −1 wrong (MCQ) · 0 unattempted</p>
               </div>
             </div>
@@ -743,7 +836,7 @@ const JEEQuiz = () => {
             <ol>
               <li><Link to="/">Home</Link></li>
               <li><Link to="/courses/jee">JEE Advanced</Link></li>
-              <li className="current">{subject}</li>
+              <li className="current">{isFull ? 'Full Test' : subject}</li>
             </ol>
           </div>
         </nav>
@@ -758,7 +851,10 @@ const JEEQuiz = () => {
               <div className="card-body p-4">
                 {/* Progress row */}
                 <div className="d-flex justify-content-between align-items-center mb-2">
-                  <span className="text-muted small">Question {currentIndex + 1} of {questions.length}</span>
+                  <span className="text-muted small">
+                    {isFull && <strong className="me-2">{q.subject}</strong>}
+                    Question {currentIndex + 1} of {questions.length}
+                  </span>
                   <div className="d-flex gap-2 flex-wrap">
                     <span className={`badge ${isAnswered ? 'bg-success' : 'bg-secondary'}`}>
                       {isAnswered ? 'Answered' : 'Not answered'}
@@ -949,9 +1045,10 @@ const JEEQuiz = () => {
                   <span className="text-success fw-semibold">✓ Correct MCQ: +3</span>
                   <span className="text-danger fw-semibold">✗ Wrong MCQ: −1</span>
                   <span className="text-success fw-semibold">✓ Correct MSQ (all): +4</span>
-                  <span className="text-secondary">✗ Wrong/partial MSQ: 0</span>
+                  <span className="text-success">✓ Partial MSQ: +1 per correct option</span>
+                  <span className="text-danger fw-semibold">✗ MSQ with any wrong option: −2</span>
                   <span className="text-success fw-semibold">✓ Correct Numeric: +3</span>
-                  <span className="text-danger fw-semibold">✗ Wrong Numeric: −1</span>
+                  <span className="text-danger">✗ Wrong Numeric: 0 or −1 (per question)</span>
                   <span className="text-secondary">— Unattempted: 0</span>
                 </div>
               </div>
