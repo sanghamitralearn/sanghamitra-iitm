@@ -77,6 +77,7 @@ import SAT from './pages/courses/SAT'
 import SATQuiz from './pages/courses/SATQuiz'
 import SATFullTest from './pages/courses/SATFullTest'
 import SATDashboard from './pages/SATDashboard'
+import SATAnalysis from './pages/SATAnalysis'
 import SATExamAnalysis from './pages/SATExamAnalysis'
 
 // New Programming course 
@@ -180,6 +181,7 @@ function App() {
             <Route path="/courses/sat" element={<SAT />} />
             <Route path="/courses/sat/quiz/:section/:module" element={<SATQuiz />} />
             <Route path="/courses/sat/full-test" element={<SATFullTest />} />
+            <Route path="/courses/sat/analysis" element={<SATAnalysis />} />
 
             {/* DBMS COURSE */}
             <Route path="/courses/DBMS" element={<DBMS />} />
