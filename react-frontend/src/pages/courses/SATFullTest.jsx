@@ -243,16 +243,56 @@ const SATFullTest = () => {
   const finalizeTest = async (allResults) => {
     const combined = mergeResults(STAGES.map(s => allResults[s.key]))
     combined.percentage = combined.maxScore > 0 ? Math.round(Math.max(0, combined.score / combined.maxScore) * 100) : 0
+
+    const rwResult   = mergeResults([allResults.rw1, allResults.rw2])
+    const mathResult = mergeResults([allResults.math1, allResults.math2])
+
+    // Tag each response with its section so the analysis page can filter
+    const taggedResponses = STAGES.flatMap(s =>
+      (allResults[s.key]?.responses || []).map(r => ({ ...r, subject: s.scoreSubject }))
+    )
+    const allQuestions = STAGES.flatMap(s =>
+      (stageQuestions[s.key] || []).map(q => ({ ...q, subject: s.scoreSubject }))
+    )
+
+    const analysisResults = {
+      testType:    'full',
+      score:       combined.score,
+      maxScore:    combined.maxScore,
+      correctAnswers: combined.correctAnswers,
+      wrongAnswers:   combined.wrongAnswers,
+      unattempted:    combined.unattempted,
+      totalTimeTaken: combined.totalTime || 0,
+      responses:   taggedResponses,
+      sectionScores: {
+        'Reading & Writing': {
+          score: rwResult.score, maxScore: rwResult.maxScore,
+          correctAnswers: rwResult.correctAnswers, wrongAnswers: rwResult.wrongAnswers,
+          unattempted: rwResult.unattempted, totalQuestions: rwResult.totalQuestions,
+        },
+        'Mathematics': {
+          score: mathResult.score, maxScore: mathResult.maxScore,
+          correctAnswers: mathResult.correctAnswers, wrongAnswers: mathResult.wrongAnswers,
+          unattempted: mathResult.unattempted, totalQuestions: mathResult.totalQuestions,
+        },
+      },
+      dateAttempted: new Date().toISOString(),
+    }
+
+    try {
+      sessionStorage.setItem('satAnalysis', JSON.stringify({ results: analysisResults, questions: allQuestions }))
+    } catch { /* ignore quota errors */ }
+
     setCombinedResults(combined)
     setPhase('review')
 
     const u = userRef.current
-    if (!u?.email) return
+    if (!u?.email) {
+      navigate('/courses/sat/analysis', { state: { results: analysisResults, questions: allQuestions } })
+      return
+    }
     setSaving(true)
     try {
-      const rwResult   = mergeResults([allResults.rw1, allResults.rw2])
-      const mathResult = mergeResults([allResults.math1, allResults.math2])
-
       await Promise.all([
         axios.post(`${API_URL}/api/sat_scores`, {
           email: u.email, name: u.username || u.name || u.email, subject: 'Reading & Writing',
@@ -271,6 +311,7 @@ const SATFullTest = () => {
       console.error('Failed to save full test scores:', e)
     } finally {
       setSaving(false)
+      navigate('/courses/sat/analysis', { state: { results: analysisResults, questions: allQuestions } })
     }
   }
 
