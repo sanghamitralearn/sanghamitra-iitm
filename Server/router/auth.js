@@ -5008,14 +5008,18 @@ router.post('/sat_scores', async (req, res) => {
 
 // GET /api/sat_scores?email=x@y.com  — returns all attempts as flat records (newest first per subject)
 router.get('/sat_scores', async (req, res) => {
-  ...
-  const result = docs.flatMap(doc =>
-    (doc.attempts || []).map(attempt => ({
-      email:   doc.email,
-      name:    doc.name,
-      subject: doc.subject,
-      ...attempt,               // ← spreads ALL attempts, one flat record each
-    }))
+  try {
+    const { email } = req.query
+    const filter = email ? { email } : {}
+    const docs = await SatScore.find(filter).lean()
+    const result = docs.flatMap(doc =>
+      (doc.attempts || []).map(attempt => ({
+        email:   doc.email,
+        name:    doc.name,
+        subject: doc.subject,
+        ...attempt,
+      }))
+    )
     res.json(result)
   } catch (err) {
     res.status(500).json({ error: err.message })
