@@ -133,6 +133,7 @@ function QuestionContent({ q }) {
 const ResultsPage = ({ results, onReview, allAttempts, activeAttemptId, onSwitchAttempt }) => {
   const [selectedView, setSelectedView] = useState('overview')
   const [sectionsOpen, setSectionsOpen] = useState(false)
+  const [expandedSubjects, setExpandedSubjects] = useState({})
 
   const sectionStats = {}
   for (const sec of SAT_SECTIONS) {
@@ -147,20 +148,46 @@ const ResultsPage = ({ results, onReview, allAttempts, activeAttemptId, onSwitch
     }
   }
 
-  const isSectionView      = selectedView !== 'overview'
-  const stats              = isSectionView ? sectionStats[selectedView] : null
-  const displayScore       = isSectionView ? (stats?.score ?? 0) : (results.score ?? 0)
-  const displayMax         = isSectionView ? (stats?.max ?? 0) : (results.maxScore ?? 0)
-  const displayCorrect     = isSectionView ? (stats?.correct ?? 0) : (results.correctAnswers ?? 0)
-  const displayWrong       = isSectionView ? (stats?.wrong ?? 0) : (results.wrongAnswers ?? 0)
-  const displayUnattempted = isSectionView ? (stats?.unattempted ?? 0) : (results.unattempted ?? 0)
+  const isFullTest = results.testType === 'full'
+
+  // Module-level stats derived from per-question responses
+  const moduleStats = {}
+  if (isFullTest) {
+    for (const sec of SAT_SECTIONS) {
+      const secResps = (results.responses || []).filter(r => r.subject === sec)
+      const half = Math.ceil(secResps.length / 2)
+      const calcMod = resps => {
+        const correct     = resps.filter(r => r?.isCorrect).length
+        const unattempted = resps.filter(r => r?.unattempted).length
+        const wrong       = resps.length - correct - unattempted
+        return { score: correct, max: resps.length, correct, wrong, unattempted }
+      }
+      moduleStats[sec] = {
+        'Module 1': calcMod(secResps.slice(0, half)),
+        'Module 2': calcMod(secResps.slice(half)),
+      }
+    }
+  }
+
+  const isModuleView   = selectedView.includes('|')
+  const [moduleSection, moduleName] = isModuleView ? selectedView.split('|') : [null, null]
+  const isSectionView  = !isModuleView && selectedView !== 'overview'
+  const isAnySubView   = isSectionView || isModuleView
+
+  const currentStats = isModuleView
+    ? (moduleStats[moduleSection]?.[moduleName] || {})
+    : (isSectionView ? sectionStats[selectedView] : null)
+
+  const displayScore       = isAnySubView ? (currentStats?.score ?? 0) : (results.score ?? 0)
+  const displayMax         = isAnySubView ? (currentStats?.max ?? 0) : (results.maxScore ?? 0)
+  const displayCorrect     = isAnySubView ? (currentStats?.correct ?? 0) : (results.correctAnswers ?? 0)
+  const displayWrong       = isAnySubView ? (currentStats?.wrong ?? 0) : (results.wrongAnswers ?? 0)
+  const displayUnattempted = isAnySubView ? (currentStats?.unattempted ?? 0) : (results.unattempted ?? 0)
   const total              = displayCorrect + displayWrong + displayUnattempted || 1
 
-  const cardGradient = isSectionView
-    ? (SECTION_GRADIENT[selectedView] || 'linear-gradient(135deg,#6c757d,#495057)')
+  const cardGradient = isAnySubView
+    ? (SECTION_GRADIENT[isModuleView ? moduleSection : selectedView] || 'linear-gradient(135deg,#6c757d,#495057)')
     : 'linear-gradient(135deg,#198754,#0d6efd)'
-
-  const isFullTest = results.testType === 'full'
   // Normalize DB value "Reading and Writing" → display label "Reading & Writing"
   const displaySubject = (results.subject || '').replace(' and ', ' & ')
   const testLabel = isFullTest ? 'Full SAT Test' : `SAT — ${displaySubject || 'Practice'}`
@@ -249,16 +276,42 @@ const ResultsPage = ({ results, onReview, allAttempts, activeAttemptId, onSwitch
                     <span style={{ paddingLeft: 10 }}>Sections</span>
                     <i className={`bi bi-chevron-${sectionsOpen ? 'up' : 'down'} text-muted`} style={{ fontSize: '0.8rem' }} />
                   </button>
-                  {sectionsOpen && SAT_SECTIONS.map(sec => (
-                    <button key={sec} onClick={() => setSelectedView(sec)}
-                      className="w-100 text-start border-0 px-4 py-2 d-flex align-items-center justify-content-between"
-                      style={{ background: selectedView === sec ? '#f8f9fa' : '#fff', borderBottom: '1px solid #f0f0f0', cursor: 'pointer' }}>
-                      <span style={{ borderLeft: selectedView === sec ? `3px solid ${SECTION_COLOR[sec]}` : '3px solid transparent', paddingLeft: 10, color: selectedView === sec ? SECTION_COLOR[sec] : '#495057', fontWeight: selectedView === sec ? 600 : 400, fontSize: '0.95rem' }}>
-                        {sec}
-                      </span>
-                      {selectedView === sec && <span style={{ width: 8, height: 8, borderRadius: '50%', background: SECTION_COLOR[sec], display: 'inline-block' }} />}
-                    </button>
-                  ))}
+                  {sectionsOpen && SAT_SECTIONS.map(sec => {
+                    const secActive = selectedView === sec || moduleSection === sec
+                    return (
+                      <React.Fragment key={sec}>
+                        <button
+                          onClick={() => {
+                            setSelectedView(sec)
+                            setExpandedSubjects(prev => ({ ...prev, [sec]: !prev[sec] }))
+                          }}
+                          className="w-100 text-start border-0 px-4 py-2 d-flex align-items-center justify-content-between"
+                          style={{ background: secActive ? '#f8f9fa' : '#fff', borderBottom: '1px solid #f0f0f0', cursor: 'pointer' }}>
+                          <span style={{ borderLeft: secActive ? `3px solid ${SECTION_COLOR[sec]}` : '3px solid transparent', paddingLeft: 10, color: secActive ? SECTION_COLOR[sec] : '#495057', fontWeight: secActive ? 600 : 400, fontSize: '0.95rem' }}>
+                            {sec}
+                          </span>
+                          <div className="d-flex align-items-center gap-2">
+                            {selectedView === sec && <span style={{ width: 8, height: 8, borderRadius: '50%', background: SECTION_COLOR[sec], display: 'inline-block' }} />}
+                            <i className={`bi bi-chevron-${expandedSubjects[sec] ? 'up' : 'down'} text-muted`} style={{ fontSize: '0.7rem' }} />
+                          </div>
+                        </button>
+                        {expandedSubjects[sec] && ['Module 1', 'Module 2'].map(mod => {
+                          const viewKey = `${sec}|${mod}`
+                          const modActive = selectedView === viewKey
+                          return (
+                            <button key={mod} onClick={() => setSelectedView(viewKey)}
+                              className="w-100 text-start border-0 py-2 d-flex align-items-center justify-content-between"
+                              style={{ paddingLeft: '2.5rem', paddingRight: 16, background: modActive ? '#f8f9fa' : '#fff', borderBottom: '1px solid #f0f0f0', cursor: 'pointer' }}>
+                              <span style={{ borderLeft: modActive ? `3px solid ${SECTION_COLOR[sec]}` : '3px solid transparent', paddingLeft: 10, color: modActive ? SECTION_COLOR[sec] : '#6c757d', fontWeight: modActive ? 600 : 400, fontSize: '0.85rem' }}>
+                                {mod}
+                              </span>
+                              {modActive && <span style={{ width: 7, height: 7, borderRadius: '50%', background: SECTION_COLOR[sec], display: 'inline-block' }} />}
+                            </button>
+                          )
+                        })}
+                      </React.Fragment>
+                    )
+                  })}
                 </>
               )}
             </div>
@@ -277,7 +330,7 @@ const ResultsPage = ({ results, onReview, allAttempts, activeAttemptId, onSwitch
               <div style={{ position: 'absolute', right: -30, top: -30, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
               <div style={{ position: 'absolute', right: 60, bottom: -40, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
               <h5 className="fw-bold mb-4" style={{ opacity: 0.95 }}>
-                {isSectionView ? `${selectedView} Report` : 'Overall'}
+                {isModuleView ? `${moduleSection} — ${moduleName}` : isSectionView ? `${selectedView} Report` : 'Overall'}
               </h5>
               <div className="text-center">
                 <div style={{ width: 150, height: 150, borderRadius: '50%', border: '5px solid rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.12)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
@@ -292,7 +345,7 @@ const ResultsPage = ({ results, onReview, allAttempts, activeAttemptId, onSwitch
             </div>
 
             {/* Section cards — full test overview only */}
-            {!isSectionView && isFullTest && (
+            {selectedView === 'overview' && isFullTest && (
               <div className="row g-3 mb-4">
                 {SAT_SECTIONS.map(sec => {
                   const st = sectionStats[sec]
