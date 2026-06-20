@@ -70,7 +70,7 @@ const Programming = () => {
     try {
       const results = await Promise.allSettled(
         courses.map(c =>
-          axios.get(`${API}/api/quiz/analytics?email=${encodeURIComponent(email)}&course=${c.id}`, { withCredentials: true })
+          axios.get(`${API}/api/mcq-quiz/analytics?email=${encodeURIComponent(email)}&course=${c.id}`, { withCredentials: true })
         )
       )
       const prog = {}
