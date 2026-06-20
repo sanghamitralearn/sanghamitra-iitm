@@ -55,6 +55,7 @@ async function loadPDSA() {
   } catch { return [] }
 }
 
+
 async function loadDBMS() {
   try {
     const data = await fetchFromAPI(`${VITE_API_URL}/api/dbms-submission`)
@@ -69,6 +70,7 @@ async function loadDBMS() {
     }))
   } catch { return [] }
 }
+
 
 async function loadInterview() {
   try {
@@ -257,34 +259,46 @@ const iconColors = {
   programming: { background: 'rgba(52,152,219,0.1)',  color: '#3498db' },
   interview:   { background: 'rgba(155,89,182,0.1)',  color: '#9b59b6' },
   dbms:        { background: 'rgba(26,188,156,0.1)',  color: '#1abc9c' },
+  java:        { background: 'rgba(248,152,32,0.1)',  color: '#f89820' },
+  sql:         { background: 'rgba(68,121,161,0.1)',  color: '#4479a1' },
 }
 
-const dashboardCards = [
+const foundationCards = [
   { key: 'm1',   icon: 'bi-calculator',  iconStyle: { background: 'rgba(52,152,219,0.1)',   color: '#3498db' }, title: 'Mathematics 1',           to: '/admin/math' },
   { key: 'm2',   icon: 'bi-calculator',  iconStyle: { background: 'rgba(230,126,34,0.1)',   color: '#e67e22' }, title: 'Mathematics 2',           to: '/admin/iitm-math2' },
   { key: 's1',   icon: 'bi-bar-chart',   iconStyle: { background: 'rgba(241,196,15,0.1)',   color: '#f1c40f' }, title: 'Statistics 1',            to: '/admin/stats1' },
   { key: 's2',   icon: 'bi-bar-chart',   iconStyle: { background: 'rgba(231,76,60,0.1)',    color: '#e74c3c' }, title: 'Statistics 2',            to: '/admin/stats2' },
-  { key: 'py',   icon: 'bi-filetype-py', iconStyle: { background: 'rgba(46,204,113,0.1)',   color: '#2ecc71' }, title: 'Python',                  to: '/admin/python' },
+  { key: 'py',   icon: 'bi-filetype-py', iconStyle: { background: 'rgba(46,204,113,0.1)',   color: '#2ecc71' }, title: 'Python (Coding)',          to: '/admin/python' },
   { key: 'ct',   icon: 'bi-cpu',         iconStyle: { background: 'rgba(155,89,182,0.1)',   color: '#9b59b6' }, title: 'Computational Thinking',  to: '/admin/iitm-ct' },
   { key: 'pdsa', icon: 'bi-diagram-3',   iconStyle: { background: 'rgba(102,126,234,0.1)',  color: '#667eea' }, title: 'PDSA',                    to: '/admin/dsa' },
-  { key: 'sat',  icon: 'bi-pencil-fill', iconStyle: { background: 'rgba(0,123,255,0.1)',    color: '#007bff' }, title: 'SAT',                     to: '/admin/sat' },
-  { key: 'prog', icon: 'bi-code-square', iconStyle: { background: 'rgba(248,152,32,0.1)',   color: '#f89820' }, title: 'Programming (Java/Python/SQL/DSA)', to: '/admin/programming' },
   { key: 'dbms', icon: 'bi-diagram-3',   iconStyle: { background: 'rgba(102,126,234,0.1)',  color: '#667eea' }, title: 'DBMS',                    to: '/admin/dbms' },
+  { key: 'sat',  icon: 'bi-pencil-fill', iconStyle: { background: 'rgba(0,123,255,0.1)',    color: '#007bff' }, title: 'SAT',                     to: '/admin/sat' },
+  
+]
+
+const programmingCards = [
+  { key: 'prog_java',   icon: 'bi-cup-hot-fill',   iconStyle: { background: 'rgba(248,152,32,0.1)',  color: '#f89820' }, title: 'Java',    to: '/admin/programming?course=java' },
+  { key: 'prog_python', icon: 'bi-filetype-py',    iconStyle: { background: 'rgba(55,118,171,0.1)',  color: '#3776ab' }, title: 'Python',  to: '/admin/programming?course=python' },
+  { key: 'prog_sql',    icon: 'bi-database-fill',  iconStyle: { background: 'rgba(68,121,161,0.1)',  color: '#4479a1' }, title: 'SQL',     to: '/admin/programming?course=sql' },
+  { key: 'prog_dsa',    icon: 'bi-diagram-3-fill', iconStyle: { background: 'rgba(244,180,26,0.1)',  color: '#f4b41a' }, title: 'DSA',     to: '/admin/programming?course=dsa' },
 ]
 
 const LAST_SEEN_KEY = 'admin_notif_last_seen'
 
 const subjectApis = [
-  { key: 'm1',   url: '/api/iitmmath_scores',                 countFn: d => (d.data || d || []).length },
-  { key: 'm2',   url: '/api/iitm_math2_scores',               countFn: d => (d.data || d || []).length },
-  { key: 's1',   url: '/api/statistics_scores',               countFn: d => (d.data || d || []).length },
-  { key: 's2',   url: '/api/iitm_stats2_scores',              countFn: d => (Array.isArray(d) ? d : (d.data || [])).length },
-  { key: 'py',   url: '/api/coding-submissions',              countFn: d => (Array.isArray(d) ? d : (d.submissions || d.data || [])).length },
-  { key: 'ct',   url: '/api/iitm_ct_scores',                  countFn: d => (d.data || d || []).length },
-  { key: 'pdsa', url: '/api/pdsa-submissions',                countFn: d => (Array.isArray(d) ? d : (d.submissions || d.data || [])).length },
-  { key: 'sat',  url: '/api/sat_scores',                     countFn: d => new Set((Array.isArray(d) ? d : []).map(e => e.email).filter(Boolean)).size },
-  { key: 'prog', url: '/api/mcq-quiz/admin/attempts',        countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
-  { key: 'dbms', url: '/api/dbms-submission',                 countFn: d => (Array.isArray(d) ? d : (d.submissions || d.data || [])).length },
+  { key: 'm1',        url: '/api/iitmmath_scores',                    countFn: d => (d.data || d || []).length },
+  { key: 'm2',        url: '/api/iitm_math2_scores',                  countFn: d => (d.data || d || []).length },
+  { key: 's1',        url: '/api/statistics_scores',                  countFn: d => (d.data || d || []).length },
+  { key: 's2',        url: '/api/iitm_stats2_scores',                 countFn: d => (Array.isArray(d) ? d : (d.data || [])).length },
+  { key: 'py',        url: '/api/coding-submissions',                 countFn: d => (Array.isArray(d) ? d : (d.submissions || d.data || [])).length },
+  { key: 'ct',        url: '/api/iitm_ct_scores',                     countFn: d => (d.data || d || []).length },
+  { key: 'pdsa',      url: '/api/pdsa-submissions',                   countFn: d => (Array.isArray(d) ? d : (d.submissions || d.data || [])).length },
+  { key: 'dbms',      url: '/api/dbms-submission',                    countFn: d => (Array.isArray(d) ? d : (d.submissions || d.data || [])).length },
+  { key: 'sat',       url: '/api/sat_scores',                         countFn: d => new Set((Array.isArray(d) ? d : []).map(e => e.email).filter(Boolean)).size },
+  { key: 'prog_java',   url: '/api/mcq-quiz/admin/attempts?course=java',   countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
+  { key: 'prog_python', url: '/api/mcq-quiz/admin/attempts?course=python', countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
+  { key: 'prog_sql',    url: '/api/mcq-quiz/admin/attempts?course=sql',    countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
+  { key: 'prog_dsa',    url: '/api/mcq-quiz/admin/attempts?course=dsa',    countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
 ]
 
 const AdminDashboard = () => {
@@ -405,9 +419,12 @@ const AdminDashboard = () => {
     { to: '/admin/python',     icon: 'bi-filetype-py',  label: 'Python' },
     { to: '/admin/iitm-ct',    icon: 'bi-cpu',          label: 'Computational Thinking' },
     { to: '/admin/dsa',        icon: 'bi-diagram-3',    label: 'PDSA' },
-    { to: '/admin/sat',        icon: 'bi-pencil-fill',  label: 'SAT' },
-    { to: '/admin/programming', icon: 'bi-code-square', label: 'Programming (Java/Python/SQL/DSA)' },
     { to: '/admin/dbms',       icon: 'bi-diagram-3',    label: 'DBMS' },
+    { to: '/admin/sat',                       icon: 'bi-pencil-fill',    label: 'SAT' },
+    { to: '/admin/programming?course=java',   icon: 'bi-cup-hot-fill',   label: 'Java' },
+    { to: '/admin/programming?course=python', icon: 'bi-filetype-py',    label: 'Python (Quiz)' },
+    { to: '/admin/programming?course=sql',    icon: 'bi-database-fill',  label: 'SQL' },
+    { to: '/admin/programming?course=dsa',    icon: 'bi-diagram-3-fill', label: 'DSA (Quiz)' },
   ]
 
   return (
@@ -595,9 +612,12 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-        {/* Dashboard Cards */}
-              <div className="row">
-                {dashboardCards.map((card) => (
+        {/* Foundation Courses */}
+              <h5 className="text-muted mb-3 fw-semibold" style={{ letterSpacing: '0.03em' }}>
+                <i className="bi bi-mortarboard-fill me-2" style={{ color: '#667eea' }}></i>Foundation Courses
+              </h5>
+              <div className="row mb-2">
+                {foundationCards.map((card) => (
                   <div className="col-md-4 mb-4" key={card.key}>
                     <div style={s.dashCard} className="admin-dash-card">
                       <div className="d-flex align-items-center justify-content-between mb-3">
@@ -615,8 +635,36 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 ))}
+              </div>
 
-                {/* User Management */}
+              {/* Programming Courses */}
+              <h5 className="text-muted mb-3 fw-semibold" style={{ letterSpacing: '0.03em' }}>
+                <i className="bi bi-code-square me-2" style={{ color: '#f89820' }}></i>Programming Courses
+              </h5>
+              <div className="row mb-2">
+                {programmingCards.map((card) => (
+                  <div className="col-md-3 mb-4" key={card.key}>
+                    <div style={s.dashCard} className="admin-dash-card">
+                      <div className="d-flex align-items-center justify-content-between mb-3">
+                        <div style={{ ...s.cardIcon, marginBottom: 0, ...card.iconStyle }}>
+                          <i className={`bi ${card.icon}`}></i>
+                        </div>
+                        {subjectCounts[card.key] != null && (
+                          <span className="badge rounded-pill" style={{ background: card.iconStyle.color, color: '#fff', fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}>
+                            {subjectCounts[card.key]} students
+                          </span>
+                        )}
+                      </div>
+                      <h5 className="mb-3">{card.title}</h5>
+                      <Link to={card.to} className="btn btn-primary btn-sm">Open Dashboard</Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="row">
+
+{/* 
                 <div className="col-md-6 mb-4">
                   <div style={s.dashCard} className="admin-dash-card">
                     <div style={{ ...s.cardIcon, background: 'rgba(40,167,69,0.1)', color: '#28a745' }}>
@@ -628,7 +676,7 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                {/* Analytics */}
+               
                 <div className="col-md-6 mb-4">
                   <div style={s.dashCard} className="admin-dash-card">
                     <div style={{ ...s.cardIcon, background: 'rgba(255,193,7,0.1)', color: '#ffc107' }}>
@@ -639,7 +687,7 @@ const AdminDashboard = () => {
                     <Link to="/admin/analytics" className="btn btn-primary">View Analytics</Link>
                   </div>
                 </div>
-
+*/}
                 {/* AI-Powered Analysis */}
                 <div className="col-12 mb-4">
                   <div style={s.dashCard} className="admin-dash-card">
