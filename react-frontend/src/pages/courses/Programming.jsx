@@ -75,8 +75,15 @@ const Programming = () => {
       )
       const prog = {}
       results.forEach((r, i) => {
-        if (r.status === 'fulfilled' && r.value.data?.analytics?.overall) {
-          prog[courses[i].id] = r.value.data.analytics.overall
+        if (r.status === 'fulfilled' && Array.isArray(r.value.data?.attempts)) {
+          const att = r.value.data.attempts
+          prog[courses[i].id] = {
+            average_score: att.length > 0
+              ? Math.round(att.reduce((s, a) => s + (a.percentage || 0), 0) / att.length)
+              : 0,
+            total_attempts: att.length,
+            weeks_attempted: new Set(att.map(a => a.week)).size
+          }
         }
       })
       setProgress(prog)
