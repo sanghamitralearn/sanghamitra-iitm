@@ -1,22 +1,26 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import axios from 'axios'
 
 const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 const COURSES = [
-  { id: 'all',    label: 'All Courses', icon: 'bi-collection',      color: '#667eea' },
-  { id: 'java',   label: 'Java',        icon: 'bi-cup-hot-fill',     color: '#f89820' },
-  { id: 'python', label: 'Python',      icon: 'bi-filetype-py',      color: '#3776ab' },
-  { id: 'sql',    label: 'SQL',         icon: 'bi-database-fill',    color: '#4479a1' },
-  { id: 'dsa',    label: 'DSA',         icon: 'bi-diagram-3-fill',   color: '#f4b41a' },
+  { id: 'all',    label: 'All Courses',                  fullTitle: 'Programming Courses Dashboard',            subtitle: 'Java, Python, SQL & DSA — quiz attempts and answer-level review', icon: 'bi-collection',      color: '#667eea' },
+  { id: 'java',   label: 'Java',                         fullTitle: 'Java Dashboard',                           subtitle: 'Weekly assessments — Java Programming',                          icon: 'bi-cup-hot-fill',    color: '#f89820' },
+  { id: 'python', label: 'Python',                       fullTitle: 'Python Dashboard',                         subtitle: 'Weekly assessments — Python Programming',                        icon: 'bi-filetype-py',     color: '#3776ab' },
+  { id: 'sql',    label: 'SQL',                          fullTitle: 'SQL Dashboard',                            subtitle: 'Weekly assessments — SQL & Databases',                           icon: 'bi-database-fill',   color: '#4479a1' },
+  { id: 'dsa',    label: 'DSA',                          fullTitle: 'DSA Dashboard',                            subtitle: 'Weekly assessments — Data Structures & Algorithms',              icon: 'bi-diagram-3-fill',  color: '#f4b41a' },
 ]
 
-const courseInfo = (id) => COURSES.find(c => c.id === id) || { label: id, icon: 'bi-code-slash', color: '#6c757d' }
+const courseInfo = (id) => COURSES.find(c => c.id === id) || { label: id, fullTitle: id, subtitle: '', icon: 'bi-code-slash', color: '#6c757d' }
 
 const ProgrammingDashboard = () => {
   const navigate = useNavigate()
-  const [course, setCourse] = useState('all')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [course, setCourse] = useState(() => {
+    const c = searchParams.get('course')
+    return COURSES.some(x => x.id === c) ? c : 'all'
+  })
   const [attempts, setAttempts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -44,7 +48,10 @@ const ProgrammingDashboard = () => {
     }
   }
 
-  useEffect(() => { load(course) }, [course])
+  useEffect(() => {
+    setSearchParams(course === 'all' ? {} : { course })
+    load(course)
+  }, [course])
 
   const getScoreColor = (pct) => {
     if (pct >= 80) return '#28a745'
@@ -90,12 +97,20 @@ const ProgrammingDashboard = () => {
     </div>
   )
 
+  const activeCourse = courseInfo(course)
+  const isSingleCourse = course !== 'all'
+
   return (
     <div className="container my-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h2 className="mb-0">Programming Courses Dashboard</h2>
-          <p className="text-muted mb-0">Java, Python, SQL & DSA — quiz attempts and answer-level review</p>
+          <h2 className="mb-0">
+            {isSingleCourse && (
+              <i className={`bi ${activeCourse.icon} me-2`} style={{ color: activeCourse.color }}></i>
+            )}
+            {activeCourse.fullTitle}
+          </h2>
+          <p className="text-muted mb-0">{activeCourse.subtitle}</p>
         </div>
         <div className="d-flex gap-2">
           <button className="btn btn-primary" onClick={() => navigate('/admin')}>← Back to Admin</button>
@@ -107,22 +122,24 @@ const ProgrammingDashboard = () => {
 
       {!selectedAttempt ? (
         <>
-          {/* Course tabs */}
-          <ul className="nav nav-pills mb-4">
-            {COURSES.map(c => (
-              <li className="nav-item" key={c.id}>
-                <button
-                  className="nav-link"
-                  style={course === c.id
-                    ? { background: c.color, color: '#fff' }
-                    : { color: c.color }}
-                  onClick={() => setCourse(c.id)}
-                >
-                  <i className={`bi ${c.icon} me-1`}></i>{c.label}
-                </button>
-              </li>
-            ))}
-          </ul>
+          {/* Course tabs — only shown in "all courses" mode */}
+          {!isSingleCourse && (
+            <ul className="nav nav-pills mb-4">
+              {COURSES.map(c => (
+                <li className="nav-item" key={c.id}>
+                  <button
+                    className="nav-link"
+                    style={course === c.id
+                      ? { background: c.color, color: '#fff' }
+                      : { color: c.color }}
+                    onClick={() => setCourse(c.id)}
+                  >
+                    <i className={`bi ${c.icon} me-1`}></i>{c.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
 
           {/* Stats cards */}
           <div className="row mb-4">
@@ -170,7 +187,7 @@ const ProgrammingDashboard = () => {
                       <tr>
                         <th>Student</th>
                         <th>Email</th>
-                        <th>Course</th>
+                        {!isSingleCourse && <th>Course</th>}
                         <th>Week / Topic</th>
                         <th>Score</th>
                         <th>Date</th>
@@ -184,11 +201,13 @@ const ProgrammingDashboard = () => {
                           <tr key={a._id} style={{ cursor: 'pointer' }} onClick={() => openAttempt(a)}>
                             <td><strong>{a.username || a.email}</strong></td>
                             <td>{a.email}</td>
-                            <td>
-                              <span className="badge" style={{ background: ci.color, color: '#fff' }}>
-                                <i className={`bi ${ci.icon} me-1`}></i>{ci.label}
-                              </span>
-                            </td>
+                            {!isSingleCourse && (
+                              <td>
+                                <span className="badge" style={{ background: ci.color, color: '#fff' }}>
+                                  <i className={`bi ${ci.icon} me-1`}></i>{ci.label}
+                                </span>
+                              </td>
+                            )}
                             <td>Week {a.week}{a.topic ? ` — ${a.topic}` : ''}</td>
                             <td>
                               <span style={{ color: getScoreColor(a.percentage), fontWeight: 'bold' }}>
