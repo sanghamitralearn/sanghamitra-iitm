@@ -121,8 +121,8 @@ const Home = () => {
                 </div>
               </div>
             </div>
-
-            {/* English Course Card */}
+            
+{/* English Course Card 
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch" data-aos="zoom-in" data-aos-delay="100">
               <div className="course-item">
                 <img src="/img/english.index.png" className="img-fluid" alt="English Course" />
@@ -145,7 +145,30 @@ const Home = () => {
               </div>
             </div>
 
-            {/*  Course Card */}
+             
+            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="200">
+              <div className="course-item">
+                <img src="/img/Programming.png" className="img-fluid" alt="Programming Course" />
+                <div className="course-content">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <Link to="/programming"><button className="category">Programming</button></Link>
+                  </div>
+                  <p className="description">
+                    Learn the basics of programming through computational thinking and Python. 
+                    This beginner-friendly course covers key concepts like logic, algorithms, 
+                    loops, and functions, helping you develop problem-solving skills for coding. 
+                    No prior experience needed!
+                  </p>
+                  <div className="trainer d-flex justify-content-between align-items-center">
+                    <div className="trainer-rank d-flex align-items-center">
+                      <i className="bi bi-heart heart-icon"></i>&nbsp;38
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/*  combine programming courses Card */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
               <div className="course-item">
                 <img src="/img/programming.png" className="img-fluid" alt="Database Management Systems Course" />
@@ -167,26 +190,30 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Competitive Exam Foundation Course Card */}
+             {/* JAVA Course Card */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
               <div className="course-item">
-                <img src="/img/competitive-exam-foundation.png" className="img-fluid" alt="Competitive Exam Foundation Course" />
+                <img src="/img/java.jpg" className="img-fluid" alt="Data Structures and Algorithms Course" />
                 <div className="course-content">
                   <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Link to="/competitive-exam-foundation"><button className="category">Competitive Exam Foundation</button></Link>
+                    <Link to="/courses/JAVA"><button className="category">JAVA</button></Link>
                   </div>
                   <p className="description">
-                    Master the fundamentals required for various competitive exams including banking, SSC, railways, and state-level examinations. Our comprehensive course covers quantitative aptitude, logical reasoning, verbal ability, and general awareness. Get access to topic-wise modules, practice tests, time management strategies, and exam-specific preparation techniques designed to help you crack competitive exams with confidence.
+                    Welcome to our Java Programming Hub, where you start your journey from basic syntax to 
+                    advanced application development. Master variables, control flow, OOP concepts, data structures, 
+                    file I/O, and JDBC through clear explanations, challenging quizzes, and real-world projects.
                   </p>
                   <div className="trainer d-flex justify-content-between align-items-center">
                     <div className="trainer-rank d-flex align-items-center">
-                      <i className="bi bi-heart heart-icon"></i>&nbsp;56
+                      <i className="bi bi-heart heart-icon"></i>&nbsp;89
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
+*/}
+          
 
             {/* CT Course Card */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
@@ -206,31 +233,6 @@ const Home = () => {
                   <div className="trainer d-flex justify-content-between align-items-center">
                     <div className="trainer-rank d-flex align-items-center">
                       <i className="bi bi-heart heart-icon"></i>&nbsp;89
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          
-
-            {/* Programming Course Card */}
-            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="200">
-              <div className="course-item">
-                <img src="/img/Programming.png" className="img-fluid" alt="Programming Course" />
-                <div className="course-content">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Link to="/programming"><button className="category">Programming</button></Link>
-                  </div>
-                  <p className="description">
-                    Learn the basics of programming through computational thinking and Python. 
-                    This beginner-friendly course covers key concepts like logic, algorithms, 
-                    loops, and functions, helping you develop problem-solving skills for coding. 
-                    No prior experience needed!
-                  </p>
-                  <div className="trainer d-flex justify-content-between align-items-center">
-                    <div className="trainer-rank d-flex align-items-center">
-                      <i className="bi bi-heart heart-icon"></i>&nbsp;38
                     </div>
                   </div>
                 </div>
@@ -281,29 +283,94 @@ const Home = () => {
               </div>
             </div>
 
-
-            {/* JAVA Course Card */}
-            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
+            {/* Java Course Card - NEW */}
+            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="200">
               <div className="course-item">
-                <img src="/img/java.jpg" className="img-fluid" alt="Data Structures and Algorithms Course" />
+                <img src="/img/java-programming.jpg" className="img-fluid" alt="Java Programming Course" />
                 <div className="course-content">
                   <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Link to="/courses/JAVA"><button className="category">JAVA</button></Link>
+                    <Link to="/programming/courses/java"><button className="category">Java Programming</button></Link>
                   </div>
                   <p className="description">
-                    Welcome to our Java Programming Hub, where you start your journey from basic syntax to 
-                    advanced application development. Master variables, control flow, OOP concepts, data structures, 
-                    file I/O, and JDBC through clear explanations, challenging quizzes, and real-world projects.
+                    Master Java from basics to advanced OOP, multithreading, collections, and design patterns. 
+                    Learn enterprise-level Java development with comprehensive hands-on practice.
                   </p>
                   <div className="trainer d-flex justify-content-between align-items-center">
                     <div className="trainer-rank d-flex align-items-center">
-                      <i className="bi bi-heart heart-icon"></i>&nbsp;89
+                      <i className="bi bi-heart heart-icon"></i>&nbsp;84
+                    </div>
+                    <span className="badge bg-primary">12 Weeks</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Python Course Card - NEW */}
+            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="200">
+              <div className="course-item">
+                <img src="/img/python.jpg" className="img-fluid" alt="Python Programming Course" />
+                <div className="course-content">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <Link to="/programming/courses/python"><button className="category">Python Course</button></Link>
+                  </div>
+                  <p className="description">
+                    Comprehensive Python covering data structures, OOP, file handling, and libraries. 
+                    Master Python from basics to advanced concepts including NumPy and Pandas for data analysis.
+                  </p>
+                  <div className="trainer d-flex justify-content-between align-items-center">
+                    <div className="trainer-rank d-flex align-items-center">
+                      <i className="bi bi-heart heart-icon"></i>&nbsp;78
+                    </div>
+                    <span className="badge bg-primary">10 Weeks</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SQL Course Card - NEW */}
+            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="200">
+              <div className="course-item">
+                <img src="/img/sql-database.jpg" className="img-fluid" alt="SQL & Databases Course" />
+                <div className="course-content">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <Link to="/programming/courses/sql"><button className="category">SQL & Databases</button></Link>
+                  </div>
+                  <p className="description">
+                    Learn SQL from basic queries to joins, subqueries, indexing, and stored procedures. 
+                    Master database management and optimization techniques for real-world applications.
+                  </p>
+                  <div className="trainer d-flex justify-content-between align-items-center">
+                    <div className="trainer-rank d-flex align-items-center">
+                      <i className="bi bi-heart heart-icon"></i>&nbsp;71
+                    </div>
+                    <span className="badge bg-primary">8 Weeks</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          {/* Competitive Exam Foundation Course Card */}
+            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
+              <div className="course-item">
+                <img src="/img/competitive-exam-foundation.png" className="img-fluid" alt="Competitive Exam Foundation Course" />
+                <div className="course-content">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <Link to="/competitive-exam-foundation"><button className="category">Competitive Exam Foundation</button></Link>
+                  </div>
+                  <p className="description">
+                    Master the fundamentals required for various competitive exams including banking, SSC, railways, and state-level examinations. Our comprehensive course covers quantitative aptitude, logical reasoning, verbal ability, and general awareness. Get access to topic-wise modules, practice tests, time management strategies, and exam-specific preparation techniques designed to help you crack competitive exams with confidence.
+                  </p>
+                  <div className="trainer d-flex justify-content-between align-items-center">
+                    <div className="trainer-rank d-flex align-items-center">
+                      <i className="bi bi-heart heart-icon"></i>&nbsp;56
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
+
+           
             
             {/* JEE Advanced Course Card */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4" data-aos="zoom-in" data-aos-delay="300">
