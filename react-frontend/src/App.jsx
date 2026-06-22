@@ -12,7 +12,7 @@ import ForgotPassword from './pages/ForgotPassword'
 import English from './pages/English'
 import Math from './pages/Math'
 import Statistics from './pages/courses/Statistics'
-import Programming from './pages/Programming'
+// import Programming from './pages/Programming'
 import Grammar from './pages/Grammar'
 import Vocabulary from './pages/Vocabulary'
 import ReadingComprehension from './pages/ReadingComprehension'
@@ -38,7 +38,7 @@ import PDSA from './pages/courses/PDSA'
 import Math2 from './pages/courses/Math2'
 import StatisticsSubject from './pages/courses/Statistics'
 import Statistics2 from './pages/courses/Statistics2'
-import Python from './pages/courses/Python'
+//import Python from './pages/courses/Python'
 import AdminSubject from './pages/courses/Admin'
 import IITMMathQuiz from './pages/courses/IITMMathQuiz'
 import StatisticsQuiz from './pages/courses/StatisticsQuiz'
@@ -67,7 +67,7 @@ import CompetitiveMath from './pages/courses/Competitive/CompetitiveMath'
 import PhysicsQuiz from './pages/courses/Competitive/PhysicsQuiz'
 
 
-import JAVA from './pages/courses/JAVA'
+// import JAVA from './pages/courses/JAVA'
 import JavaQuiz from './pages/courses/JAVA/JavaQuiz'
 
 import JEE from './pages/courses/JEE'
@@ -104,7 +104,7 @@ function App() {
             <Route path="/english" element={<English />} />
             <Route path="/math" element={<Math />} />
             <Route path="/statistics" element={<Statistics />} />
-            <Route path="/programming" element={<Programming />} />
+            
             <Route path="/english/grammar" element={<Grammar />} />
             <Route path="/english/vocabulary" element={<Vocabulary />} />
             <Route path="/english/reading-comprehension" element={<ReadingComprehension />} />
@@ -137,8 +137,7 @@ function App() {
             <Route path="/courses/pdsa" element={<PDSA />} />
             <Route path="/courses/math2" element={<Math2 />} />
             <Route path="/courses/statistics" element={<StatisticsSubject />} />
-            <Route path="/courses/statistics2" element={<Statistics2 />} />
-            <Route path="/courses/python" element={<Python />} />
+            <Route path="/courses/statistics2" element={<Statistics2 />} /
             <Route path="/courses/admin" element={<AdminSubject />} />
             
             {/* IIITM Math Quiz — dynamic, DB-driven */}
@@ -168,9 +167,14 @@ function App() {
             <Route path="/courses/competitive-math/review" element={<ReviewPage />} />
             <Route path="/competitive-exam-foundation/physics" element={<PhysicsQuiz />} />
 
-            {/* JAVA COURSE */}
+            {/* 
+            <Route path="/courses/python" element={<Python />} />
+            <Route path="/programming" element={<Programming />} />
             <Route path="/courses/JAVA" element={<JAVA />} />
+            */}
+            
             <Route path="/courses/JAVA/:weekId" element={<JavaQuiz />} />
+            
 
             {/* JEE Advanced — subject-wise quizzes */}
             <Route path="/courses/jee" element={<JEE />} />
