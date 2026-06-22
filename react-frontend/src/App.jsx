@@ -137,7 +137,7 @@ function App() {
             <Route path="/courses/pdsa" element={<PDSA />} />
             <Route path="/courses/math2" element={<Math2 />} />
             <Route path="/courses/statistics" element={<StatisticsSubject />} />
-            <Route path="/courses/statistics2" element={<Statistics2 />} /
+            <Route path="/courses/statistics2" element={<Statistics2 />} />
             <Route path="/courses/admin" element={<AdminSubject />} />
             
             {/* IIITM Math Quiz — dynamic, DB-driven */}
