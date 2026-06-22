@@ -168,7 +168,7 @@ const Home = () => {
               </div>
             </div>
             
-            {/*  combine programming courses Card */}
+             combine programming courses Card 
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
               <div className="course-item">
                 <img src="/img/programming.png" className="img-fluid" alt="Database Management Systems Course" />
@@ -190,7 +190,7 @@ const Home = () => {
               </div>
             </div>
 
-             {/* JAVA Course Card */}
+              JAVA Course Card 
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
               <div className="course-item">
                 <img src="/img/java.jpg" className="img-fluid" alt="Data Structures and Algorithms Course" />
@@ -286,7 +286,7 @@ const Home = () => {
             {/* Java Course Card - NEW */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="200">
               <div className="course-item">
-                <img src="/img/java-programming.jpg" className="img-fluid" alt="Java Programming Course" />
+                <img src="/img/java.jpg" className="img-fluid" alt="Java Programming Course" />
                 <div className="course-content">
                   <div className="d-flex justify-content-between align-items-center mb-3">
                     <Link to="/programming/courses/java"><button className="category">Java Programming</button></Link>
