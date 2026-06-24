@@ -71,6 +71,10 @@ const JavaQuestions = require('../model/Java_Questions');
 const JeeQuestion = require('../model/jee_questions')
 const JeeScore = require('../model/jee_scores')
 
+const JeeMainQuestion  = require('../model/jee_main_questions')
+const JeeMainScore     = require('../model/jee_main_scores')
+const JeeMainFullScore = require('../model/jee_main_full_scores')
+
 const SatQuestion = require('../model/sat_questions')
 const SatScore = require('../model/sat_scores')
 
@@ -4930,6 +4934,183 @@ router.get('/jee_scores', async (req, res) => {
     res.status(500).json({ error: err.message })
   }
 })
+
+// ═══ JEE Main (full-length papers + subject-wise practice) ════════════════════
+
+// GET /api/jee_main_papers
+// Groups jee_main_questions by (year, paper) and returns per-paper totals +
+// per-subject question counts / marks (shape expected by the JEE Main page).
+router.get('/jee_main_papers', async (req, res) => {
+  try {
+    const grouped = await JeeMainQuestion.aggregate([
+      {
+        $group: {
+          _id:   { year: '$year', paper: '$paper', subject: '$subject' },
+          count: { $sum: 1 },
+          marks: { $sum: { $ifNull: ['$points', 4] } },
+        },
+      },
+      {
+        $group: {
+          _id:            { year: '$_id.year', paper: '$_id.paper' },
+          totalQuestions: { $sum: '$count' },
+          totalMarks:     { $sum: '$marks' },
+          subjects:       { $push: { subject: '$_id.subject', count: '$count', totalMarks: '$marks' } },
+        },
+      },
+    ])
+
+    const result = grouped.map(p => {
+      const subjects = {}
+      p.subjects.forEach(s => { subjects[s.subject] = { count: s.count, totalMarks: s.totalMarks } })
+      return {
+        year:           p._id.year,
+        paper:          p._id.paper,
+        totalQuestions: p.totalQuestions,
+        totalMarks:     p.totalMarks,
+        subjects,
+      }
+    })
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/jee_main_questions_by_paper?year=...&paper=...  — all questions in one paper
+router.get('/jee_main_questions_by_paper', async (req, res) => {
+  try {
+    const { year, paper } = req.query
+    const filter = {}
+    if (paper) filter.paper = paper
+    if (year !== undefined && year !== '') {
+      const yearNum = Number(year)
+      // year is stored as Mixed (string or number) — match either representation
+      filter.year = (!isNaN(yearNum) && String(yearNum) === String(year)) ? { $in: [year, yearNum] } : year
+    }
+    const qs = await JeeMainQuestion.find(filter).lean()
+    res.json(qs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/jee_main_questions?subject=Physics&difficulty=easy&limit=30  — subject-wise pool
+router.get('/jee_main_questions', async (req, res) => {
+  try {
+    const { subject, difficulty, limit } = req.query
+    const filter = {}
+    if (subject) filter.subject = subject
+    if (difficulty) filter.difficulty = difficulty
+    const qs = await JeeMainQuestion.find(filter)
+      .limit(limit ? parseInt(limit) : 0)
+      .lean()
+    res.json(qs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/jee_main_scores — subject-wise quiz: upsert one doc per (email+subject), keep last 5
+router.post('/jee_main_scores', async (req, res) => {
+  try {
+    const { email, name, subject, totalQuestions, correctAnswers, wrongAnswers,
+            unattempted, score, maxScore, responses } = req.body
+    if (!email || !subject) return res.status(400).json({ error: 'email and subject are required' })
+
+    const newAttempt = {
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore,
+      responses: (responses || []).map(r => ({
+        questionId:   r.questionId,
+        userResponse: r.userResponse,
+        isCorrect:    r.isCorrect,
+        marksAwarded: r.marksAwarded,
+      })),
+      dateAttempted: new Date(),
+    }
+
+    const doc = await JeeMainScore.findOneAndUpdate(
+      { email, subject },
+      {
+        $set:  { name },
+        $push: { attempts: { $each: [newAttempt], $position: 0, $slice: 5 } },
+      },
+      { upsert: true, new: true }
+    )
+    res.json({ success: true, data: { email: doc.email, subject: doc.subject, attemptCount: doc.attempts.length } })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/jee_main_full_scores — full-length paper attempt (one doc per attempt)
+router.post('/jee_main_full_scores', async (req, res) => {
+  try {
+    const { email, name, year, paper, totalQuestions, correctAnswers, wrongAnswers,
+            unattempted, score, maxScore, subjectScores, responses, totalTimeTaken } = req.body
+    if (!email) return res.status(400).json({ error: 'email is required' })
+
+    const doc = await JeeMainFullScore.create({
+      email, name, year, paper, totalQuestions, correctAnswers, wrongAnswers,
+      unattempted, score, maxScore, subjectScores, responses, totalTimeTaken,
+      dateAttempted: new Date(),
+    })
+    res.json({ success: true, data: { _id: doc._id } })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/jee_main_full_scores?email=x@y.com — all full-paper attempts, newest first
+router.get('/jee_main_full_scores', async (req, res) => {
+  try {
+    const { email } = req.query
+    const filter = email ? { email } : {}
+    const docs = await JeeMainFullScore.find(filter).sort({ dateAttempted: -1 }).lean()
+    res.json(docs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/jee_main_admin_scores — all full-paper attempts grouped per student (admin dashboard)
+router.get('/jee_main_admin_scores', async (req, res) => {
+  try {
+    const docs = await JeeMainFullScore.find({}).sort({ dateAttempted: 1 }).lean()
+    const byEmail = {}
+    docs.forEach(doc => {
+      if (!byEmail[doc.email]) {
+        byEmail[doc.email] = { email: doc.email, name: doc.name, quizScores: [] }
+      }
+      const pct   = doc.maxScore > 0 ? Math.round((doc.score / doc.maxScore) * 100) : 0
+      const label = [doc.year, doc.paper].filter(Boolean).join(' · ') || 'JEE Main Paper'
+      byEmail[doc.email].quizScores.push({
+        attemptId:      doc._id,
+        topic:          label,
+        year:           doc.year,
+        paper:          doc.paper,
+        score:          doc.score,
+        maxScore:       doc.maxScore,
+        correctAnswers: doc.correctAnswers,
+        wrongAnswers:   doc.wrongAnswers,
+        unattempted:    doc.unattempted,
+        totalQuestions: doc.totalQuestions,
+        percentage:     pct,
+        subjectScores:  doc.subjectScores,
+        responses:      doc.responses,
+        totalTimeTaken: doc.totalTimeTaken,
+        timestamp:      doc.dateAttempted,
+        attemptNumber:  byEmail[doc.email].quizScores.length + 1,
+      })
+    })
+    res.json({ success: true, data: Object.values(byEmail) })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+
 
 // ─── SAT Debug — returns total count + distinct subjects in the collection ────
 router.get('/sat_debug', async (req, res) => {
