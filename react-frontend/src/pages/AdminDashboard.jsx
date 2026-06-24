@@ -273,7 +273,8 @@ const foundationCards = [
   { key: 'pdsa', icon: 'bi-diagram-3',   iconStyle: { background: 'rgba(102,126,234,0.1)',  color: '#667eea' }, title: 'PDSA',                    to: '/admin/dsa' },
   { key: 'dbms', icon: 'bi-diagram-3',   iconStyle: { background: 'rgba(102,126,234,0.1)',  color: '#667eea' }, title: 'DBMS',                    to: '/admin/dbms' },
   { key: 'sat',  icon: 'bi-pencil-fill', iconStyle: { background: 'rgba(0,123,255,0.1)',    color: '#007bff' }, title: 'SAT',                     to: '/admin/sat' },
-  
+  { key: 'jee',  icon: 'bi-mortarboard-fill', iconStyle: { background: 'rgba(95,207,128,0.15)', color: '#5fcf80' }, title: 'JEE Main',             to: '/admin/jee-main' },
+]
 ]
 
 const programmingCards = [
@@ -299,6 +300,7 @@ const subjectApis = [
   { key: 'prog_python', url: '/api/mcq-quiz/admin/attempts?course=python', countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
   { key: 'prog_sql',    url: '/api/mcq-quiz/admin/attempts?course=sql',    countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
   { key: 'prog_dsa',    url: '/api/mcq-quiz/admin/attempts?course=dsa',    countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
+  { key: 'jee',  url: '/api/jee_main_admin_scores',  
 ]
 
 const AdminDashboard = () => {
@@ -425,6 +427,7 @@ const AdminDashboard = () => {
     { to: '/admin/programming?course=python', icon: 'bi-filetype-py',    label: 'Python (Quiz)' },
     { to: '/admin/programming?course=sql',    icon: 'bi-database-fill',  label: 'SQL' },
     { to: '/admin/programming?course=dsa',    icon: 'bi-diagram-3-fill', label: 'DSA (Quiz)' },
+    { to: '/admin/jee-main',   icon: 'bi-mortarboard-fill', label: 'JEE Main' },
   ]
 
   return (
