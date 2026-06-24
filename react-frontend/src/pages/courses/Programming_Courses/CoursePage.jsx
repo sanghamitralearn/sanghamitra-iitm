@@ -92,14 +92,14 @@ const COURSE_CONFIG = {
       { week: 8,  topic: 'Libraries & Practice',    description: 'NumPy, Pandas, mixed revision' },
     ],
   },
-  sql: {
-    title: 'SQL & Databases',
+  dbms: {
+    title: 'database management systems',
     icon: 'bi-database-fill',
     color: '#4479a1',
-    description: 'Database fundamentals, SQL queries, and optimization techniques.',
+    description: 'Database fundamentals, dbms queries, and optimization techniques.',
     weeks: [
-      { week: 1, topic: 'SQL Basics',               description: 'SELECT, WHERE, ORDER BY, LIMIT' },
-      { week: 2, topic: 'Joins',                    description: 'INNER, LEFT, RIGHT, FULL OUTER joins' },
+      { week: 1, topic: 'Introduction to DBMS',     description: 'Introduction to DBMS is the foundational study of database systems, covering their purpose, architecture, data models, and how they overcome the limitations of traditional file-based storage systems.' },
+      { week: 2, topic: '',                    description: 'INNER, LEFT, RIGHT, FULL OUTER joins' },
       { week: 3, topic: 'Aggregate Functions',      description: 'COUNT, SUM, AVG, GROUP BY, HAVING' },
       { week: 4, topic: 'Subqueries & CTEs',        description: 'Nested queries, WITH clause' },
       { week: 5, topic: 'DDL & Data Modeling',      description: 'CREATE, ALTER, DROP, normalization' },
@@ -108,11 +108,11 @@ const COURSE_CONFIG = {
       { week: 8, topic: 'Stored Procedures & Views',description: 'Procedures, triggers, views' },
     ],
   },
-  dsa: {
+  pdsa: {
     title: 'Data Structures & Algorithms',
     icon: 'bi-diagram-3-fill',
     color: '#f4b41a',
-    description: 'Core DSA concepts essential for coding interviews and problem solving.',
+    description: 'Core pdsa concepts essential for coding interviews and problem solving.',
     weeks: [
       { week: 1,  topic: 'Arrays & Strings',        description: 'Traversal, sliding window, two pointers' },
       { week: 2,  topic: 'Linked Lists',            description: 'Singly, doubly, circular lists' },
@@ -125,7 +125,7 @@ const COURSE_CONFIG = {
       { week: 9,  topic: 'Dynamic Programming',     description: 'Memoization, tabulation, classic problems' },
       { week: 10, topic: 'Greedy & Backtracking',   description: 'Interval scheduling, N-queens, subsets' },
       { week: 11, topic: 'Divide & Conquer',        description: 'Binary search, merge sort, matrix multiply' },
-      { week: 12, topic: 'Revision & Practice',     description: 'Mixed DSA revision questions' },
+      { week: 12, topic: 'Revision & Practice',     description: 'Mixed pdsa revision questions' },
     ],
   },
 }
