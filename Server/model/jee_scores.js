@@ -2,9 +2,9 @@ const mongoose = require('mongoose');
 
 // Lean response — no questionText/correctAnswer (already in jee_questions)
 const responseSchema = new mongoose.Schema({
-  questionId: mongoose.Schema.Types.ObjectId,
+  questionId:   mongoose.Schema.Types.ObjectId,
   userResponse: mongoose.Schema.Types.Mixed,
-  isCorrect: Boolean,
+  isCorrect:    Boolean,
   marksAwarded: Number,
 }, { _id: false });
 
@@ -13,12 +13,12 @@ const responseSchema = new mongoose.Schema({
 const attemptSchema = new mongoose.Schema({
   totalQuestions: Number,
   correctAnswers: Number,
-  wrongAnswers: Number,
-  unattempted: Number,
-  score: Number,
-  maxScore: Number,
-  responses: [responseSchema],
-  dateAttempted: { type: Date, default: Date.now },
+  wrongAnswers:   Number,
+  unattempted:    Number,
+  score:          Number,
+  maxScore:       Number,
+  responses:      [responseSchema],
+  dateAttempted:  { type: Date, default: Date.now },
 }, { _id: false });
 
 const jeeScoreSchema = new mongoose.Schema({
