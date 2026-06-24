@@ -422,6 +422,58 @@ const Home = () => {
                 </div>
               </div>
             </div>
+
+            {/* JEE Main Course Card */}
+            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4" data-aos="zoom-in" data-aos-delay="300">
+              <div className="course-item" style={{ width: '100%' }}>
+                {/* Gradient banner instead of image */}
+                <div style={{
+                  background: 'linear-gradient(135deg, #20c997 0%, #0d6efd 40%, #6610f2 100%)',
+                  height: '180px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                }}>
+                  <div style={{ display: 'flex', gap: '18px' }}>
+                    <div style={{ textAlign: 'center', color: '#fff' }}>
+                      <i className="bi bi-lightning-charge-fill" style={{ fontSize: '1.8rem' }}></i>
+                      <div style={{ fontSize: '0.75rem', marginTop: 4 }}>Physics</div>
+                    </div>
+                    <div style={{ textAlign: 'center', color: '#fff' }}>
+                      <i className="bi bi-eyedropper" style={{ fontSize: '1.8rem' }}></i>
+                      <div style={{ fontSize: '0.75rem', marginTop: 4 }}>Chemistry</div>
+                    </div>
+                    <div style={{ textAlign: 'center', color: '#fff' }}>
+                      <i className="bi bi-calculator-fill" style={{ fontSize: '1.8rem' }}></i>
+                      <div style={{ fontSize: '0.75rem', marginTop: 4 }}>Mathematics</div>
+                    </div>
+                  </div>
+                  <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.8rem', letterSpacing: '1px' }}>
+                    JEE MAIN
+                  </span>
+                </div>
+
+                <div className="course-content">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <Link to="/courses/jee-main"><button className="category">JEE Main</button></Link>
+                    <span className="badge bg-primary" style={{ fontSize: '0.75rem' }}>+4 / −1</span>
+                  </div>
+                  <p className="description">
+                    Practice JEE Main questions subject-wise — Physics, Chemistry and Mathematics.
+                    Official JEE Main marking scheme applied: +4 for correct, −1 for wrong MCQ, 0 for unattempted.
+                    Includes LaTeX rendering and diagram support.
+                  </p>
+                  <div className="trainer d-flex justify-content-between align-items-center">
+                    <div className="trainer-rank d-flex align-items-center">
+                      <i className="bi bi-heart heart-icon"></i>&nbsp;0
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
           {/* SAT Course Card */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4" data-aos="zoom-in" data-aos-delay="400">
               <div className="course-item" style={{ width: '100%' }}>
