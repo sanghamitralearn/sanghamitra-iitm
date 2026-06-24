@@ -42,7 +42,7 @@ const jeeQuestionSchema = new mongoose.Schema({
   options: [optionSchema],
   // string ("A"), array (["A","B"]), number (100), or range ({ min, max })
   correct_answer: mongoose.Schema.Types.Mixed,
-  difficulty: { type: String, enum: ['easy', 'medium', 'hard'], default: 'medium' }, 
+  difficulty: { type: String, enum: ['easy', 'medium', 'hard'], default: 'medium' },
   points: { type: Number, default: 3 },
   marking_scheme: markingSchemeSchema,
   concept_tags: [String],
