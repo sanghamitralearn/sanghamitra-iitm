@@ -1101,7 +1101,7 @@ const JEEQuiz = () => {
                 <Link to="/courses/jee" className="btn btn-outline-secondary w-100 mt-2 btn-sm"><i className="bi bi-arrow-left me-1" />Exit</Link>
               </div>
             </div>
-          </div>
+          </div> 
         </div>
       </div>
     </main>
