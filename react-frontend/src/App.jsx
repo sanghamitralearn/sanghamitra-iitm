@@ -73,6 +73,11 @@ import JavaQuiz from './pages/courses/JAVA/JavaQuiz'
 import JEE from './pages/courses/JEE'
 import JEEQuiz from './pages/courses/JEEQuiz'
 
+import JEEMain from './pages/courses/JEEMain'
+import JEEMainQuiz from './pages/courses/JEEMainQuiz'
+import JEEMainTest from './pages/courses/JEEMainTest'
+import JEEMainAnalysis from './pages/JEEMainAnalysis'
+
 import SAT from './pages/courses/SAT'
 import SATQuiz from './pages/courses/SATQuiz'
 import SATFullTest from './pages/courses/SATFullTest'
@@ -179,6 +184,12 @@ function App() {
             {/* JEE Advanced — subject-wise quizzes */}
             <Route path="/courses/jee" element={<JEE />} />
             <Route path="/courses/jee/quiz/:subject" element={<JEEQuiz />} />
+
+            {/* JEE Main — paper listing, full test, analysis + legacy subject quizzes */}
+            <Route path="/courses/jee-main" element={<JEEMain />} />
+            <Route path="/courses/jee-main/test" element={<JEEMainTest />} />
+            <Route path="/courses/jee-main/analysis" element={<JEEMainAnalysis />} />
+            <Route path="/courses/jee-main/quiz/:subject" element={<JEEMainQuiz />} />
 
             {/* SAT — module-based quizzes */}
             <Route path="/courses/sat" element={<SAT />} />
