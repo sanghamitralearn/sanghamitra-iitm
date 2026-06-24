@@ -212,6 +212,28 @@ const Home = () => {
               </div>
             </div>
 
+             DBMS Course Card 
+            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
+              <div className="course-item">
+                <img src="/img/DBMS.png" className="img-fluid" alt="Database Management Systems Course" />
+                <div className="course-content">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <Link to="/courses/dbms"><button className="category">Database Management Systems</button></Link>
+                  </div>
+                  <p className="description">
+                    Welcome to our Database Management Systems Hub, where you learn how data is stored,
+                    organized, and queried. Explore ER modeling, relational design, SQL fundamentals,
+                    normalization, indexing, and transactions through clear notes, quizzes, and hands-on practice.
+                  </p>
+                  <div className="trainer d-flex justify-content-between align-items-center">
+                    <div className="trainer-rank d-flex align-items-center">
+                      <i className="bi bi-heart heart-icon"></i>&nbsp;89
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
 */}
           
 
@@ -251,28 +273,6 @@ const Home = () => {
                     Welcome to our Python Data Structures & Algorithms Hub, where programming meets 
                     efficient problem-solving. Master Python fundamentals, explore data structures, 
                     and implement powerful algorithms through hands-on coding exercises and interactive lessons.
-                  </p>
-                  <div className="trainer d-flex justify-content-between align-items-center">
-                    <div className="trainer-rank d-flex align-items-center">
-                      <i className="bi bi-heart heart-icon"></i>&nbsp;89
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* DBMS Course Card */}
-            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
-              <div className="course-item">
-                <img src="/img/DBMS.png" className="img-fluid" alt="Database Management Systems Course" />
-                <div className="course-content">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Link to="/courses/dbms"><button className="category">Database Management Systems</button></Link>
-                  </div>
-                  <p className="description">
-                    Welcome to our Database Management Systems Hub, where you learn how data is stored,
-                    organized, and queried. Explore ER modeling, relational design, SQL fundamentals,
-                    normalization, indexing, and transactions through clear notes, quizzes, and hands-on practice.
                   </p>
                   <div className="trainer d-flex justify-content-between align-items-center">
                     <div className="trainer-rank d-flex align-items-center">
@@ -327,15 +327,18 @@ const Home = () => {
               </div>
             </div>
 
-            {/* SQL Course Card - NEW */}
+            {/* DBMS Course Card - NEW */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="200">
               <div className="course-item">
-                <img src="/img/sql-database.jpg" className="img-fluid" alt="SQL & Databases Course" />
+                <img src="/img/DBMS.png" className="img-fluid" alt="Database Management Systems Course" />
                 <div className="course-content">
                   <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Link to="/programming/courses/sql"><button className="category">SQL & Databases</button></Link>
+                    <Link to="/programming/courses/dbms"><button className="category">Database Management Systems Course</button></Link>
                   </div>
                   <p className="description">
+                    Welcome to our Database Management Systems Hub, where you learn how data is stored,
+                    organized, and queried. Explore ER modeling, relational design, SQL fundamentals,
+                    normalization, indexing, and transactions through clear notes, quizzes, and hands-on practice.
                     Learn SQL from basic queries to joins, subqueries, indexing, and stored procedures. 
                     Master database management and optimization techniques for real-world applications.
                   </p>
@@ -343,12 +346,12 @@ const Home = () => {
                     <div className="trainer-rank d-flex align-items-center">
                       <i className="bi bi-heart heart-icon"></i>&nbsp;71
                     </div>
-                    <span className="badge bg-primary">8 Weeks</span>
+                    <span className="badge bg-primary">12 Weeks</span>
                   </div>
                 </div>
               </div>
             </div>
-
+            
           {/* Competitive Exam Foundation Course Card */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
               <div className="course-item">
