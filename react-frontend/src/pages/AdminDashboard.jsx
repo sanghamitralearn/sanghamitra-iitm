@@ -300,7 +300,7 @@ const subjectApis = [
   { key: 'prog_python', url: '/api/mcq-quiz/admin/attempts?course=python', countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
   { key: 'prog_sql',    url: '/api/mcq-quiz/admin/attempts?course=sql',    countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
   { key: 'prog_dsa',    url: '/api/mcq-quiz/admin/attempts?course=dsa',    countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
-  { key: 'jee',  url: '/api/jee_main_admin_scores',  
+  { key: 'jee',  url: '/api/jee_main_admin_scores',  countFn: d => ((d && d.data) || []).length },
 ]
 
 const AdminDashboard = () => {
