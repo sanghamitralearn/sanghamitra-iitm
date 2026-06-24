@@ -273,7 +273,8 @@ const foundationCards = [
   { key: 'pdsa', icon: 'bi-diagram-3',   iconStyle: { background: 'rgba(102,126,234,0.1)',  color: '#667eea' }, title: 'PDSA',                    to: '/admin/dsa' },
   { key: 'dbms', icon: 'bi-diagram-3',   iconStyle: { background: 'rgba(102,126,234,0.1)',  color: '#667eea' }, title: 'DBMS',                    to: '/admin/dbms' },
   { key: 'sat',  icon: 'bi-pencil-fill', iconStyle: { background: 'rgba(0,123,255,0.1)',    color: '#007bff' }, title: 'SAT',                     to: '/admin/sat' },
-  { key: 'jee',  icon: 'bi-mortarboard-fill', iconStyle: { background: 'rgba(95,207,128,0.15)', color: '#5fcf80' }, title: 'JEE Main',             to: '/admin/jee-main' },
+  { key: 'jee',    icon: 'bi-mortarboard-fill', iconStyle: { background: 'rgba(95,207,128,0.15)',  color: '#5fcf80' }, title: 'JEE Main',      to: '/admin/jee-main' },
+  { key: 'jeeadv', icon: 'bi-mortarboard-fill', iconStyle: { background: 'rgba(220,53,69,0.15)',   color: '#dc3545' }, title: 'JEE Advanced',  to: '/courses/jee' },
 ]
 
 
@@ -300,7 +301,8 @@ const subjectApis = [
   { key: 'prog_python', url: '/api/mcq-quiz/admin/attempts?course=python', countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
   { key: 'prog_sql',    url: '/api/mcq-quiz/admin/attempts?course=sql',    countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
   { key: 'prog_dsa',    url: '/api/mcq-quiz/admin/attempts?course=dsa',    countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
-  { key: 'jee',  url: '/api/jee_main_admin_scores',  countFn: d => ((d && d.data) || []).length },
+  { key: 'jee',    url: '/api/jee_main_admin_scores',  countFn: d => ((d && d.data) || []).length },
+  { key: 'jeeadv', url: '/api/jee_scores',             countFn: d => (Array.isArray(d) ? d : []).length },
 ]
 
 const AdminDashboard = () => {
@@ -364,7 +366,7 @@ const AdminDashboard = () => {
   subjectApis.forEach(async ({ key, url, countFn }) => {
     try {
       const data = await fetchFromAPI(`${VITE_API_URL}${url}`)
-      
+
       // Special handling for PDSA and Python to count unique students
       if (key === 'pdsa' || key === 'py') {
         const submissions = Array.isArray(data) ? data : (data.submissions || data.data || [])
@@ -377,7 +379,7 @@ const AdminDashboard = () => {
       } else {
         setSubjectCounts(prev => ({ ...prev, [key]: countFn(data) }))
       }
-    } catch { 
+    } catch {
       // leave as undefined
     }
   })
@@ -428,6 +430,7 @@ const AdminDashboard = () => {
     { to: '/admin/programming?course=sql',    icon: 'bi-database-fill',  label: 'SQL' },
     { to: '/admin/programming?course=dsa',    icon: 'bi-diagram-3-fill', label: 'DSA (Quiz)' },
     { to: '/admin/jee-main',   icon: 'bi-mortarboard-fill', label: 'JEE Main' },
+    { to: '/courses/jee',      icon: 'bi-mortarboard-fill', label: 'JEE Advanced' },
   ]
 
   return (
@@ -667,7 +670,7 @@ const AdminDashboard = () => {
 
               <div className="row">
 
-{/* 
+{/*
                 <div className="col-md-6 mb-4">
                   <div style={s.dashCard} className="admin-dash-card">
                     <div style={{ ...s.cardIcon, background: 'rgba(40,167,69,0.1)', color: '#28a745' }}>
@@ -679,7 +682,7 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-               
+
                 <div className="col-md-6 mb-4">
                   <div style={s.dashCard} className="admin-dash-card">
                     <div style={{ ...s.cardIcon, background: 'rgba(255,193,7,0.1)', color: '#ffc107' }}>
