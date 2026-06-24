@@ -11,7 +11,7 @@ import Register from './pages/Register'
 import ForgotPassword from './pages/ForgotPassword'
 import English from './pages/English'
 import Math from './pages/Math'
-import Statistics from './pages/Statistics'
+import Statistics from './pages/courses/Statistics'
 import Programming from './pages/Programming'
 import Grammar from './pages/Grammar'
 import Vocabulary from './pages/Vocabulary'
@@ -42,12 +42,18 @@ import Python from './pages/courses/Python'
 import AdminSubject from './pages/courses/Admin'
 import IITMMathQuiz from './pages/courses/IITMMathQuiz'
 import StatisticsQuiz from './pages/courses/StatisticsQuiz'
-
+import MathReview from './pages/MathReview'
 // PDSA quiz type imports
 import PdsaTestQuiz from './pages/courses/PDSA/PdsaTestQuiz'
 import PdsaCodingQuiz from './pages/courses/PDSA/PdsaCodingQuiz'
 import PdsaInterviewQuiz from './pages/courses/PDSA/PdsaInterviewQuiz'
 import Math2Quiz from './pages/courses/Math2Quiz'
+import MathExamReview from './pages/MathReview'
+import JEE from './pages/courses/JEE'
+import JEEQuiz from './pages/courses/JEEQuiz'
+import JEEAdminPage from './pages/JEEAdminPage'
+import QuestionGeneratorPage from './pages/QuestionGeneratorPage'
+
 
 function App() {
   return (
@@ -83,6 +89,8 @@ function App() {
             <Route path="/admin/iitm-ct" element={<CTDashboard />} />
             <Route path="/admin/python" element={<PythonDashboard />} />
             <Route path="/admin/dsa" element={<PDSADashboard />} />
+            <Route path="/admin/jee" element={<JEEAdminPage />} />
+            <Route path="/admin/question-generator" element={<QuestionGeneratorPage />} />
             <Route path="/algebra" element={<Algebra />} />
             <Route path="/math2" element={<Math2 />} />
             <Route path="/statistics2" element={<Statistics2 />} />
@@ -103,7 +111,8 @@ function App() {
             
             {/* IIITM Math Quiz — dynamic, DB-driven */}
             <Route path="/courses/IIITM-math/quiz/:topic" element={<IITMMathQuiz />} />
-
+            <Route path="/admin/math/exam/:email/:topic/:attemptNumber" element={<MathReview />} />
+            <Route path="/courses/IIITM-math/review" element={<MathReview />} />
             {/* Statistics Quiz — dynamic, DB-driven */}
             <Route path="/courses/statistics/quiz/:topic" element={<StatisticsQuiz />} />
 
@@ -111,9 +120,13 @@ function App() {
             <Route path="/courses/pdsa/test/:weekId" element={<PdsaTestQuiz />} />
             <Route path="/courses/pdsa/coding/:weekId" element={<PdsaCodingQuiz />} />
             <Route path="/courses/pdsa/interview/:weekId" element={<PdsaInterviewQuiz />} />
-
+      
             {/* Math 2 Quiz — week-based, DB-driven */}
             <Route path="/courses/math2/quiz/:week" element={<Math2Quiz />} />
+
+            {/* JEE Advanced — subject-wise quizzes */}
+            <Route path="/courses/jee" element={<JEE />} />
+            <Route path="/courses/jee/quiz/:subject" element={<JEEQuiz />} />
           </Routes>
         </main>
         <Footer />
