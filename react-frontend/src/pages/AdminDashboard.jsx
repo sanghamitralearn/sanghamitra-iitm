@@ -275,7 +275,7 @@ const foundationCards = [
   { key: 'sat',  icon: 'bi-pencil-fill', iconStyle: { background: 'rgba(0,123,255,0.1)',    color: '#007bff' }, title: 'SAT',                     to: '/admin/sat' },
   { key: 'jee',  icon: 'bi-mortarboard-fill', iconStyle: { background: 'rgba(95,207,128,0.15)', color: '#5fcf80' }, title: 'JEE Main',             to: '/admin/jee-main' },
 ]
-]
+
 
 const programmingCards = [
   { key: 'prog_java',   icon: 'bi-cup-hot-fill',   iconStyle: { background: 'rgba(248,152,32,0.1)',  color: '#f89820' }, title: 'Java',    to: '/admin/programming?course=java' },
