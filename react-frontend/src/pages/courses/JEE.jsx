@@ -122,6 +122,7 @@ const JEE = () => {
 
       {/* Subject cards */}
       <div className="container mb-5">
+        <h5 className="fw-bold mb-3" style={{ color: '#212529' }}>Practice by Subject</h5>
         <div className="course-list" style={{ maxWidth: 900, margin: '0 auto', padding: '0 15px' }}>
           {SUBJECTS.map((sub) => {
             const stats = getSubjectStats(sub.subject)
@@ -220,15 +221,38 @@ const JEE = () => {
           })}
         </div>
 
-        {/* Full Test */}
-        <div className="text-center mb-4">
-          <Link
-            to="/courses/jee/quiz/Full"
-            className="btn btn-lg text-white"
-            style={{ background: 'linear-gradient(135deg,#6610f2,#0d6efd,#198754)', borderRadius: 8, padding: '0.6rem 2rem' }}
-          >
-            <i className="bi bi-stopwatch-fill me-2" />Start Full Test (All 3 Subjects)
-          </Link>
+        {/* Full Paper Tests */}
+        <div className="mb-5">
+          <h5 className="fw-bold mb-3" style={{ color: '#212529' }}>Full Paper Tests</h5>
+          <div className="row g-3">
+            {[
+              { paper: 'Paper1', num: 1, year: '2025', color: '#f7931e', gradient: 'linear-gradient(135deg,#f7931e,#fcbe7c)' },
+              { paper: 'Paper2', num: 2, year: '2025', color: '#6610f2', gradient: 'linear-gradient(135deg,#6610f2,#ae63f7)' },
+            ].map(({ paper, num, year, color, gradient }) => (
+              <div key={paper} className="col-md-6">
+                <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 16, overflow: 'hidden' }}>
+                  <div style={{ height: 5, background: gradient }} />
+                  <div className="card-body p-4">
+                    <h4 className="fw-bold mb-1">{year} — Paper {num}</h4>
+                    <p className="text-muted mb-3" style={{ fontSize: '0.9rem' }}>
+                      <span className="fw-semibold">3 hrs</span>
+                      <span className="mx-2 text-muted">|</span>
+                      <span style={{ color }}>JEE (Advanced)</span>
+                    </p>
+                    <p className="text-muted small mb-4">
+                      51 questions · Physics + Chemistry + Mathematics
+                      <br />Section I–IV per subject · 60 marks each · 180 marks total
+                    </p>
+                    <Link to={`/courses/jee/quiz/${paper}`}
+                      className="btn text-white"
+                      style={{ background: gradient, borderRadius: 8, padding: '0.5rem 2rem', minWidth: 160 }}>
+                      <i className="bi bi-play-fill me-1" />Start Test
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Info strip */}
@@ -244,7 +268,7 @@ const JEE = () => {
                 <div className="fw-bold">{item.label}</div>
                 <div className="text-muted" style={{ fontSize: '0.82rem' }}>{item.desc}</div>
               </div>
-            </div> 
+            </div>
           ))}
         </div>
       </div>
