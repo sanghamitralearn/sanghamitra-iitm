@@ -50,27 +50,10 @@ async function loadPDSA() {
       topic: s.topic || 'Quiz Test',
       score: s.percentage || ((s.score / (s.maxScore || 100)) * 100) || 0,
       timestamp: s.timestamp || new Date().toISOString(),
-      icon: 'bi-pencil-square', iconClass: 'dsa',
+      icon: 'bi-pencil-square', iconClass: 'pdsa',
     }))
   } catch { return [] }
 }
-
-
-async function loadDBMS() {
-  try {
-    const data = await fetchFromAPI(`${VITE_API_URL}/api/dbms-submission`)
-    const arr = Array.isArray(data) ? data : (data.submissions || data.data || [])
-    return arr.filter(s => s.email && s.email.toLowerCase() !== 'test@example.com').map(s => ({
-      userName: s.username || s.name || s.email,
-      subject: 'Quiz Test (DBMS)', subjectKey: 'dbms',
-      topic: s.topic || 'Quiz Test',
-      score: s.percentage || ((s.score / (s.maxScore || 100)) * 100) || 0,
-      timestamp: s.timestamp || new Date().toISOString(),
-      icon: 'bi-database', iconClass: 'dbms',
-    }))
-  } catch { return [] }
-}
-
 
 async function loadInterview() {
   try {
@@ -250,39 +233,19 @@ const s = {
 
 const iconColors = {
   ct:          { background: 'rgba(102,126,234,0.1)', color: '#667eea' },
-  python:      { background: 'rgba(52,152,219,0.1)',  color: '#3498db' },
-  dsa:         { background: 'rgba(155,89,182,0.1)',  color: '#9b59b6' },
   math:        { background: 'rgba(46,204,113,0.1)',  color: '#2ecc71' },
   stats:       { background: 'rgba(241,196,15,0.1)',  color: '#f1c40f' },
   math2:       { background: 'rgba(230,126,34,0.1)',  color: '#e67e22' },
   stats2:      { background: 'rgba(231,76,60,0.1)',   color: '#e74c3c' },
   programming: { background: 'rgba(52,152,219,0.1)',  color: '#3498db' },
   interview:   { background: 'rgba(155,89,182,0.1)',  color: '#9b59b6' },
-  dbms:        { background: 'rgba(26,188,156,0.1)',  color: '#1abc9c' },
   java:        { background: 'rgba(248,152,32,0.1)',  color: '#f89820' },
-  sql:         { background: 'rgba(68,121,161,0.1)',  color: '#4479a1' },
+  dbms:        { background: 'rgba(68,121,161,0.1)',  color: '#4479a1' },
+  python:      { background: 'rgba(52,152,219,0.1)',  color: '#3498db' },
+  pdsa:        { background: 'rgba(155,89,182,0.1)',  color: '#9b59b6' },
+  sat:         { background: 'rgba(0,61,143,0.1)',    color: '#003D8F' },
+  jee:         { background: 'rgba(220,53,69,0.1)',   color: '#dc3545' },
 }
-
-const foundationCards = [
-  { key: 'm1',   icon: 'bi-calculator',  iconStyle: { background: 'rgba(52,152,219,0.1)',   color: '#3498db' }, title: 'Mathematics 1',           to: '/admin/math' },
-  { key: 'm2',   icon: 'bi-calculator',  iconStyle: { background: 'rgba(230,126,34,0.1)',   color: '#e67e22' }, title: 'Mathematics 2',           to: '/admin/iitm-math2' },
-  { key: 's1',   icon: 'bi-bar-chart',   iconStyle: { background: 'rgba(241,196,15,0.1)',   color: '#f1c40f' }, title: 'Statistics 1',            to: '/admin/stats1' },
-  { key: 's2',   icon: 'bi-bar-chart',   iconStyle: { background: 'rgba(231,76,60,0.1)',    color: '#e74c3c' }, title: 'Statistics 2',            to: '/admin/stats2' },
-  { key: 'py',   icon: 'bi-filetype-py', iconStyle: { background: 'rgba(46,204,113,0.1)',   color: '#2ecc71' }, title: 'Python (Coding)',          to: '/admin/python' },
-  { key: 'ct',   icon: 'bi-cpu',         iconStyle: { background: 'rgba(155,89,182,0.1)',   color: '#9b59b6' }, title: 'Computational Thinking',  to: '/admin/iitm-ct' },
-  { key: 'pdsa', icon: 'bi-diagram-3',   iconStyle: { background: 'rgba(102,126,234,0.1)',  color: '#667eea' }, title: 'PDSA',                    to: '/admin/dsa' },
-  { key: 'dbms', icon: 'bi-diagram-3',   iconStyle: { background: 'rgba(102,126,234,0.1)',  color: '#667eea' }, title: 'DBMS',                    to: '/admin/dbms' },
-  { key: 'sat',  icon: 'bi-pencil-fill', iconStyle: { background: 'rgba(0,123,255,0.1)',    color: '#007bff' }, title: 'SAT',                     to: '/admin/sat' },
-  { key: 'jee',  icon: 'bi-mortarboard-fill', iconStyle: { background: 'rgba(95,207,128,0.15)', color: '#5fcf80' }, title: 'JEE Main',             to: '/admin/jee-main' },
-]
-
-
-const programmingCards = [
-  { key: 'prog_java',   icon: 'bi-cup-hot-fill',   iconStyle: { background: 'rgba(248,152,32,0.1)',  color: '#f89820' }, title: 'Java',    to: '/admin/programming?course=java' },
-  { key: 'prog_python', icon: 'bi-filetype-py',    iconStyle: { background: 'rgba(55,118,171,0.1)',  color: '#3776ab' }, title: 'Python',  to: '/admin/programming?course=python' },
-  { key: 'prog_sql',    icon: 'bi-database-fill',  iconStyle: { background: 'rgba(68,121,161,0.1)',  color: '#4479a1' }, title: 'SQL',     to: '/admin/programming?course=sql' },
-  { key: 'prog_dsa',    icon: 'bi-diagram-3-fill', iconStyle: { background: 'rgba(244,180,26,0.1)',  color: '#f4b41a' }, title: 'DSA',     to: '/admin/programming?course=dsa' },
-]
 
 const LAST_SEEN_KEY = 'admin_notif_last_seen'
 
@@ -291,16 +254,22 @@ const subjectApis = [
   { key: 'm2',        url: '/api/iitm_math2_scores',                  countFn: d => (d.data || d || []).length },
   { key: 's1',        url: '/api/statistics_scores',                  countFn: d => (d.data || d || []).length },
   { key: 's2',        url: '/api/iitm_stats2_scores',                 countFn: d => (Array.isArray(d) ? d : (d.data || [])).length },
-  { key: 'py',        url: '/api/coding-submissions',                 countFn: d => (Array.isArray(d) ? d : (d.submissions || d.data || [])).length },
   { key: 'ct',        url: '/api/iitm_ct_scores',                     countFn: d => (d.data || d || []).length },
-  { key: 'pdsa',      url: '/api/pdsa-submissions',                   countFn: d => (Array.isArray(d) ? d : (d.submissions || d.data || [])).length },
-  { key: 'dbms',      url: '/api/dbms-submission',                    countFn: d => (Array.isArray(d) ? d : (d.submissions || d.data || [])).length },
-  { key: 'sat',       url: '/api/sat_scores',                         countFn: d => new Set((Array.isArray(d) ? d : []).map(e => e.email).filter(Boolean)).size },
   { key: 'prog_java',   url: '/api/mcq-quiz/admin/attempts?course=java',   countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
   { key: 'prog_python', url: '/api/mcq-quiz/admin/attempts?course=python', countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
-  { key: 'prog_sql',    url: '/api/mcq-quiz/admin/attempts?course=sql',    countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
-  { key: 'prog_dsa',    url: '/api/mcq-quiz/admin/attempts?course=dsa',    countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
-  { key: 'jee',  url: '/api/jee_main_admin_scores',  countFn: d => ((d && d.data) || []).length },
+  { key: 'prog_dbms',    url: '/api/mcq-quiz/admin/attempts?course=dbms',    countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
+  { key: 'prog_pdsa',      url: '/api/pdsa-submissions',                   countFn: d => {
+      const arr = Array.isArray(d) ? d : (d.submissions || d.data || [])
+      const uniqueStudents = new Set(
+        arr
+          .filter(s => s.email && s.email.toLowerCase() !== 'test@example.com')
+          .map(s => s.email.toLowerCase())
+      )
+      return uniqueStudents.size
+    }
+  },
+  { key: 'sat',       url: '/api/sat_scores',                         countFn: d => new Set((Array.isArray(d) ? d : []).map(e => e.email).filter(Boolean)).size },
+  { key: 'jee',       url: '/api/jee_main_admin_scores',              countFn: d => ((d && d.data) || []).length },
 ]
 
 const AdminDashboard = () => {
@@ -361,27 +330,15 @@ const AdminDashboard = () => {
   }, [loadNotifications])
 
   useEffect(() => {
-  subjectApis.forEach(async ({ key, url, countFn }) => {
-    try {
-      const data = await fetchFromAPI(`${VITE_API_URL}${url}`)
-      
-      // Special handling for PDSA and Python to count unique students
-      if (key === 'pdsa' || key === 'py') {
-        const submissions = Array.isArray(data) ? data : (data.submissions || data.data || [])
-        const uniqueStudents = new Set(
-          submissions
-            .filter(s => s.email && s.email.toLowerCase() !== 'test@example.com')
-            .map(s => s.email.toLowerCase())
-        )
-        setSubjectCounts(prev => ({ ...prev, [key]: uniqueStudents.size }))
-      } else {
+    subjectApis.forEach(async ({ key, url, countFn }) => {
+      try {
+        const data = await fetchFromAPI(`${VITE_API_URL}${url}`)
         setSubjectCounts(prev => ({ ...prev, [key]: countFn(data) }))
+      } catch { 
+        // leave as undefined
       }
-    } catch { 
-      // leave as undefined
-    }
-  })
-}, [])
+    })
+  }, [])
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -410,23 +367,18 @@ const AdminDashboard = () => {
     setHasNewNotifs(false)
   }
 
-
-
   const navItems = [
     { to: '/admin',            icon: 'bi-speedometer2', label: 'Dashboard Overview' },
     { to: '/admin/math',       icon: 'bi-calculator',   label: 'Mathematics 1' },
     { to: '/admin/iitm-math2', icon: 'bi-calculator',   label: 'Mathematics 2' },
     { to: '/admin/stats1',     icon: 'bi-bar-chart',    label: 'Statistics 1' },
     { to: '/admin/stats2',     icon: 'bi-bar-chart',    label: 'Statistics 2' },
-    { to: '/admin/python',     icon: 'bi-filetype-py',  label: 'Python' },
     { to: '/admin/iitm-ct',    icon: 'bi-cpu',          label: 'Computational Thinking' },
-    { to: '/admin/dsa',        icon: 'bi-diagram-3',    label: 'PDSA' },
-    { to: '/admin/dbms',       icon: 'bi-diagram-3',    label: 'DBMS' },
-    { to: '/admin/sat',                       icon: 'bi-pencil-fill',    label: 'SAT' },
     { to: '/admin/programming?course=java',   icon: 'bi-cup-hot-fill',   label: 'Java' },
-    { to: '/admin/programming?course=python', icon: 'bi-filetype-py',    label: 'Python (Quiz)' },
-    { to: '/admin/programming?course=sql',    icon: 'bi-database-fill',  label: 'SQL' },
-    { to: '/admin/programming?course=dsa',    icon: 'bi-diagram-3-fill', label: 'DSA (Quiz)' },
+    { to: '/admin/programming?course=python', icon: 'bi-filetype-py',    label: 'Python' },
+    { to: '/admin/programming?course=dbms',    icon: 'bi-database-fill',  label: 'DBMS' },
+    { to: '/admin/pdsa',       icon: 'bi-diagram-3-fill', label: 'PDSA' },
+    { to: '/admin/sat',        icon: 'bi-pencil-fill',    label: 'SAT' },
     { to: '/admin/jee-main',   icon: 'bi-mortarboard-fill', label: 'JEE Main' },
   ]
 
@@ -615,12 +567,18 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-        {/* Foundation Courses */}
+              {/* Foundation Courses */}
               <h5 className="text-muted mb-3 fw-semibold" style={{ letterSpacing: '0.03em' }}>
                 <i className="bi bi-mortarboard-fill me-2" style={{ color: '#667eea' }}></i>Foundation Courses
               </h5>
-              <div className="row mb-2">
-                {foundationCards.map((card) => (
+              <div className="row mb-4">
+                {[
+                  { key: 'm1',   icon: 'bi-calculator',  iconStyle: { background: 'rgba(52,152,219,0.1)',   color: '#3498db' }, title: 'Mathematics 1',           to: '/admin/math' },
+                  { key: 'm2',   icon: 'bi-calculator',  iconStyle: { background: 'rgba(230,126,34,0.1)',   color: '#e67e22' }, title: 'Mathematics 2',           to: '/admin/iitm-math2' },
+                  { key: 's1',   icon: 'bi-bar-chart',   iconStyle: { background: 'rgba(241,196,15,0.1)',   color: '#f1c40f' }, title: 'Statistics 1',            to: '/admin/stats1' },
+                  { key: 's2',   icon: 'bi-bar-chart',   iconStyle: { background: 'rgba(231,76,60,0.1)',    color: '#e74c3c' }, title: 'Statistics 2',            to: '/admin/stats2' },
+                  { key: 'ct',   icon: 'bi-cpu',         iconStyle: { background: 'rgba(155,89,182,0.1)',   color: '#9b59b6' }, title: 'Computational Thinking',  to: '/admin/iitm-ct' },
+                ].map((card) => (
                   <div className="col-md-4 mb-4" key={card.key}>
                     <div style={s.dashCard} className="admin-dash-card">
                       <div className="d-flex align-items-center justify-content-between mb-3">
@@ -644,8 +602,41 @@ const AdminDashboard = () => {
               <h5 className="text-muted mb-3 fw-semibold" style={{ letterSpacing: '0.03em' }}>
                 <i className="bi bi-code-square me-2" style={{ color: '#f89820' }}></i>Programming Courses
               </h5>
-              <div className="row mb-2">
-                {programmingCards.map((card) => (
+              <div className="row mb-4">
+                {[
+                  { key: 'prog_java',   icon: 'bi-cup-hot-fill',   iconStyle: { background: 'rgba(248,152,32,0.1)',  color: '#f89820' }, title: 'Java',    to: '/admin/programming?course=java' },
+                  { key: 'prog_python', icon: 'bi-filetype-py',    iconStyle: { background: 'rgba(55,118,171,0.1)',  color: '#3776ab' }, title: 'Python',  to: '/admin/programming?course=python' },
+                  { key: 'prog_dbms',   icon: 'bi-database-fill',  iconStyle: { background: 'rgba(68,121,161,0.1)',  color: '#4479a1' }, title: 'DBMS',     to: '/admin/programming?course=dbms' },
+                  { key: 'prog_pdsa',   icon: 'bi-diagram-3-fill', iconStyle: { background: 'rgba(155,89,182,0.1)',  color: '#9b59b6' }, title: 'PDSA',     to: '/admin/pdsa' },
+                ].map((card) => (
+                  <div className="col-md-3 mb-4" key={card.key}>
+                    <div style={s.dashCard} className="admin-dash-card">
+                      <div className="d-flex align-items-center justify-content-between mb-3">
+                        <div style={{ ...s.cardIcon, marginBottom: 0, ...card.iconStyle }}>
+                          <i className={`bi ${card.icon}`}></i>
+                        </div>
+                        {subjectCounts[card.key] != null && (
+                          <span className="badge rounded-pill" style={{ background: card.iconStyle.color, color: '#fff', fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}>
+                            {subjectCounts[card.key]} students
+                          </span>
+                        )}
+                      </div>
+                      <h5 className="mb-3">{card.title}</h5>
+                      <Link to={card.to} className="btn btn-primary btn-sm">Open Dashboard</Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Entrance / Competitive Exam Courses */}
+              <h5 className="text-muted mb-3 fw-semibold" style={{ letterSpacing: '0.03em' }}>
+                <i className="bi bi-trophy me-2" style={{ color: '#ff6b6b' }}></i>Competitive Exam Courses
+              </h5>
+              <div className="row mb-4">
+                {[
+                  { key: 'sat', icon: 'bi-pencil-fill',    iconStyle: { background: 'rgba(0,61,143,0.1)',    color: '#003D8F' }, title: 'SAT',           to: '/admin/sat' },
+                  { key: 'jee', icon: 'bi-mortarboard-fill', iconStyle: { background: 'rgba(220,53,69,0.1)',   color: '#dc3545' }, title: 'JEE Main',      to: '/admin/jee-main' },
+                ].map((card) => (
                   <div className="col-md-3 mb-4" key={card.key}>
                     <div style={s.dashCard} className="admin-dash-card">
                       <div className="d-flex align-items-center justify-content-between mb-3">
@@ -666,31 +657,6 @@ const AdminDashboard = () => {
               </div>
 
               <div className="row">
-
-{/* 
-                <div className="col-md-6 mb-4">
-                  <div style={s.dashCard} className="admin-dash-card">
-                    <div style={{ ...s.cardIcon, background: 'rgba(40,167,69,0.1)', color: '#28a745' }}>
-                      <i className="bi bi-people-fill"></i>
-                    </div>
-                    <h4>User Management</h4>
-                    <p className="text-muted">Manage student accounts, permissions, and access controls across the platform.</p>
-                    <Link to="/admin/users" className="btn btn-primary">Manage Users</Link>
-                  </div>
-                </div>
-
-               
-                <div className="col-md-6 mb-4">
-                  <div style={s.dashCard} className="admin-dash-card">
-                    <div style={{ ...s.cardIcon, background: 'rgba(255,193,7,0.1)', color: '#ffc107' }}>
-                      <i className="bi bi-bar-chart"></i>
-                    </div>
-                    <h4>Analytics</h4>
-                    <p className="text-muted">Deep dive into platform analytics, performance metrics, and learning trends.</p>
-                    <Link to="/admin/analytics" className="btn btn-primary">View Analytics</Link>
-                  </div>
-                </div>
-*/}
                 {/* AI-Powered Analysis */}
                 <div className="col-12 mb-4">
                   <div style={s.dashCard} className="admin-dash-card">
@@ -720,12 +686,12 @@ const AdminDashboard = () => {
                         </Link>
                       </div>
                       <div className="col-md-3 mb-2">
-                        <Link to="/admin/python" className="btn btn-info w-100 text-white">
+                        <Link to="/admin/programming?course=python" className="btn btn-info w-100 text-white">
                           <i className="bi bi-code-slash me-2"></i>Python
                         </Link>
                       </div>
                       <div className="col-md-3 mb-2">
-                        <Link to="/admin/dsa" className="btn btn-danger w-100">
+                        <Link to="/admin/pdsa" className="btn btn-danger w-100">
                           <i className="bi bi-diagram-3 me-2"></i>DSA
                         </Link>
                       </div>
@@ -737,6 +703,11 @@ const AdminDashboard = () => {
                       <div className="col-md-3 mb-2">
                         <Link to="/admin/sat" className="btn btn-primary w-100">
                           <i className="bi bi-pencil-fill me-2"></i>SAT
+                        </Link>
+                      </div>
+                      <div className="col-md-3 mb-2">
+                        <Link to="/admin/jee-main" className="btn btn-danger w-100">
+                          <i className="bi bi-mortarboard-fill me-2"></i>JEE Main
                         </Link>
                       </div>
                     </div>
