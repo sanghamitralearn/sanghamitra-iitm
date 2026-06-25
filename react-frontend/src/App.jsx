@@ -82,7 +82,7 @@ import JEEMainDashboard from './pages/JEEMainDashboard'
 import SAT from './pages/courses/SAT'
 import SATQuiz from './pages/courses/SATQuiz'
 import SATFullTest from './pages/courses/SATFullTest'
-import SATDashboard from './pages/SATScoreDashboard'  ✅
+import SATDashboard from './pages/courses/SATScoreDashboard'
 import SATAnalysis from './pages/SATAnalysis'
 import SATExamAnalysis from './pages/SATExamAnalysis'
 
