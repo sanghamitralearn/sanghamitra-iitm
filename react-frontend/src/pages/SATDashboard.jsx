@@ -1,463 +1,368 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
-const difficultyColor = { easy: '#28a745', medium: '#ffc107', hard: '#dc3545', unknown: '#6c757d' };
-const difficultyBg   = { easy: 'rgba(40,167,69,0.1)', medium: 'rgba(255,193,7,0.1)', hard: 'rgba(220,53,69,0.1)', unknown: 'rgba(108,117,125,0.1)' };
-
-const pct = (c, t) => t > 0 ? ((c / t) * 100).toFixed(0) : 0;
-
-const Skel = ({ w = '100%', h = 16 }) => (
-  <div style={{ width: w, height: h, background: '#e9ecef', borderRadius: 8, marginBottom: 12, animation: 'pulse 1.5s ease-in-out infinite' }} />
-);
-
-const getOptionText = (options, id) => {
-  if (id == null) return null;
-  const opt = (options || []).find(o => o.option_id === id || o.option_id === String(id));
-  return opt ? opt.text : (Array.isArray(id) ? id.join(', ') : String(id));
-};
-
-export default function SATExamAnalysis() {
-  const { email, subject, attemptNumber } = useParams();
+const SATDashboard = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-
-  const [data, setData] = useState(null);
+  const [satData, setSatData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [expandedQ, setExpandedQ] = useState(null);
-  const [filter, setFilter] = useState('all');
+  const [selectedStudent, setSelectedStudent] = useState(null);
 
-  const [aiFeedback, setAiFeedback] = useState(null);
-  const [aiLoading,  setAiLoading]  = useState(false);
-  const [aiError,    setAiError]    = useState(null);
-  const [countdown,  setCountdown]  = useState(0);
-
-  const countdownRef = useRef(null);
-  const studentName = location.state?.studentName || email;
-
-  useEffect(() => () => clearInterval(countdownRef.current), []);
-
-  const fetchAI = async (examData) => {
-    clearInterval(countdownRef.current);
-    setAiLoading(true);
-    setAiError(null);
-    setCountdown(0);
+  const loadSATData = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const res = await axios.post(
-        `${API_URL}/api/sat_exam_ai_feedback`,
-        { student: examData.student, attempt: examData.attempt, enrichedResults: examData.enrichedResults, insights: examData.insights },
-        { withCredentials: true }
-      );
-      if (res.data.success) setAiFeedback(res.data.feedback);
-      else setAiError(res.data.message);
-    } catch (e) {
-      const msg  = e.response?.data?.message || 'AI service unavailable.';
-      const secs = e.response?.data?.retryAfter;
-      setAiError(msg);
-      if (e.response?.status === 429 && secs > 0) {
-        setCountdown(secs);
-        countdownRef.current = setInterval(() => {
-          setCountdown(prev => {
-            if (prev <= 1) {
-              clearInterval(countdownRef.current);
-              fetchAI(examData);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
+      const res = await axios.get(`${VITE_API_URL}/api/sat_admin_scores`, { withCredentials: true });
+      if (res.data.success && res.data.data) {
+        setSatData(Array.isArray(res.data.data) ? res.data.data : [res.data.data]);
+      } else {
+        setSatData([]);
       }
+    } catch (err) {
+      setError('Unable to fetch SAT data');
+      setSatData([]);
     } finally {
-      setAiLoading(false);
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await axios.get(`${API_URL}/api/sat_exam_detail`, {
-          params: { email, subject, attemptNumber },
-          withCredentials: true,
+    loadSATData();
+  }, []);
+
+  const calculateStats = () => {
+    if (!satData.length) return { totalStudents: 0, avgScore: 0, totalSubmissions: 0 };
+    let totalScore = 0, totalMaxScore = 0, totalSubmissions = 0;
+    satData.forEach(student => {
+      if (student.quizScores && student.quizScores.length) {
+        student.quizScores.forEach(quiz => {
+          totalScore += quiz.score || 0;
+          totalMaxScore += quiz.maxScore || 100;
+          totalSubmissions++;
         });
-        if (!res.data.success) { setError(res.data.message); return; }
-        setData(res.data.data);
-        fetchAI(res.data.data);
-      } catch (e) {
-        setError(e.response?.data?.message || 'Failed to load exam details.');
-      } finally {
-        setLoading(false);
       }
-    })();
-  }, [email, subject, attemptNumber]);
+    });
+    const avgScore = totalMaxScore > 0 ? (totalScore / totalMaxScore) * 100 : 0;
+    return {
+      totalStudents: satData.length,
+      avgScore: Math.round(avgScore * 100) / 100,
+      totalSubmissions,
+    };
+  };
 
-  if (loading) return (
-    <div className="d-flex justify-content-center align-items-center" style={{ height: '60vh' }}>
-      <div className="spinner-border text-primary" />&nbsp;Loading exam analysis…
-    </div>
-  );
-  if (error) return (
-    <div className="container my-4">
-      <div className="alert alert-danger">{error}</div>
-      <button className="btn btn-secondary" onClick={() => navigate(-1)}>← Back</button>
-    </div>
-  );
+  const stats = calculateStats();
 
-  const { attempt, enrichedResults, insights } = data;
-  const { difficultyStats, typeStats, hardestQuestions } = insights || {};
-  const scoreColor = attempt.percentage >= 80 ? '#28a745' : attempt.percentage >= 60 ? '#ffc107' : '#dc3545';
+  const getScoreColor = (percentage) => {
+    if (percentage >= 80) return '#28a745';
+    if (percentage >= 60) return '#ffc107';
+    return '#dc3545';
+  };
 
-  const filtered = enrichedResults.filter(r => {
-    if (filter === 'wrong')   return !r.isCorrect && r.userAnswer != null;
-    if (filter === 'correct') return r.isCorrect;
-    if (filter === 'unattempted') return r.userAnswer == null;
-    return true;
-  });
+  const handleStudentClick = (student) => setSelectedStudent(student);
+  const handleBackToDashboard = () => setSelectedStudent(null);
+
+  const handleGenerateAnalysis = (student) => {
+    navigate(`/admin/analysis/sat/${student._id || student.email}`, {
+      state: { student },
+    });
+  };
+
+  const getTopicProgress = (student) => {
+    if (!student.quizScores || student.quizScores.length === 0) return [];
+    const topicMap = new Map();
+    student.quizScores.forEach(quiz => {
+      const topic = quiz.topic || 'Unknown Section';
+      if (!topicMap.has(topic)) {
+        topicMap.set(topic, { topic, correctAnswers: 0, totalQuestions: 0, progress: 0 });
+      }
+      const t = topicMap.get(topic);
+      t.correctAnswers += quiz.score || 0;
+      t.totalQuestions += quiz.maxScore || 100;
+      t.progress = t.totalQuestions > 0 ? (t.correctAnswers / t.totalQuestions) * 100 : 0;
+    });
+    return Array.from(topicMap.values());
+  };
+
+  if (loading) {
+    return (
+      <div className="container my-4">
+        <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container my-4">
+      <div className="row">
+        <div className="col-12">
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <h2 className="mb-0">SAT Dashboard</h2>
+              <p className="text-muted mb-0">Monitor SAT exam performance across Reading &amp; Writing and Mathematics sections.</p>
+            </div>
+            <div className="d-flex gap-2">
+              <button className="btn btn-primary" onClick={() => navigate('/admin')}>
+                ← Back to Admin Dashboard
+              </button>
+              <button className="btn btn-success" onClick={loadSATData}>
+                <i className="bi bi-arrow-repeat"></i> Refresh
+              </button>
+            </div>
+          </div>
 
-      {/* Header */}
-      <div className="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
-        <div>
-          <h2 className="mb-1">SAT Exam Analysis</h2>
-          <p className="text-muted mb-0">
-            <strong>{studentName}</strong> · Section: <strong>{attempt.subject}</strong> · Attempt #{attempt.attemptNumber} · {attempt.dateAttempted ? new Date(attempt.dateAttempted).toLocaleString() : 'N/A'}
-          </p>
-        </div>
-        <button className="btn btn-outline-secondary" onClick={() => navigate(-1)}>← Back</button>
-      </div>
+          {error && <div className="alert alert-danger">{error}</div>}
 
-      {/* ══════════════════════════════════════════
-          AI FEEDBACK  (always at top)
-      ══════════════════════════════════════════ */}
-      <div className="card mb-4" style={{ border: '2px solid #667eea' }}>
-        <div className="card-header text-white d-flex align-items-center gap-2"
-          style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)' }}>
-          <i className="bi bi-magic" />
-          <h5 className="mb-0">AI-Powered Feedback</h5>
-          {aiLoading && <span className="spinner-border spinner-border-sm ms-auto" />}
-        </div>
-        <div className="card-body">
-
-          {aiLoading && (
+          {!selectedStudent ? (
             <>
-              <Skel w="100%" h={18} /><Skel w="80%" h={14} /><Skel w="90%" h={14} /><Skel w="65%" h={14} />
-              <div className="row mt-3">
-                {[1,2,3].map(i => <div key={i} className="col-md-4 mb-2"><div style={{ height: 80, background: '#e9ecef', borderRadius: 8 }} /></div>)}
+              {/* Statistics Overview */}
+              <div className="row mb-4">
+                <div className="col-md-4 mb-3">
+                  <div className="card h-100">
+                    <div className="card-body text-center">
+                      <i className="bi bi-people-fill text-primary" style={{ fontSize: '2rem' }}></i>
+                      <h4 className="mt-2">{stats.totalStudents}</h4>
+                      <p className="text-muted">Total Students</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-md-4 mb-3">
+                  <div className="card h-100">
+                    <div className="card-body text-center">
+                      <i className="bi bi-bar-chart text-info" style={{ fontSize: '2rem' }}></i>
+                      <h4 className="mt-2" style={{ color: getScoreColor(stats.avgScore) }}>
+                        {stats.avgScore}%
+                      </h4>
+                      <p className="text-muted">Average Score</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-md-4 mb-3">
+                  <div className="card h-100">
+                    <div className="card-body text-center">
+                      <i className="bi bi-file-text-fill text-warning" style={{ fontSize: '2rem' }}></i>
+                      <h4 className="mt-2">{stats.totalSubmissions}</h4>
+                      <p className="text-muted">Total Submissions</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Students List */}
+              <div className="card">
+                <div className="card-header bg-primary text-white">
+                  <h5 className="mb-0">Recent Exam Activity</h5>
+                </div>
+                <div className="card-body">
+                  {satData.length === 0 ? (
+                    <div className="text-center text-muted py-4">No SAT data available yet.</div>
+                  ) : (
+                    <div className="table-responsive">
+                      <table className="table table-hover">
+                        <thead>
+                          <tr>
+                            <th>Student Name</th>
+                            <th>Email</th>
+                            <th>Recent Section</th>
+                            <th>Score</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[...satData].sort((a, b) => {
+                            const aLatest = (a.quizScores || []).reduce((max, q) => Math.max(max, new Date(q.timestamp || 0)), 0);
+                            const bLatest = (b.quizScores || []).reduce((max, q) => Math.max(max, new Date(q.timestamp || 0)), 0);
+                            return bLatest - aLatest;
+                          }).map((student, index) => {
+                            const scores = student.quizScores || [];
+                            const recentExam = scores.length > 0
+                              ? scores.reduce((latest, current) =>
+                                  new Date(current.timestamp) > new Date(latest.timestamp) ? current : latest)
+                              : null;
+
+                            return (
+                              <tr key={index} style={{ cursor: 'pointer' }} onClick={() => handleStudentClick(student)}>
+                                <td><strong>{student.name || 'Unknown'}</strong></td>
+                                <td>{student.email || 'N/A'}</td>
+                                <td>
+                                  {recentExam ? (
+                                    <span className="badge bg-primary">
+                                      {recentExam.topic || 'SAT Section'}
+                                    </span>
+                                  ) : (
+                                    <span className="text-muted">No exams</span>
+                                  )}
+                                </td>
+                                <td>
+                                  {recentExam ? (
+                                    <span style={{ color: getScoreColor(recentExam.percentage || 0), fontWeight: 'bold' }}>
+                                      {recentExam.score || 0}/{recentExam.maxScore || 200} ({Math.round(recentExam.percentage || 0)}%)
+                                    </span>
+                                  ) : (
+                                    <span className="text-muted">-</span>
+                                  )}
+                                </td>
+                                <td>
+                                  {recentExam ? new Date(recentExam.timestamp).toLocaleDateString() : (
+                                    <span className="text-muted">-</span>
+                                  )}
+                                </td>
+                                <td>
+                                  <div className="btn-group" role="group">
+                                    <button
+                                      className="btn btn-outline-primary btn-sm"
+                                      onClick={(e) => { e.stopPropagation(); handleStudentClick(student); }}
+                                    >
+                                      View Details
+                                    </button>
+                                    <button
+                                      className="btn btn-outline-success btn-sm"
+                                      onClick={(e) => { e.stopPropagation(); handleGenerateAnalysis(student); }}
+                                    >
+                                      AI Analysis
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
               </div>
             </>
-          )}
-
-          {aiError && !aiLoading && (
-            <div className="alert alert-warning mb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
-              <span><i className="bi bi-exclamation-triangle me-2" />{aiError}</span>
-              {countdown > 0
-                ? <span className="badge bg-warning text-dark fs-6">Auto-retrying in {countdown}s…</span>
-                : <button className="btn btn-sm btn-warning" onClick={() => fetchAI(data)}>
-                    <i className="bi bi-arrow-repeat me-1" />Retry
-                  </button>
-              }
-            </div>
-          )}
-
-          {aiFeedback && !aiLoading && (
-            <>
-              <div className="alert alert-primary mb-4" style={{ fontSize: '0.95rem' }}>
-                {aiFeedback.summary}
+          ) : (
+            /* Student Detail View */
+            <div className="card">
+              <div className="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h5 className="mb-0">Student Details: {selectedStudent.name || 'Unknown'}</h5>
+                <button className="btn btn-light btn-sm" onClick={handleBackToDashboard}>
+                  ← Back to List
+                </button>
               </div>
+              <div className="card-body">
+                <div className="row">
+                  <div className="col-md-6">
+                    <h6>Student Information</h6>
+                    <p><strong>Email:</strong> {selectedStudent.email || 'N/A'}</p>
+                    <p><strong>Name:</strong> {selectedStudent.name || 'N/A'}</p>
+                  </div>
+                  <div className="col-md-6">
+                    <h6>Performance Summary</h6>
+                    {selectedStudent.quizScores && selectedStudent.quizScores.length > 0 ? (
+                      <>
+                        <p><strong>Total Submissions:</strong> {selectedStudent.quizScores.length}</p>
+                        <p><strong>Total Score:</strong> {selectedStudent.quizScores.reduce((sum, q) => sum + (q.score || 0), 0)}</p>
+                        <p><strong>Maximum Possible:</strong> {selectedStudent.quizScores.reduce((sum, q) => sum + (q.maxScore || 200), 0)}</p>
+                      </>
+                    ) : (
+                      <p>No submissions yet.</p>
+                    )}
+                  </div>
+                </div>
 
-              <div className="row mb-4">
-                {aiFeedback.conceptualGaps?.length > 0 && (
-                  <div className="col-md-6 mb-3">
-                    <h6 className="text-danger"><i className="bi bi-x-circle me-1" />Conceptual Gaps</h6>
-                    <ul className="mb-0" style={{ fontSize: '0.88rem' }}>
-                      {aiFeedback.conceptualGaps.map((g, i) => <li key={i}>{g}</li>)}
-                    </ul>
-                  </div>
-                )}
-                {aiFeedback.mistakePatterns?.length > 0 && (
-                  <div className="col-md-6 mb-3">
-                    <h6 className="text-warning"><i className="bi bi-exclamation-circle me-1" />Mistake Patterns</h6>
-                    <ul className="mb-0" style={{ fontSize: '0.88rem' }}>
-                      {aiFeedback.mistakePatterns.map((p, i) => <li key={i}>{p}</li>)}
-                    </ul>
-                  </div>
-                )}
-              </div>
-
-              <div className="row mb-4">
-                {aiFeedback.difficultyInsight && (
-                  <div className="col-md-6 mb-3">
-                    <h6 className="text-info"><i className="bi bi-bar-chart me-1" />Difficulty Analysis</h6>
-                    <p className="text-muted mb-0" style={{ fontSize: '0.88rem' }}>{aiFeedback.difficultyInsight}</p>
-                  </div>
-                )}
-                {aiFeedback.timeInsight && (
-                  <div className="col-md-6 mb-3">
-                    <h6 className="text-secondary"><i className="bi bi-clock me-1" />Pacing Analysis</h6>
-                    <p className="text-muted mb-0" style={{ fontSize: '0.88rem' }}>{aiFeedback.timeInsight}</p>
-                  </div>
-                )}
-              </div>
-
-              {aiFeedback.priorityActions?.length > 0 && (
-                <div className="mb-4">
-                  <h6><i className="bi bi-list-check me-1" />Priority Actions</h6>
-                  <div className="row">
-                    {aiFeedback.priorityActions.map((a, i) => (
-                      <div className="col-md-4 mb-2" key={i}>
-                        <div className="card h-100" style={{ borderLeft: `4px solid ${a.urgency==='high'?'#dc3545':a.urgency==='medium'?'#ffc107':'#28a745'}` }}>
-                          <div className="card-body py-2 px-3">
-                            <div className="d-flex justify-content-between align-items-start mb-1">
-                              <strong style={{ fontSize: '0.85rem' }}>{a.action}</strong>
-                              <span className={`badge ms-2 ${a.urgency==='high'?'bg-danger':a.urgency==='medium'?'bg-warning text-dark':'bg-success'}`}>{a.urgency}</span>
-                            </div>
-                            <p className="text-muted mb-0" style={{ fontSize: '0.8rem' }}>{a.reason}</p>
+                {/* Section-wise progress */}
+                {getTopicProgress(selectedStudent).length > 0 && (
+                  <div className="mt-3 mb-3">
+                    <h6>Section Progress</h6>
+                    <div className="row">
+                      {getTopicProgress(selectedStudent).map((t, i) => (
+                        <div key={i} className="col-md-6 mb-2">
+                          <div className="d-flex justify-content-between mb-1">
+                            <small><strong>{t.topic}</strong></small>
+                            <small style={{ color: getScoreColor(t.progress) }}>{Math.round(t.progress)}%</small>
+                          </div>
+                          <div className="progress" style={{ height: '8px' }}>
+                            <div
+                              className="progress-bar"
+                              style={{ width: `${t.progress}%`, backgroundColor: getScoreColor(t.progress) }}
+                            />
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {aiFeedback.encouragement && (
-                <div className="alert alert-success mb-0" style={{ fontSize: '0.9rem' }}>
-                  <i className="bi bi-star me-2" />{aiFeedback.encouragement}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Stats Row */}
-      <div className="row mb-4">
-        <div className="col-md-3 mb-3">
-          <div className="card h-100 text-center">
-            <div className="card-body d-flex flex-column align-items-center justify-content-center">
-              <div style={{ width:110,height:110,borderRadius:'50%',background:`conic-gradient(${scoreColor} ${attempt.percentage}%,#e9ecef ${attempt.percentage}%)`,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:12 }}>
-                <div style={{ width:74,height:74,borderRadius:'50%',background:'white',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.3rem',fontWeight:'bold',color:scoreColor }}>
-                  {Math.round(attempt.percentage)}%
-                </div>
-              </div>
-              <h6 className="mb-0">Overall Score</h6>
-              <small className="text-muted">{attempt.correctAnswers}/{attempt.totalQuestions} correct</small>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-md-3 mb-3">
-          <div className="card h-100">
-            <div className="card-body">
-              <h6 className="card-title text-muted">Score</h6>
-              <h3 className="mb-0" style={{ color: scoreColor }}>{attempt.score} / {attempt.maxScore}</h3>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-md-3 mb-3">
-          <div className="card h-100">
-            <div className="card-body">
-              <h6 className="card-title text-muted">Correct / Wrong</h6>
-              <p className="mb-1"><span className="badge bg-success me-2">{attempt.correctAnswers}</span>Correct</p>
-              <p className="mb-0"><span className="badge bg-danger me-2">{attempt.wrongAnswers ?? 0}</span>Wrong</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-md-3 mb-3">
-          <div className="card h-100">
-            <div className="card-body">
-              <h6 className="card-title text-muted">Unattempted</h6>
-              <h3 className="mb-0 text-secondary">{attempt.unattempted ?? 0}</h3>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Difficulty / Type breakdown + Hardest Questions */}
-      {(difficultyStats || typeStats || hardestQuestions?.length > 0) && (
-        <div className="row mb-4">
-          {difficultyStats && (
-            <div className="col-md-3 mb-3">
-              <div className="card h-100">
-                <div className="card-body">
-                  <h6 className="card-title text-muted">By Difficulty</h6>
-                  {Object.entries(difficultyStats).map(([d, s]) => s.total === 0 ? null : (
-                    <div key={d} className="mb-2">
-                      <div className="d-flex justify-content-between">
-                        <span style={{ color: difficultyColor[d], fontWeight:600, textTransform:'capitalize' }}>{d}</span>
-                        <small className="text-muted">{s.correct}/{s.total} ({pct(s.correct,s.total)}%)</small>
-                      </div>
-                      <div style={{ height:6,background:'#e9ecef',borderRadius:3 }}>
-                        <div style={{ width:`${pct(s.correct,s.total)}%`,height:'100%',background:difficultyColor[d],borderRadius:3 }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {typeStats && (
-            <div className="col-md-3 mb-3">
-              <div className="card h-100">
-                <div className="card-body">
-                  <h6 className="card-title text-muted">By Question Type</h6>
-                  {Object.entries(typeStats).map(([t, s]) => (
-                    <div key={t} className="mb-2">
-                      <div className="d-flex justify-content-between">
-                        <span style={{ fontSize:'0.8rem' }}>{t.replace(/_/g,' ')}</span>
-                        <small className="text-muted">{s.correct}/{s.total}</small>
-                      </div>
-                      <div style={{ height:5,background:'#e9ecef',borderRadius:3 }}>
-                        <div style={{ width:`${pct(s.correct,s.total)}%`,height:'100%',background:'#667eea',borderRadius:3 }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {hardestQuestions?.length > 0 && (
-            <div className="col-md-6 mb-3">
-              <div className="card border-danger h-100">
-                <div className="card-header bg-danger text-white">
-                  <i className="bi bi-exclamation-triangle me-2" />Missed Hard Questions
-                </div>
-                <ul className="list-group list-group-flush">
-                  {hardestQuestions.map((q, i) => (
-                    <li key={i} className="list-group-item">
-                      <div className="fw-semibold mb-1" style={{ fontSize:'0.88rem' }}>Q{q.questionNumber}: {q.questionText}</div>
-                      {q.explanation && <div className="text-muted" style={{ fontSize:'0.8rem' }}><i className="bi bi-lightbulb me-1 text-warning" />{q.explanation}</div>}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Question Table */}
-      <div className="card">
-        <div className="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-          <h5 className="mb-0">Question-by-Question Breakdown</h5>
-          <div className="btn-group btn-group-sm">
-            {[['all','All'],['correct','Correct'],['wrong','Wrong'],['unattempted','Unattempted']].map(([v,l]) => (
-              <button key={v} className={`btn ${filter===v?'btn-primary':'btn-outline-secondary'}`} onClick={() => setFilter(v)}>{l}</button>
-            ))}
-          </div>
-        </div>
-        <div className="card-body p-0">
-          <div className="table-responsive">
-            <table className="table table-hover mb-0">
-              <thead className="table-light">
-                <tr>
-                  <th style={{ width:40 }}>#</th>
-                  <th>Question</th>
-                  <th>Type</th>
-                  <th>Difficulty</th>
-                  <th>Your Answer</th>
-                  <th>Result</th>
-                  <th style={{ width:60 }}></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0
-                  ? <tr><td colSpan={7} className="text-center text-muted py-4">No questions match this filter.</td></tr>
-                  : filtered.map((r, i) => {
-                    const userAnswerText = r.type === 'numeric'
-                      ? r.userAnswer
-                      : getOptionText(r.options, r.userAnswer);
-                    const correctAnswerText = r.type === 'numeric'
-                      ? (Array.isArray(r.correctAnswer) ? r.correctAnswer.join(', ') : r.correctAnswer)
-                      : getOptionText(r.options, r.correctAnswer);
-
-                    return (
-                      <React.Fragment key={i}>
-                        <tr
-                          style={{ cursor:'pointer', background: r.userAnswer == null ? 'rgba(108,117,125,0.04)' : (r.isCorrect?'rgba(40,167,69,0.03)':'rgba(220,53,69,0.04)') }}
-                          onClick={() => setExpandedQ(expandedQ === i ? null : i)}
-                        >
-                          <td><strong>Q{r.questionNumber}</strong></td>
-                          <td style={{ maxWidth:350, fontSize:'0.88rem' }}>{r.questionText?.slice(0,90)}{r.questionText?.length>90?'…':''}</td>
-                          <td><span className="badge bg-secondary" style={{ fontSize:'0.72rem' }}>{(r.type||'unknown').replace(/_/g,' ')}</span></td>
-                          <td>
-                            {r.difficulty
-                              ? <span className="badge" style={{ background:difficultyBg[r.difficulty],color:difficultyColor[r.difficulty],fontSize:'0.75rem' }}>{r.difficulty}</span>
-                              : <span className="text-muted">—</span>}
-                          </td>
-                          <td style={{ fontSize:'0.85rem',maxWidth:150,wordBreak:'break-word' }}>{userAnswerText ?? <span className="text-muted">Not attempted</span>}</td>
-                          <td>
-                            {r.userAnswer == null
-                              ? <span className="badge bg-secondary">Unattempted</span>
-                              : <span className={`badge ${r.isCorrect?'bg-success':'bg-danger'}`}>{r.isCorrect?'✓ Correct':'✗ Wrong'}</span>}
-                          </td>
-                          <td><button className="btn btn-outline-primary btn-sm">{expandedQ===i?'▲':'▼'}</button></td>
-                        </tr>
-
-                        {expandedQ === i && (
+                {/* Exam-wise Data */}
+                {selectedStudent.quizScores && selectedStudent.quizScores.length > 0 && (
+                  <div className="mt-4">
+                    <h6>Exam-wise Performance</h6>
+                    <div className="table-responsive">
+                      <table className="table table-striped">
+                        <thead>
                           <tr>
-                            <td colSpan={7} style={{ background:'#f8f9ff',padding:'1rem 1.5rem' }}>
-                              <div className="row">
-                                <div className="col-md-6">
-                                  <p className="mb-1"><strong>Full Question:</strong></p>
-                                  <p className="mb-2" style={{ fontSize:'0.9rem' }}>{r.questionText}</p>
-                                  {r.options?.length > 0 && (
-                                    <div className="mb-2">
-                                      <strong>Options:</strong>
-                                      <ul className="mb-0 mt-1">
-                                        {r.options.map((opt, oi) => {
-                                          const isCorrectOpt = opt.option_id === r.correctAnswer || (Array.isArray(r.correctAnswer) && r.correctAnswer.includes(opt.option_id));
-                                          const isUserOpt = opt.option_id === r.userAnswer;
-                                          return (
-                                            <li key={oi} style={{ color: isCorrectOpt?'#28a745':isUserOpt?'#dc3545':'inherit', fontWeight:(isCorrectOpt||isUserOpt)?600:400, fontSize:'0.87rem' }}>
-                                              {opt.text}{isCorrectOpt?' ✓':''}{isUserOpt && !isCorrectOpt?' ✗':''}
-                                            </li>
-                                          );
-                                        })}
-                                      </ul>
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="col-md-6">
-                                  <div className="mb-2">
-                                    <span className="text-muted">Your Answer: </span>
-                                    <span style={{ color:r.userAnswer==null?'#6c757d':r.isCorrect?'#28a745':'#dc3545',fontWeight:600 }}>{userAnswerText ?? 'Not attempted'}</span>
-                                  </div>
-                                  <div className="mb-2">
-                                    <span className="text-muted">Correct Answer: </span>
-                                    <span style={{ color:'#28a745',fontWeight:600 }}>{correctAnswerText}</span>
-                                  </div>
-                                  <div className="mb-2">
-                                    <span className="text-muted">Marks Awarded: </span>
-                                    <span style={{ fontWeight:600 }}>{r.marksAwarded ?? 0} / {r.points ?? 1}</span>
-                                  </div>
-                                  {r.explanation && (
-                                    <div className="alert alert-info py-2 px-3 mb-0" style={{ fontSize:'0.85rem' }}>
-                                      <i className="bi bi-lightbulb me-1" /><strong>Explanation:</strong> {r.explanation}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </td>
+                            <th>Section</th>
+                            <th>Attempt</th>
+                            <th>Score</th>
+                            <th>Correct / Total</th>
+                            <th>Percentage</th>
+                            <th>Date</th>
+                            <th>Action</th>
                           </tr>
-                        )}
-                      </React.Fragment>
-                    );
-                  })}
-              </tbody>
-            </table>
-          </div>
+                        </thead>
+                        <tbody>
+                          {[...selectedStudent.quizScores]
+                            .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
+                            .map((quiz, index) => (
+                              <tr key={index}>
+                                <td><strong>{quiz.topic || 'SAT Section'}</strong></td>
+                                <td>#{quiz.attemptNumber || index + 1}</td>
+                                <td>{quiz.score || 0}/{quiz.maxScore || 200}</td>
+                                <td>{quiz.correctAnswers ?? '-'} / {quiz.totalQuestions ?? '-'}</td>
+                                <td>
+                                  <span style={{ color: getScoreColor(quiz.percentage || 0), fontWeight: 'bold' }}>
+                                    {Math.round(quiz.percentage || 0)}%
+                                  </span>
+                                </td>
+                                <td>{quiz.timestamp ? new Date(quiz.timestamp).toLocaleDateString() : 'N/A'}</td>
+                                <td>
+                                  <button
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() => navigate(
+                                      `/admin/sat/exam/${encodeURIComponent(selectedStudent.email)}/${encodeURIComponent(quiz.topic)}/${quiz.attemptNumber || index + 1}`,
+                                      { state: { studentName: selectedStudent.name || selectedStudent.email } }
+                                    )}
+                                  >
+                                    <i className="bi bi-bar-chart-line me-1"></i>Analyze
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="mt-4">
+                  <button
+                    className="btn btn-success me-2"
+                    onClick={() => handleGenerateAnalysis(selectedStudent)}
+                  >
+                    <i className="bi bi-magic"></i> Generate AI Analysis
+                  </button>
+                  <button className="btn btn-outline-secondary" onClick={handleBackToDashboard}>
+                    ← Back to List
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-
     </div>
   );
-}
+};
+
+export default SATDashboard;
