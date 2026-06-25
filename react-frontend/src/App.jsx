@@ -77,6 +77,7 @@ import JEEMain from './pages/courses/JEEMain'
 import JEEMainQuiz from './pages/courses/JEEMainQuiz'
 import JEEMainTest from './pages/courses/JEEMainTest'
 import JEEMainAnalysis from './pages/JEEMainAnalysis'
+import JEEMainDashboard from './pages/JEEMainDashboard'
 
 import SAT from './pages/courses/SAT'
 import SATQuiz from './pages/courses/SATQuiz'
@@ -190,6 +191,7 @@ function App() {
             <Route path="/courses/jee-main/test" element={<JEEMainTest />} />
             <Route path="/courses/jee-main/analysis" element={<JEEMainAnalysis />} />
             <Route path="/courses/jee-main/quiz/:subject" element={<JEEMainQuiz />} />
+            <Route path="/admin/jee-main" element={<JEEMainDashboard />} />
 
             {/* SAT — module-based quizzes */}
             <Route path="/courses/sat" element={<SAT />} />
