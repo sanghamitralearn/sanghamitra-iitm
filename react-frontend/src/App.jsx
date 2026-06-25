@@ -197,7 +197,7 @@ function App() {
             <Route path="/courses/sat/full-test" element={<SATFullTest />} />
             <Route path="/courses/sat/analysis" element={<SATAnalysis />} />
             <Route path="/admin/sat" element={<SATDashboard />} />
-            <Route path="/admin/sat/exam/:email/:subject/:attemptNumber" element={<SATExamAnalysis />} />
+            
           
 
             {/* DBMS COURSE */}
