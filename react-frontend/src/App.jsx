@@ -85,6 +85,8 @@ import SATFullTest from './pages/courses/SATFullTest'
 import SATDashboard from './pages/SATDashboard'
 import SATAnalysis from './pages/SATAnalysis'
 import SATExamAnalysis from './pages/SATExamAnalysis'
+import SATScoreDashboard from './pages/courses/SATScoreDashboard'
+
 
 // New Programming course 
 import ProgrammingDashboard from './pages/ProgrammingDashboard'
@@ -197,6 +199,7 @@ function App() {
             <Route path="/courses/sat/full-test" element={<SATFullTest />} />
             <Route path="/courses/sat/analysis" element={<SATAnalysis />} />
             <Route path="/admin/sat" element={<SATDashboard />} />
+            <Route path="/courses/sat/ScoreDashboard" element={<SATScoreDashboard />} />
             <Route path="/admin/sat/exam/:email/:subject/:attemptNumber" element={<SATExamAnalysis />} />
             
           
