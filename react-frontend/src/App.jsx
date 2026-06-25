@@ -127,8 +127,6 @@ function App() {
             <Route path="/admin/iitm-ct" element={<CTDashboard />} />
             <Route path="/admin/python" element={<PythonDashboard />} />
             <Route path="/admin/dsa" element={<PDSADashboard />} />
-            <Route path="/admin/sat" element={<SATDashboard />} />
-            <Route path="/admin/sat/exam/:email/:subject/:attemptNumber" element={<SATExamAnalysis />} />
             <Route path="/algebra" element={<Algebra />} />
             <Route path="/math2" element={<Math2 />} />
             <Route path="/statistics2" element={<Statistics2 />} />
@@ -198,6 +196,8 @@ function App() {
             <Route path="/courses/sat/quiz/:section/:module" element={<SATQuiz />} />
             <Route path="/courses/sat/full-test" element={<SATFullTest />} />
             <Route path="/courses/sat/analysis" element={<SATAnalysis />} />
+            <Route path="/admin/sat" element={<SATDashboard />} />
+            <Route path="/admin/sat/exam/:email/:subject/:attemptNumber" element={<SATExamAnalysis />} />
           
 
             {/* DBMS COURSE */}
