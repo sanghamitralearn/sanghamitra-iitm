@@ -5759,7 +5759,7 @@ router.get('/admin-notifications', async (req, res) => {
         'scores.week':1, 'scores.subtopic':1, 'scores.score':1,
         'scores.correctAnswers':1, 'scores.totalQuestions':1, 'scores.dateAttempted':1
       }).lean(),
-      IITM_Stats_2_Score.find({}, { email:1, name:1,
+      IITStats2Scores.find({}, { email:1, name:1,
         'scores.week':1, 'scores.subtopic':1, 'scores.score':1,
         'scores.correctAnswers':1, 'scores.totalQuestions':1, 'scores.dateAttempted':1
       }).lean(),
