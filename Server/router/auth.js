@@ -4603,144 +4603,115 @@ router.get('/java/questions/week/:week', async (req, res) => {
 });
 
 
-
-// ─── Aggregated Admin Notifications ────────────────────────────────────────
-// Single endpoint that replaces 8 separate frontend calls.
-// Only returns notification-sized fields — no questionResults, no options arrays.
-router.get('/admin-notifications', async (req, res) => {
+// GET all DBMS submissions — merges test, coding, and interview quiz submissions
+router.get('/dbms-submission', async (req, res) => {
   try {
-    const [
-      math1Users, stats1Users, ctUsers,
-      math2Users, stats2Users,
-      codingUsers, pdsaUsers, satDocs
-    ] = await Promise.all([
-      iitm_math_score.find({}, { email:1, username:1, name:1,
-        'quizScores.topic':1, 'quizScores.score':1, 'quizScores.percentage':1,
-        'quizScores.correctAnswers':1, 'quizScores.totalQuestions':1, 'quizScores.timestamp':1
-      }).lean(),
-      Statistics_scores.find({}, { email:1, username:1, name:1,
-        'quizScores.topic':1, 'quizScores.percentage':1,
-        'quizScores.correctAnswers':1, 'quizScores.totalQuestions':1, 'quizScores.timestamp':1
-      }).lean(),
-      iitm_ct_scores.find({}, { email:1, username:1, name:1,
-        'quizScores.topic':1, 'quizScores.score':1, 'quizScores.percentage':1,
-        'quizScores.totalQuestions':1, 'quizScores.timestamp':1
-      }).lean(),
-      IITM_Maths_2_Score.find({}, { email:1, name:1,
-        'scores.week':1, 'scores.subtopic':1, 'scores.score':1,
-        'scores.correctAnswers':1, 'scores.totalQuestions':1, 'scores.dateAttempted':1
-      }).lean(),
-      IITM_Stats_2_Score.find({}, { email:1, name:1,
-        'scores.week':1, 'scores.subtopic':1, 'scores.score':1,
-        'scores.correctAnswers':1, 'scores.totalQuestions':1, 'scores.dateAttempted':1
-      }).lean(),
-      pdsaCodingSubmission.find({}, { email:1, username:1, name:1, topic:1, percentage:1, score:1, maxScore:1, timestamp:1 }).lean(),
-      pdsaSubmission.find({}, { email:1, username:1, name:1, topic:1, percentage:1, score:1, maxScore:1, timestamp:1 }).lean(),
-      SatScore.find({}, { email:1, name:1, subject:1,
-        'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
-        'attempts.totalQuestions':1, 'attempts.dateAttempted':1
-      }).lean(),
-    ])
+    const { email } = req.query;
+    const filter = email ? { email } : {};
 
-    const all = []
+    const [testSubs, codingSubs, interviewSubs] = await Promise.all([
+      DBMSSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
+      CodingSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
+      InterviewSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
+    ]);
 
-    const push = (arr, subject, subjectKey, icon, iconClass, mapFn) =>
-      arr.forEach(s => mapFn(s).forEach(n => all.push({ ...n, subject, subjectKey, icon, iconClass })))
+    const normalize = (sub, quizType) => ({
+      _id: sub._id,
+      email: sub.email,
+      username: sub.username,
+      topic: sub.topic,
+      score: sub.score,
+      maxScore: sub.maxScore,
+      percentage: sub.percentage,
+      timestamp: sub.timestamp,
+      quizType,
+    });
 
-    // Math 1
-    push(math1Users, 'Mathematics-1', 'math1', 'bi-calculator', 'math', s =>
-      (s.quizScores || []).map(q => ({
-        userName: s.username || s.name || s.email,
-        topic: q.topic || 'Quiz',
-        score: q.percentage || (q.correctAnswers != null && q.totalQuestions ? Math.round((q.correctAnswers/q.totalQuestions)*100) : 0),
-        timestamp: q.timestamp
-      }))
-    )
+    const merged = [
+      ...testSubs.map(s => normalize(s, 'test')),
+      ...codingSubs.map(s => normalize(s, 'coding')),
+      ...interviewSubs.map(s => normalize(s, 'interview')),
+    ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-    // Stats 1
-    push(stats1Users, 'Statistics-1', 'stats1', 'bi-bar-chart', 'stats', s =>
-      (s.quizScores || []).map(q => ({
-        userName: s.username || s.name || s.email,
-        topic: q.topic || 'Statistics Quiz',
-        score: q.percentage || (q.correctAnswers != null && q.totalQuestions ? Math.round((q.correctAnswers/q.totalQuestions)*100) : 0),
-        timestamp: q.timestamp
-      }))
-    )
+    res.json({ success: true, data: merged });
 
-    // CT
-    push(ctUsers, 'Computational Thinking', 'ct', 'bi-cpu', 'ct', s =>
-      (s.quizScores || []).map(q => ({
-        userName: s.username || s.name || s.email,
-        topic: q.topic || 'CT Exercise',
-        score: q.percentage || (q.score != null && q.totalQuestions ? Math.round((q.score/q.totalQuestions)*100) : 0),
-        timestamp: q.timestamp
-      }))
-    )
-
-    // Math 2
-    push(math2Users, 'Mathematics-2', 'math2', 'bi-calculator', 'math2', s =>
-      (s.scores || []).map(q => ({
-        userName: s.name || s.email,
-        topic: q.subtopic || `Week ${q.week}`,
-        score: q.totalQuestions ? Math.round((q.correctAnswers/q.totalQuestions)*100) : 0,
-        timestamp: q.dateAttempted
-      }))
-    )
-
-    // Stats 2
-    push(stats2Users, 'Statistics-2', 'stats2', 'bi-bar-chart', 'stats2', s =>
-      (s.scores || []).map(q => ({
-        userName: s.name || s.email,
-        topic: q.subtopic || `Week ${q.week}`,
-        score: q.totalQuestions ? Math.round((q.correctAnswers/q.totalQuestions)*100) : 0,
-        timestamp: q.dateAttempted
-      }))
-    )
-
-    // Coding
-    codingUsers
-      .filter(s => s.email && s.email.toLowerCase() !== 'test@example.com')
-      .forEach(s => all.push({
-        userName: s.username || s.name || s.email,
-        subject: 'Programming', subjectKey: 'coding', icon: 'bi-code-slash', iconClass: 'programming',
-        topic: s.topic || 'Coding Assignment',
-        score: s.percentage || (s.score != null && s.maxScore ? Math.round((s.score/s.maxScore)*100) : 0),
-        timestamp: s.timestamp
-      }))
-
-    // PDSA
-    pdsaUsers
-      .filter(s => s.email && s.email.toLowerCase() !== 'test@example.com')
-      .forEach(s => all.push({
-        userName: s.username || s.name || s.email,
-        subject: 'Quiz Test (PDSA)', subjectKey: 'pdsa', icon: 'bi-pencil-square', iconClass: 'dsa',
-        topic: s.topic || 'Quiz Test',
-        score: s.percentage || (s.score != null && s.maxScore ? Math.round((s.score/s.maxScore)*100) : 0),
-        timestamp: s.timestamp
-      }))
-
-    // SAT
-    satDocs.forEach(doc => {
-      ;(doc.attempts || []).forEach(attempt => {
-        const pct = attempt.totalQuestions > 0
-          ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
-          : (attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0)
-        all.push({
-          userName: doc.name || doc.email,
-          subject: 'SAT', subjectKey: 'sat', icon: 'bi-pencil-fill', iconClass: 'sat',
-          topic: doc.subject || 'SAT Section',
-          score: pct,
-          timestamp: attempt.dateAttempted
-        })
-      })
-    })
-
-    all.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
-    res.json({ success: true, data: all.slice(0, 50) })
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message })
+  } catch (error) {
+    console.error('Error fetching DBMS submissions:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
-})
+});
+
+// POST — save DBMS quiz submission
+router.post('/dbms-submission', async (req, res) => {
+  try {
+    const submissionData = req.body;
+    const submission = new DBMSSubmission(submissionData);
+    await submission.save();
+    res.status(201).json({
+      success: true,
+      message: 'Quiz results saved successfully',
+      submissionId: submission._id
+    });
+  } catch (error) {
+    console.error('❌ Error saving DBMS submission:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to save quiz results',
+      error: error.message
+    });
+  }
+});
+
+// GET — fetch DBMS questions by week number
+router.get('/dbms/questions/week/:week', async (req, res) => {
+  try {
+    const { week } = req.params;
+    const { topic, subtopic, type, difficulty, limit } = req.query;
+
+    if (week < 1 || week > 11) {
+      return res.status(400).json({ success: false, message: 'Week must be between 1 and 11' });
+    }
+
+    let filter = { week: parseInt(week) };
+    if (topic) filter.topic = topic;
+    if (subtopic) filter.subtopic = subtopic;
+    if (type) filter.type = type;
+    if (difficulty) filter.difficulty = difficulty;
+
+    let query = DBMSQuestions.find(filter).sort({ questionId: 1 });
+    if (limit) query = query.limit(parseInt(limit));
+
+    const questions = await query.lean();
+
+    if (questions.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `No questions found for week ${week}`,
+        filters: filter
+      });
+    }
+
+    const stats = {
+      totalQuestions: questions.length,
+      byType: {}, byDifficulty: {}, byTopic: {},
+      totalMaxScore: questions.reduce((sum, q) => sum + (q.maxScore || 0), 0)
+    };
+    questions.forEach(q => {
+      stats.byType[q.type] = (stats.byType[q.type] || 0) + 1;
+      stats.byDifficulty[q.difficulty] = (stats.byDifficulty[q.difficulty] || 0) + 1;
+      stats.byTopic[q.topic] = (stats.byTopic[q.topic] || 0) + 1;
+    });
+
+    res.json({ success: true, week: parseInt(week), count: questions.length, statistics: stats, questions });
+
+  } catch (error) {
+    console.error('❌ Error fetching questions by week:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch questions', error: error.message });
+  }
+});
+
+
+// SAT course routes 
 
 // GET /api/sat_admin_scores — all attempts per student, grouped by email (for admin dashboard)
 router.get('/sat_admin_scores', async (req, res) => {
@@ -5206,9 +5177,14 @@ router.get('/sat_scores', async (req, res) => {
     res.status(500).json({ error: err.message })
   }
 })
-
-// GET QUESTIONS for quiz
 // ============================================
+
+
+
+
+
+// NEW PROGRAMMING SINGLE COLLECTION/SCHEMA DESIGN ROUTES----->>>>>>
+//GET QUESTIONS for quiz ( java , python, pdsa, dbms
 router.get('/mcq-questions', async (req, res) => {
   try {
     const { 
@@ -5314,7 +5290,6 @@ router.get('/mcq-questions', async (req, res) => {
 
 // ============================================
 // SUBMIT QUIZ ANSWERS (server-side grading)
-// ============================================
 router.post('/mcq-quiz/submit', async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -5498,7 +5473,6 @@ router.post('/mcq-quiz/submit', async (req, res) => {
 
 // ============================================
 // GET ALL ATTEMPTS for a user (with filters)
-// ============================================
 router.get('/mcq-quiz/attempts', async (req, res) => {
   try {
     const { email, course } = req.query;
@@ -5520,7 +5494,6 @@ router.get('/mcq-quiz/attempts', async (req, res) => {
 
 // ============================================
 // ADMIN: GET ALL ATTEMPTS ACROSS ALL STUDENTS (optional course filter)
-// ============================================
 router.get('/mcq-quiz/admin/attempts', async (req, res) => {
   try {
     const { course } = req.query;
@@ -5541,7 +5514,7 @@ router.get('/mcq-quiz/admin/attempts', async (req, res) => {
 
 // ============================================
 // ADMIN: GET PER-QUESTION RESULTS FOR ONE ATTEMPT (with question text/answers)
-// ============================================
+
 router.get('/mcq-quiz/admin/attempts/:attemptId/results', async (req, res) => {
   try {
     const { attemptId } = req.params;
@@ -5580,7 +5553,7 @@ router.get('/mcq-quiz/admin/attempts/:attemptId/results', async (req, res) => {
 
 
 // ============================================
-// CODING QUIZ ROUTES (CodingQuestions / CodingSubmission / CodingTestCase)
+// NEW CODING/PROGRAMMING QUIZ ROUTES (CodingQuestions / CodingSubmission / CodingTestCase)
 // ============================================
 
 // GET /api/coding-questions?course=&week=&topic=&difficulty=&language=
@@ -5758,114 +5731,171 @@ router.get('/coding-progress', async (req, res) => {
   }
 });
 
-
-// GET all DBMS submissions — merges test, coding, and interview quiz submissions
-router.get('/dbms-submission', async (req, res) => {
+// ─── Aggregated Admin Notifications ────────────────────────────────────────
+// Single endpoint that replaces 8 separate frontend calls.
+// Only returns notification-sized fields — no questionResults, no options arrays.
+router.get('/admin-notifications', async (req, res) => {
   try {
-    const { email } = req.query;
-    const filter = email ? { email } : {};
+    const [
+      math1Users, stats1Users, ctUsers,
+      math2Users, stats2Users,
+      codingUsers, pdsaUsers, 
+      satDocs, progAttempts
+        
+    ] = await Promise.all([
+      iitm_math_score.find({}, { email:1, username:1, name:1,
+        'quizScores.topic':1, 'quizScores.score':1, 'quizScores.percentage':1,
+        'quizScores.correctAnswers':1, 'quizScores.totalQuestions':1, 'quizScores.timestamp':1
+      }).lean(),
+      Statistics_scores.find({}, { email:1, username:1, name:1,
+        'quizScores.topic':1, 'quizScores.percentage':1,
+        'quizScores.correctAnswers':1, 'quizScores.totalQuestions':1, 'quizScores.timestamp':1
+      }).lean(),
+      iitm_ct_scores.find({}, { email:1, username:1, name:1,
+        'quizScores.topic':1, 'quizScores.score':1, 'quizScores.percentage':1,
+        'quizScores.totalQuestions':1, 'quizScores.timestamp':1
+      }).lean(),
+      IITM_Maths_2_Score.find({}, { email:1, name:1,
+        'scores.week':1, 'scores.subtopic':1, 'scores.score':1,
+        'scores.correctAnswers':1, 'scores.totalQuestions':1, 'scores.dateAttempted':1
+      }).lean(),
+      IITM_Stats_2_Score.find({}, { email:1, name:1,
+        'scores.week':1, 'scores.subtopic':1, 'scores.score':1,
+        'scores.correctAnswers':1, 'scores.totalQuestions':1, 'scores.dateAttempted':1
+      }).lean(),
+      pdsaCodingSubmission.find({}, { email:1, username:1, name:1, topic:1, percentage:1, score:1, maxScore:1, timestamp:1 }).lean(),
+      pdsaSubmission.find({}, { email:1, username:1, name:1, topic:1, percentage:1, score:1, maxScore:1, timestamp:1 }).lean(),
 
-    const [testSubs, codingSubs, interviewSubs] = await Promise.all([
-      DBMSSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
-      CodingSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
-      InterviewSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
-    ]);
+      ProgrammingQuizAttempt.find({}, { email:1, username:1, course:1, week:1, topic:1, percentage:1, submitted_at:1 }).lean(),
 
-    const normalize = (sub, quizType) => ({
-      _id: sub._id,
-      email: sub.email,
-      username: sub.username,
-      topic: sub.topic,
-      score: sub.score,
-      maxScore: sub.maxScore,
-      percentage: sub.percentage,
-      timestamp: sub.timestamp,
-      quizType,
-    });
+      SatScore.find({}, { email:1, name:1, subject:1,
+        'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
+        'attempts.totalQuestions':1, 'attempts.dateAttempted':1}).lean(),
+    ])
 
-    const merged = [
-      ...testSubs.map(s => normalize(s, 'test')),
-      ...codingSubs.map(s => normalize(s, 'coding')),
-      ...interviewSubs.map(s => normalize(s, 'interview')),
-    ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    const all = []
 
-    res.json({ success: true, data: merged });
+    const push = (arr, subject, subjectKey, icon, iconClass, mapFn) =>
+      arr.forEach(s => mapFn(s).forEach(n => all.push({ ...n, subject, subjectKey, icon, iconClass })))
 
-  } catch (error) {
-    console.error('Error fetching DBMS submissions:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+    // Math 1
+    push(math1Users, 'Mathematics-1', 'math1', 'bi-calculator', 'math', s =>
+      (s.quizScores || []).map(q => ({
+        userName: s.username || s.name || s.email,
+        topic: q.topic || 'Quiz',
+        score: q.percentage || (q.correctAnswers != null && q.totalQuestions ? Math.round((q.correctAnswers/q.totalQuestions)*100) : 0),
+        timestamp: q.timestamp
+      }))
+    )
 
-// POST — save DBMS quiz submission
-router.post('/dbms-submission', async (req, res) => {
-  try {
-    const submissionData = req.body;
-    const submission = new DBMSSubmission(submissionData);
-    await submission.save();
-    res.status(201).json({
-      success: true,
-      message: 'Quiz results saved successfully',
-      submissionId: submission._id
-    });
-  } catch (error) {
-    console.error('❌ Error saving DBMS submission:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to save quiz results',
-      error: error.message
-    });
-  }
-});
+    // Stats 1
+    push(stats1Users, 'Statistics-1', 'stats1', 'bi-bar-chart', 'stats', s =>
+      (s.quizScores || []).map(q => ({
+        userName: s.username || s.name || s.email,
+        topic: q.topic || 'Statistics Quiz',
+        score: q.percentage || (q.correctAnswers != null && q.totalQuestions ? Math.round((q.correctAnswers/q.totalQuestions)*100) : 0),
+        timestamp: q.timestamp
+      }))
+    )
 
-// GET — fetch DBMS questions by week number
-router.get('/dbms/questions/week/:week', async (req, res) => {
-  try {
-    const { week } = req.params;
-    const { topic, subtopic, type, difficulty, limit } = req.query;
+    // CT
+    push(ctUsers, 'Computational Thinking', 'ct', 'bi-cpu', 'ct', s =>
+      (s.quizScores || []).map(q => ({
+        userName: s.username || s.name || s.email,
+        topic: q.topic || 'CT Exercise',
+        score: q.percentage || (q.score != null && q.totalQuestions ? Math.round((q.score/q.totalQuestions)*100) : 0),
+        timestamp: q.timestamp
+      }))
+    )
 
-    if (week < 1 || week > 11) {
-      return res.status(400).json({ success: false, message: 'Week must be between 1 and 11' });
+    // Math 2
+    push(math2Users, 'Mathematics-2', 'math2', 'bi-calculator', 'math2', s =>
+      (s.scores || []).map(q => ({
+        userName: s.name || s.email,
+        topic: q.subtopic || `Week ${q.week}`,
+        score: q.totalQuestions ? Math.round((q.correctAnswers/q.totalQuestions)*100) : 0,
+        timestamp: q.dateAttempted
+      }))
+    )
+
+    // Stats 2
+    push(stats2Users, 'Statistics-2', 'stats2', 'bi-bar-chart', 'stats2', s =>
+      (s.scores || []).map(q => ({
+        userName: s.name || s.email,
+        topic: q.subtopic || `Week ${q.week}`,
+        score: q.totalQuestions ? Math.round((q.correctAnswers/q.totalQuestions)*100) : 0,
+        timestamp: q.dateAttempted
+      }))
+    )
+
+    // Coding
+    codingUsers
+      .filter(s => s.email && s.email.toLowerCase() !== 'test@example.com')
+      .forEach(s => all.push({
+        userName: s.username || s.name || s.email,
+        subject: 'Programming', subjectKey: 'coding', icon: 'bi-code-slash', iconClass: 'programming',
+        topic: s.topic || 'Coding Assignment',
+        score: s.percentage || (s.score != null && s.maxScore ? Math.round((s.score/s.maxScore)*100) : 0),
+        timestamp: s.timestamp
+      }))
+
+    // PDSA
+    pdsaUsers
+      .filter(s => s.email && s.email.toLowerCase() !== 'test@example.com')
+      .forEach(s => all.push({
+        userName: s.username || s.name || s.email,
+        subject: 'Quiz Test (PDSA)', subjectKey: 'pdsa', icon: 'bi-pencil-square', iconClass: 'dsa',
+        topic: s.topic || 'Quiz Test',
+        score: s.percentage || (s.score != null && s.maxScore ? Math.round((s.score/s.maxScore)*100) : 0),
+        timestamp: s.timestamp
+      }))
+
+     // Programming courses (Java, Python, SQL, DSA)
+    const progCourseMap = {
+      java:   { label: 'Java Programming',            icon: 'bi-cup-hot-fill',    iconClass: 'java'   },
+      python: { label: 'Python Programming',          icon: 'bi-filetype-py',     iconClass: 'python' },
+      sql:    { label: 'SQL & Databases',             icon: 'bi-database-fill',   iconClass: 'sql'    },
+      dsa:    { label: 'Data Structures & Algorithms',icon: 'bi-diagram-3-fill',  iconClass: 'dsa'    },
     }
+    progAttempts
+      .filter(a => a.email && a.email.toLowerCase() !== 'test@example.com')
+      .forEach(a => {
+        const cm = progCourseMap[a.course] || { label: a.course, icon: 'bi-code-slash', iconClass: 'programming' }
+        all.push({
+          userName: a.username || a.email,
+          subject: cm.label,
+          subjectKey: a.course,
+          icon: cm.icon,
+          iconClass: cm.iconClass,
+          topic: a.topic ? `Week ${a.week} — ${a.topic}` : `Week ${a.week}`,
+          score: a.percentage || 0,
+          timestamp: a.submitted_at
+        })
+      })
 
-    let filter = { week: parseInt(week) };
-    if (topic) filter.topic = topic;
-    if (subtopic) filter.subtopic = subtopic;
-    if (type) filter.type = type;
-    if (difficulty) filter.difficulty = difficulty;
 
-    let query = DBMSQuestions.find(filter).sort({ questionId: 1 });
-    if (limit) query = query.limit(parseInt(limit));
+    // SAT
+    satDocs.forEach(doc => {
+      ;(doc.attempts || []).forEach(attempt => {
+        const pct = attempt.totalQuestions > 0
+          ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
+          : (attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0)
+        all.push({
+          userName: doc.name || doc.email,
+          subject: 'SAT', subjectKey: 'sat', icon: 'bi-pencil-fill', iconClass: 'sat',
+          topic: doc.subject || 'SAT Section',
+          score: pct,
+          timestamp: attempt.dateAttempted
+        })
+      })
+    })
 
-    const questions = await query.lean();
-
-    if (questions.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: `No questions found for week ${week}`,
-        filters: filter
-      });
-    }
-
-    const stats = {
-      totalQuestions: questions.length,
-      byType: {}, byDifficulty: {}, byTopic: {},
-      totalMaxScore: questions.reduce((sum, q) => sum + (q.maxScore || 0), 0)
-    };
-    questions.forEach(q => {
-      stats.byType[q.type] = (stats.byType[q.type] || 0) + 1;
-      stats.byDifficulty[q.difficulty] = (stats.byDifficulty[q.difficulty] || 0) + 1;
-      stats.byTopic[q.topic] = (stats.byTopic[q.topic] || 0) + 1;
-    });
-
-    res.json({ success: true, week: parseInt(week), count: questions.length, statistics: stats, questions });
-
-  } catch (error) {
-    console.error('❌ Error fetching questions by week:', error);
-    res.status(500).json({ success: false, message: 'Failed to fetch questions', error: error.message });
+    all.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
+    res.json({ success: true, data: all.slice(0, 50) })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
   }
-});
-
+})
 
 
 module.exports = router
