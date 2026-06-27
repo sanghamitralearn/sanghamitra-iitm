@@ -5,11 +5,10 @@ import axios from 'axios'
 const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 const COURSES = [
-  { id: 'all',    label: 'All Courses',                  fullTitle: 'Programming Courses Dashboard',            subtitle: 'Java, Python, SQL & DSA — quiz attempts and answer-level review', icon: 'bi-collection',      color: '#667eea' },
+  { id: 'all',    label: 'All Courses',                  fullTitle: 'Programming Courses Dashboard',            subtitle: 'Java, Python, DBMS & PDSA — quiz attempts and answer-level review', icon: 'bi-collection',      color: '#667eea' },
   { id: 'java',   label: 'Java',                         fullTitle: 'Java Dashboard',                           subtitle: 'Weekly assessments — Java Programming',                          icon: 'bi-cup-hot-fill',    color: '#f89820' },
   { id: 'python', label: 'Python',                       fullTitle: 'Python Dashboard',                         subtitle: 'Weekly assessments — Python Programming',                        icon: 'bi-filetype-py',     color: '#3776ab' },
-  { id: 'sql',    label: 'SQL',                          fullTitle: 'SQL Dashboard',                            subtitle: 'Weekly assessments — SQL & Databases',                           icon: 'bi-database-fill',   color: '#4479a1' },
-  { id: 'dsa',    label: 'DSA',                          fullTitle: 'DSA Dashboard',                            subtitle: 'Weekly assessments — Data Structures & Algorithms',              icon: 'bi-diagram-3-fill',  color: '#f4b41a' },
+  { id: 'dbms',    label: 'DBMS',                          fullTitle: 'DBMS Dashboard',                            subtitle: 'Weekly assessments — DBMS & Databases',                           icon: 'bi-database-fill',   color: '#4479a1' },
 ]
 
 const courseInfo = (id) => COURSES.find(c => c.id === id) || { label: id, fullTitle: id, subtitle: '', icon: 'bi-code-slash', color: '#6c757d' }
