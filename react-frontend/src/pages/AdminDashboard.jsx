@@ -290,6 +290,7 @@ const AdminDashboard = () => {
     setNotifLoading(true)
     try {
       const res = await fetchFromAPI(`${VITE_API_URL}/api/admin-notifications`)
+      console.log('Notifications API Response:', res) 
       const all = res.success ? res.data : []
 
       let lastSeen = getLastSeen()
