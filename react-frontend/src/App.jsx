@@ -28,7 +28,7 @@ import Stats1Dashboard from './pages/Stats1Dashboard'
 import Stats2Dashboard from './pages/Stats2Dashboard'
 import CTDashboard from './pages/CTDashboard'
 import PythonDashboard from './pages/PythonDashboard'
-import PDSADashboard from './pages/PDSADashboard'
+
 import Algebra from './pages/Algebra'
 import IIITMMath from './pages/courses/IIITM-math'
 import AlgebraSubject from './pages/courses/algebra'
@@ -89,6 +89,8 @@ import SATScoreDashboard from './pages/courses/SATScoreDashboard'
 
 
 // New Programming course 
+import PDSADashboard from './pages/PDSADashboard'
+import ProgrammingCourses from './pages/courses/Programming'
 import ProgrammingDashboard from './pages/ProgrammingDashboard'
 import CoursePage from './pages/courses/Programming_Courses/CoursePage'
 import QuizPage from './pages/courses/Programming_Courses/QuizPage'
@@ -128,7 +130,6 @@ function App() {
             <Route path="/admin/stats2" element={<Stats2Dashboard />} />
             <Route path="/admin/iitm-ct" element={<CTDashboard />} />
             <Route path="/admin/python" element={<PythonDashboard />} />
-            <Route path="/admin/dsa" element={<PDSADashboard />} />
             <Route path="/algebra" element={<Algebra />} />
             <Route path="/math2" element={<Math2 />} />
             <Route path="/statistics2" element={<Statistics2 />} />
@@ -209,7 +210,9 @@ function App() {
             <Route path="/courses/DBMS/:weekId" element={<DBMSQuiz />} />
 
             {/* programming COURSE */}
+            <Route path="/admin/pdsa" element={<PDSADashboard />} />
             <Route path="/admin/programming" element={<ProgrammingDashboard />} />
+            <Route path="/programming/courses" element={<ProgrammingCourses />} />
             <Route path="/programming/courses/:course" element={<CoursePage />} />
             <Route path="/quiz/:course/week/:week" element={<QuizPage />} />
             <Route path="/coding/:course/week/:week" element={<CodingPage />} />
