@@ -77,6 +77,7 @@ const JeeMainFullScore = require('../model/jee_main_full_scores')
 
 const SatQuestion = require('../model/sat_questions')
 const SatScore = require('../model/sat_scores')
+const SatFullScore   = require('../model/sat_full_scores')
 
 const DBMSSubmission = require('../model/DBMS_Submission');
 const DBMSQuestions = require('../model/DBMS_Questions');
@@ -5173,6 +5174,102 @@ router.get('/sat_scores', async (req, res) => {
       }))
     )
     res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── SAT Papers aggregation ───────────────────────────────────────────────────
+// GET /api/sat_papers  — groups sat_questions by (paper, year) and returns per-paper totals
+router.get('/sat_papers', async (req, res) => {
+  try {
+    const grouped = await SatQuestion.aggregate([
+      {
+        // Normalise subject so both "Reading & Writing" and "Reading and Writing" collapse into one key
+        $addFields: {
+          _normSubject: {
+            $cond: {
+              if: { $regexMatch: { input: { $ifNull: ['$subject', ''] }, regex: /reading/i } },
+              then: 'Reading & Writing',
+              else: '$subject',
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id:   { paper: '$paper', year: '$year', subject: '$_normSubject' },
+          count: { $sum: 1 },
+          marks: { $sum: { $ifNull: ['$points', 1] } },
+        },
+      },
+      {
+        $group: {
+          _id:            { paper: '$_id.paper', year: '$_id.year' },
+          totalQuestions: { $sum: '$count' },
+          totalMarks:     { $sum: '$marks' },
+          subjects:       { $push: { subject: '$_id.subject', count: '$count', totalMarks: '$marks' } },
+        },
+      },
+    ])
+
+    const result = grouped.map(p => {
+      const subjects = {}
+      p.subjects.forEach(s => { subjects[s.subject] = { count: s.count, totalMarks: s.totalMarks } })
+      return {
+        paper:          p._id.paper,
+        year:           p._id.year,
+        totalQuestions: p.totalQuestions,
+        totalMarks:     p.totalMarks,
+        subjects,
+      }
+    })
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/sat_full_scores — save one full-paper attempt
+router.post('/sat_full_scores', async (req, res) => {
+  try {
+    const {
+      email, name, paper, year,
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore, sectionScores, responses, totalTimeTaken,
+    } = req.body
+    if (!email || !paper) return res.status(400).json({ error: 'email and paper are required' })
+
+    const doc = new SatFullScore({
+      email, name, paper, year,
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore, sectionScores,
+      responses: (responses || []).map(r => ({
+        questionId:   r.questionId,
+        subject:      r.subject,
+        userResponse: r.userResponse,
+        isCorrect:    r.isCorrect,
+        marksAwarded: r.marksAwarded,
+        unattempted:  r.unattempted,
+        timeTaken:    r.timeTaken,
+      })),
+      totalTimeTaken,
+      dateAttempted: new Date(),
+    })
+    await doc.save()
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/sat_full_scores?email=x@y.com — all full-paper attempts newest first
+router.get('/sat_full_scores', async (req, res) => {
+  try {
+    const { email } = req.query
+    if (!email) return res.status(400).json({ error: 'email is required' })
+    const docs = await SatFullScore.find({ email }).sort({ dateAttempted: -1 }).lean()
+    res.json(docs)
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
