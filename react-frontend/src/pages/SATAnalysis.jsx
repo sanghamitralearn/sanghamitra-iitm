@@ -132,7 +132,7 @@ function QuestionContent({ q }) {
 // ─── Results Page ─────────────────────────────────────────────────────────────
 const ResultsPage = ({ results, onReview, allAttempts, activeAttemptId, onSwitchAttempt }) => {
   const [selectedView, setSelectedView] = useState('overview')
-  const [sectionsOpen, setSectionsOpen] = useState(false)
+  const [sectionsOpen, setSectionsOpen] = useState(true)
   const [expandedSubjects, setExpandedSubjects] = useState({})
 
   const sectionStats = {}
@@ -149,6 +149,25 @@ const ResultsPage = ({ results, onReview, allAttempts, activeAttemptId, onSwitch
   }
 
   const isFullTest = results.testType === 'full'
+
+  // For practice tests, populate section stats from overall results
+  if (!isFullTest) {
+    const normSub = (results.subject || '').replace(' and ', ' & ')
+    if (normSub) {
+      sectionStats[normSub] = {
+        score:       results.score ?? 0,
+        max:         results.maxScore ?? 0,
+        correct:     results.correctAnswers ?? 0,
+        wrong:       results.wrongAnswers ?? 0,
+        unattempted: results.unattempted ?? 0,
+        total:       results.totalQuestions ?? (results.responses || []).length,
+      }
+    }
+  }
+
+  const sidebarSections = isFullTest
+    ? SAT_SECTIONS
+    : (() => { const s = (results.subject || '').replace(' and ', ' & '); return s ? [s] : [] })()
 
   // Module-level stats derived from per-question responses
   const moduleStats = {}
@@ -268,7 +287,7 @@ const ResultsPage = ({ results, onReview, allAttempts, activeAttemptId, onSwitch
                 {selectedView === 'overview' && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0d6efd', display: 'inline-block' }} />}
               </button>
 
-              {isFullTest && (
+              {sidebarSections.length > 0 && (
                 <>
                   <button onClick={() => setSectionsOpen(o => !o)}
                     className="w-100 text-start border-0 p-3 d-flex align-items-center justify-content-between"
@@ -276,14 +295,14 @@ const ResultsPage = ({ results, onReview, allAttempts, activeAttemptId, onSwitch
                     <span style={{ paddingLeft: 10 }}>Sections</span>
                     <i className={`bi bi-chevron-${sectionsOpen ? 'up' : 'down'} text-muted`} style={{ fontSize: '0.8rem' }} />
                   </button>
-                  {sectionsOpen && SAT_SECTIONS.map(sec => {
+                  {sectionsOpen && sidebarSections.map(sec => {
                     const secActive = selectedView === sec || moduleSection === sec
                     return (
                       <React.Fragment key={sec}>
                         <button
                           onClick={() => {
                             setSelectedView(sec)
-                            setExpandedSubjects(prev => ({ ...prev, [sec]: !prev[sec] }))
+                            if (isFullTest) setExpandedSubjects(prev => ({ ...prev, [sec]: !prev[sec] }))
                           }}
                           className="w-100 text-start border-0 px-4 py-2 d-flex align-items-center justify-content-between"
                           style={{ background: secActive ? '#f8f9fa' : '#fff', borderBottom: '1px solid #f0f0f0', cursor: 'pointer' }}>
@@ -292,10 +311,10 @@ const ResultsPage = ({ results, onReview, allAttempts, activeAttemptId, onSwitch
                           </span>
                           <div className="d-flex align-items-center gap-2">
                             {selectedView === sec && <span style={{ width: 8, height: 8, borderRadius: '50%', background: SECTION_COLOR[sec], display: 'inline-block' }} />}
-                            <i className={`bi bi-chevron-${expandedSubjects[sec] ? 'up' : 'down'} text-muted`} style={{ fontSize: '0.7rem' }} />
+                            {isFullTest && <i className={`bi bi-chevron-${expandedSubjects[sec] ? 'up' : 'down'} text-muted`} style={{ fontSize: '0.7rem' }} />}
                           </div>
                         </button>
-                        {expandedSubjects[sec] && ['Module 1', 'Module 2'].map(mod => {
+                        {isFullTest && expandedSubjects[sec] && ['Module 1', 'Module 2'].map(mod => {
                           const viewKey = `${sec}|${mod}`
                           const modActive = selectedView === viewKey
                           return (
