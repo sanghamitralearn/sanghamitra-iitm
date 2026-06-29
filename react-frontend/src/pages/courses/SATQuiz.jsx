@@ -64,21 +64,57 @@ function renderMathContent(element) {
   setTimeout(run, 50)
 }
 
-// ─── Convert \begin{tabular}...\end{tabular} to an HTML table ────────────────
+// ─── Convert \begin{tabular} or \begin{array} to an HTML table ───────────────
+function processCell(c) {
+  return c.trim()
+    .replace(/\\textbf\{([^}]*)\}/g, '<strong>$1</strong>')
+    .replace(/\\textit\{([^}]*)\}/g, '<em>$1</em>')
+    .replace(/\\text\{([^}]*)\}/g, '$1')
+    .replace(/\\%/g, '%')
+}
+
 function latexTabularToHtml(text) {
   return text.replace(
-    /\\begin\{tabular\}(\{[^}]*\})([\s\S]*?)\\end\{tabular\}/g,
-    (_match, _colSpec, body) => {
+    /\\begin\{(tabular|array)\}\*?(?:\{[^}]*\})?([\s\S]*?)\\end\{\1\}/g,
+    (_match, _env, body) => {
       const rows = body.split(/\\\\/).map(r => r.replace(/\\hline/g, '').trim()).filter(r => r)
       if (rows.length === 0) return ''
       const [header, ...dataRows] = rows
-      const headerCells = header.split('&').map(c => `<th>${c.trim()}</th>`).join('')
+      const headerCells = header.split('&').map(c => `<th>${processCell(c)}</th>`).join('')
       const bodyRows = dataRows
-        .map(r => '<tr>' + r.split('&').map(c => `<td>${c.trim()}</td>`).join('') + '</tr>')
+        .map(r => '<tr>' + r.split('&').map(c => `<td>${processCell(c)}</td>`).join('') + '</tr>')
         .join('')
       return `<table class="sat-table"><thead><tr>${headerCells}</tr></thead><tbody>${bodyRows}</tbody></table>`
     }
   )
+}
+
+// ─── Escape currency dollar signs so they don't trigger KaTeX math mode ──────
+// Matches $N, $N.NN, $N,NNN etc. when NOT followed by a letter/backslash
+// (which would indicate a math expression like $5x rather than currency like $5)
+function escapeCurrencyDollars(text) {
+  return text.replace(/\$(\d[\d,]*(?:\.\d{1,2})?)(?![a-zA-Z\\])/g, '&#36;$1')
+}
+
+// ─── Convert \begin{enumerate}/\begin{itemize} to HTML lists ─────────────────
+function latexListToHtml(text) {
+  text = text.replace(
+    /\\begin\{enumerate\}(?:\[[^\]]*\])?([\s\S]*?)\\end\{enumerate\}/g,
+    (_match, body) => {
+      const items = body.split(/\\item\s*/).slice(1)
+        .map(i => `<li>${i.trim()}</li>`).join('')
+      return `<ol style="padding-left:1.5rem;margin:8px 0">${items}</ol>`
+    }
+  )
+  text = text.replace(
+    /\\begin\{itemize\}([\s\S]*?)\\end\{itemize\}/g,
+    (_match, body) => {
+      const items = body.split(/\\item\s*/).slice(1)
+        .map(i => `<li>${i.trim()}</li>`).join('')
+      return `<ul style="padding-left:1.5rem;margin:8px 0">${items}</ul>`
+    }
+  )
+  return text
 }
 
 // ─── MathText: renders $...$ LaTeX, tabular tables, and (structure) markers ──
@@ -87,13 +123,18 @@ export const MathText = ({ text, style, className }) => {
   useEffect(() => { if (ref.current) renderMathContent(ref.current) }, [text])
 
   let html = (text || '')
-    .replace(/\\\$/g, '&#36;')            // \$ → literal dollar sign
+    .replace(/\\\$/g, '&#36;')
+    .replace(/\\%/g, '%')
+    .replace(/\\textit\{([^}]*)\}/g, '<em>$1</em>')
+    .replace(/\\textbf\{([^}]*)\}/g, '<strong>$1</strong>')
     .replace(/\(structure\)/g,
       '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;' +
       'background:#fff3cd;border:1px dashed #ffc107;border-radius:4px;font-size:0.8rem;' +
       'color:#856404;vertical-align:middle;margin:0 4px;">⬡ Structure</span>'
     )
+  html = escapeCurrencyDollars(html)
   html = latexTabularToHtml(html)
+  html = latexListToHtml(html)
 
   return (
     <span
@@ -156,7 +197,19 @@ function parseMatchingLists(text) {
 
 // ─── Passage block (SAT Reading & Writing) ───────────────────────────────────
 function PassageBlock({ text }) {
+  const ref = useRef(null)
+  useEffect(() => { if (ref.current) renderMathContent(ref.current) }, [text])
+
   if (!text) return null
+
+  let html = (text || '')
+    .replace(/\\%/g, '%')
+    .replace(/\\textit\{([^}]*)\}/g, '<em>$1</em>')
+    .replace(/\\textbf\{([^}]*)\}/g, '<strong>$1</strong>')
+  html = escapeCurrencyDollars(html)
+  html = latexTabularToHtml(html)
+  html = latexListToHtml(html)
+
   return (
     <div style={{
       background: '#f8f9ff',
@@ -172,11 +225,10 @@ function PassageBlock({ text }) {
       }}>
         Passage
       </div>
-      <p style={{
-        fontSize: '1rem', lineHeight: 1.85, whiteSpace: 'pre-wrap',
-        margin: 0, color: '#1a1a2e',
-      }}
-        dangerouslySetInnerHTML={{ __html: text }}
+      <div
+        ref={ref}
+        style={{ fontSize: '1rem', lineHeight: 1.85, whiteSpace: 'pre-wrap', margin: 0, color: '#1a1a2e' }}
+        dangerouslySetInnerHTML={{ __html: html }}
       />
     </div>
   )
@@ -349,23 +401,7 @@ export const QuestionReviewItem = ({ q, idx, answer, res, isOpen, onToggle }) =>
         {isOpen && (
           <div className="mt-3 ms-5 ps-2">
             {/* Passage (SAT Reading & Writing) */}
-            {q.passage && (
-              <div style={{
-                background: '#f8f9ff',
-                border: '1px solid #d0d9f0',
-                borderLeft: '4px solid #003D8F',
-                borderRadius: 10,
-                padding: '14px 18px',
-                marginBottom: 14,
-              }}>
-                <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '1px', color: '#003D8F', marginBottom: 8, textTransform: 'uppercase' }}>
-                  Passage
-                </div>
-                <p style={{ fontSize: '0.92rem', lineHeight: 1.8, whiteSpace: 'pre-wrap', margin: 0, color: '#1a1a2e' }}
-                  dangerouslySetInnerHTML={{ __html: q.passage }}
-                />
-              </div>
-            )}
+            <PassageBlock text={q.passage} />
             {q.image_url && (
               <div className="mb-3">
                 <img
