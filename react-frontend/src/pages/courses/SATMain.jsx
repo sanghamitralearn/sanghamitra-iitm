@@ -300,7 +300,7 @@ const SATMain = () => {
                             {attempt && (
                               <Link
                                 to="/courses/sat/analysis"
-                                state={{ results: attempt, questions: null }}
+                                state={{ results: { ...attempt, testType: 'full' }, questions: null }}
                                 className="btn btn-outline-secondary btn-sm"
                                 style={{ borderRadius: 10, minWidth: 150 }}
                               >
