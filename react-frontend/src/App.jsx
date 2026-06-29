@@ -196,8 +196,8 @@ function App() {
             <Route path="/admin/jee-main" element={<JEEMainDashboard />} />
 
             {/* SAT — module-based quizzes */}
-            <Route path="/courses/sat" element={<SAT />} />
             <Route path="/courses/sat" element={<SATMain />} />
+            <Route path="/courses/sat/modules" element={<SAT />} />
             <Route path="/courses/sat/quiz/:section/:module" element={<SATQuiz />} />
             <Route path="/courses/sat/full-test" element={<SATFullTest />} />
             <Route path="/courses/sat/analysis" element={<SATAnalysis />} />
