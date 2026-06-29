@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import axios from 'axios'
 import {
   loadKaTeX, SUBJECT_STYLE, calcMarks,
@@ -55,7 +55,10 @@ function mergeResults(results) {
 }
 
 const SATFullTest = () => {
-  const navigate = useNavigate()
+  const navigate   = useNavigate()
+  const location   = useLocation()
+  const paperName  = location.state?.paper ?? null
+  const paperYear  = location.state?.year  ?? null
 
   // phase: loading | error | overview | quiz | review
   const [phase, setPhase] = useState('loading')
@@ -109,9 +112,10 @@ const SATFullTest = () => {
     setPhase('loading')
     setError(null)
     try {
+      const paperParam = paperName ? `&paper=${encodeURIComponent(paperName)}` : ''
       const [rwRes, mathRes] = await Promise.all([
-        axios.get(`${API_URL}/api/sat_questions?subject=${encodeURIComponent('Reading and Writing')}`, { withCredentials: true }),
-        axios.get(`${API_URL}/api/sat_questions?subject=${encodeURIComponent('Mathematics')}`, { withCredentials: true }),
+        axios.get(`${API_URL}/api/sat_questions?subject=${encodeURIComponent('Reading and Writing')}${paperParam}`, { withCredentials: true }),
+        axios.get(`${API_URL}/api/sat_questions?subject=${encodeURIComponent('Mathematics')}${paperParam}`, { withCredentials: true }),
       ])
       const rw = shuffle(Array.isArray(rwRes.data) ? rwRes.data : [])
       const math = shuffle(Array.isArray(mathRes.data) ? mathRes.data : [])
@@ -294,6 +298,7 @@ const SATFullTest = () => {
     setSaving(true)
     try {
       await Promise.all([
+        // Per-subject scores (existing flow)
         axios.post(`${API_URL}/api/sat_scores`, {
           email: u.email, name: u.username || u.name || u.email, subject: 'Reading & Writing',
           totalQuestions: rwResult.totalQuestions, correctAnswers: rwResult.correctAnswers,
@@ -306,6 +311,21 @@ const SATFullTest = () => {
           wrongAnswers: mathResult.wrongAnswers, unattempted: mathResult.unattempted,
           score: mathResult.score, maxScore: mathResult.maxScore, responses: mathResult.responses,
         }, { withCredentials: true }),
+        // Full-paper score (for the paper listing page)
+        ...(paperName ? [
+          axios.post(`${API_URL}/api/sat_full_scores`, {
+            email: u.email, name: u.username || u.name || u.email,
+            paper: paperName, year: paperYear,
+            totalQuestions: combined.totalQuestions,
+            correctAnswers: combined.correctAnswers,
+            wrongAnswers: combined.wrongAnswers,
+            unattempted: combined.unattempted,
+            score: combined.score, maxScore: combined.maxScore,
+            sectionScores: analysisResults.sectionScores,
+            responses: analysisResults.responses,
+            totalTimeTaken: combined.totalTime || 0,
+          }, { withCredentials: true }),
+        ] : []),
       ])
     } catch (e) {
       console.error('Failed to save full test scores:', e)
