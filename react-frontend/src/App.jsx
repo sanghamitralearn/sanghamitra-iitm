@@ -80,6 +80,7 @@ import JEEMainAnalysis from './pages/JEEMainAnalysis'
 import JEEMainDashboard from './pages/JEEMainDashboard'
 
 import SAT from './pages/courses/SAT'
+import SATMain from './pages/courses/SATMain'
 import SATQuiz from './pages/courses/SATQuiz'
 import SATFullTest from './pages/courses/SATFullTest'
 import SATDashboard from './pages/SATDashboard'
@@ -196,6 +197,7 @@ function App() {
 
             {/* SAT — module-based quizzes */}
             <Route path="/courses/sat" element={<SAT />} />
+            <Route path="/courses/sat" element={<SATMain />} />
             <Route path="/courses/sat/quiz/:section/:module" element={<SATQuiz />} />
             <Route path="/courses/sat/full-test" element={<SATFullTest />} />
             <Route path="/courses/sat/analysis" element={<SATAnalysis />} />
