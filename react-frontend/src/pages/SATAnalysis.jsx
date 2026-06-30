@@ -132,8 +132,6 @@ function QuestionContent({ q }) {
 // ─── Results Page ─────────────────────────────────────────────────────────────
 const ResultsPage = ({ results, onReview, allAttempts, activeAttemptId, onSwitchAttempt }) => {
   const [selectedView, setSelectedView] = useState('overview')
-  const [sectionsOpen, setSectionsOpen] = useState(true)
-  const [expandedSubjects, setExpandedSubjects] = useState({})
 
   const sectionStats = {}
   for (const sec of SAT_SECTIONS) {
@@ -278,43 +276,26 @@ const ResultsPage = ({ results, onReview, allAttempts, activeAttemptId, onSwitch
           {/* Sidebar */}
           <div className="col-md-3">
             <div className="card border-0 shadow-sm" style={{ borderRadius: 12, overflow: 'hidden' }}>
-              <button onClick={() => setSelectedView('overview')}
-                className="w-100 text-start border-0 p-3 d-flex align-items-center justify-content-between"
-                style={{ background: selectedView === 'overview' ? '#f0f4ff' : '#fff', borderBottom: '1px solid #e9ecef', cursor: 'pointer' }}>
-                <span style={{ borderLeft: selectedView === 'overview' ? '3px solid #0d6efd' : '3px solid transparent', paddingLeft: 10, fontWeight: selectedView === 'overview' ? 600 : 400, color: selectedView === 'overview' ? '#0d6efd' : '#212529' }}>
-                  Overview
-                </span>
-                {selectedView === 'overview' && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0d6efd', display: 'inline-block' }} />}
-              </button>
-
               {sidebarSections.length > 0 && (
                 <>
-                  <button onClick={() => setSectionsOpen(o => !o)}
-                    className="w-100 text-start border-0 p-3 d-flex align-items-center justify-content-between"
-                    style={{ background: '#fff', borderBottom: '1px solid #e9ecef', cursor: 'pointer' }}>
-                    <span style={{ paddingLeft: 10 }}>Sections</span>
-                    <i className={`bi bi-chevron-${sectionsOpen ? 'up' : 'down'} text-muted`} style={{ fontSize: '0.8rem' }} />
-                  </button>
-                  {sectionsOpen && sidebarSections.map(sec => {
+                  <div className="w-100 p-3 d-flex align-items-center justify-content-between"
+                    style={{ background: '#fff', borderBottom: '1px solid #e9ecef' }}>
+                    <span style={{ paddingLeft: 10, fontWeight: 500, color: '#495057', fontSize: '0.9rem' }}>Sections</span>
+                  </div>
+                  {sidebarSections.map(sec => {
                     const secActive = selectedView === sec || moduleSection === sec
                     return (
                       <React.Fragment key={sec}>
                         <button
-                          onClick={() => {
-                            setSelectedView(sec)
-                            if (isFullTest) setExpandedSubjects(prev => ({ ...prev, [sec]: !prev[sec] }))
-                          }}
+                          onClick={() => setSelectedView(sec)}
                           className="w-100 text-start border-0 px-4 py-2 d-flex align-items-center justify-content-between"
                           style={{ background: secActive ? '#f8f9fa' : '#fff', borderBottom: '1px solid #f0f0f0', cursor: 'pointer' }}>
                           <span style={{ borderLeft: secActive ? `3px solid ${SECTION_COLOR[sec]}` : '3px solid transparent', paddingLeft: 10, color: secActive ? SECTION_COLOR[sec] : '#495057', fontWeight: secActive ? 600 : 400, fontSize: '0.95rem' }}>
                             {sec}
                           </span>
-                          <div className="d-flex align-items-center gap-2">
-                            {selectedView === sec && <span style={{ width: 8, height: 8, borderRadius: '50%', background: SECTION_COLOR[sec], display: 'inline-block' }} />}
-                            {isFullTest && <i className={`bi bi-chevron-${expandedSubjects[sec] ? 'up' : 'down'} text-muted`} style={{ fontSize: '0.7rem' }} />}
-                          </div>
+                          {selectedView === sec && <span style={{ width: 8, height: 8, borderRadius: '50%', background: SECTION_COLOR[sec], display: 'inline-block' }} />}
                         </button>
-                        {isFullTest && expandedSubjects[sec] && ['Module 1', 'Module 2'].map(mod => {
+                        {isFullTest && ['Module 1', 'Module 2'].map(mod => {
                           const viewKey = `${sec}|${mod}`
                           const modActive = selectedView === viewKey
                           return (
@@ -338,6 +319,9 @@ const ResultsPage = ({ results, onReview, allAttempts, activeAttemptId, onSwitch
             <div className="d-flex flex-column gap-2 mt-3">
               <Link to="/courses/sat" className="btn btn-outline-dark btn-sm">
                 <i className="bi bi-house me-1" />SAT
+              </Link>
+              <Link to="/courses/jee-main" className="btn btn-outline-dark btn-sm">
+                <i className="bi bi-mortarboard me-1" />JEE Main
               </Link>
             </div>
           </div>
@@ -371,7 +355,7 @@ const ResultsPage = ({ results, onReview, allAttempts, activeAttemptId, onSwitch
                   return (
                     <div key={sec} className="col-md-6">
                       <div className="card border-0 shadow-sm h-100 text-center" style={{ borderRadius: 12, cursor: 'pointer' }}
-                        onClick={() => { setSectionsOpen(true); setSelectedView(sec) }}>
+                        onClick={() => setSelectedView(sec)}>
                         <div style={{ height: 4, background: SECTION_GRADIENT[sec], borderRadius: '12px 12px 0 0' }} />
                         <div className="card-body py-3">
                           <i className={`bi ${SECTION_ICON[sec]} mb-2`} style={{ fontSize: '1.3rem', color: SECTION_COLOR[sec] }} />
