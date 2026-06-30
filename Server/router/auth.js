@@ -4907,6 +4907,40 @@ router.get('/jee_scores', async (req, res) => {
   }
 })
 
+// GET /api/jee_admin_scores — all JEE Advanced attempts per student, grouped by email (for admin dashboard)
+router.get('/jee_admin_scores', async (req, res) => {
+  try {
+    const docs = await JeeScore.find({}).lean()
+    const byEmail = {}
+    docs.forEach(doc => {
+      if (!byEmail[doc.email]) {
+        byEmail[doc.email] = { email: doc.email, name: doc.name, quizScores: [] }
+      }
+      ;(doc.attempts || []).forEach((attempt, i) => {
+        const pct = attempt.totalQuestions > 0
+          ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
+          : (attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0)
+        byEmail[doc.email].quizScores.push({
+          topic: doc.subject,
+          score: attempt.score,
+          maxScore: attempt.maxScore,
+          correctAnswers: attempt.correctAnswers,
+          wrongAnswers: attempt.wrongAnswers,
+          unattempted: attempt.unattempted,
+          totalQuestions: attempt.totalQuestions,
+          percentage: pct,
+          timestamp: attempt.dateAttempted,
+          attemptNumber: i + 1,
+        })
+      })
+    })
+    res.json({ success: true, data: Object.values(byEmail) })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+
 // ═══ JEE Main (full-length papers + subject-wise practice) ════════════════════
 
 // GET /api/jee_main_papers
