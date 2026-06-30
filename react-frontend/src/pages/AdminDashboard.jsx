@@ -245,6 +245,7 @@ const iconColors = {
   pdsa:        { background: 'rgba(155,89,182,0.1)',  color: '#9b59b6' },
   sat:         { background: 'rgba(0,61,143,0.1)',    color: '#003D8F' },
   jee:         { background: 'rgba(220,53,69,0.1)',   color: '#dc3545' },
+  'jee-adv':     { background: 'rgba(102,16,242,0.1)',  color: '#6610f2' },
 }
 
 const LAST_SEEN_KEY = 'admin_notif_last_seen'
@@ -270,6 +271,7 @@ const subjectApis = [
   },
   { key: 'sat',       url: '/api/sat_scores',                         countFn: d => new Set((Array.isArray(d) ? d : []).map(e => e.email).filter(Boolean)).size },
   { key: 'jee',       url: '/api/jee_main_admin_scores',              countFn: d => ((d && d.data) || []).length },
+  
 ]
 
 const AdminDashboard = () => {
@@ -705,6 +707,11 @@ const AdminDashboard = () => {
                       <div className="col-md-3 mb-2">
                         <Link to="/admin/sat" className="btn btn-primary w-100">
                           <i className="bi bi-pencil-fill me-2"></i>SAT
+                        </Link>
+                      </div>
+                      <div className="col-md-3 mb-2">
+                        <Link to="/admin/jee-advanced" className="btn w-100 text-white" style={{ background: 'linear-gradient(135deg, #0d6efd, #6610f2)' }}>
+                          <i className="bi bi-trophy-fill me-2"></i>JEE Advanced
                         </Link>
                       </div>
                       <div className="col-md-3 mb-2">
