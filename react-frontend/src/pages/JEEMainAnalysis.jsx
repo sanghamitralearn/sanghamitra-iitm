@@ -160,7 +160,6 @@ function QuestionContent({ q }) {
 // ─── Allen-style Results Page ─────────────────────────────────────────────────
 const ResultsPage = ({ results, enriched, year, paper, onReview, allAttempts, activeAttemptId, onSwitchAttempt }) => {
   const [selectedView, setSelectedView] = useState('overview')
-  const [subjectsOpen, setSubjectsOpen] = useState(false)
 
   const subjectStats = {}
   for (const sub of FULL_TEST_SUBJECTS) {
@@ -264,22 +263,11 @@ const ResultsPage = ({ results, enriched, year, paper, onReview, allAttempts, ac
           {/* Sidebar */}
           <div className="col-md-3">
             <div className="card border-0 shadow-sm" style={{ borderRadius:12, overflow:'hidden' }}>
-              <button onClick={() => setSelectedView('overview')}
-                className="w-100 text-start border-0 p-3 d-flex align-items-center justify-content-between"
-                style={{ background: selectedView === 'overview' ? '#f0f4ff' : '#fff', borderBottom:'1px solid #e9ecef', cursor:'pointer' }}>
-                <span style={{ borderLeft: selectedView === 'overview' ? '3px solid #0d6efd' : '3px solid transparent', paddingLeft:10, fontWeight: selectedView === 'overview' ? 600 : 400, color: selectedView === 'overview' ? '#0d6efd' : '#212529' }}>
-                  Overview
-                </span>
-                {selectedView === 'overview' && <span style={{ width:8, height:8, borderRadius:'50%', background:'#0d6efd', display:'inline-block' }} />}
-              </button>
-
-              <button onClick={() => setSubjectsOpen(o => !o)}
-                className="w-100 text-start border-0 p-3 d-flex align-items-center justify-content-between"
-                style={{ background:'#fff', borderBottom:'1px solid #e9ecef', cursor:'pointer' }}>
-                <span style={{ paddingLeft:10 }}>Subjects</span>
-                <i className={`bi bi-chevron-${subjectsOpen ? 'up' : 'down'} text-muted`} style={{ fontSize:'0.8rem' }} />
-              </button>
-              {subjectsOpen && FULL_TEST_SUBJECTS.map(sub => (
+              <div className="w-100 p-3 d-flex align-items-center"
+                style={{ background:'#fff', borderBottom:'1px solid #e9ecef' }}>
+                <span style={{ paddingLeft:10, fontWeight:500, color:'#495057', fontSize:'0.9rem' }}>Subjects</span>
+              </div>
+              {FULL_TEST_SUBJECTS.map(sub => (
                 <button key={sub} onClick={() => setSelectedView(sub)}
                   className="w-100 text-start border-0 px-4 py-2 d-flex align-items-center justify-content-between"
                   style={{ background: selectedView === sub ? '#f8f9fa' : '#fff', borderBottom:'1px solid #f0f0f0', cursor:'pointer' }}>
@@ -294,6 +282,9 @@ const ResultsPage = ({ results, enriched, year, paper, onReview, allAttempts, ac
             <div className="d-flex flex-column gap-2 mt-3">
               <Link to="/courses/jee-main" className="btn btn-outline-dark btn-sm">
                 <i className="bi bi-house me-1" />JEE Main
+              </Link>
+              <Link to="/courses/sat" className="btn btn-outline-dark btn-sm">
+                <i className="bi bi-house me-1" />SAT
               </Link>
             </div>
           </div>
@@ -327,7 +318,7 @@ const ResultsPage = ({ results, enriched, year, paper, onReview, allAttempts, ac
                   return (
                     <div key={sub} className="col-md-4">
                       <div className="card border-0 shadow-sm h-100 text-center" style={{ borderRadius:12, cursor:'pointer' }}
-                        onClick={() => { setSubjectsOpen(true); setSelectedView(sub) }}>
+                        onClick={() => setSelectedView(sub)}>
                         <div style={{ height:4, background: SUBJECT_GRADIENT[sub], borderRadius:'12px 12px 0 0' }} />
                         <div className="card-body py-3">
                           <div className="fw-bold mb-1" style={{ color: SUBJECT_COLOR[sub] }}>{sub}</div>
