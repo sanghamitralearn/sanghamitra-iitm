@@ -302,6 +302,7 @@ const AdminDashboard = () => {
         localStorage.setItem(LAST_SEEN_KEY, latestTs.toString())
         lastSeen = latestTs
       }
+      const lastSeen = getLastSeen()
 
       const top50 = all.slice(0, 50).map(n => ({
         ...n,
