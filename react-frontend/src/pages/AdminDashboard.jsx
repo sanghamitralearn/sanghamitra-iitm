@@ -356,7 +356,6 @@ const AdminDashboard = () => {
   const handleBellClick = () => {
     if (!dropdownOpen) {
       loadNotifications()
-      markAllRead()
     }
     setDropdownOpen(v => !v)
   }
