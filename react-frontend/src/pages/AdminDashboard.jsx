@@ -271,7 +271,8 @@ const subjectApis = [
   },
   { key: 'sat',       url: '/api/sat_scores',                         countFn: d => new Set((Array.isArray(d) ? d : []).map(e => e.email).filter(Boolean)).size },
   { key: 'jee',       url: '/api/jee_main_admin_scores',              countFn: d => ((d && d.data) || []).length },
-  
+  { key: 'jee-adv', url: '/api/jee_admin_scores', countFn: d => ((d && d.data) || []).length },
+
 ]
 
 const AdminDashboard = () => {
@@ -384,6 +385,8 @@ const AdminDashboard = () => {
     { to: '/admin/pdsa',       icon: 'bi-diagram-3-fill', label: 'PDSA' },
     { to: '/admin/sat',        icon: 'bi-pencil-fill',    label: 'SAT' },
     { to: '/admin/jee-main',   icon: 'bi-mortarboard-fill', label: 'JEE Main' },
+    { to: '/admin/jee-advanced', icon: 'bi-trophy-fill', label: 'JEE Advanced' },
+
   ]
 
   return (
@@ -640,6 +643,8 @@ const AdminDashboard = () => {
                 {[
                   { key: 'sat', icon: 'bi-pencil-fill',    iconStyle: { background: 'rgba(0,61,143,0.1)',    color: '#003D8F' }, title: 'SAT',           to: '/admin/sat' },
                   { key: 'jee', icon: 'bi-mortarboard-fill', iconStyle: { background: 'rgba(220,53,69,0.1)',   color: '#dc3545' }, title: 'JEE Main',      to: '/admin/jee-main' },
+                  { key: 'jee-adv', icon: 'bi-trophy-fill', iconStyle: { background: 'rgba(102,16,242,0.1)', color: '#6610f2' }, title: 'JEE Advanced', to: '/admin/jee-advanced' },
+
                 ].map((card) => (
                   <div className="col-md-3 mb-4" key={card.key}>
                     <div style={s.dashCard} className="admin-dash-card">
