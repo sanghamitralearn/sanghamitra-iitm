@@ -72,6 +72,7 @@ import JavaQuiz from './pages/courses/JAVA/JavaQuiz'
 
 import JEE from './pages/courses/JEE'
 import JEEQuiz from './pages/courses/JEEQuiz'
+import JEEAdvancedDashboard from './pages/JEEAdvancedDashboard'
 
 import JEEMain from './pages/courses/JEEMain'
 import JEEMainQuiz from './pages/courses/JEEMainQuiz'
@@ -131,6 +132,7 @@ function App() {
             <Route path="/admin/stats2" element={<Stats2Dashboard />} />
             <Route path="/admin/iitm-ct" element={<CTDashboard />} />
             <Route path="/admin/python" element={<PythonDashboard />} />
+            <Route path="/admin/jee-advanced" element={<JEEAdvancedDashboard />} />
             <Route path="/algebra" element={<Algebra />} />
             <Route path="/math2" element={<Math2 />} />
             <Route path="/statistics2" element={<Statistics2 />} />
