@@ -72,7 +72,6 @@ import JavaQuiz from './pages/courses/JAVA/JavaQuiz'
 
 import JEE from './pages/courses/JEE'
 import JEEQuiz from './pages/courses/JEEQuiz'
-import JEEAdvancedDashboard from './pages/JEEAdvancedDashboard'
 
 import JEEMain from './pages/courses/JEEMain'
 import JEEMainQuiz from './pages/courses/JEEMainQuiz'
@@ -88,17 +87,6 @@ import SATDashboard from './pages/SATDashboard'
 import SATAnalysis from './pages/SATAnalysis'
 import SATExamAnalysis from './pages/SATExamAnalysis'
 import SATScoreDashboard from './pages/courses/SATScoreDashboard'
-
-import GRE from './pages/courses/GRE'
-import GREMain from './pages/courses/GREMain'
-import GREQuiz from './pages/courses/GREQuiz'
-import GREFullTest from './pages/courses/GREFullTest'
-import GREDashboard from './pages/GREDashboard'
-import GREExamAnalysis from './pages/GREExamAnalysis'
-import GREAnalysis from './pages/GREAnalysis'
-import GREScoreDashboard from './pages/courses/GREScoreDashboard'
-
-
 
 
 // New Programming course 
@@ -143,7 +131,6 @@ function App() {
             <Route path="/admin/stats2" element={<Stats2Dashboard />} />
             <Route path="/admin/iitm-ct" element={<CTDashboard />} />
             <Route path="/admin/python" element={<PythonDashboard />} />
-            <Route path="/admin/jee-advanced" element={<JEEAdvancedDashboard />} />
             <Route path="/algebra" element={<Algebra />} />
             <Route path="/math2" element={<Math2 />} />
             <Route path="/statistics2" element={<Statistics2 />} />
@@ -217,19 +204,8 @@ function App() {
             <Route path="/admin/sat" element={<SATDashboard />} />
             <Route path="/courses/sat/ScoreDashboard" element={<SATScoreDashboard />} />
             <Route path="/admin/sat/exam/:email/:subject/:attemptNumber" element={<SATExamAnalysis />} />
-
-
-
-            {/* GRE — paper listing (like SAT) + module-based quizzes */}
-            <Route path="/courses/gre" element={<GREMain />} />
-            <Route path="/courses/gre/modules" element={<GRE />} />
-            <Route path="/courses/gre/quiz/:section/:module" element={<GREQuiz />} />
-            <Route path="/courses/gre/full-test" element={<GREFullTest />} />
-            <Route path="/courses/gre/analysis" element={<GREAnalysis />} />
-            <Route path="/admin/gre" element={<GREDashboard />} />
-            <Route path="/courses/gre/ScoreDashboard" element={<GREScoreDashboard />} />
-            <Route path="/admin/gre/exam/:email/:subject/:attemptNumber" element={<GREExamAnalysis />} />
-
+            
+          
 
             {/* DBMS COURSE */}
             <Route path="/courses/DBMS" element={<DBMS />} />
