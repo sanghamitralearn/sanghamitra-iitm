@@ -70,7 +70,9 @@ import PhysicsQuiz from './pages/courses/Competitive/PhysicsQuiz'
 // import JAVA from './pages/courses/JAVA'
 import JavaQuiz from './pages/courses/JAVA/JavaQuiz'
 
-
+import JEE from './pages/courses/JEE'
+import JEEQuiz from './pages/courses/JEEQuiz'
+import JEEAdvancedDashboard from './pages/JEEAdvancedDashboard'
 
 import JEEMain from './pages/courses/JEEMain'
 import JEEMainQuiz from './pages/courses/JEEMainQuiz'
@@ -195,7 +197,9 @@ function App() {
             <Route path="/courses/JAVA/:weekId" element={<JavaQuiz />} />
             
 
-          
+            {/* JEE Advanced — subject-wise quizzes */}
+            <Route path="/courses/jee" element={<JEE />} />
+            <Route path="/courses/jee/quiz/:subject" element={<JEEQuiz />} />
 
             {/* JEE Main — paper listing, full test, analysis + legacy subject quizzes */}
             <Route path="/courses/jee-main" element={<JEEMain />} />
