@@ -244,6 +244,7 @@ const iconColors = {
   python:      { background: 'rgba(52,152,219,0.1)',  color: '#3498db' },
   pdsa:        { background: 'rgba(155,89,182,0.1)',  color: '#9b59b6' },
   sat:         { background: 'rgba(0,61,143,0.1)',    color: '#003D8F' },
+  gre:         { background: 'rgba(111,66,193,0.1)',  color: '#6f42c1' },
   jee:         { background: 'rgba(220,53,69,0.1)',   color: '#dc3545' },
 }
 
@@ -269,6 +270,7 @@ const subjectApis = [
     }
   },
   { key: 'sat',       url: '/api/sat_scores',                         countFn: d => new Set((Array.isArray(d) ? d : []).map(e => e.email).filter(Boolean)).size },
+  { key: 'gre',       url: '/api/gre_scores',                         countFn: d => new Set((Array.isArray(d) ? d : []).map(e => e.email).filter(Boolean)).size },
   { key: 'jee',       url: '/api/jee_main_admin_scores',              countFn: d => ((d && d.data) || []).length },
 ]
 
@@ -381,6 +383,7 @@ const AdminDashboard = () => {
     { to: '/admin/programming?course=dbms',    icon: 'bi-database-fill',  label: 'DBMS' },
     { to: '/admin/pdsa',       icon: 'bi-diagram-3-fill', label: 'PDSA' },
     { to: '/admin/sat',        icon: 'bi-pencil-fill',    label: 'SAT' },
+    { to: '/admin/gre',        icon: 'bi-mortarboard-fill', label: 'GRE' },
     { to: '/admin/jee-main',   icon: 'bi-mortarboard-fill', label: 'JEE Main' },
   ]
 
@@ -637,6 +640,7 @@ const AdminDashboard = () => {
               <div className="row mb-4">
                 {[
                   { key: 'sat', icon: 'bi-pencil-fill',    iconStyle: { background: 'rgba(0,61,143,0.1)',    color: '#003D8F' }, title: 'SAT',           to: '/admin/sat' },
+                  { key: 'gre', icon: 'bi-mortarboard-fill', iconStyle: { background: 'rgba(111,66,193,0.1)',  color: '#6f42c1' }, title: 'GRE',           to: '/admin/gre' },
                   { key: 'jee', icon: 'bi-mortarboard-fill', iconStyle: { background: 'rgba(220,53,69,0.1)',   color: '#dc3545' }, title: 'JEE Main',      to: '/admin/jee-main' },
                 ].map((card) => (
                   <div className="col-md-3 mb-4" key={card.key}>
@@ -705,6 +709,11 @@ const AdminDashboard = () => {
                       <div className="col-md-3 mb-2">
                         <Link to="/admin/sat" className="btn btn-primary w-100">
                           <i className="bi bi-pencil-fill me-2"></i>SAT
+                        </Link>
+                      </div>
+                      <div className="col-md-3 mb-2">
+                        <Link to="/admin/gre" className="btn w-100 text-white" style={{ background: '#6f42c1', borderColor: '#6f42c1' }}>
+                          <i className="bi bi-mortarboard-fill me-2"></i>GRE
                         </Link>
                       </div>
                       <div className="col-md-3 mb-2">
