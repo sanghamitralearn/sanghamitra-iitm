@@ -89,6 +89,17 @@ import SATAnalysis from './pages/SATAnalysis'
 import SATExamAnalysis from './pages/SATExamAnalysis'
 import SATScoreDashboard from './pages/courses/SATScoreDashboard'
 
+import GRE from './pages/courses/GRE'
+import GREMain from './pages/courses/GREMain'
+import GREQuiz from './pages/courses/GREQuiz'
+import GREFullTest from './pages/courses/GREFullTest'
+import GREDashboard from './pages/GREDashboard'
+import GREExamAnalysis from './pages/GREExamAnalysis'
+import GREAnalysis from './pages/GREAnalysis'
+import GREScoreDashboard from './pages/courses/GREScoreDashboard'
+
+
+
 
 // New Programming course 
 import PDSADashboard from './pages/PDSADashboard'
@@ -206,8 +217,19 @@ function App() {
             <Route path="/admin/sat" element={<SATDashboard />} />
             <Route path="/courses/sat/ScoreDashboard" element={<SATScoreDashboard />} />
             <Route path="/admin/sat/exam/:email/:subject/:attemptNumber" element={<SATExamAnalysis />} />
-            
-          
+
+
+
+            {/* GRE — paper listing (like SAT) + module-based quizzes */}
+            <Route path="/courses/gre" element={<GREMain />} />
+            <Route path="/courses/gre/modules" element={<GRE />} />
+            <Route path="/courses/gre/quiz/:section/:module" element={<GREQuiz />} />
+            <Route path="/courses/gre/full-test" element={<GREFullTest />} />
+            <Route path="/courses/gre/analysis" element={<GREAnalysis />} />
+            <Route path="/admin/gre" element={<GREDashboard />} />
+            <Route path="/courses/gre/ScoreDashboard" element={<GREScoreDashboard />} />
+            <Route path="/admin/gre/exam/:email/:subject/:attemptNumber" element={<GREExamAnalysis />} />
+
 
             {/* DBMS COURSE */}
             <Route path="/courses/DBMS" element={<DBMS />} />
