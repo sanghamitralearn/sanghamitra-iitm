@@ -566,6 +566,9 @@ const Home = () => {
       </section>
 
       {/* GRE Course Card */}
+      <section>
+        <div>
+          <div>
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4" data-aos="zoom-in" data-aos-delay="500">
               <div className="course-item" style={{ width: '100%' }}>
                 <div style={{
