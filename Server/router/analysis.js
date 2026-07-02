@@ -808,4 +808,96 @@ Be specific and data-driven. Reference actual question numbers or topics. Do NOT
   }
 });
 
+// POST /api/gre_exam_ai_feedback - AI feedback for a single enriched GRE exam attempt
+router.post('/gre_exam_ai_feedback', async (req, res) => {
+  try {
+    const { student, attempt, enrichedResults, insights } = req.body;
+
+    if (!attempt || !enrichedResults) {
+      return res.status(400).json({ success: false, message: 'Missing exam data' });
+    }
+
+    const { difficultyStats, typeStats } = insights || {};
+
+    // Build a concise wrong-question summary (max 8 to keep prompt tight)
+    const wrongQuestions = enrichedResults
+      .filter(r => !r.isCorrect && r.userAnswer != null)
+      .slice(0, 8)
+      .map(r =>
+        `  Q${r.questionNumber} [${r.difficulty || 'unknown'} | ${(r.type || 'unknown').replace(/_/g, ' ')}]: ` +
+        `"${(r.questionText || '').slice(0, 120)}" ` +
+        `| Student answered: "${r.userAnswer || '—'}" | Correct: "${Array.isArray(r.correctAnswer) ? r.correctAnswer.join(', ') : r.correctAnswer}"` +
+        (r.explanation ? ` | Explanation: "${r.explanation.slice(0, 150)}"` : '')
+      ).join('\n');
+
+    const unattemptedCount = enrichedResults.filter(r => r.userAnswer == null).length;
+
+    const diffLines = Object.entries(difficultyStats || {})
+      .filter(([, s]) => s.total > 0)
+      .map(([d, s]) => `  ${d}: ${s.correct}/${s.total} correct (${Math.round((s.correct / s.total) * 100)}%)`)
+      .join('\n');
+
+    const typeLines = Object.entries(typeStats || {})
+      .map(([t, s]) => `  ${t.replace(/_/g, ' ')}: ${s.correct}/${s.total} correct`)
+      .join('\n');
+
+    const prompt = `
+You are an expert GRE tutor reviewing a student's exam attempt. Provide a deeply personalised, constructive analysis.
+
+STUDENT: ${student?.name || 'Student'} (${student?.email || ''})
+SECTION: ${attempt.subject}
+ATTEMPT: #${attempt.attemptNumber}  |  DATE: ${attempt.dateAttempted ? new Date(attempt.dateAttempted).toLocaleDateString() : 'N/A'}
+
+OVERALL RESULT: ${attempt.correctAnswers}/${attempt.totalQuestions} correct = ${Math.round(attempt.percentage)}%${attempt.scaledScore ? `  |  Scaled score: ${attempt.scaledScore}/170` : ''}  |  Unattempted: ${unattemptedCount}
+
+DIFFICULTY BREAKDOWN:
+${diffLines || '  (no data)'}
+
+QUESTION TYPE BREAKDOWN:
+${typeLines || '  (no data)'}
+
+WRONG QUESTIONS (${enrichedResults.filter(r => !r.isCorrect && r.userAnswer != null).length} total, showing up to 8):
+${wrongQuestions || '  (none — all attempted questions correct!)'}
+
+Based on this data, provide a JSON response with these exact fields:
+{
+  "summary": "2-3 sentence honest overall assessment — mention the scaled score, strongest and weakest areas",
+  "conceptualGaps": ["list each distinct concept or sub-topic the student clearly doesn't understand yet, based on the wrong questions and their explanations"],
+  "mistakePatterns": ["patterns you notice — e.g. struggling with a specific question type, leaving questions unattempted, careless errors on easy ones"],
+  "difficultyInsight": "one paragraph: how the student performed across difficulty levels and what it reveals about their current mastery",
+  "timeInsight": "one paragraph: based on the unattempted count and difficulty pattern, what this suggests about pacing and time management on the test",
+  "priorityActions": [
+    { "action": "specific thing to do", "reason": "why this matters based on the data", "urgency": "high/medium/low" }
+  ],
+  "encouragement": "one genuine, specific sentence of encouragement that acknowledges actual effort visible in the data"
+}
+
+Be specific and data-driven. Reference actual question numbers or topics. Do NOT be generic.
+`.trim();
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(503).json({ success: false, message: 'AI service not configured (GEMINI_API_KEY missing)' });
+    }
+
+    const completion = await groq.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'llama-3.3-70b-versatile',
+    });
+    const text = completion.choices[0]?.message?.content || '';
+
+    // Extract JSON block
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      return res.status(500).json({ success: false, message: 'AI returned unreadable response', raw: text });
+    }
+
+    const feedback = JSON.parse(jsonMatch[0]);
+    res.json({ success: true, feedback });
+
+  } catch (error) {
+    console.error('GRE exam AI feedback error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 module.exports = router;
