@@ -1,115 +1,117 @@
-import React, { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const IIITMMath = () => {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [scores, setScores] = useState([])
-  const [error, setError] = useState(null)
-  const navigate = useNavigate()
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [scores, setScores] = useState([]);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    checkAuth()
-  }, [])
+    checkAuth();
+  }, []);
 
   const checkAuth = async () => {
     try {
-      setLoading(true)
+      setLoading(true);
       
-      // Check auth first — redirect immediately if not logged in
       const authCheck = await axios.get(`${import.meta.env.VITE_API_URL}/api/check-auth`, {
         withCredentials: true,
-      })
+      });
       if (!authCheck.data.authenticated) {
-        navigate('/login', { state: { from: { pathname: '/courses/IIITM-math' } }, replace: true })
-        return
+        navigate('/login', { state: { from: { pathname: '/courses/IIITM-math' } }, replace: true });
+        return;
       }
 
-      // Fetch user session info
       const sessionResponse = await axios.get(`${import.meta.env.VITE_API_URL}/api/session-info`, {
         withCredentials: true
-      })
+      });
       
-      setUser(sessionResponse.data)
-      fetchScores(sessionResponse.data.email)
+      setUser(sessionResponse.data);
+      fetchScores(sessionResponse.data.email);
       
     } catch (error) {
-      console.error('Error checking authentication:', error)
-      navigate('/login', { state: { from: { pathname: '/courses/IIITM-math' } }, replace: true })
+      console.error('Error checking authentication:', error);
+      navigate('/login', { state: { from: { pathname: '/courses/IIITM-math' } }, replace: true });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
-
+  };
 
   const fetchScores = async (email) => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/iitmmath_scores?email=${encodeURIComponent(email)}`, {
         withCredentials: true
-      })
+      });
       
       if (response.data.success && response.data.data && response.data.data.quizScores) {
-        setScores(response.data.data.quizScores)
+        setScores(response.data.data.quizScores);
       }
     } catch (err) {
-      console.error('Error fetching scores:', err)
-      setError('Failed to load assessment data')
+      console.error('Error fetching scores:', err);
+      setError('Failed to load assessment data');
     }
-  }
+  };
 
   const getDisplayTopic = (topicName) => {
-    if (!topicName) return null
+    if (!topicName) return null;
     
-    const searchName = topicName.toLowerCase().trim()
+    const searchName = topicName.toLowerCase().trim();
     
     const topicGroups = {
-      'Week 1 and 2 (Quiz 1)': ['Domain_and_Range', 'Quiz1', 'Week 1 and 2', 'Week1_and_Week2'],
-      'Domain and Range (Week 1)': ['Domain_and_Range-2', 'Quiz2', 'Quiz2_Domain_Range', 'Domain and Range-2', 'Domain_and_Range_2'],
-      'Linear Functions (Week 2)': ['Quiz3', 'Quiz3_Linear_functions', 'Linear_functions', 'Linear_Functions'],
-      'Quadratic Functions (Week 3)': ['Quiz4', 'quadratic', 'Quadratic_functions', 'Quadratic_Functions'],
-      'Linear function (Week 2)': ['Quiz5', 'Linear', 'Linear_functions - 2', 'Linear_functions-2'],
-      'Sets and Relations (Week 1)': ['Quiz6', 'Sets', 'Relations', 'sets_and_relations', 'Sets And Relations', 'Sets_and_Relations'],
-      'Polynomials (Week 4)': ['Quiz7', 'Polynomials', 'Polynomial Function', 'Polynomial_Function'],
-      'Exponential Functions (Week-5)': ['Quiz8', 'function_concepts', 'Exponential', 'Function Concepts', 'Function_Concepts'],
-      'Logarithmic Functions (Week 6)': ['Quiz9', 'Logarithmic', 'logarithmic_functions', 'Logarithmic Functions', 'Logarithmic_Functions'],
-      'Sequence and limit (Week 7)': ['Quiz10', 'Function_Limits', 'Function Limits'],
-      'Limits, Continuity and Differentiation (Week 8)': ['Quiz11', 'Limit_Concepts', 'Differentiation'],
-      'Derivatives and Integrals (Week 9)': ['Quiz12', 'Derivatives_Integrals', 'Derivatives and Integrals', 'Derivatives', 'Integrals'],
-      'Graph Theory (Week 10)': ['Quiz13', 'graph_theory', 'Graph Theory', 'Graph_Theory'],
-      'Graph Properties (Week 11)': ['Quiz14', 'graph_properties', 'Graph Properties', 'Graph_Properties']
-    }
+    'Quiz 1 Midterm': ['Quiz1_Midterm', 'Domain_and_Range', 'Quiz1', 'Week 1 and 2', 'Week1_and_Week2', 'Domain and Range', 'quadratic_functions', 'linear_functions', 'sets_and_relations', 'Polynomials'],
+    'Quiz 1 Midterm - 2': ['Quiz1_midterm', 'Quiz1_Midterm_2'],
+    'Week 1 - Sets and Relations': ['sets_and_relations', 'Quiz6', 'Sets', 'Relations', 'Sets And Relations', 'Sets_and_Relations'],
+    'Week 1 - Domain and Range': ['Domain and Range', 'Domain_and_Range', 'Domain_and_Range-2', 'Quiz2', 'Domain and Range-2'],
+    'Week 2 - Linear Functions': ['linear_functions', 'Linear_functions', 'Quiz3', 'Quiz5', 'Linear_functions-2'],
+    'Week 3 - Quadratic Functions': ['quadratic_functions', 'Quadratic_functions', 'Quiz4', 'quadratic'],
+    'Week 4 - Polynomial Zeros & Multiplicity': ['polynomial_zeros_and_multiplicity', 'Polynomial_Zeros', 'Quiz15'],
+    'Week 4 - Polynomial Functions': ['Polynomials', 'Polynomial_Function', 'Polynomial Function', 'Quiz7'],
+    'Week 5 - Exponential Functions': ['exponential_function', 'Function_Concepts', 'function_concepts', 'Exponential', 'Quiz8'],
+    'Week 5 - Composite Function': ['composite_function', 'Composite_Function', 'Quiz16'],
+    'Week 5 - Inverse Function': ['inverse_function', 'Inverse_function', 'Quiz17'],
+    'Week 6 - Logarithmic Functions': ['logarithmic_functions', 'Logarithmic_Functions', 'Logarithmic', 'Quiz9'],
+    'Week 7 - Sequence': ['sequences', 'Sequence', 'Quiz19'],
+    'Week 7 - Sequence and Limits': ['Function_Limits', 'Function Limits', 'Quiz10'],
+    'Week 8 - Limits, Continuity and Differentiation': ['Limit Concepts', 'Limit_Concepts', 'Differentiation', 'Quiz11'],
+    'Week 9 - Integrals': ['integrals'],
+    'Week 10 - Graph Theory': ['graph_theory', 'Graph_Theory', 'Graph Theory', 'Quiz13'],
+    'Week 11 - Graph Properties': ['graph_properties', 'Graph_Properties', 'Graph Properties', 'Quiz14']
+  };
+
 
     for (const [displayTopic, variations] of Object.entries(topicGroups)) {
       for (const variation of variations) {
-        const variationLower = variation.toLowerCase()
+        const variationLower = variation.toLowerCase();
         if (variationLower === searchName ||
             searchName.includes(variationLower) ||
             variationLower.includes(searchName) ||
             searchName.replace(/_/g, ' ') === variationLower.replace(/_/g, ' ')) {
-          return displayTopic
+          return displayTopic;
         }
       }
     }
-    return topicName
-  }
+    return topicName;
+  };
 
   const findTopicAssessment = (topicName) => {
-    if (!scores || !Array.isArray(scores)) return null
+    if (!scores || !Array.isArray(scores)) return null;
 
-    const displayTopic = getDisplayTopic(topicName)
-    const variations = topicGroups[displayTopic] || [topicName]
+    const displayTopic = getDisplayTopic(topicName);
+    const variations = topicGroups[displayTopic] || [topicName];
     
-    let allTopicScores = []
+    let allTopicScores = [];
     
     scores.forEach(score => {
-      if (!score || !score.topic) return
+      if (!score || !score.topic) return;
       
-      const scoreTopic = score.topic.trim()
-      const scoreTopicLower = scoreTopic.toLowerCase()
+      const scoreTopic = score.topic.trim();
+      const scoreTopicLower = scoreTopic.toLowerCase();
       
       for (const variation of variations) {
-        const variationLower = variation.toLowerCase()
+        const variationLower = variation.toLowerCase();
         
         if (scoreTopicLower === variationLower ||
             scoreTopicLower.includes(variationLower) ||
@@ -120,28 +122,28 @@ const IIITMMath = () => {
               ...score,
               displayTopic: displayTopic,
               matchedVariation: variation
-            })
+            });
           }
-          break
+          break;
         }
       }
-    })
+    });
 
-    if (allTopicScores.length === 0) return null
+    if (allTopicScores.length === 0) return null;
 
     const latestScore = allTopicScores.sort((a, b) => {
-      const dateA = new Date(a.timestamp || 0)
-      const dateB = new Date(b.timestamp || 0)
-      return dateB - dateA
-    })[0]
+      const dateA = new Date(a.timestamp || 0);
+      const dateB = new Date(b.timestamp || 0);
+      return dateB - dateA;
+    })[0];
     
-    if (!latestScore) return null
+    if (!latestScore) return null;
     
-    let percentage = 0
+    let percentage = 0;
     if (latestScore.percentage !== undefined && latestScore.percentage !== null) {
-      percentage = Math.round(parseFloat(latestScore.percentage))
+      percentage = Math.round(parseFloat(latestScore.percentage));
     } else if (latestScore.score !== undefined && latestScore.totalQuestions) {
-      percentage = Math.round((latestScore.score / latestScore.totalQuestions) * 100)
+      percentage = Math.round((latestScore.score / latestScore.totalQuestions) * 100);
     }
     
     return {
@@ -155,18 +157,16 @@ const IIITMMath = () => {
       answers: latestScore.answers,
       attemptCount: allTopicScores.length,
       originalTopic: latestScore.topic
-    }
-  }
+    };
+  };
 
-  // topic = exact DB topic name (endpoint) from /api/iitm-math-questions/:topic
-  // linkState is passed to the quiz page via React Router state
   const QUIZ1_MIDTERM_TOPICS = [
     { name: 'Domain and Range',   endpoint: 'Domain and Range' },
     { name: 'Quadratic Functions', endpoint: 'quadratic_functions' },
     { name: 'Linear Functions',   endpoint: 'linear_functions' },
     { name: 'Sets and Relations', endpoint: 'sets_and_relations' },
     { name: 'Polynomials',        endpoint: 'Polynomials' }
-  ]
+  ];
 
   const availableTopics = [
     {
@@ -287,31 +287,40 @@ const IIITMMath = () => {
       linkState: { quizName: 'Week 7 - Sequence' }
     },
     {
-      id: 'sequence_limits',
-      name: 'Sequence and Limits (Quiz 10)',
-      displayName: 'Week 7 - Sequence and Limits',
-      description: 'Assessment on Sequence, Limits and Continuity',
+      id: 'limit',
+      name: 'Limit (Quiz 20)',
+      displayName: 'Week 7 - Limit',
+      description: 'Assessment on Limit',
       icon: 'bi-cpu',
-      url: '/courses/IIITM-math/quiz/Function_Limits',
-      linkState: { quizName: 'Week 7 - Sequence and Limits' }
+      url: '/courses/IIITM-math/quiz/Limit',
+      linkState: { quizName: 'Week 7 - Limit' }
     },
     {
-      id: 'limits_continuity',
-      name: 'Limits, Continuity and Differentiation (Quiz 11)',
-      displayName: 'Week 8 - Limits, Continuity and Differentiation',
-      description: 'Assessment on Limits, Continuity and Differentiation',
+      id: 'Continuity',
+      name: 'Week 7 - Continuity',
+      displayName: 'Week 7 - Continuity',
+      description: 'Assessment on Continuity',
       icon: 'bi-cpu',
-      url: '/courses/IIITM-math/quiz/Limit Concepts',
-      linkState: { quizName: 'Week 8 - Limits, Continuity & Differentiation' }
+      url: '/courses/IIITM-math/quiz/Continuity',
+      linkState: { quizName: 'Week 7 - Continuity' }
     },
     {
-      id: 'derivatives_integrals',
-      name: 'Derivatives and Integrals (Quiz 12)',
-      displayName: 'Week 9 - Derivatives and Integrals',
-      description: 'Assessment on Derivatives and Integrals',
+      id: 'Differentiation',
+      name: 'Differentiation (Quiz 20)',
+      displayName: 'Week 8 - Differentiation',
+      description: 'Assessment on Differentiation',
       icon: 'bi-cpu',
-      url: '/courses/IIITM-math/quiz/Derivatives and Integrals',
-      linkState: { quizName: 'Week 9 - Derivatives and Integrals' }
+      url: '/courses/IIITM-math/quiz/differentiability',
+      linkState: { quizName: 'Week 8 - Differentiation' }
+    },
+    {
+      id: 'Integrals',
+      name: 'Week 9 - Integrals',
+      displayName: 'Week 9 - Integrals',
+      description: 'Assessment on Integrals',
+      icon: 'bi-cpu',
+      url: '/courses/IIITM-math/quiz/integrals',
+      linkState: { quizName: 'Week 9 - Integrals' }
     },
     {
       id: 'graph_theory',
@@ -330,8 +339,18 @@ const IIITMMath = () => {
       icon: 'bi-cpu',
       url: '/courses/IIITM-math/quiz/graph_properties',
       linkState: { quizName: 'Week 11 - Graph Properties' }
+    },
+
+     {
+      id: 'End_term',
+      name: 'End term',
+      displayName: 'End term',
+      description: 'Assessment on End_term',
+      icon: 'bi-cpu',
+      url: '/courses/IIITM-math/quiz/end_term',
+      linkState: { quizName: 'End_term' }
     }
-  ]
+  ];
 
   const topicGroups = {
     'Quiz 1 Midterm': ['Quiz1_Midterm', 'Domain_and_Range', 'Quiz1', 'Week 1 and 2', 'Week1_and_Week2', 'Domain and Range', 'quadratic_functions', 'linear_functions', 'sets_and_relations', 'Polynomials'],
@@ -349,10 +368,10 @@ const IIITMMath = () => {
     'Week 7 - Sequence': ['sequences', 'Sequence', 'Quiz19'],
     'Week 7 - Sequence and Limits': ['Function_Limits', 'Function Limits', 'Quiz10'],
     'Week 8 - Limits, Continuity and Differentiation': ['Limit Concepts', 'Limit_Concepts', 'Differentiation', 'Quiz11'],
-    'Week 9 - Derivatives and Integrals': ['Derivatives and Integrals', 'Derivatives_Integrals', 'Derivatives', 'Integrals', 'Quiz12'],
+    'Week 9 - Integrals': ['integrals'],
     'Week 10 - Graph Theory': ['graph_theory', 'Graph_Theory', 'Graph Theory', 'Quiz13'],
     'Week 11 - Graph Properties': ['graph_properties', 'Graph_Properties', 'Graph Properties', 'Quiz14']
-  }
+  };
 
   if (loading) {
     return (
@@ -361,11 +380,11 @@ const IIITMMath = () => {
           <span className="visually-hidden">Loading...</span>
         </div>
       </div>
-    )
+    );
   }
 
   if (!user) {
-    navigate('/login', { state: { from: { pathname: '/courses/IIITM-math' } }, replace: true })
+    navigate('/login', { state: { from: { pathname: '/courses/IIITM-math' } }, replace: true });
     return (
       <div className="container text-center" style={{ height: '50vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
         <div className="spinner-border" role="status">
@@ -373,7 +392,7 @@ const IIITMMath = () => {
         </div>
         <p className="lead mt-3">Redirecting to login...</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -400,36 +419,91 @@ const IIITMMath = () => {
         </nav>
       </div>
 
+      {/* Review Button with Explanation - USING SIMPLE DIV WITH VISIBLE TEXT */}
+      <div className="container mb-4">
+        <div className="row justify-content-center">
+          <div className="col-lg-8 text-center">
+            <button
+              onClick={() => navigate('/courses/IIITM-math/review')}
+              style={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                border: 'none',
+                color: 'white',
+                fontWeight: '600',
+                fontSize: '0.95rem',
+                padding: '0.6rem 1.8rem',
+                borderRadius: '50px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.6rem',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0px)';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.3)';
+              }}
+            >
+              <i className="bi bi-journal-bookmark-fill me-2"></i>
+              My Review & Progress
+              <span style={{ display: 'inline-block', fontSize: '1rem' }}>📊</span>
+            </button>
+            
+            {/* EXPLANATION TEXT - SIMPLE AND VISIBLE */}
+            <div style={{
+              background: '#f0f2ff',
+              padding: '12px 20px',
+              borderRadius: '12px',
+              fontSize: '0.85rem',
+              color: '#4a5568',
+              border: '1px solid #667eea33',
+              maxWidth: '500px',
+              margin: '12px auto 0 auto',
+              textAlign: 'left'
+            }}>
+              <i className="bi bi-info-circle-fill" style={{ color: '#667eea', marginRight: '8px' }}></i>
+              📊 Track your quiz scores, view detailed performance analytics, and monitor your progress across all IITM Math topics. Click to see your detailed review and improvement areas.
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="container">
         <div className="course-list" style={{ maxWidth: '900px', margin: '0 auto', padding: '0 15px' }}>
           {availableTopics.map((topic) => {
-            const topicAssessment = findTopicAssessment(topic.name)
-            const isCompleted = topicAssessment && topicAssessment.score !== undefined && topicAssessment.score !== null
-            const score = topicAssessment ? Math.round(topicAssessment.score || 0) : 0
-            const actualScore = topicAssessment ? topicAssessment.actualScore : 0
-            const totalQuestions = topicAssessment ? topicAssessment.totalQuestions : 15
-            const lastAttempted = topicAssessment ? topicAssessment.timestamp : null
-            const attemptCount = topicAssessment ? topicAssessment.attemptCount : 0
-            const displayName = topicAssessment?.displayName || topic.displayName || topic.name
+            const topicAssessment = findTopicAssessment(topic.name);
+            const isCompleted = topicAssessment && topicAssessment.score !== undefined && topicAssessment.score !== null;
+            const score = topicAssessment ? Math.round(topicAssessment.score || 0) : 0;
+            const actualScore = topicAssessment ? topicAssessment.actualScore : 0;
+            const totalQuestions = topicAssessment ? topicAssessment.totalQuestions : 15;
+            const lastAttempted = topicAssessment ? topicAssessment.timestamp : null;
+            const attemptCount = topicAssessment ? topicAssessment.attemptCount : 0;
+            const displayName = topicAssessment?.displayName || topic.displayName || topic.name;
 
-            let progressBarClass = 'bg-primary'
-            let badgeStyle = { background: 'linear-gradient(45deg, #007bff, #0056b3)' }
+            let progressBarClass = 'bg-primary';
+            let badgeStyle = { background: 'linear-gradient(45deg, #007bff, #0056b3)' };
 
             if (score >= 80) {
-              progressBarClass = 'bg-success'
-              badgeStyle = { background: 'linear-gradient(45deg, #28a745, #20c997)' }
+              progressBarClass = 'bg-success';
+              badgeStyle = { background: 'linear-gradient(45deg, #28a745, #20c997)' };
             } else if (score >= 60) {
-              progressBarClass = 'bg-info'
-              badgeStyle = { background: 'linear-gradient(45deg, #17a2b8, #138496)' }
+              progressBarClass = 'bg-info';
+              badgeStyle = { background: 'linear-gradient(45deg, #17a2b8, #138496)' };
             } else if (score >= 40) {
-              progressBarClass = 'bg-warning'
-              badgeStyle = { background: 'linear-gradient(45deg, #ffc107, #fd7e14)' }
+              progressBarClass = 'bg-warning';
+              badgeStyle = { background: 'linear-gradient(45deg, #ffc107, #fd7e14)' };
             } else if (score > 0) {
-              progressBarClass = 'bg-danger'
-              badgeStyle = { background: 'linear-gradient(45deg, #dc3545, #c82333)' }
+              progressBarClass = 'bg-danger';
+              badgeStyle = { background: 'linear-gradient(45deg, #dc3545, #c82333)' };
             }
 
-            const progressWidth = isCompleted ? score : 0
+            const progressWidth = isCompleted ? score : 0;
 
             return (
               <div className="course-item mb-3" key={topic.id} data-topic={topic.id}>
@@ -486,12 +560,12 @@ const IIITMMath = () => {
                   </div>
                 </div>
               </div>
-            )
+            );
           })}
         </div>
       </div>
     </main>
-  )
-}
+  );
+};
 
-export default IIITMMath
+export default IIITMMath;

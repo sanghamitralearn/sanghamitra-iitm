@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken'); 
+﻿const jwt = require('jsonwebtoken'); 
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
@@ -42,13 +42,60 @@ const iitm_ct_questions = require('../model/iitm_ct_questions');
 const iitm_ct_scores = require('../model/iitm_ct_scores');
 const IITM_Maths_2_Question = require('../model/iitm_math2_questions')
 const IITM_Maths_2_Score = require('../model/iitm_math2_scores')
-const IITM_Stats_2_Question = require('../model/iitm_stats2_questions')
-const IITM_Stats_2_Score = require('../model/iitm_stats2_scores')
+const IITStats2Question = require('../model/iitmstats2questionschema')
+const IITStats2Scores = require('../model/iitmstats2questionresult')
+const QuizAttemptstats2 = require('../model/iitmstats2quizattempt');
 
-const Question = require('../model/pdsa_Questions');
-const PDSA_Submission = require('../model/pdsa_Submission');
-const CodingQuestion = require('../model/coding_Questions'); 
-const CodingSubmission = require('../model/coding_Submission'); 
+
+
+const pdsaQuestion = require('../model/pdsa_Questions');
+const pdsaSubmission = require('../model/pdsa_Submission');
+const pdsaCodingQuestion = require('../model/pdsa_Coding_Questions'); 
+const pdsaCodingSubmission = require('../model/pdsa_Coding_Submission'); 
+const InterviewSubmission = require('../model/interview_Submission'); 
+
+const QuizAttempt     = require('../model/iitmMaths2QuizAttempt');
+const QuestionResult  = require('../model/iitmMaths2QuestionResult');
+const IITMath2Question = require('../model/iitmMath2QuestionsSchema')
+
+const competitive_MathQuizAttempt     = require('../model/competitive_MathQuizAttempt');
+const competitive_MathResult  = require('../model/competitive_MathResult');
+const competitive_MathQue = require('../model/competitive_MathQue');
+
+const PhysicQuizAttempt = require('../model/competitive_PhysicQuizAttempt');
+const PhysicResult = require('../model/competitive_PhysicResult');
+const PhysicQue = require('../model/competitive_PhysicQue');
+
+const JavaSubmission = require('../model/Java_Submission');
+const JavaQuestions = require('../model/Java_Questions');
+
+const JeeQuestion = require('../model/jee_questions')
+const JeeScore = require('../model/jee_scores')
+
+const JeeMainQuestion  = require('../model/jee_main_questions')
+const JeeMainScore     = require('../model/jee_main_scores')
+const JeeMainFullScore = require('../model/jee_main_full_scores')
+
+const SatQuestion = require('../model/sat_questions')
+const SatScore = require('../model/sat_scores')
+const SatFullScore   = require('../model/sat_full_scores')
+
+const GreQuestion    = require('../model/gre_questions')
+const GreScore       = require('../model/gre_scores')
+const GreFullScore   = require('../model/gre_full_scores')
+
+const DBMSSubmission = require('../model/DBMS_Submission');
+const DBMSQuestions = require('../model/DBMS_Questions');
+
+
+// NEW programming course models
+const ProgrammingQuizQuestion = require('../model/Programming_Questions');  
+const ProgrammingQuizAttempt = require('../model/Programming_QuizAttempt');
+const ProgrammingQuizResult = require('../model/Programming_QuizResult');
+
+const CodingQuestion = require('../model/CodingQuestions'); 
+const CodingSubmission = require('../model/CodingSubmission'); 
+const CodingTestCase = require('../model/CodingTestCase'); 
 
 
 require('../db/conn');
@@ -110,12 +157,17 @@ router.post('/signin', async (req, res) => {
         req.session.token = token;
         req.session.username = user.name;
         req.session.email = user.email;
-        console.log(req.session.email, req.session.username);
-        res.status(200).json({ 
-          success: true,
-          message: 'User signed in successfully',
-          username: user.name,
-          email: user.email
+        req.session.save((err) => {
+          if (err) {
+            console.error('Session save error:', err);
+            return res.status(500).json({ error: 'Session error' });
+          }
+          res.status(200).json({
+            success: true,
+            message: 'User signed in successfully',
+            username: user.name,
+            email: user.email
+          });
         });
 
     } catch (error) {
@@ -213,6 +265,274 @@ router.post('/reset-password/set-new-password', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+
+
+// Mathematics - II 
+
+
+router.get('/iitm_maths2_questions_databases', async (req, res) => {
+  try {
+    const { week, email, count = 10, difficulty, type, topic } = req.query;
+
+    if (!week || !email) {
+      return res.status(400).json({
+        error: 'week and email are required',
+        example: '/math2/questions?week=7&email=user@example.com&count=10'
+      });
+    }
+
+    const weekNum = parseInt(week);
+    if (isNaN(weekNum) || weekNum < 1 || weekNum > 12) {
+      return res.status(400).json({ error: 'week must be between 1 and 12' });
+    }
+
+    const filter = {
+      week:      weekNum,
+      is_active: true
+    };
+    if (difficulty) filter.difficulty = difficulty;
+    if (type)       filter.type       = type;
+    if (topic)      filter.topic      = topic;
+
+    let pool = await IITMath2Question.find(filter).lean();
+
+    if (pool.length === 0) {
+      return res.status(404).json({ error: 'No questions found for this week' });
+    }
+
+    // Fisher-Yates shuffle
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+
+    const requestedCount = Math.min(parseInt(count), pool.length);
+    const selected = pool.slice(0, requestedCount);
+
+    return res.status(200).json({
+      questions: selected,
+      metadata: {
+        week:      weekNum,
+        pool_size: pool.length,
+        returned:  selected.length,
+        requested: requestedCount
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching questions:', error);
+    return res.status(500).json({ error: 'Failed to fetch questions', details: error.message });
+  }
+});
+
+
+router.post('/iitm_maths2_scores_databases', async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { email, username, quizData } = req.body;
+    // ── Add this temporarily ───────────────────────────────
+    console.log('📥 Received body:', JSON.stringify({ email, username }, null, 2));
+    console.log('📥 quizData keys:', quizData ? Object.keys(quizData) : 'quizData is undefined');
+    console.log('📥 week:', quizData?.week);
+    console.log('📥 startTime:', quizData?.startTime);
+    console.log('📥 endTime:', quizData?.endTime);
+    // ── End temporary logs ─────────────────────────────────
+
+    if (!email || !quizData) {
+      return res.status(400).json({ error: 'email and quizData are required' });
+    }
+
+    const {
+      week,
+      topic,
+      score,
+      maxPossibleScore,
+      percentage,
+      totalQuestions,
+      correctAnswers,
+      difficultyBreakdown,
+      questionResults,
+      startTime,
+      endTime,
+      totalTimeTaken,
+      cheatCount
+    } = quizData;
+
+    // ── 1. Save attempt summary ────────────────────────────────────
+    const [attempt] = await QuizAttempt.create([{
+      email,
+      username:           username || email,
+      week:               week     || 7,
+      topic:              topic    || '',
+      score,
+      max_possible_score: maxPossibleScore,
+      percentage:         Math.round(percentage),
+      total_questions:    totalQuestions,
+      correct_answers:    correctAnswers,
+
+      easy_attempted:   difficultyBreakdown?.easy?.attempted   || 0,
+      easy_correct:     difficultyBreakdown?.easy?.correct     || 0,
+      medium_attempted: difficultyBreakdown?.medium?.attempted || 0,
+      medium_correct:   difficultyBreakdown?.medium?.correct   || 0,
+      hard_attempted:   difficultyBreakdown?.hard?.attempted   || 0,
+      hard_correct:     difficultyBreakdown?.hard?.correct     || 0,
+
+      total_time_seconds: totalTimeTaken || 0,
+      started_at:         new Date(startTime),
+      submitted_at:       new Date(endTime),
+      is_completed:       true,
+      cheat_count:        cheatCount || 0
+    }], { session });
+
+    // ── 2. Save individual question results ────────────────────────
+    if (Array.isArray(questionResults) && questionResults.length > 0) {
+
+      const resultDocs = questionResults.map(qr => ({
+        attempt_id:         attempt._id,
+        email,
+        week:               week || 7,
+        question_id:        qr.questionId,
+        user_answer:        qr.userAnswer      ?? null,
+        is_correct:         qr.isCorrect,
+        marks_awarded:      qr.marksAwarded    || 0,
+        time_taken_seconds: qr.timeTaken       || 0,
+        difficulty:         qr.difficulty      || 'medium',
+        topic:              topic              || '',
+        subtopic:           qr.subtopic        || '',
+        question_type:      qr.questionType    || '',
+        concept_tags:       qr.conceptTags     || [],
+        bloom_level:        qr.bloomLevel      || 'apply'
+      }));
+
+      await QuestionResult.insertMany(resultDocs, { session });
+    }
+
+    // ── 3. Commit both writes atomically ───────────────────────────
+    await session.commitTransaction();
+
+    return res.status(201).json({
+      success:    true,
+      attempt_id: attempt._id,
+      message:    'Quiz attempt saved successfully'
+    });
+
+  } catch (error) {
+    await session.abortTransaction();
+    console.error('❌ Error saving quiz attempt:', error);
+    return res.status(500).json({
+      error:   'Failed to save quiz attempt',
+      details: error.message
+    });
+  } finally {
+    session.endSession();
+  }
+});
+
+// ── Fetch all attempts for a user ──────────────────────────────────
+router.get('/iitm_maths2_scores_databases', async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({ error: 'email is required' });
+    }
+
+    const attempts = await QuizAttempt.find({ email })
+      .sort({ submitted_at: -1 })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        quizScores: attempts
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching scores:', error);
+    return res.status(500).json({
+      error:   'Failed to fetch scores',
+      details: error.message
+    });
+  }
+});
+
+// ── Fetch single attempt with full question results (review page) ──
+router.get('/iitm_maths2_scores_databases/:attemptId', async (req, res) => {
+  try {
+    const { attemptId } = req.params;
+
+    // Get attempt summary
+    const attempt = await QuizAttempt.findById(attemptId).lean();
+    if (!attempt) {
+      return res.status(404).json({ error: 'Attempt not found' });
+    }
+
+    // Get question results and populate full question data
+    const questionResults = await QuestionResult.find({ attempt_id: attemptId })
+      .populate({
+        path:   'question_id',
+        select: 'question_text options correct_answer explanation difficulty type points has_latex subtopic'
+      })
+      .lean();
+
+    // Shape data for review page
+    const reviewQuestions = questionResults.map(qr => ({
+      // Full question content
+      question_text:  qr.question_id?.question_text  || '',
+      type:           qr.question_id?.type           || qr.question_type,
+      difficulty:     qr.question_id?.difficulty     || qr.difficulty,
+      points:         qr.question_id?.points         || 1,
+      has_latex:      qr.question_id?.has_latex      || false,
+      explanation:    qr.question_id?.explanation    || '',
+      options:        qr.question_id?.options        || [],
+      correct_answer: qr.question_id?.correct_answer,
+
+      // What the user did
+      user_answer:        qr.user_answer,
+      is_correct:         qr.is_correct,
+      marks_awarded:      qr.marks_awarded,
+      time_taken_seconds: qr.time_taken_seconds,
+      subtopic:           qr.subtopic,
+      concept_tags:       qr.concept_tags,
+      bloom_level:        qr.bloom_level
+    }));
+
+    return res.status(200).json({
+      success: true,
+      attempt: {
+        _id:                attempt._id,
+        week:               attempt.week,
+        topic:              attempt.topic,
+        score:              attempt.score,
+        max_possible_score: attempt.max_possible_score,
+        percentage:         attempt.percentage,
+        total_questions:    attempt.total_questions,
+        correct_answers:    attempt.correct_answers,
+        total_time_seconds: attempt.total_time_seconds,
+        submitted_at:       attempt.submitted_at,
+        easy_attempted:     attempt.easy_attempted,
+        easy_correct:       attempt.easy_correct,
+        medium_attempted:   attempt.medium_attempted,
+        medium_correct:     attempt.medium_correct,
+        hard_attempted:     attempt.hard_attempted,
+        hard_correct:       attempt.hard_correct
+      },
+      questions: reviewQuestions
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching review:', error);
+    return res.status(500).json({
+      error:   'Failed to fetch review data',
+      details: error.message
+    });
+  }
+});
+
 
 // Route to get all topics
 router.get('/gre_writing_topics', async (req, res) => {
@@ -398,6 +718,304 @@ router.post('/algebra_score_add', async (req, res) => {
     return res.status(500).json({ error: 'An error occurred while storing quiz attempt' });
   }
 });
+
+
+router.get('/iitm_stats2_questions_databases', async (req, res) => {
+  try {
+    const { week, email, count = 25, difficulty, type, topic } = req.query;
+
+
+    if (!week || !email) {
+      return res.status(400).json({
+        error: 'week and email are required',
+        example: '/math2/questions?week=7&email=user@example.com&count=10'
+      });
+    }
+
+
+    const weekNum = parseInt(week);
+    if (isNaN(weekNum) || ((weekNum < 1 || weekNum > 12) && weekNum !== 100)) {
+      return res.status(400).json({ error: 'week must be between 1 and 12, or 100 for the Midterm Assessment' });
+    }
+
+
+    const filter = {
+      week:      weekNum,
+      is_active: true
+    };
+    if (difficulty) filter.difficulty = difficulty;
+    if (type)       filter.type       = type;
+    if (topic)      filter.topic      = topic;
+
+
+    let pool = await IITStats2Question .find(filter).lean();
+
+
+    if (pool.length === 0) {
+      return res.status(404).json({ error: 'No questions found for this week' });
+    }
+
+
+    // Fisher-Yates shuffle
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+
+
+    const requestedCount = Math.min(parseInt(count), pool.length);
+    const selected = pool.slice(0, requestedCount);
+
+
+    return res.status(200).json({
+      questions: selected,
+      metadata: {
+        week:      weekNum,
+        pool_size: pool.length,
+        returned:  selected.length,
+        requested: requestedCount
+      }
+    });
+
+
+  } catch (error) {
+    console.error('❌ Error fetching questions:', error);
+    return res.status(500).json({ error: 'Failed to fetch questions', details: error.message });
+  }
+});
+
+router.post('/iitm_stats2_quiz_attempt', async (req, res) => {
+  try {
+    const { email, username, quizData } = req.body;
+
+
+    if (!email || !quizData) {
+      return res.status(400).json({ error: 'email and quizData are required' });
+    }
+
+
+    const {
+      week,
+      topic,
+      score,
+      maxPossibleScore,
+      percentage,
+      totalQuestions,
+      correctAnswers,
+      difficultyBreakdown,
+      questionResults,
+      startTime,
+      endTime,
+      totalTimeTaken,
+      cheatCount
+    } = quizData;
+
+
+    // ── 1. Save attempt summary ────────────────────────────────────
+    const attempt = await QuizAttemptstats2.create({
+      email,
+      username:           username || email,
+      week:               Number(week) || 1,
+      topic:              topic    || '',
+      score:              score    ?? 0,
+      max_possible_score: maxPossibleScore ?? 0,
+      percentage:         Math.round(percentage ?? 0),
+      total_questions:    totalQuestions ?? 0,
+      correct_answers:    correctAnswers ?? 0,
+
+
+      easy_attempted:   difficultyBreakdown?.easy?.attempted   || 0,
+      easy_correct:     difficultyBreakdown?.easy?.correct     || 0,
+      medium_attempted: difficultyBreakdown?.medium?.attempted || 0,
+      medium_correct:   difficultyBreakdown?.medium?.correct   || 0,
+      hard_attempted:   difficultyBreakdown?.hard?.attempted   || 0,
+      hard_correct:     difficultyBreakdown?.hard?.correct     || 0,
+
+
+      total_time_seconds: totalTimeTaken || 0,
+      started_at:         startTime ? new Date(startTime) : new Date(),
+      submitted_at:       endTime   ? new Date(endTime)   : new Date(),
+      is_completed:       true,
+      cheat_count:        cheatCount || 0
+    });
+
+
+    // ── 2. Save individual question results ────────────────────────
+    if (Array.isArray(questionResults) && questionResults.length > 0) {
+      const resultDocs = questionResults.map(qr => ({
+        attempt_id:         attempt._id,
+        email,
+        week:               Number(week) || 1,
+        question_id:        qr.questionId,
+        user_answer:        qr.userAnswer      ?? null,
+        is_correct:         qr.isCorrect,
+        marks_awarded:      qr.marksAwarded    ?? qr.partialScore ?? 0,
+        time_taken_seconds: qr.timeTaken       || 0,
+        difficulty:         qr.difficulty      || 'medium',
+        topic:              topic              || '',
+        subtopic:           qr.subtopic        || '',
+        question_type:      qr.questionType    || '',
+        concept_tags:       qr.conceptTags     || [],
+        bloom_level:        qr.bloomLevel      || 'apply'
+      }));
+
+
+      await IITStats2Scores.insertMany(resultDocs);
+    }
+
+
+    return res.status(201).json({
+      success:    true,
+      attempt_id: attempt._id,
+      message:    'Quiz attempt saved successfully'
+    });
+
+
+  } catch (error) {
+    console.error('❌ Error saving quiz attempt:', JSON.stringify(error.message));
+    if (error.errors) console.error('❌ Validation errors:', JSON.stringify(error.errors, null, 2));
+    return res.status(500).json({
+      error:   'Failed to save quiz attempt',
+      details: error.message
+    });
+  }
+});
+
+
+
+
+
+
+router.get('/iitm_stats2_scores_databases', async (req, res) => {
+  try {
+    const { email } = req.query;
+
+
+    if (!email) {
+      // Admin: group all attempts by email
+      const attempts = await QuizAttemptstats2.find().lean();
+      const byEmail = {}
+      attempts.forEach(a => {
+        if (!byEmail[a.email]) byEmail[a.email] = { email: a.email, name: a.username || a.email, scores: [] }
+        byEmail[a.email].scores.push({
+          week:           a.week,
+          topic:          a.topic,
+          subtopic:       a.topic,
+          score:          a.score,
+          correctAnswers: a.correct_answers,
+          totalQuestions: a.total_questions,
+          percentage:     a.percentage,
+          dateAttempted:  a.submitted_at,
+          timestamp:      a.submitted_at,
+        })
+      })
+      return res.status(200).json(Object.values(byEmail));
+    }
+
+
+    // Student: return all attempts for this email formatted for Statistics2.jsx
+    const attempts = await QuizAttemptstats2.find({ email }).lean();
+    const quizScores = attempts.map(a => ({
+      _id:            a._id,
+      topic:          a.topic,
+      week:           a.week,
+      percentage:     a.percentage,
+      score:          a.score,
+      correctAnswers: a.correct_answers,
+      totalQuestions: a.total_questions,
+      timestamp:      a.submitted_at,
+      dateAttempted:  a.submitted_at,
+    }))
+    return res.status(200).json({ success: true, data: { quizScores } });
+
+
+  } catch (error) {
+    console.error('❌ Error fetching scores:', error);
+    return res.status(500).json({ error: 'Failed to fetch scores', details: error.message });
+  }
+});
+
+
+// ── Fetch single attempt with full question results (review page) ──
+router.get('/iitm_stats2_scores_databases/:attemptId', async (req, res) => {
+  try {
+    const { attemptId } = req.params;
+
+
+    // Get attempt summary
+    const attempt = await QuizAttemptstats2.findById(attemptId).lean();
+    if (!attempt) {
+      return res.status(404).json({ error: 'Attempt not found' });
+    }
+
+
+    // Get question results and populate full question data
+    const questionResults = await IITStats2Scores.find({ attempt_id: attemptId })
+      .populate({
+        path:   'question_id',
+        select: 'question_text options correct_answer explanation difficulty type points has_latex subtopic'
+      })
+      .lean();
+
+
+    // Shape data for review page
+    const reviewQuestions = questionResults.map(qr => ({
+      // Full question content
+      question_text:  qr.question_id?.question_text  || '',
+      type:           qr.question_id?.type           || qr.question_type,
+      difficulty:     qr.question_id?.difficulty     || qr.difficulty,
+      points:         qr.question_id?.points         || 1,
+      has_latex:      qr.question_id?.has_latex      || false,
+      explanation:    qr.question_id?.explanation    || '',
+      options:        qr.question_id?.options        || [],
+      correct_answer: qr.question_id?.correct_answer,
+
+
+      // What the user did
+      user_answer:        qr.user_answer,
+      is_correct:         qr.is_correct,
+      marks_awarded:      qr.marks_awarded,
+      time_taken_seconds: qr.time_taken_seconds,
+      subtopic:           qr.subtopic,
+      concept_tags:       qr.concept_tags,
+      bloom_level:        qr.bloom_level
+    }));
+
+
+    return res.status(200).json({
+      success: true,
+      attempt: {
+        _id:                attempt._id,
+        week:               attempt.week,
+        topic:              attempt.topic,
+        score:              attempt.score,
+        max_possible_score: attempt.max_possible_score,
+        percentage:         attempt.percentage,
+        total_questions:    attempt.total_questions,
+        correct_answers:    attempt.correct_answers,
+        total_time_seconds: attempt.total_time_seconds,
+        submitted_at:       attempt.submitted_at,
+        easy_attempted:     attempt.easy_attempted,
+        easy_correct:       attempt.easy_correct,
+        medium_attempted:   attempt.medium_attempted,
+        medium_correct:     attempt.medium_correct,
+        hard_attempted:     attempt.hard_attempted,
+        hard_correct:       attempt.hard_correct
+      },
+      questions: reviewQuestions
+    });
+
+
+  } catch (error) {
+    console.error('❌ Error fetching review:', error);
+    return res.status(500).json({
+      error:   'Failed to fetch review data',
+      details: error.message
+    });
+  }
+});
+
+
 
 
 router.get('/algebra_scores', async (req, res) => {
@@ -994,9 +1612,208 @@ router.get('/algorithm-submissions', async (req, res) => {
       }
   });
 
+
+
 //This are PDSA routes:
 
-router.get('/interview', async (req, res) => {
+// GET coding submissions - FIXED: using pdsaCodingSubmission
+router.get('/pdsa/coding-submissions', async (req, res) => {
+  try {
+    const { username, email, topic, date } = req.query;
+
+    // Build dynamic filter object
+    const filter = {};
+    if (username) filter.username = username;
+    if (email) filter.email = email;
+    if (topic) filter.topic = topic;
+    
+    // Date filtering
+    if (date) {
+      const startDate = new Date(date);
+      const endDate = new Date(date);
+      endDate.setDate(endDate.getDate() + 1);
+      
+      filter.timestamp = {
+        $gte: startDate,
+        $lt: endDate
+      };
+    }
+
+    // Fetch based on filter - USING pdsaCodingSubmission
+    const submissions = await pdsaCodingSubmission.find(filter)
+      .sort({ timestamp: -1 });
+
+    // Handle empty results
+    if (!submissions.length) {
+      return res.status(404).json({
+        message: 'No coding submissions found for provided parameters.',
+        filterUsed: filter
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      count: submissions.length,
+      submissions
+    });
+  } catch (error) {
+    console.error('Error fetching coding submissions:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server Error', 
+      error: error.message 
+    });
+  }
+});
+
+// GET all PDSA submissions (admin) — merges test, coding, and interview quiz submissions
+router.get('/pdsa-submissions', async (req, res) => {
+  try {
+    const { email } = req.query;
+    const filter = email ? { email } : {};
+
+    const [testSubs, codingSubs, interviewSubs] = await Promise.all([
+      pdsaSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
+      pdsaCodingSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(), // FIXED: using pdsaCodingSubmission
+      InterviewSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
+    ]);
+
+    const normalize = (sub, quizType) => ({
+      _id: sub._id,
+      email: sub.email,
+      username: sub.username,
+      topic: sub.topic,
+      score: sub.score,
+      maxScore: sub.maxScore,
+      percentage: sub.percentage,
+      timestamp: sub.timestamp,
+      quizType,
+    });
+
+    const merged = [
+      ...testSubs.map(s => normalize(s, 'test')),
+      ...codingSubs.map(s => normalize(s, 'coding')),
+      ...interviewSubs.map(s => normalize(s, 'interview')),
+    ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    res.json({ success: true, data: merged });
+
+  } catch (error) {
+    console.error('Error fetching PDSA submissions:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET interview submissions
+router.get('/pdsa/interview-submissions', async (req, res) => {
+    try {
+        const { username, email, topic, type, date } = req.query;
+        
+        const filter = {};
+        if (username) filter.username = username;
+        if (email) filter.email = email;
+        if (topic) filter.topic = topic;
+        if (type) filter.type = type;
+        
+        // Date filtering
+        if (date) {
+          const startDate = new Date(date);
+          const endDate = new Date(date);
+          endDate.setDate(endDate.getDate() + 1);
+          
+          filter.timestamp = {
+            $gte: startDate,
+            $lt: endDate
+          };
+        }
+        
+        const submissions = await InterviewSubmission.find(filter)
+            .sort({ timestamp: -1 })
+            .limit(10)
+            .select('-__v -questions.testResults');
+        
+        if (!submissions.length) {
+          return res.status(404).json({
+            success: false,
+            message: 'No interview submissions found for provided parameters.',
+            filterUsed: filter
+          });
+        }
+        
+        res.json({
+            success: true,
+            count: submissions.length,
+            submissions
+        });
+    } catch (error) {
+        console.error('Error fetching interview submissions:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch interview submissions',
+            error: error.message
+        });
+    }
+});
+
+// POST interview submission
+router.post('/pdsa/interview-submission', async (req, res) => {
+    try {
+        const submissionData = req.body;
+        
+        console.log('📝 Received interview submission:', {
+            username: submissionData.username,
+            topic: submissionData.topic,
+            type: submissionData.type,
+            score: submissionData.score
+        });
+
+        // Validate required fields
+        if (!submissionData.username || !submissionData.email || !submissionData.topic) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required fields'
+            });
+        }
+
+        // Calculate breakdown scores
+        if (submissionData.questions) {
+            const codingQuestions = submissionData.questions.filter(q => q.type === 'coding');
+            const mcqQuestions = submissionData.questions.filter(q => q.type !== 'coding');
+            
+            submissionData.codingScore = codingQuestions.reduce((sum, q) => sum + (q.score || 0), 0);
+            submissionData.codingMaxScore = codingQuestions.reduce((sum, q) => sum + (q.maxScore || 0), 0);
+            submissionData.mcqScore = mcqQuestions.reduce((sum, q) => sum + (q.score || 0), 0);
+            submissionData.mcqMaxScore = mcqQuestions.reduce((sum, q) => sum + (q.maxScore || 0), 0);
+        }
+
+        const submission = new InterviewSubmission(submissionData);
+        await submission.save();
+        
+        console.log('✅ Interview submission saved:', submission._id);
+        
+        res.status(201).json({
+            success: true,
+            message: 'Interview results saved',
+            submissionId: submission._id,
+            breakdown: {
+                coding: `${submission.codingScore}/${submission.codingMaxScore}`,
+                mcq: `${submission.mcqScore}/${submission.mcqMaxScore}`,
+                overall: `${submission.percentage}%`
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Error saving interview submission:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to save interview results',
+            error: error.message
+        });
+    }
+});
+
+// Fetching questions with type interview from collection
+router.get('/pdsa/interview', async (req, res) => {
     try {
         const { topic, type, codingCount = 3, pdsaCount = 2 } = req.query;
 
@@ -1010,14 +1827,14 @@ router.get('/interview', async (req, res) => {
 
         // Fetch questions from both collections in parallel
         const [codingQuestions, pdsaQuestions] = await Promise.all([
-            // Fetch from coding_Question collection
-            CodingQuestion.aggregate([
+            // Fetch from pdsaCodingQuestion collection - FIXED
+            pdsaCodingQuestion.aggregate([
                 { $match: { topic: topic, type: type } },
                 { $sample: { size: parseInt(codingCount) } }
             ]),
             
-            // Fetch from pdsa_questions collection
-            Question.aggregate([
+            // Fetch from pdsaQuestion collection - FIXED
+            pdsaQuestion.aggregate([
                 { $match: { topic: topic, type: type } },
                 { $sample: { size: parseInt(pdsaCount) } }
             ])
@@ -1048,8 +1865,8 @@ router.get('/interview', async (req, res) => {
     }
 });
 
-// POST submit coding quiz results
-router.post('/coding-submission', async (req, res) => {
+// POST submit coding quiz results - FIXED: using pdsaCodingSubmission
+router.post('/pdsa/coding-submission', async (req, res) => {
     try {
         const submissionData = req.body;
         
@@ -1087,8 +1904,8 @@ router.post('/coding-submission', async (req, res) => {
             submissionData.timestamp = new Date();
         }
 
-        // Create submission document
-        const submission = new CodingSubmission(submissionData);
+        // Create submission document - USING pdsaCodingSubmission
+        const submission = new pdsaCodingSubmission(submissionData);
         
         // Save to database
         await submission.save();
@@ -1120,10 +1937,8 @@ router.post('/coding-submission', async (req, res) => {
     }
 });
 
-
-
-// GET random coding questions by difficulty and topic
-router.get('/coding-questions', async (req, res) => {
+// GET random coding questions by difficulty and topic - FIXED: using pdsaCodingQuestion
+router.get('/pdsa/coding-questions', async (req, res) => {
     try {
         const { difficulty, topic, limit = 5 } = req.query;
         
@@ -1140,8 +1955,8 @@ router.get('/coding-questions', async (req, res) => {
             matchQuery.topic = decodeURIComponent(topic);
         }
         
-        // Fetch random questions
-        const questions = await CodingQuestion.aggregate([
+        // Fetch random questions - USING pdsaCodingQuestion
+        const questions = await pdsaCodingQuestion.aggregate([
             { $match: matchQuery },
             { $sample: { size: parseInt(limit) } },
             { $project: { 
@@ -1188,7 +2003,7 @@ router.get('/coding-questions', async (req, res) => {
     }
 });
 
-// Submit quiz results route
+// Submit quiz results route - using pdsaSubmission (this one is correct)
 router.post('/pdsa-submission', async (req, res) => {
     try {
         const submissionData = req.body;
@@ -1201,7 +2016,7 @@ router.post('/pdsa-submission', async (req, res) => {
         });
 
         // Create submission document
-        const submission = new PDSA_Submission(submissionData);
+        const submission = new pdsaSubmission(submissionData);
         
         // Save to database
         await submission.save();
@@ -1223,32 +2038,8 @@ router.post('/pdsa-submission', async (req, res) => {
         });
     }
 });
-// GET all coding submissions (admin)
-router.get('/coding-submissions', async (req, res) => {
-  try {
-    const { email } = req.query
-    const filter = email ? { email } : {}
-    const submissions = await CodingSubmission.find(filter).sort({ timestamp: -1 }).lean()
-    res.json({ success: true, data: submissions })
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message })
-  }
-})
 
-// GET all PDSA submissions (admin)
-router.get('/pdsa-submissions', async (req, res) => {
-  try {
-    const { email } = req.query
-    const filter = email ? { email } : {}
-    const submissions = await PDSA_Submission.find(filter).sort({ timestamp: -1 }).lean()
-    res.json({ success: true, data: submissions })
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message })
-  }
-})
-
-//pdsa questions fetching route
-
+// PDSA questions fetching route - FIXED: using pdsaQuestion
 function shuffleArray(array) {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -1258,7 +2049,7 @@ function shuffleArray(array) {
     return shuffled;
 }
 
-router.get('/questions/:topic', async (req, res) => {
+router.get('/pdsa/questions/:topic', async (req, res) => {
     try {
         const { topic } = req.params;
         const limit = parseInt(req.query.limit) || 50;
@@ -1274,10 +2065,10 @@ router.get('/questions/:topic', async (req, res) => {
 
         let allQuestions = [];
         
-        // Fetch questions for each maxScore category
+        // Fetch questions for each maxScore category - USING pdsaQuestion
         for (const category of distribution) {
             try {
-                const questions = await Question.aggregate([
+                const questions = await pdsaQuestion.aggregate([
                     { 
                         $match: { 
                             topic: topic,
@@ -1306,7 +2097,7 @@ router.get('/questions/:topic', async (req, res) => {
             const remainingCount = limit - allQuestions.length;
             const existingIds = allQuestions.map(q => q._id);
             
-            const additionalQuestions = await Question.aggregate([
+            const additionalQuestions = await pdsaQuestion.aggregate([
                 { 
                     $match: { 
                         topic: topic,
@@ -1344,7 +2135,6 @@ router.get('/questions/:topic', async (req, res) => {
             distribution: scoreDistribution,
             questions: shuffledQuestions
         });
-
            
     } catch (error) {
         console.error('❌ Error fetching random questions:', error);
@@ -1356,6 +2146,8 @@ router.get('/questions/:topic', async (req, res) => {
     }
 });
 
+
+// programming course route 
   router.post('/programming/submit', async (req, res) => {
     try {
       console.log("Received submission request:", req.body);
@@ -1987,7 +2779,6 @@ router.post('/reset-ct-progress', async (req, res) => {
 
 
 
-// GET Statistics Questions by Topic - Single route like math
 router.get('/iitm-stats-questions/:topic', async (req, res) => {
   try {
     const { topic } = req.params;
@@ -2008,7 +2799,7 @@ router.get('/iitm-stats-questions/:topic', async (req, res) => {
     // Get all questions for the topic (NO FILTERING by completed questions)
     let allQuestions = await Statistics_questions.find({
       topic: topic
-    });
+    }).lean();
 
     console.log(`📊 Found ${allQuestions.length} total questions for topic: ${topic}`);
     
@@ -2020,19 +2811,30 @@ router.get('/iitm-stats-questions/:topic', async (req, res) => {
     }
 
     // Enhanced shuffle for better randomness
-    const shuffledQuestions = [...allQuestions];
-    
-    // Fisher-Yates shuffle
-    for (let i = shuffledQuestions.length - 1; i > 0; i--) {
+    const shuffle = arr => {
+    const a = [...arr]
+    for (let i = a.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [shuffledQuestions[i], shuffledQuestions[j]] = [shuffledQuestions[j], shuffledQuestions[i]];
+      [a[i], a[j]] = [a[j], a[i]]
     }
+    return a
+  }
 
-    // Take exactly the requested count
-    const selectedQuestions = shuffledQuestions.slice(0, parseInt(count));
+    const withPoints = (qs, pts) => qs.map(q => ({ ...q, points: pts }))
+
+    const easy   = shuffle(allQuestions.filter(q => q.difficulty?.toLowerCase() === 'easy'))
+    const medium = shuffle(allQuestions.filter(q => q.difficulty?.toLowerCase() === 'medium'))
+    const hard   = shuffle(allQuestions.filter(q => q.difficulty?.toLowerCase() === 'hard'))
+
+    const selectedQuestions = shuffle([
+    ...withPoints(easy.slice(0, 10), 1),
+    ...withPoints(medium.slice(0, 10), 2),
+    ...withPoints(hard.slice(0, 5), 4),
+  ])
+// 10 easy(×1) + 10 medium(×2) + 5 hard(×4) = 25 questions, 50 points
     
     // Optional: Sort by question_number for consistent display
-    selectedQuestions.sort((a, b) => a.question_number - b.question_number);
+   
 
     console.log(`✅ Returning ${selectedQuestions.length} random questions for ${topic} to ${email}`);
 
@@ -2194,8 +2996,33 @@ router.get('/iitmmath_scores', async (req, res) => {
       }
       res.json({ success: true, data: user });
     } else {
-      // Exclude heavy questionResults array from list view — only load summary fields
-      const users = await iitm_math_score.find({}, { 'quizScores.questionResults': 0 }).lean();
+      // Compute totalTime from questionResults but don't return the heavy array
+      const users = await iitm_math_score.aggregate([
+        { $addFields: {
+          quizScores: {
+            $map: {
+              input: '$quizScores',
+              as: 'quiz',
+              in: {
+                topic:          '$$quiz.topic',
+                percentage:     '$$quiz.percentage',
+                score:          '$$quiz.score',
+                totalQuestions: '$$quiz.totalQuestions',
+                correctAnswers: '$$quiz.correctAnswers',
+                attemptNumber:  '$$quiz.attemptNumber',
+                timestamp:      '$$quiz.timestamp',
+                totalTime: {
+                  $cond: [
+                    { $gt: [{ $ifNull: ['$$quiz.totalTime', 0] }, 0] },
+                    '$$quiz.totalTime',
+                    { $sum: '$$quiz.questionResults.timeTaken' }
+                  ]
+                }
+              }
+            }
+          }
+        }}
+      ]);
       res.json({ success: true, data: users });
     }
   } catch (error) {
@@ -2348,7 +3175,8 @@ router.get('/iitm-math-questions/:topic', async (req, res) => {
     // Get all questions for the topic (NO FILTERING by completed questions)
     let allQuestions = await IITMathQuestion.find({
       topic: topic
-    });
+    }).lean();
+
 
     console.log(`📊 Found ${allQuestions.length} total questions for topic: ${topic}`);
     
@@ -2361,19 +3189,30 @@ router.get('/iitm-math-questions/:topic', async (req, res) => {
     }
 
     // Enhanced shuffle for better randomness
-    const shuffledQuestions = [...allQuestions];
-    
-    // Fisher-Yates shuffle
-    for (let i = shuffledQuestions.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffledQuestions[i], shuffledQuestions[j]] = [shuffledQuestions[j], shuffledQuestions[i]];
-    }
+      const shuffle = arr => {
+      const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      };
 
-    // Take exactly the requested count
-    const selectedQuestions = shuffledQuestions.slice(0, parseInt(count));
+      const easy   = shuffle(allQuestions.filter(q => q.difficulty?.toLowerCase() === 'easy'));
+      const medium = shuffle(allQuestions.filter(q => q.difficulty?.toLowerCase() === 'medium'));
+      const hard   = shuffle(allQuestions.filter(q => q.difficulty?.toLowerCase() === 'hard'));
+
+    const withPoints = (qs, pts) => qs.map(q => ({ ...q, points: pts }))
+
+    const selectedQuestions = shuffle([
+      ...withPoints(easy.slice(0, 10), 1),   // 10 × 1 = 10 pts
+      ...withPoints(medium.slice(0, 10), 2), // 10 × 2 = 20 pts
+      ...withPoints(hard.slice(0, 5), 4),    //  5 × 4 = 20 pts
+    ]);
+// Total: 25 questions, 50 points ✓
     
     // Optional: Sort by question_number for consistent display
-    selectedQuestions.sort((a, b) => a.question_number - b.question_number);
+    
 
     console.log(`✅ Returning ${selectedQuestions.length} random questions for ${topic} to ${email}`);
 
@@ -2408,12 +3247,17 @@ router.post('/iitmmath_scores', async (req, res) => {
     if (!email || !username || !quizData) {
       return res.status(400).json({ error: 'Email, username and quizData are required' });
     }
-    
+
+    // Compute totalTime from questionResults if not already set
+    if (!quizData.totalTime && quizData.questionResults) {
+      quizData.totalTime = quizData.questionResults.reduce((sum, r) => sum + (r.timeTaken || 0), 0)
+    }
+
     // Extract question IDs from the quiz results
     const completedQuestionIds = quizData.questionResults
       ? quizData.questionResults.map(result => result.questionId).filter(Boolean)
       : [];
-    
+
     console.log(`Quiz completed with ${completedQuestionIds.length} question IDs:`, completedQuestionIds);
     
     // FIXED: Use iitm_math_score instead of Statistics_score
@@ -2453,6 +3297,48 @@ router.post('/iitmmath_scores', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+router.post('/get-question-explanations', async (req, res) => {
+  try {
+    const { questionIds } = req.body
+
+    if (!questionIds || !Array.isArray(questionIds) || questionIds.length === 0) {
+      return res.json({ success: false, message: 'Question IDs array is required' })
+    }
+
+    const objectIds = questionIds.filter(id => /^[a-f0-9]{24}$/i.test(id))
+    const numbers   = questionIds.map(Number).filter(n => !isNaN(n))
+
+    const questions = await IITMathQuestion.find({  // ← replace with your model name
+      $or: [
+        ...(objectIds.length ? [{ _id: { $in: objectIds } }] : []),
+        ...(numbers.length   ? [{ question_number: { $in: numbers } }] : []),
+      ]
+    }).lean()
+
+    const explanationMap = {}
+    questions.forEach(q => {
+      const entry = {
+        explanation:   q.explanation    || '',
+        difficulty:    q.difficulty     || '',
+        points:        q.points         || 1,
+        questionType:  q.type           || '',
+        options:       q.options        || [],
+        topic:         q.topic          || '',
+        correctAnswer: q.correct_answer || '',
+        questionText:  q.question_text  || '',
+      }
+      if (q._id)             explanationMap[q._id.toString()]          = entry
+      if (q.question_number) explanationMap[String(q.question_number)] = entry
+    })
+
+    res.json({ success: true, explanationMap })
+
+  } catch (error) {
+    console.error('Error fetching explanations:', error)
+    res.status(500).json({ success: false, message: 'Failed to fetch explanations' })
+  }
+})
 
 // fetching users' predaignostic data
 
@@ -3031,99 +3917,1962 @@ router.get("/iitm_math2_scores", async (req, res) => {
 });
 
 
-router.get("/iitm_stats2_questions", async (req, res) => {
+
+
+
+
+
+
+
+
+
+// competitive Mathematics routes 
+
+// CHANGED: Route path updated
+router.get('/competitive_math_questions', async (req, res) => {
   try {
-    const { week, subtopic } = req.query;
-    const filter = {};
+    const { week, email, count = 10, difficulty, type, topic } = req.query;
 
-    if (week) filter.week = Number(week);
-    if (subtopic) filter.subtopic = subtopic;
-
-    const questions = await IITM_Stats_2_Question.find(filter);
-
-    if (questions.length === 0) {
-      return res.status(404).json({ message: "No questions found for the given criteria" });
+    if (!week || !email) {
+      return res.status(400).json({
+        error: 'week and email are required',
+        example: '/competitive_math_questions?week=7&email=user@example.com&count=10'
+      });
     }
 
-    res.status(200).json(questions);
-  } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
+    const weekNum = parseInt(week);
+    if (isNaN(weekNum) || weekNum < 1 || weekNum > 12) {
+      return res.status(400).json({ error: 'week must be between 1 and 12' });
+    }
+
+    const filter = {
+      week:      weekNum,
+      is_active: true
+    };
+    if (difficulty) filter.difficulty = difficulty;
+    if (type)       filter.type       = type;
+    if (topic)      filter.topic      = topic;
+
+    let pool = await competitive_MathQue.find(filter).lean();
+
+    if (pool.length === 0) {
+      return res.status(404).json({ error: 'No questions found for this week' });
+    }
+
+    // Fisher-Yates shuffle
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+
+    const requestedCount = Math.min(parseInt(count), pool.length);
+    const selected = pool.slice(0, requestedCount);
+
+    return res.status(200).json({
+      questions: selected,
+      metadata: {
+        week:      weekNum,
+        pool_size: pool.length,
+        returned:  selected.length,
+        requested: requestedCount
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching questions:', error);
+    return res.status(500).json({ error: 'Failed to fetch questions', details: error.message });
   }
 });
 
-router.post("/iitm_stats2_scores", async (req, res) => {
+
+// CHANGED: Route path updated
+router.post('/competitive_math_quiz_attempts', async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const { email, name, week, subtopic, totalQuestions, correctAnswers, score, responses } = req.body;
-    if (!email || !name || !week || !subtopic || !responses)
-      return res.status(400).json({ message: "Missing required fields" });
+    const { email, username, quizData } = req.body;
     
-    let user = await IITM_Stats_2_Score.findOne({ email });
-    const newEntry = { week, subtopic, totalQuestions, correctAnswers, score, responses };
-    if (user) {
-      user.scores.push(newEntry);
-      await user.save();
-    } else {
-      user = new IITM_Stats_2_Score({ email, name, scores: [newEntry] });
-      await user.save();
-    }
-    res.status(201).json({ message: "Score and responses saved successfully", user });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+    console.log('📥 Received body:', JSON.stringify({ email, username }, null, 2));
+    console.log('📥 quizData keys:', quizData ? Object.keys(quizData) : 'quizData is undefined');
+    console.log('📥 week:', quizData?.week);
+    console.log('📥 startTime:', quizData?.startTime);
+    console.log('📥 endTime:', quizData?.endTime);
 
-router.get("/iitm_stats2_scores", async (req, res) => {
-  try {
-    const { email, week } = req.query;
-
-    // Case 1: No filters — return all user scores
-    if (!email && !week) {
-      const allScores = await IITM_Stats_2_Score.find();
-      if (!allScores.length)
-        return res.status(404).json({ message: "No scores found" });
-      return res.status(200).json(allScores);
+    if (!email || !quizData) {
+      return res.status(400).json({ error: 'email and quizData are required' });
     }
 
-    // Case 2: Filter by email only
-    if (email && !week) {
-      const user = await IITM_Stats_2_Score.findOne({ email });
-      if (!user) return res.status(404).json({ message: "User not found" });
-      return res.status(200).json(user);
-    }
+    const {
+      week,
+      topic,
+      score,
+      maxPossibleScore,
+      percentage,
+      totalQuestions,
+      correctAnswers,
+      difficultyBreakdown,
+      questionResults,
+      startTime,
+      endTime,
+      totalTimeTaken,
+      cheatCount
+    } = quizData;
 
-    // Case 3: Filter by week only (across all users)
-    if (week && !email) {
-      const all = await IITM_Stats_2_Score.find({ "scores.week": Number(week) });
-      if (!all.length)
-        return res
-          .status(404)
-          .json({ message: "No scores found for the given week" });
+    // ── 1. Save attempt summary ────────────────────────────────────
+    const [attempt] = await competitive_MathQuizAttempt.create([{
+      email,
+      username:           username || email,
+      week:               week     || 7,
+      topic:              topic    || '',
+      score,
+      max_possible_score: maxPossibleScore,
+      percentage:         Math.round(percentage),
+      total_questions:    totalQuestions,
+      correct_answers:    correctAnswers,
 
-      // Flatten week-specific entries
-      const weekData = all.map((u) => ({
-        email: u.email,
-        name: u.name,
-        scores: u.scores.filter((s) => s.week === Number(week)),
+      easy_attempted:   difficultyBreakdown?.easy?.attempted   || 0,
+      easy_correct:     difficultyBreakdown?.easy?.correct     || 0,
+      medium_attempted: difficultyBreakdown?.medium?.attempted || 0,
+      medium_correct:   difficultyBreakdown?.medium?.correct   || 0,
+      hard_attempted:   difficultyBreakdown?.hard?.attempted   || 0,
+      hard_correct:     difficultyBreakdown?.hard?.correct     || 0,
+
+      total_time_seconds: totalTimeTaken || 0,
+      started_at:         new Date(startTime),
+      submitted_at:       new Date(endTime),
+      is_completed:       true,
+      cheat_count:        cheatCount || 0
+    }], { session });
+
+    // ── 2. Save individual question results ────────────────────────
+    if (Array.isArray(questionResults) && questionResults.length > 0) {
+
+      const resultDocs = questionResults.map(qr => ({
+        attempt_id:         attempt._id,
+        email,
+        week:               week || 7,
+        question_id:        qr.questionId,
+        user_answer:        qr.userAnswer      ?? null,
+        is_correct:         qr.isCorrect,
+        marks_awarded:      qr.marksAwarded    || 0,
+        time_taken_seconds: qr.timeTaken       || 0,
+        difficulty:         qr.difficulty      || 'medium',
+        topic:              topic              || '',
+        subtopic:           qr.subtopic        || '',
+        question_type:      qr.questionType    || '',
+        concept_tags:       qr.conceptTags     || [],
+        bloom_level:        qr.bloomLevel      || 'apply'
       }));
 
-      return res.status(200).json(weekData);
+      await competitive_MathResult.insertMany(resultDocs, { session });
     }
 
-    // Case 4: Filter by both email & week
-    if (email && week) {
-      const user = await IITM_Stats_2_Score.findOne({ email });
-      if (!user) return res.status(404).json({ message: "User not found" });
+    // ── 3. Commit both writes atomically ───────────────────────────
+    await session.commitTransaction();
 
-      const weekScores = user.scores.filter((s) => s.week === Number(week));
-      if (!weekScores.length)
-        return res
-          .status(404)
-          .json({ message: "No scores found for this week for the user" });
+    return res.status(201).json({
+      success:    true,
+      attempt_id: attempt._id,
+      message:    'Quiz attempt saved successfully'
+    });
 
-      return res.status(200).json({ email: user.email, name: user.name, scores: weekScores });
+  } catch (error) {
+    await session.abortTransaction();
+    console.error('❌ Error saving quiz attempt:', error);
+    return res.status(500).json({
+      error:   'Failed to save quiz attempt',
+      details: error.message
+    });
+  } finally {
+    session.endSession();
+  }
+});
+
+// CHANGED: Route path updated
+router.get('/competitive_math_quiz_attempts', async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({ error: 'email is required' });
     }
+
+    const attempts = await competitive_MathQuizAttempt.find({ email })
+      .sort({ submitted_at: -1 })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        quizScores: attempts
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching scores:', error);
+    return res.status(500).json({
+      error:   'Failed to fetch scores',
+      details: error.message
+    });
+  }
+});
+
+// CHANGED: Route path updated
+router.get('/competitive_math_quiz_attempts/:attemptId', async (req, res) => {
+  try {
+    const { attemptId } = req.params;
+
+    // Get attempt summary
+    const attempt = await competitive_MathQuizAttempt.findById(attemptId).lean();
+    if (!attempt) {
+      return res.status(404).json({ error: 'Attempt not found' });
+    }
+
+    // Get question results and populate full question data
+    const questionResults = await competitive_MathResult.find({ attempt_id: attemptId })
+      .populate({
+        path:   'question_id',
+        select: 'question_text options correct_answer explanation difficulty type points has_latex subtopic'
+      })
+      .lean();
+
+    // Shape data for review page
+    const reviewQuestions = questionResults.map(qr => ({
+      // Full question content
+      question_text:  qr.question_id?.question_text  || '',
+      type:           qr.question_id?.type           || qr.question_type,
+      difficulty:     qr.question_id?.difficulty     || qr.difficulty,
+      points:         qr.question_id?.points         || 1,
+      has_latex:      qr.question_id?.has_latex      || false,
+      explanation:    qr.question_id?.explanation    || '',
+      options:        qr.question_id?.options        || [],
+      correct_answer: qr.question_id?.correct_answer,
+
+      // What the user did
+      user_answer:        qr.user_answer,
+      is_correct:         qr.is_correct,
+      marks_awarded:      qr.marks_awarded,
+      time_taken_seconds: qr.time_taken_seconds,
+      subtopic:           qr.subtopic,
+      concept_tags:       qr.concept_tags,
+      bloom_level:        qr.bloom_level
+    }));
+
+    return res.status(200).json({
+      success: true,
+      attempt: {
+        _id:                attempt._id,
+        week:               attempt.week,
+        topic:              attempt.topic,
+        score:              attempt.score,
+        max_possible_score: attempt.max_possible_score,
+        percentage:         attempt.percentage,
+        total_questions:    attempt.total_questions,
+        correct_answers:    attempt.correct_answers,
+        total_time_seconds: attempt.total_time_seconds,
+        submitted_at:       attempt.submitted_at,
+        easy_attempted:     attempt.easy_attempted,
+        easy_correct:       attempt.easy_correct,
+        medium_attempted:   attempt.medium_attempted,
+        medium_correct:     attempt.medium_correct,
+        hard_attempted:     attempt.hard_attempted,
+        hard_correct:       attempt.hard_correct
+      },
+      questions: reviewQuestions
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching review:', error);
+    return res.status(500).json({
+      error:   'Failed to fetch review data',
+      details: error.message
+    });
+  }
+});
+
+
+// GET /physics/questions - Fetch random questions for a week
+
+router.get('/physics_questions_databases', async (req, res) => {
+  try {
+    const { week, email, count = 10, difficulty, type, topic } = req.query;
+
+    if (!week || !email) {
+      return res.status(400).json({
+        error: 'week and email are required',
+        example: '/physics/questions?week=7&email=user@example.com&count=10'
+      });
+    }
+
+    const weekNum = parseInt(week);
+    if (isNaN(weekNum) || weekNum < 1 || weekNum > 11) {
+      return res.status(400).json({ error: 'week must be between 1 and 11' });
+    }
+
+    const filter = {
+      week: weekNum,
+      is_active: true
+    };
+    if (difficulty) filter.difficulty = difficulty;
+    if (type) filter.type = type;
+    if (topic) filter.topic = topic;
+
+    let pool = await PhysicQue.find(filter).lean();
+
+    if (pool.length === 0) {
+      return res.status(404).json({ error: 'No questions found for this week' });
+    }
+
+    // Fisher-Yates shuffle
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+
+    const requestedCount = Math.min(parseInt(count), pool.length);
+    const selected = pool.slice(0, requestedCount);
+
+    return res.status(200).json({
+      questions: selected,
+      metadata: {
+        week: weekNum,
+        pool_size: pool.length,
+        returned: selected.length,
+        requested: requestedCount
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching questions:', error);
+    return res.status(500).json({ error: 'Failed to fetch questions', details: error.message });
+  }
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// POST /physics/scores - Save quiz attempt and results
+// ──────────────────────────────────────────────────────────────────────────────
+router.post('/physics_scores_databases', async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { email, username, quizData } = req.body;
+    
+    // ── Temporary logging ───────────────────────────────
+    console.log('📥 Received body:', JSON.stringify({ email, username }, null, 2));
+    console.log('📥 quizData keys:', quizData ? Object.keys(quizData) : 'quizData is undefined');
+    console.log('📥 week:', quizData?.week);
+    console.log('📥 startTime:', quizData?.startTime);
+    console.log('📥 endTime:', quizData?.endTime);
+    // ── End temporary logs ─────────────────────────────────
+
+    if (!email || !quizData) {
+      return res.status(400).json({ error: 'email and quizData are required' });
+    }
+
+    const {
+      week,
+      topic,
+      score,
+      maxPossibleScore,
+      percentage,
+      totalQuestions,
+      correctAnswers,
+      difficultyBreakdown,
+      questionResults,
+      startTime,
+      endTime,
+      totalTimeTaken,
+      cheatCount
+    } = quizData;
+
+    // ── 1. Save attempt summary ────────────────────────────────────
+    const [attempt] = await PhysicQuizAttempt.create([{
+      email,
+      username: username || email,
+      week: week || 7,
+      topic: topic || '',
+      score,
+      max_possible_score: maxPossibleScore,
+      percentage: Math.round(percentage),
+      total_questions: totalQuestions,
+      correct_answers: correctAnswers,
+
+      easy_attempted: difficultyBreakdown?.easy?.attempted || 0,
+      easy_correct: difficultyBreakdown?.easy?.correct || 0,
+      medium_attempted: difficultyBreakdown?.medium?.attempted || 0,
+      medium_correct: difficultyBreakdown?.medium?.correct || 0,
+      hard_attempted: difficultyBreakdown?.hard?.attempted || 0,
+      hard_correct: difficultyBreakdown?.hard?.correct || 0,
+
+      total_time_seconds: totalTimeTaken || 0,
+      started_at: new Date(startTime),
+      submitted_at: new Date(endTime),
+      is_completed: true,
+      cheat_count: cheatCount || 0
+    }], { session });
+
+    // ── 2. Save individual question results ────────────────────────
+    if (Array.isArray(questionResults) && questionResults.length > 0) {
+
+      const resultDocs = questionResults.map(qr => ({
+        attempt_id: attempt._id,
+        email,
+        week: week || 7,
+        question_id: qr.questionId,
+        user_answer: qr.userAnswer ?? null,
+        is_correct: qr.isCorrect,
+        marks_awarded: qr.marksAwarded || 0,
+        time_taken_seconds: qr.timeTaken || 0,
+        difficulty: qr.difficulty || 'medium',
+        topic: topic || '',
+        subtopic: qr.subtopic || '',
+        question_type: qr.questionType || '',
+        concept_tags: qr.conceptTags || [],
+        bloom_level: qr.bloomLevel || 'apply'
+      }));
+
+      await PhysicResult.insertMany(resultDocs, { session });
+    }
+
+    // ── 3. Commit both writes atomically ───────────────────────────
+    await session.commitTransaction();
+
+    return res.status(201).json({
+      success: true,
+      attempt_id: attempt._id,
+      message: 'Quiz attempt saved successfully'
+    });
+
+  } catch (error) {
+    await session.abortTransaction();
+    console.error('❌ Error saving quiz attempt:', error);
+    return res.status(500).json({
+      error: 'Failed to save quiz attempt',
+      details: error.message
+    });
+  } finally {
+    session.endSession();
+  }
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// GET /physics/scores - Fetch all attempts for a user
+// ──────────────────────────────────────────────────────────────────────────────
+router.get('/physics_scores_databases', async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({ error: 'email is required' });
+    }
+
+    const attempts = await PhysicQuizAttempt.find({ email })
+      .sort({ submitted_at: -1 })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        quizScores: attempts
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching scores:', error);
+    return res.status(500).json({
+      error: 'Failed to fetch scores',
+      details: error.message
+    });
+  }
+});
+
+
+// GET /physics/scores/:attemptId - Fetch single attempt with full results
+
+router.get('/physics_scores_databases/:attemptId', async (req, res) => {
+  try {
+    const { attemptId } = req.params;
+
+    // Get attempt summary
+    const attempt = await PhysicQuizAttempt.findById(attemptId).lean();
+    if (!attempt) {
+      return res.status(404).json({ error: 'Attempt not found' });
+    }
+
+    // Get question results and populate full question data
+    const questionResults = await PhysicResult.find({ attempt_id: attemptId })
+      .populate({
+        path: 'question_id',
+        select: 'question_text options correct_answer explanation difficulty type points has_latex subtopic'
+      })
+      .lean();
+
+    // Shape data for review page
+    const reviewQuestions = questionResults.map(qr => ({
+      // Full question content
+      question_text: qr.question_id?.question_text || '',
+      type: qr.question_id?.type || qr.question_type,
+      difficulty: qr.question_id?.difficulty || qr.difficulty,
+      points: qr.question_id?.points || 1,
+      has_latex: qr.question_id?.has_latex || false,
+      explanation: qr.question_id?.explanation || '',
+      options: qr.question_id?.options || [],
+      correct_answer: qr.question_id?.correct_answer,
+
+      // What the user did
+      user_answer: qr.user_answer,
+      is_correct: qr.is_correct,
+      marks_awarded: qr.marks_awarded,
+      time_taken_seconds: qr.time_taken_seconds,
+      subtopic: qr.subtopic,
+      concept_tags: qr.concept_tags,
+      bloom_level: qr.bloom_level
+    }));
+
+    return res.status(200).json({
+      success: true,
+      attempt: {
+        _id: attempt._id,
+        week: attempt.week,
+        topic: attempt.topic,
+        score: attempt.score,
+        max_possible_score: attempt.max_possible_score,
+        percentage: attempt.percentage,
+        total_questions: attempt.total_questions,
+        correct_answers: attempt.correct_answers,
+        total_time_seconds: attempt.total_time_seconds,
+        submitted_at: attempt.submitted_at,
+        easy_attempted: attempt.easy_attempted,
+        easy_correct: attempt.easy_correct,
+        medium_attempted: attempt.medium_attempted,
+        medium_correct: attempt.medium_correct,
+        hard_attempted: attempt.hard_attempted,
+        hard_correct: attempt.hard_correct
+      },
+      questions: reviewQuestions
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching review:', error);
+    return res.status(500).json({
+      error: 'Failed to fetch review data',
+      details: error.message
+    });
+  }
+});
+
+// GET all Java submissions (admin) — merges test, coding, and interview quiz submissions
+router.get('/java-submission', async (req, res) => {
+  try {
+    const { email } = req.query;
+    const filter = email ? { email } : {};
+
+    const [testSubs, codingSubs, interviewSubs] = await Promise.all([
+      JavaSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
+      // Note: If you have separate CodingSubmission and InterviewSubmission models for Java, 
+      // replace these with your actual model names
+      CodingSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
+      InterviewSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
+    ]);
+
+    const normalize = (sub, quizType) => ({
+      _id: sub._id,
+      email: sub.email,
+      username: sub.username,
+      topic: sub.topic,
+      score: sub.score,
+      maxScore: sub.maxScore,
+      percentage: sub.percentage,
+      timestamp: sub.timestamp,
+      quizType,
+    });
+
+    const merged = [
+      ...testSubs.map(s => normalize(s, 'test')),
+      ...codingSubs.map(s => normalize(s, 'coding')),
+      ...interviewSubs.map(s => normalize(s, 'interview')),
+    ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    res.json({ success: true, data: merged });
+
+  } catch (error) {
+    console.error('Error fetching Java submissions:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Submit quiz results route
+router.post('/java-submission', async (req, res) => {
+    try {
+        const submissionData = req.body;
+        
+        console.log('📝 Received Java submission:', {
+            username: submissionData.username,
+            topic: submissionData.topic,
+            score: submissionData.score,
+            maxScore: submissionData.maxScore
+        });
+
+        // Create submission document using JavaSubmission model
+        const submission = new JavaSubmission(submissionData);
+        
+        // Save to database
+        await submission.save();
+        
+        console.log('✅ Java submission saved successfully');
+        
+        res.status(201).json({
+            success: true,
+            message: 'Quiz results saved successfully',
+            submissionId: submission._id
+        });
+        
+    } catch (error) {
+        console.error('❌ Error saving Java submission:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to save quiz results',
+            error: error.message
+        });
+    }
+});
+
+//Alternative: Get questions by specific week (most common use case)
+router.get('/java/questions/week/:week', async (req, res) => {
+    try {
+        const { week } = req.params;
+        const { topic, subtopic, type, difficulty, limit } = req.query;
+        
+        // Validate week range
+        if (week < 1 || week > 11) {
+            return res.status(400).json({
+                success: false,
+                message: 'Week must be between 1 and 11'
+            });
+        }
+        
+        // Build filter
+        let filter = { week: parseInt(week) };
+        if (topic) filter.topic = topic;
+        if (subtopic) filter.subtopic = subtopic;
+        if (type) filter.type = type;
+        if (difficulty) filter.difficulty = difficulty;
+        
+        // Execute query with optional limit
+        let query = JavaQuestions.find(filter).sort({ questionId: 1 });
+        if (limit) {
+            query = query.limit(parseInt(limit));
+        }
+        
+        const questions = await query.lean();
+        
+        if (questions.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: `No questions found for week ${week}`,
+                filters: filter
+            });
+        }
+        
+        // Get statistics for the response
+        const stats = {
+            totalQuestions: questions.length,
+            byType: {},
+            byDifficulty: {},
+            byTopic: {},
+            totalMaxScore: questions.reduce((sum, q) => sum + (q.maxScore || 0), 0)
+        };
+        
+        // Calculate statistics
+        questions.forEach(q => {
+            // By type
+            stats.byType[q.type] = (stats.byType[q.type] || 0) + 1;
+            // By difficulty
+            stats.byDifficulty[q.difficulty] = (stats.byDifficulty[q.difficulty] || 0) + 1;
+            // By topic
+            stats.byTopic[q.topic] = (stats.byTopic[q.topic] || 0) + 1;
+        });
+        
+        res.json({
+            success: true,
+            week: parseInt(week),
+            count: questions.length,
+            statistics: stats,
+            questions: questions
+        });
+        
+    } catch (error) {
+        console.error('❌ Error fetching questions by week:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch questions',
+            error: error.message
+        });
+    }
+});
+
+
+// GET all DBMS submissions — merges test, coding, and interview quiz submissions
+router.get('/dbms-submission', async (req, res) => {
+  try {
+    const { email } = req.query;
+    const filter = email ? { email } : {};
+
+    const [testSubs, codingSubs, interviewSubs] = await Promise.all([
+      DBMSSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
+      CodingSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
+      InterviewSubmission.find(filter).sort({ timestamp: -1 }).select('-__v -questions').lean(),
+    ]);
+
+    const normalize = (sub, quizType) => ({
+      _id: sub._id,
+      email: sub.email,
+      username: sub.username,
+      topic: sub.topic,
+      score: sub.score,
+      maxScore: sub.maxScore,
+      percentage: sub.percentage,
+      timestamp: sub.timestamp,
+      quizType,
+    });
+
+    const merged = [
+      ...testSubs.map(s => normalize(s, 'test')),
+      ...codingSubs.map(s => normalize(s, 'coding')),
+      ...interviewSubs.map(s => normalize(s, 'interview')),
+    ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    res.json({ success: true, data: merged });
+
+  } catch (error) {
+    console.error('Error fetching DBMS submissions:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST — save DBMS quiz submission
+router.post('/dbms-submission', async (req, res) => {
+  try {
+    const submissionData = req.body;
+    const submission = new DBMSSubmission(submissionData);
+    await submission.save();
+    res.status(201).json({
+      success: true,
+      message: 'Quiz results saved successfully',
+      submissionId: submission._id
+    });
+  } catch (error) {
+    console.error('❌ Error saving DBMS submission:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to save quiz results',
+      error: error.message
+    });
+  }
+});
+
+// GET — fetch DBMS questions by week number
+router.get('/dbms/questions/week/:week', async (req, res) => {
+  try {
+    const { week } = req.params;
+    const { topic, subtopic, type, difficulty, limit } = req.query;
+
+    if (week < 1 || week > 11) {
+      return res.status(400).json({ success: false, message: 'Week must be between 1 and 11' });
+    }
+
+    let filter = { week: parseInt(week) };
+    if (topic) filter.topic = topic;
+    if (subtopic) filter.subtopic = subtopic;
+    if (type) filter.type = type;
+    if (difficulty) filter.difficulty = difficulty;
+
+    let query = DBMSQuestions.find(filter).sort({ questionId: 1 });
+    if (limit) query = query.limit(parseInt(limit));
+
+    const questions = await query.lean();
+
+    if (questions.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `No questions found for week ${week}`,
+        filters: filter
+      });
+    }
+
+    const stats = {
+      totalQuestions: questions.length,
+      byType: {}, byDifficulty: {}, byTopic: {},
+      totalMaxScore: questions.reduce((sum, q) => sum + (q.maxScore || 0), 0)
+    };
+    questions.forEach(q => {
+      stats.byType[q.type] = (stats.byType[q.type] || 0) + 1;
+      stats.byDifficulty[q.difficulty] = (stats.byDifficulty[q.difficulty] || 0) + 1;
+      stats.byTopic[q.topic] = (stats.byTopic[q.topic] || 0) + 1;
+    });
+
+    res.json({ success: true, week: parseInt(week), count: questions.length, statistics: stats, questions });
+
+  } catch (error) {
+    console.error('❌ Error fetching questions by week:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch questions', error: error.message });
+  }
+});
+
+
+// SAT course routes 
+
+// GET /api/sat_admin_scores — all attempts per student, grouped by email (for admin dashboard)
+router.get('/sat_admin_scores', async (req, res) => {
+  try {
+    const docs = await SatScore.find({}).lean()
+    const byEmail = {}
+    docs.forEach(doc => {
+      if (!byEmail[doc.email]) {
+        byEmail[doc.email] = { email: doc.email, name: doc.name, quizScores: [] }
+      }
+      ;(doc.attempts || []).forEach((attempt, i) => {
+        const pct = attempt.totalQuestions > 0
+          ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
+          : (attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0)
+        byEmail[doc.email].quizScores.push({
+          topic: doc.subject,
+          score: attempt.score,
+          maxScore: attempt.maxScore,
+          correctAnswers: attempt.correctAnswers,
+          totalQuestions: attempt.totalQuestions,
+          percentage: pct,
+          timestamp: attempt.dateAttempted,
+          attemptNumber: i + 1,
+        })
+      })
+    })
+    res.json({ success: true, data: Object.values(byEmail) })
   } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// GET /api/sat_exam_detail?email=...&subject=...&attemptNumber=... — question-by-question breakdown for one attempt
+router.get('/sat_exam_detail', async (req, res) => {
+  try {
+    const { email, subject, attemptNumber } = req.query
+    if (!email || !subject || !attemptNumber) {
+      return res.status(400).json({ success: false, message: 'email, subject, and attemptNumber are required' })
+    }
+
+    const doc = await SatScore.findOne({ email, subject }).lean()
+    if (!doc) return res.status(404).json({ success: false, message: 'Score record not found' })
+
+    const idx = parseInt(attemptNumber) - 1
+    const attempt = (doc.attempts || [])[idx]
+    if (!attempt) return res.status(404).json({ success: false, message: 'Attempt not found' })
+
+    const questionIds = (attempt.responses || []).map(r => r.questionId).filter(Boolean)
+    const questionMeta = await SatQuestion.find({ _id: { $in: questionIds } }).lean()
+    const metaMap = {}
+    questionMeta.forEach(q => { metaMap[String(q._id)] = q })
+
+    const enrichedResults = (attempt.responses || []).map((r, i) => {
+      const meta = metaMap[String(r.questionId)] || {}
+      return {
+        questionId:     r.questionId,
+        questionNumber: meta.question_number || i + 1,
+        questionText:   meta.question_text || '',
+        userAnswer:     r.userResponse,
+        correctAnswer:  meta.correct_answer,
+        isCorrect:      r.isCorrect,
+        marksAwarded:   r.marksAwarded,
+        difficulty:     meta.difficulty || null,
+        type:           meta.type || null,
+        options:        meta.options || [],
+        explanation:    meta.explanation || null,
+        points:         meta.points || 1,
+      }
+    })
+
+    const totalQuestions = attempt.totalQuestions || enrichedResults.length
+    const correctAnswers = attempt.correctAnswers || 0
+
+    // Compute difficulty breakdown
+    const difficultyStats = { easy: { total: 0, correct: 0 }, medium: { total: 0, correct: 0 }, hard: { total: 0, correct: 0 }, unknown: { total: 0, correct: 0 } }
+    enrichedResults.forEach(r => {
+      const d = r.difficulty || 'unknown'
+      difficultyStats[d].total++
+      if (r.isCorrect) difficultyStats[d].correct++
+    })
+
+    // Compute type breakdown
+    const typeStats = {}
+    enrichedResults.forEach(r => {
+      const t = r.type || 'unknown'
+      if (!typeStats[t]) typeStats[t] = { total: 0, correct: 0 }
+      typeStats[t].total++
+      if (r.isCorrect) typeStats[t].correct++
+    })
+
+    res.json({
+      success: true,
+      data: {
+        student: { email: doc.email, name: doc.name },
+        attempt: {
+          subject:        doc.subject,
+          attemptNumber:  parseInt(attemptNumber),
+          dateAttempted:  attempt.dateAttempted,
+          score:          attempt.score,
+          maxScore:       attempt.maxScore,
+          totalQuestions,
+          correctAnswers,
+          wrongAnswers:   attempt.wrongAnswers,
+          unattempted:    attempt.unattempted,
+          percentage:     totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0,
+        },
+        enrichedResults,
+        insights: {
+          difficultyStats,
+          typeStats,
+          hardestQuestions: enrichedResults
+            .filter(r => !r.isCorrect && r.difficulty === 'hard')
+            .map(r => ({ questionNumber: r.questionNumber, questionText: r.questionText, explanation: r.explanation })),
+        },
+      }
+    })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// ─── JEE Questions ────────────────────────────────────────────────────────────
+// GET /api/jee_questions?subject=Physics&difficulty=easy&limit=30
+router.get('/jee_questions', async (req, res) => {
+  try {
+    const { subject, difficulty, limit } = req.query
+    const filter = {}
+    if (subject) filter.subject = subject
+    if (difficulty) filter.difficulty = difficulty
+    const qs = await JeeQuestion.find(filter)
+      .limit(limit ? parseInt(limit) : 0)
+      .lean()
+    res.json(qs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/jee_scores — upsert: one doc per (email+subject), keep last 5 attempts
+router.post('/jee_scores', async (req, res) => {
+  try {
+    const { email, name, subject, totalQuestions, correctAnswers, wrongAnswers,
+            unattempted, score, maxScore, responses } = req.body
+    if (!email || !subject) return res.status(400).json({ error: 'email and subject are required' })
+
+    const newAttempt = {
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore,
+      // Only store questionId + userResponse + isCorrect + marksAwarded (no text/answer duplication)
+      responses: (responses || []).map(r => ({
+        questionId:   r.questionId,
+        userResponse: r.userResponse,
+        isCorrect:    r.isCorrect,
+        marksAwarded: r.marksAwarded,
+      })),
+      dateAttempted: new Date(),
+    }
+
+    // Upsert: find existing doc, prepend new attempt, slice to last 5
+    const doc = await JeeScore.findOneAndUpdate(
+      { email, subject },
+      {
+        $set:  { name },
+        $push: { attempts: { $each: [newAttempt], $position: 0, $slice: 5 } },
+      },
+      { upsert: true, new: true }
+    )
+    res.json({ success: true, data: { email: doc.email, subject: doc.subject, attemptCount: doc.attempts.length } })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/jee_scores?email=x@y.com  — returns latest attempt summary per subject
+router.get('/jee_scores', async (req, res) => {
+  try {
+    const { email } = req.query
+    const filter = email ? { email } : {}
+    const docs = await JeeScore.find(filter).lean()
+    // Return flattened: latest attempt per (email, subject)
+    const result = docs.map(doc => ({
+      email:          doc.email,
+      name:           doc.name,
+      subject:        doc.subject,
+      attemptCount:   doc.attempts?.length || 0,
+      // Latest attempt stats (index 0 = most recent)
+      ...(doc.attempts?.[0] || {}),
+    }))
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/jee_admin_scores — all JEE Advanced attempts per student, grouped by email (for admin dashboard)
+router.get('/jee_admin_scores', async (req, res) => {
+  try {
+    const docs = await JeeScore.find({}).lean()
+    const byEmail = {}
+    docs.forEach(doc => {
+      if (!byEmail[doc.email]) {
+        byEmail[doc.email] = { email: doc.email, name: doc.name, quizScores: [] }
+      }
+      ;(doc.attempts || []).forEach((attempt, i) => {
+        const attempted = (attempt.correctAnswers || 0) + (attempt.wrongAnswers || 0)
+        const accuracy  = attempted > 0 ? Math.round((attempt.correctAnswers / attempted) * 100) : 0
+        const scorePct  = attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0
+        byEmail[doc.email].quizScores.push({
+          topic:          doc.subject,
+          subject:        doc.subject,
+          paper:          attempt.paper || 'Single',
+          score:          attempt.score,
+          maxScore:       attempt.maxScore,
+          correctAnswers: attempt.correctAnswers,
+          wrongAnswers:   attempt.wrongAnswers,
+          unattempted:    attempt.unattempted,
+          totalQuestions: attempt.totalQuestions,
+          percentage:     scorePct,
+          accuracy,
+          timestamp:      attempt.dateAttempted,
+          attemptNumber:  i + 1,
+          responses:      attempt.responses || [],
+        })
+      })
+    })
+    res.json({ success: true, data: Object.values(byEmail) })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+
+// ═══ JEE Main (full-length papers + subject-wise practice) ════════════════════
+
+// GET /api/jee_main_papers
+// Groups jee_main_questions by (year, paper) and returns per-paper totals +
+// per-subject question counts / marks (shape expected by the JEE Main page).
+router.get('/jee_main_papers', async (req, res) => {
+  try {
+    const grouped = await JeeMainQuestion.aggregate([
+      {
+        $group: {
+          _id:   { year: '$year', paper: '$paper', subject: '$subject' },
+          count: { $sum: 1 },
+          marks: { $sum: { $ifNull: ['$points', 4] } },
+        },
+      },
+      {
+        $group: {
+          _id:            { year: '$_id.year', paper: '$_id.paper' },
+          totalQuestions: { $sum: '$count' },
+          totalMarks:     { $sum: '$marks' },
+          subjects:       { $push: { subject: '$_id.subject', count: '$count', totalMarks: '$marks' } },
+        },
+      },
+    ])
+
+    const result = grouped.map(p => {
+      const subjects = {}
+      p.subjects.forEach(s => { subjects[s.subject] = { count: s.count, totalMarks: s.totalMarks } })
+      return {
+        year:           p._id.year,
+        paper:          p._id.paper,
+        totalQuestions: p.totalQuestions,
+        totalMarks:     p.totalMarks,
+        subjects,
+      }
+    })
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/jee_main_questions_by_paper?year=...&paper=...  — all questions in one paper
+router.get('/jee_main_questions_by_paper', async (req, res) => {
+  try {
+    const { year, paper } = req.query
+    const filter = {}
+    if (paper) filter.paper = paper
+    if (year !== undefined && year !== '') {
+      const yearNum = Number(year)
+      // year is stored as Mixed (string or number) — match either representation
+      filter.year = (!isNaN(yearNum) && String(yearNum) === String(year)) ? { $in: [year, yearNum] } : year
+    }
+    const qs = await JeeMainQuestion.find(filter).lean()
+    res.json(qs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/jee_main_questions?subject=Physics&difficulty=easy&limit=30  — subject-wise pool
+router.get('/jee_main_questions', async (req, res) => {
+  try {
+    const { subject, difficulty, limit } = req.query
+    const filter = {}
+    if (subject) filter.subject = subject
+    if (difficulty) filter.difficulty = difficulty
+    const qs = await JeeMainQuestion.find(filter)
+      .limit(limit ? parseInt(limit) : 0)
+      .lean()
+    res.json(qs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/jee_main_scores — subject-wise quiz: upsert one doc per (email+subject), keep last 5
+router.post('/jee_main_scores', async (req, res) => {
+  try {
+    const { email, name, subject, totalQuestions, correctAnswers, wrongAnswers,
+            unattempted, score, maxScore, responses } = req.body
+    if (!email || !subject) return res.status(400).json({ error: 'email and subject are required' })
+
+    const newAttempt = {
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore,
+      responses: (responses || []).map(r => ({
+        questionId:   r.questionId,
+        userResponse: r.userResponse,
+        isCorrect:    r.isCorrect,
+        marksAwarded: r.marksAwarded,
+      })),
+      dateAttempted: new Date(),
+    }
+
+    const doc = await JeeMainScore.findOneAndUpdate(
+      { email, subject },
+      {
+        $set:  { name },
+        $push: { attempts: { $each: [newAttempt], $position: 0, $slice: 5 } },
+      },
+      { upsert: true, new: true }
+    )
+    res.json({ success: true, data: { email: doc.email, subject: doc.subject, attemptCount: doc.attempts.length } })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/jee_main_full_scores — full-length paper attempt (one doc per attempt)
+router.post('/jee_main_full_scores', async (req, res) => {
+  try {
+    const { email, name, year, paper, totalQuestions, correctAnswers, wrongAnswers,
+            unattempted, score, maxScore, subjectScores, responses, totalTimeTaken } = req.body
+    if (!email) return res.status(400).json({ error: 'email is required' })
+
+    const doc = await JeeMainFullScore.create({
+      email, name, year, paper, totalQuestions, correctAnswers, wrongAnswers,
+      unattempted, score, maxScore, subjectScores, responses, totalTimeTaken,
+      dateAttempted: new Date(),
+    })
+    res.json({ success: true, data: { _id: doc._id } })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/jee_main_full_scores?email=x@y.com — all full-paper attempts, newest first
+router.get('/jee_main_full_scores', async (req, res) => {
+  try {
+    const { email } = req.query
+    const filter = email ? { email } : {}
+    const docs = await JeeMainFullScore.find(filter).sort({ dateAttempted: -1 }).lean()
+    res.json(docs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/jee_main_admin_scores — all full-paper attempts grouped per student (admin dashboard)
+router.get('/jee_main_admin_scores', async (req, res) => {
+  try {
+    const docs = await JeeMainFullScore.find({}).sort({ dateAttempted: 1 }).lean()
+    const byEmail = {}
+    docs.forEach(doc => {
+      if (!byEmail[doc.email]) {
+        byEmail[doc.email] = { email: doc.email, name: doc.name, quizScores: [] }
+      }
+      const pct   = doc.maxScore > 0 ? Math.round((doc.score / doc.maxScore) * 100) : 0
+      const label = [doc.year, doc.paper].filter(Boolean).join(' · ') || 'JEE Main Paper'
+      byEmail[doc.email].quizScores.push({
+        attemptId:      doc._id,
+        topic:          label,
+        year:           doc.year,
+        paper:          doc.paper,
+        score:          doc.score,
+        maxScore:       doc.maxScore,
+        correctAnswers: doc.correctAnswers,
+        wrongAnswers:   doc.wrongAnswers,
+        unattempted:    doc.unattempted,
+        totalQuestions: doc.totalQuestions,
+        percentage:     pct,
+        subjectScores:  doc.subjectScores,
+        responses:      doc.responses,
+        totalTimeTaken: doc.totalTimeTaken,
+        timestamp:      doc.dateAttempted,
+        attemptNumber:  byEmail[doc.email].quizScores.length + 1,
+      })
+    })
+    res.json({ success: true, data: Object.values(byEmail) })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+
+
+// ─── SAT Debug — returns total count + distinct subjects in the collection ────
+router.get('/sat_debug', async (req, res) => {
+  try {
+    const totalQuestions = await SatQuestion.countDocuments()
+    const distinctSubjects = await SatQuestion.distinct('subject')
+    res.json({ totalQuestions, distinctSubjects })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── SAT Questions ────────────────────────────────────────────────────────────
+// GET /api/sat_questions?subject=Reading %26 Writing&paper=Module 1&difficulty=easy&limit=30
+router.get('/sat_questions', async (req, res) => {
+  try {
+    const { subject, difficulty, paper, limit } = req.query
+    const filter = {}
+    if (subject) {
+      // Normalise: treat "Reading & Writing" and "Reading and Writing" as the same.
+      // Build both forms and match either one, case-insensitively.
+      const withAmpersand = subject.replace(/\s+and\s+/gi, ' & ')
+      const withAnd       = subject.replace(/\s*&\s*/g, ' and ')
+      const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      filter.$or = [
+        { subject: { $regex: new RegExp('^' + esc(withAmpersand) + '$', 'i') } },
+        { subject: { $regex: new RegExp('^' + esc(withAnd)       + '$', 'i') } },
+      ]
+    }
+    if (difficulty) filter.difficulty = difficulty
+    if (paper) {
+      const escapedPaper = paper.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      filter.paper = { $regex: new RegExp('^' + escapedPaper + '$', 'i') }
+    }
+    const qs = await SatQuestion.find(filter)
+      .limit(limit ? parseInt(limit) : 0)
+      .lean()
+    res.json(qs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/sat_scores — upsert: one doc per (email+subject), keep last 5 attempts
+router.post('/sat_scores', async (req, res) => {
+  try {
+    const { email, name, subject, totalQuestions, correctAnswers, wrongAnswers,
+            unattempted, score, maxScore, responses } = req.body
+    if (!email || !subject) return res.status(400).json({ error: 'email and subject are required' })
+
+    const newAttempt = {
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore,
+      responses: (responses || []).map(r => ({
+        questionId:   r.questionId,
+        userResponse: r.userResponse,
+        isCorrect:    r.isCorrect,
+        marksAwarded: r.marksAwarded,
+      })),
+      dateAttempted: new Date(),
+    }
+
+    const doc = await SatScore.findOneAndUpdate(
+      { email, subject },
+      {
+        $set:  { name },
+        $push: { attempts: { $each: [newAttempt], $position: 0, $slice: 5 } },
+      },
+      { upsert: true, new: true }
+    )
+    res.json({ success: true, data: { email: doc.email, subject: doc.subject, attemptCount: doc.attempts.length } })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/sat_scores?email=x@y.com  — returns all attempts as flat records (newest first per subject)
+router.get('/sat_scores', async (req, res) => {
+  try {
+    const { email } = req.query
+    const filter = email ? { email } : {}
+    const docs = await SatScore.find(filter).lean()
+    const result = docs.flatMap(doc =>
+      (doc.attempts || []).map(attempt => ({
+        email:   doc.email,
+        name:    doc.name,
+        subject: doc.subject,
+        ...attempt,
+      }))
+    )
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── SAT Papers aggregation ───────────────────────────────────────────────────
+// GET /api/sat_papers  — groups sat_questions by (paper, year) and returns per-paper totals
+router.get('/sat_papers', async (req, res) => {
+  try {
+    const grouped = await SatQuestion.aggregate([
+      {
+        // Normalise subject so both "Reading & Writing" and "Reading and Writing" collapse into one key
+        $addFields: {
+          _normSubject: {
+            $cond: {
+              if: { $regexMatch: { input: { $ifNull: ['$subject', ''] }, regex: /reading/i } },
+              then: 'Reading & Writing',
+              else: '$subject',
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id:   { paper: '$paper', year: '$year', subject: '$_normSubject' },
+          count: { $sum: 1 },
+          marks: { $sum: { $ifNull: ['$points', 1] } },
+        },
+      },
+      {
+        $group: {
+          _id:            { paper: '$_id.paper', year: '$_id.year' },
+          totalQuestions: { $sum: '$count' },
+          totalMarks:     { $sum: '$marks' },
+          subjects:       { $push: { subject: '$_id.subject', count: '$count', totalMarks: '$marks' } },
+        },
+      },
+    ])
+
+    const result = grouped.map(p => {
+      const subjects = {}
+      p.subjects.forEach(s => { subjects[s.subject] = { count: s.count, totalMarks: s.totalMarks } })
+      return {
+        paper:          p._id.paper,
+        year:           p._id.year,
+        totalQuestions: p.totalQuestions,
+        totalMarks:     p.totalMarks,
+        subjects,
+      }
+    })
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/sat_full_scores — save one full-paper attempt
+router.post('/sat_full_scores', async (req, res) => {
+  try {
+    const {
+      email, name, paper, year,
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore, sectionScores, responses, totalTimeTaken,
+    } = req.body
+    if (!email || !paper) return res.status(400).json({ error: 'email and paper are required' })
+
+    const doc = new SatFullScore({
+      email, name, paper, year,
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore, sectionScores,
+      responses: (responses || []).map(r => ({
+        questionId:   r.questionId,
+        subject:      r.subject,
+        userResponse: r.userResponse,
+        isCorrect:    r.isCorrect,
+        marksAwarded: r.marksAwarded,
+        unattempted:  r.unattempted,
+        timeTaken:    r.timeTaken,
+      })),
+      totalTimeTaken,
+      dateAttempted: new Date(),
+    })
+    await doc.save()
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/sat_full_scores?email=x@y.com — all full-paper attempts newest first
+router.get('/sat_full_scores', async (req, res) => {
+  try {
+    const { email } = req.query
+    if (!email) return res.status(400).json({ error: 'email is required' })
+    const docs = await SatFullScore.find({ email }).sort({ dateAttempted: -1 }).lean()
+    res.json(docs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+// ============================================
+
+
+
+
+
+// NEW PROGRAMMING SINGLE COLLECTION/SCHEMA DESIGN ROUTES----->>>>>>
+//GET QUESTIONS for quiz ( java , python, pdsa, dbms
+router.get('/mcq-questions', async (req, res) => {
+  try {
+    const { 
+      course,      // Required: 'java', 'python', 'sql', etc.
+      week,        // Required: week number
+      email,       // Optional: for logging/analytics
+      count = 10,  // Number of questions to return
+      difficulty,  // Optional: 'easy', 'medium', 'hard'
+      question_type, // Optional: 'mcq', 'msq', 'true-false'
+      topic,       // Optional: filter by topic
+      subtopic     // Optional: filter by subtopic
+    } = req.query;
+
+    // Validation
+    if (!course || !week) {
+      return res.status(400).json({
+        error: 'course and week are required',
+        example: '/api/questions?course=java&week=3&count=10'
+      });
+    }
+
+    const weekNum = parseInt(week);
+    if (isNaN(weekNum) || weekNum < 1) {
+      return res.status(400).json({ error: 'week must be a positive number' });
+    }
+
+    // Build filter
+    const filter = {
+      course: course,
+      week: weekNum,
+      is_active: true
+    };
+    
+    if (difficulty) filter.difficulty = difficulty;
+    if (question_type) filter.question_type = question_type;
+    if (topic) filter.topic = topic;
+    if (subtopic) filter.subtopic = subtopic;
+
+    // Get questions pool
+    let pool = await ProgrammingQuizQuestion.find(filter).lean();
+
+    if (pool.length === 0) {
+      return res.status(404).json({ 
+        error: `No active questions found for ${course} week ${weekNum}`,
+        filter_used: filter
+      });
+    }
+
+    // Fisher-Yates shuffle
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+
+    // Select requested number of questions
+    const requestedCount = Math.min(parseInt(count), pool.length);
+    const selected = pool.slice(0, requestedCount);
+
+    // Remove answer data before sending to client
+    const questionsForClient = selected.map(q => ({
+      _id: q._id,
+      question_text: q.question_text,
+      question_type: q.question_type,
+      options: q.options,
+      has_latex: q.has_latex,
+      image_url: q.image_url,
+      code_snippet: q.code_snippet,
+      points: q.points,
+      difficulty: q.difficulty,
+      topic: q.topic,
+      subtopic: q.subtopic,
+      concept_tags: q.concept_tags,
+      bloom_level: q.bloom_level
+      // Note: answers field is NOT sent to client
+    }));
+
+    return res.status(200).json({
+      success: true,
+      questions: questionsForClient,
+      metadata: {
+        course: course,
+        week: weekNum,
+        pool_size: pool.length,
+        returned: questionsForClient.length,
+        requested: requestedCount,
+        filters_applied: {
+          difficulty: difficulty || 'all',
+          question_type: question_type || 'all',
+          topic: topic || 'all',
+          subtopic: subtopic || 'all'
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching questions:', error);
+    return res.status(500).json({ 
+      error: 'Failed to fetch questions', 
+      details: error.message 
+    });
+  }
+});
+
+// ============================================
+// SUBMIT QUIZ ANSWERS (server-side grading)
+router.post('/mcq-quiz/submit', async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { email, username, quizData } = req.body;
+
+    if (!email || !quizData) {
+      return res.status(400).json({ error: 'email and quizData are required' });
+    }
+
+    const {
+      course,
+      week,
+      topic,
+      questionResults: clientResults,
+      startTime,
+      endTime,
+      totalTimeTaken,
+      cheatCount
+    } = quizData;
+
+    if (!course || !week) {
+      return res.status(400).json({ error: 'course and week are required in quizData' });
+    }
+
+    if (!Array.isArray(clientResults) || clientResults.length === 0) {
+      return res.status(400).json({ error: 'questionResults array is required' });
+    }
+
+    // ── 1. Fetch correct answers from DB ───────────────────────────
+    const questionIds = clientResults.map(qr => qr.questionId).filter(Boolean);
+    const questions = await ProgrammingQuizQuestion.find({ _id: { $in: questionIds } }).lean();
+    const questionMap = {};
+    questions.forEach(q => { questionMap[String(q._id)] = q; });
+
+    // ── 2. Grade each question server-side ─────────────────────────
+    let totalScore = 0;
+    let correctCount = 0;
+    const difficultyBreakdown = {
+      easy:   { attempted: 0, correct: 0 },
+      medium: { attempted: 0, correct: 0 },
+      hard:   { attempted: 0, correct: 0 }
+    };
+
+    const gradedResults = clientResults.map(cr => {
+      const q = questionMap[String(cr.questionId)];
+      if (!q) return {
+        questionId: cr.questionId, isCorrect: false, marksAwarded: 0,
+        userAnswer: cr.userAnswer, timeTaken: cr.timeTaken || 0,
+        difficulty: 'medium', topic: topic || '', subtopic: '',
+        question_type: 'mcq', concept_tags: [], bloom_level: 'apply'
+      };
+
+      const userAns = cr.userAnswer;
+      const correct = q.answers?.correct;
+      let isCorrect = false;
+
+      if (q.question_type === 'mcq') {
+        // options are {id, text}; correct is an option id or text
+        const correctOpt = q.options?.find(o => o.id === correct || o.text === correct);
+        const userOpt = q.options?.find(o => o.id === userAns || o.text === userAns);
+        isCorrect = !!(correctOpt && userOpt && correctOpt.id === userOpt.id);
+      } else if (q.question_type === 'msq') {
+        const correctArr = (Array.isArray(correct) ? correct : [correct]).map(String).sort();
+        const userArr = (Array.isArray(userAns) ? userAns : (userAns ? [userAns] : [])).map(String).sort();
+        isCorrect = JSON.stringify(correctArr) === JSON.stringify(userArr);
+      } else if (q.question_type === 'numeric') {
+        const tolerance = q.answers?.tolerance || 0;
+        const userNum = parseFloat(userAns);
+        const correctNum = parseFloat(correct);
+        isCorrect = !isNaN(userNum) && Math.abs(userNum - correctNum) <= tolerance;
+      } else if (q.question_type === 'true-false') {
+        isCorrect = String(userAns).toLowerCase() === String(correct).toLowerCase();
+      }
+
+      const marksAwarded = isCorrect ? (q.points || 1) : 0;
+      if (isCorrect) { correctCount++; totalScore += marksAwarded; }
+
+      const diff = q.difficulty || 'medium';
+      if (difficultyBreakdown[diff]) {
+        difficultyBreakdown[diff].attempted++;
+        if (isCorrect) difficultyBreakdown[diff].correct++;
+      }
+
+      return {
+        questionId: cr.questionId,
+        isCorrect,
+        marksAwarded,
+        userAnswer: userAns ?? null,
+        timeTaken: cr.timeTaken || 0,
+        // Question metadata (for review)
+        question_text: q.question_text,
+        question_type: q.question_type,
+        options: q.options,
+        correct_answer: q.answers?.correct,
+        code_snippet: q.code_snippet || null,
+        image_url: q.image_url || null,
+        solution: q.solution || null,
+        points: q.points || 1,
+        difficulty: q.difficulty || 'medium',
+        topic: q.topic || topic || '',
+        subtopic: q.subtopic || '',
+        concept_tags: q.concept_tags || [],
+        bloom_level: q.bloom_level || 'apply'
+      };
+    });
+
+    const maxPossibleScore = questions.reduce((sum, q) => sum + (q.points || 1), 0);
+    const finalPercentage = maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0;
+
+    // ── 3. Save attempt summary ────────────────────────────────────
+    const [attempt] = await ProgrammingQuizAttempt.create([{
+      email,
+      username: username || email.split('@')[0],
+      course,
+      week: parseInt(week),
+      topic: topic || '',
+      score: totalScore,
+      max_possible_score: maxPossibleScore,
+      percentage: finalPercentage,
+      total_questions: clientResults.length,
+      correct_answers: correctCount,
+      easy_attempted:   difficultyBreakdown.easy.attempted,
+      easy_correct:     difficultyBreakdown.easy.correct,
+      medium_attempted: difficultyBreakdown.medium.attempted,
+      medium_correct:   difficultyBreakdown.medium.correct,
+      hard_attempted:   difficultyBreakdown.hard.attempted,
+      hard_correct:     difficultyBreakdown.hard.correct,
+      total_time_seconds: totalTimeTaken || 0,
+      started_at: new Date(startTime),
+      submitted_at: new Date(endTime),
+      is_completed: true,
+      cheat_count: cheatCount || 0
+    }], { session });
+
+    // ── 4. Save per-question results ───────────────────────────────
+    const resultDocs = gradedResults.map(gr => ({
+      attempt_id: attempt._id,
+      email,
+      course,
+      week: parseInt(week),
+      question_id: gr.questionId,
+      user_answer: gr.userAnswer,
+      is_correct: gr.isCorrect,
+      marks_awarded: gr.marksAwarded,
+      time_taken_seconds: gr.timeTaken,
+      difficulty: gr.difficulty,
+      topic: gr.topic,
+      subtopic: gr.subtopic,
+      question_type: gr.question_type,
+      concept_tags: gr.concept_tags,
+      bloom_level: gr.bloom_level
+    }));
+
+    await ProgrammingQuizResult.insertMany(resultDocs, { session });
+    await session.commitTransaction();
+
+    return res.status(201).json({
+      success: true,
+      attempt_id: attempt._id,
+      message: 'Quiz saved successfully',
+      stats: {
+        score: totalScore,
+        maxPossibleScore,
+        percentage: finalPercentage,
+        correct: correctCount,
+        total: clientResults.length
+      },
+      question_results: gradedResults  // Full review data returned to client
+    });
+
+  } catch (error) {
+    await session.abortTransaction();
+    console.error('❌ Error saving quiz attempt:', error);
+    return res.status(500).json({ error: 'Failed to save quiz attempt', details: error.message });
+  } finally {
+    session.endSession();
+  }
+});
+
+// ============================================
+// GET ALL ATTEMPTS for a user (with filters)
+router.get('/mcq-quiz/attempts', async (req, res) => {
+  try {
+    const { email, course } = req.query;
+    if (!email) return res.status(400).json({ error: 'email is required' });
+
+    const filter = { email };
+    if (course) filter.course = course;
+
+    const attempts = await ProgrammingQuizAttempt.find(filter)
+      .sort({ submitted_at: -1 })
+      .lean();
+
+    return res.status(200).json({ success: true, attempts });
+  } catch (error) {
+    console.error('❌ Error fetching attempts:', error);
+    return res.status(500).json({ error: 'Failed to fetch attempts', details: error.message });
+  }
+});
+
+// ============================================
+// ADMIN: GET ALL ATTEMPTS ACROSS ALL STUDENTS (optional course filter)
+router.get('/mcq-quiz/admin/attempts', async (req, res) => {
+  try {
+    const { course } = req.query;
+
+    const filter = {};
+    if (course) filter.course = course;
+
+    const attempts = await ProgrammingQuizAttempt.find(filter)
+      .sort({ submitted_at: -1 })
+      .lean();
+
+    return res.status(200).json({ success: true, attempts });
+  } catch (error) {
+    console.error('❌ Error fetching admin attempts:', error);
+    return res.status(500).json({ error: 'Failed to fetch attempts', details: error.message });
+  }
+});
+
+// ============================================
+// ADMIN: GET PER-QUESTION RESULTS FOR ONE ATTEMPT (with question text/answers)
+
+router.get('/mcq-quiz/admin/attempts/:attemptId/results', async (req, res) => {
+  try {
+    const { attemptId } = req.params;
+
+    const results = await ProgrammingQuizResult.find({ attempt_id: attemptId }).lean();
+    if (!results.length) {
+      return res.status(404).json({ error: 'No results found for this attempt' });
+    }
+
+    const questionIds = results.map(r => r.question_id).filter(Boolean);
+    const questions = await ProgrammingQuizQuestion.find({ _id: { $in: questionIds } }).lean();
+    const questionMap = {};
+    questions.forEach(q => { questionMap[String(q._id)] = q; });
+
+    const enriched = results.map(r => {
+      const q = questionMap[String(r.question_id)];
+      return {
+        ...r,
+        question_text: q?.question_text || '',
+        options: q?.options || [],
+        correct_answer: q?.answers?.correct,
+        code_snippet: q?.code_snippet || null,
+        image_url: q?.image_url || null,
+        solution: q?.solution || null,
+        points: q?.points || 1
+      };
+    });
+
+    return res.status(200).json({ success: true, results: enriched });
+  } catch (error) {
+    console.error('❌ Error fetching admin results:', error);
+    return res.status(500).json({ error: 'Failed to fetch results', details: error.message });
+  }
+});
+
+
+
+// ============================================
+// NEW CODING/PROGRAMMING QUIZ ROUTES (CodingQuestions / CodingSubmission / CodingTestCase)
+// ============================================
+
+// GET /api/coding-questions?course=&week=&topic=&difficulty=&language=
+router.get('/coding-questions', async (req, res) => {
+  try {
+    const { course, week, topic, difficulty, language } = req.query;
+    if (!course || !week) {
+      return res.status(400).json({ error: 'course and week are required' });
+    }
+
+    const filter = { course, week: Number(week), is_active: true };
+    if (topic) filter.topic = topic;
+    if (difficulty) filter.difficulty = difficulty;
+    if (language) filter.language = language;
+
+    const questions = await CodingQuestion.find(filter).sort({ difficulty: 1 }).lean();
+    if (questions.length === 0) {
+      return res.status(200).json({ success: true, questions: [] });
+    }
+
+    const questionIds = questions.map(q => q._id);
+    const testCases = await CodingTestCase.find({
+      question_id: { $in: questionIds },
+      is_active: true
+    }).sort({ testcase_number: 1 }).lean();
+
+    const testCasesByQuestion = {};
+    testCases.forEach(tc => {
+      const qid = String(tc.question_id);
+      if (!testCasesByQuestion[qid]) testCasesByQuestion[qid] = [];
+      testCasesByQuestion[qid].push({
+        testcase_number: tc.testcase_number,
+        input: tc.input,
+        expected_output: tc.expected_output,
+        explanation: tc.explanation,
+        is_hidden: tc.is_hidden,
+        is_sample: tc.is_sample,
+        weightage: tc.weightage
+      });
+    });
+
+    const result = questions.map(q => {
+      const { solution, ...rest } = q;
+      return {
+        ...rest,
+        testCases: testCasesByQuestion[String(q._id)] || []
+      };
+    });
+
+    return res.status(200).json({ success: true, questions: result });
+  } catch (error) {
+    console.error('❌ Error fetching coding questions:', error);
+    return res.status(500).json({ error: 'Failed to fetch coding questions', details: error.message });
+  }
+});
+
+// POST /api/coding-submit
+// body: { email, username, course, week, topic, results: [{ questionId, language, sourceCode, verdict, passed_testcases, total_testcases, score, percentage, execution_time_ms }] }
+router.post('/coding-submit', async (req, res) => {
+  try {
+    const { email, username, course, week, topic, results } = req.body;
+    if (!email || !course || !week || !Array.isArray(results) || results.length === 0) {
+      return res.status(400).json({ error: 'email, course, week and results are required' });
+    }
+
+    const docs = [];
+    for (const r of results) {
+      const { questionId, language, sourceCode, verdict, passed_testcases, total_testcases, score, percentage, execution_time_ms } = r;
+      if (!questionId || !language || sourceCode === undefined) continue;
+
+      const submissionCount = await CodingSubmission.countDocuments({ email, question_id: questionId });
+
+      docs.push({
+        email,
+        username,
+        question_id: questionId,
+        course,
+        week: Number(week),
+        topic: r.topic || topic,
+        language,
+        source_code: sourceCode,
+        verdict: verdict || 'Wrong Answer',
+        passed_testcases: passed_testcases || 0,
+        total_testcases: total_testcases || 0,
+        score: score || 0,
+        percentage: percentage || 0,
+        execution_time_ms: execution_time_ms ?? null,
+        submission_number: submissionCount + 1
+      });
+    }
+
+    if (docs.length === 0) {
+      return res.status(400).json({ error: 'No valid submission results provided' });
+    }
+
+    const saved = await CodingSubmission.insertMany(docs);
+
+    return res.status(201).json({ success: true, message: 'Submissions saved', count: saved.length, submissions: saved });
+  } catch (error) {
+    console.error('❌ Error saving coding submission:', error);
+    return res.status(500).json({ error: 'Failed to save submission', details: error.message });
+  }
+});
+
+// GET /api/coding-submissions?email=&course=&week=
+router.get('/coding-submissions', async (req, res) => {
+  try {
+    const { email, course, week } = req.query;
+    if (!email) return res.status(400).json({ error: 'email is required' });
+
+    const filter = { email };
+    if (course) filter.course = course;
+    if (week) filter.week = Number(week);
+
+    const submissions = await CodingSubmission.find(filter)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.status(200).json({ success: true, submissions });
+  } catch (error) {
+    console.error('❌ Error fetching coding submissions:', error);
+    return res.status(500).json({ error: 'Failed to fetch coding submissions', details: error.message });
+  }
+});
+
+// GET /api/coding-progress?email=&course=
+// Returns per-week best-attempt progress, used by CoursePage to show coding progress
+router.get('/coding-progress', async (req, res) => {
+  try {
+    const { email, course } = req.query;
+    if (!email) return res.status(400).json({ error: 'email is required' });
+
+    const filter = { email };
+    if (course) filter.course = course;
+
+    const submissions = await CodingSubmission.find(filter).lean();
+
+    // Keep only the best (highest percentage) submission per question
+    const bestByQuestion = {};
+    submissions.forEach(s => {
+      const qid = String(s.question_id);
+      if (!bestByQuestion[qid] || s.percentage > bestByQuestion[qid].percentage) {
+        bestByQuestion[qid] = s;
+      }
+    });
+
+    // Aggregate per course/week
+    const weekMap = {};
+    Object.values(bestByQuestion).forEach(s => {
+      const key = `${s.course}_${s.week}`;
+      if (!weekMap[key]) {
+        weekMap[key] = {
+          course: s.course,
+          week: s.week,
+          topic: s.topic,
+          totalQuestions: 0,
+          solvedQuestions: 0,
+          totalPercentage: 0
+        };
+      }
+      weekMap[key].totalQuestions += 1;
+      weekMap[key].totalPercentage += s.percentage;
+      if (s.verdict === 'Accepted') weekMap[key].solvedQuestions += 1;
+    });
+
+    const progress = Object.values(weekMap).map(w => ({
+      ...w,
+      averagePercentage: w.totalQuestions > 0 ? Math.round(w.totalPercentage / w.totalQuestions) : 0
+    }));
+
+    return res.status(200).json({ success: true, progress });
+  } catch (error) {
+    console.error('❌ Error fetching coding progress:', error);
+    return res.status(500).json({ error: 'Failed to fetch coding progress', details: error.message });
   }
 });
 
@@ -3135,7 +5884,9 @@ router.get('/admin-notifications', async (req, res) => {
     const [
       math1Users, stats1Users, ctUsers,
       math2Users, stats2Users,
-      codingUsers, pdsaUsers
+      codingUsers, pdsaUsers, 
+      satDocs, progAttempts
+        
     ] = await Promise.all([
       iitm_math_score.find({}, { email:1, username:1, name:1,
         'quizScores.topic':1, 'quizScores.score':1, 'quizScores.percentage':1,
@@ -3153,12 +5904,18 @@ router.get('/admin-notifications', async (req, res) => {
         'scores.week':1, 'scores.subtopic':1, 'scores.score':1,
         'scores.correctAnswers':1, 'scores.totalQuestions':1, 'scores.dateAttempted':1
       }).lean(),
-      IITM_Stats_2_Score.find({}, { email:1, name:1,
+      IITStats2Scores.find({}, { email:1, name:1,
         'scores.week':1, 'scores.subtopic':1, 'scores.score':1,
         'scores.correctAnswers':1, 'scores.totalQuestions':1, 'scores.dateAttempted':1
       }).lean(),
-      CodingSubmission.find({}, { email:1, username:1, name:1, topic:1, percentage:1, score:1, maxScore:1, timestamp:1 }).lean(),
-      PDSA_Submission.find({}, { email:1, username:1, name:1, topic:1, percentage:1, score:1, maxScore:1, timestamp:1 }).lean(),
+      pdsaCodingSubmission.find({}, { email:1, username:1, name:1, topic:1, percentage:1, score:1, maxScore:1, timestamp:1 }).lean(),
+      pdsaSubmission.find({}, { email:1, username:1, name:1, topic:1, percentage:1, score:1, maxScore:1, timestamp:1 }).lean(),
+
+      ProgrammingQuizAttempt.find({}, { email:1, username:1, course:1, week:1, topic:1, percentage:1, submitted_at:1 }).lean(),
+
+      SatScore.find({}, { email:1, name:1, subject:1,
+        'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
+        'attempts.totalQuestions':1, 'attempts.dateAttempted':1}).lean(),
     ])
 
     const all = []
@@ -3238,6 +5995,46 @@ router.get('/admin-notifications', async (req, res) => {
         timestamp: s.timestamp
       }))
 
+     // Programming courses (Java, Python, SQL, DSA)
+    const progCourseMap = {
+      java:   { label: 'Java Programming',            icon: 'bi-cup-hot-fill',    iconClass: 'java'   },
+      python: { label: 'Python Programming',          icon: 'bi-filetype-py',     iconClass: 'python' },
+      sql:    { label: 'SQL & Databases',             icon: 'bi-database-fill',   iconClass: 'sql'    },
+      dsa:    { label: 'Data Structures & Algorithms',icon: 'bi-diagram-3-fill',  iconClass: 'dsa'    },
+    }
+    progAttempts
+      .filter(a => a.email && a.email.toLowerCase() !== 'test@example.com')
+      .forEach(a => {
+        const cm = progCourseMap[a.course] || { label: a.course, icon: 'bi-code-slash', iconClass: 'programming' }
+        all.push({
+          userName: a.username || a.email,
+          subject: cm.label,
+          subjectKey: a.course,
+          icon: cm.icon,
+          iconClass: cm.iconClass,
+          topic: a.topic ? `Week ${a.week} — ${a.topic}` : `Week ${a.week}`,
+          score: a.percentage || 0,
+          timestamp: a.submitted_at
+        })
+      })
+
+
+    // SAT
+    satDocs.forEach(doc => {
+      ;(doc.attempts || []).forEach(attempt => {
+        const pct = attempt.totalQuestions > 0
+          ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
+          : (attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0)
+        all.push({
+          userName: doc.name || doc.email,
+          subject: 'SAT', subjectKey: 'sat', icon: 'bi-pencil-fill', iconClass: 'sat',
+          topic: doc.subject || 'SAT Section',
+          score: pct,
+          timestamp: attempt.dateAttempted
+        })
+      })
+    })
+
     all.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
     res.json({ success: true, data: all.slice(0, 50) })
   } catch (err) {
@@ -3245,33 +6042,531 @@ router.get('/admin-notifications', async (req, res) => {
   }
 })
 
+
+
+
+// ─── GRE Debug — returns total count + distinct subjects in the collection ────
+router.get('/gre_debug', async (req, res) => {
+  try {
+    const totalQuestions = await GreQuestion.countDocuments()
+    const distinctSubjects = await GreQuestion.distinct('subject')
+    res.json({ totalQuestions, distinctSubjects })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Maps 0-100% raw accuracy onto the official GRE 130-170 scaled-score range.
+// No public GRE concordance table is available, so this is a linear approximation —
+// not applicable to Analytical Writing (essay), which is never auto-scored.
+function greScaledScore(correctAnswers, totalQuestions) {
+  if (!totalQuestions) return null
+  const pct = Math.max(0, Math.min(1, correctAnswers / totalQuestions))
+  return 130 + Math.round(pct * 40)
+}
+
+// ─── GRE Questions ────────────────────────────────────────────────────────────
+// GET /api/gre_questions?subject=Verbal Reasoning&paper=Module 1&difficulty=easy&limit=30
+router.get('/gre_questions', async (req, res) => {
+  try {
+    const { subject, difficulty, paper, limit } = req.query
+    const filter = {}
+    if (subject) {
+      const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      filter.subject = { $regex: new RegExp('^' + esc(subject) + '$', 'i') }
+    }
+    if (difficulty) filter.difficulty = difficulty
+    if (paper) {
+      const escapedPaper = paper.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      filter.paper = { $regex: new RegExp('^' + escapedPaper + '$', 'i') }
+    }
+    const qs = await GreQuestion.find(filter)
+      .limit(limit ? parseInt(limit) : 0)
+      .lean()
+    res.json(qs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/jee_questions?subject=Physics&difficulty=easy&limit=30
+router.get('/jee_questions', async (req, res) => {
+  try {
+    const { subject, difficulty, limit } = req.query
+    const filter = {}
+    if (subject) filter.subject = subject
+    if (difficulty) filter.difficulty = difficulty
+    const qs = await JeeQuestion.find(filter)
+      .limit(limit ? parseInt(limit) : 0)
+      .lean()
+    res.json(qs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+
+// POST /api/gre_scores — upsert: one doc per (email+subject), keep last 5 attempts
+router.post('/gre_scores', async (req, res) => {
+  try {
+    const { email, name, subject, totalQuestions, correctAnswers, wrongAnswers,
+            unattempted, score, maxScore, responses, essayResponse } = req.body
+    if (!email || !subject) return res.status(400).json({ error: 'email and subject are required' })
+
+    const isEssay = subject === 'Analytical Writing'
+
+    const newAttempt = {
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore,
+      scaledScore:   isEssay ? null : greScaledScore(correctAnswers, totalQuestions),
+      essayResponse: isEssay ? (essayResponse || '') : null,
+      essayStatus:   isEssay ? 'pending_review' : null,
+      responses: (responses || []).map(r => ({
+        questionId:   r.questionId,
+        userResponse: r.userResponse,
+        isCorrect:    r.isCorrect,
+        marksAwarded: r.marksAwarded,
+      })),
+      dateAttempted: new Date(),
+    }
+
+    const doc = await GreScore.findOneAndUpdate(
+      { email, subject },
+      {
+        $set:  { name },
+        $push: { attempts: { $each: [newAttempt], $position: 0, $slice: 5 } },
+      },
+      { upsert: true, new: true }
+    )
+    res.json({ success: true, data: { email: doc.email, subject: doc.subject, attemptCount: doc.attempts.length } })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/gre_scores?email=x@y.com  — returns all attempts as flat records (newest first per subject)
+router.get('/gre_scores', async (req, res) => {
+  try {
+    const { email } = req.query
+    const filter = email ? { email } : {}
+    const docs = await GreScore.find(filter).lean()
+    const result = docs.flatMap(doc =>
+      (doc.attempts || []).map(attempt => ({
+        email:   doc.email,
+        name:    doc.name,
+        subject: doc.subject,
+        ...attempt,
+      }))
+    )
+    res.json(result)
+// ══ JEE Advanced Admin Routes ════════════════════════════════════════════════
+
+// GET /api/jee_admin — overview table: one row per student with latest score per subject
+router.get('/jee_admin', async (req, res) => {
+  try {
+    const docs = await JeeScore.find({}).lean()
+    const byEmail = {}
+    docs.forEach(doc => {
+      if (!byEmail[doc.email]) {
+        byEmail[doc.email] = { email: doc.email, name: doc.name, subjects: [] }
+      }
+      const latest = doc.attempts?.[0] || {}
+      byEmail[doc.email].subjects.push({
+        subject:       doc.subject,
+        score:         latest.score         ?? 0,
+        maxScore:      latest.maxScore      ?? 0,
+        attemptCount:  doc.attempts?.length ?? 0,
+        dateAttempted: latest.dateAttempted ?? null,
+      })
+    })
+    res.json({ success: true, data: Object.values(byEmail) })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// GET /api/jee_admin/topic_analysis?email=&subject=
+router.get('/jee_admin/topic_analysis', async (req, res) => {
+  try {
+    const { email, subject } = req.query
+    if (!email || !subject) return res.status(400).json({ error: 'email and subject required' })
+
+    const doc = await JeeScore.findOne({ email, subject }).lean()
+    if (!doc || !doc.attempts?.length) return res.json({ data: [], dateAttempted: null })
+
+    const latest    = doc.attempts[0]
+    const responses = latest.responses || []
+    const qIds      = responses.map(r => r.questionId).filter(Boolean)
+    const questions = await JeeQuestion.find({ _id: { $in: qIds } }).lean()
+    const qMap = {}
+    questions.forEach(q => { qMap[String(q._id)] = q })
+
+    const topicMap = {}
+    responses.forEach(r => {
+      const q        = qMap[String(r.questionId)] || {}
+      const topic    = q.topic    || 'Unknown'
+      const subtopic = q.subtopic || ''
+      const key      = topic + '||' + subtopic
+      if (!topicMap[key]) topicMap[key] = { topic, subtopic, correct: 0, total: 0, timeSum: 0 }
+      topicMap[key].total++
+      if (r.isCorrect) topicMap[key].correct++
+      topicMap[key].timeSum += q.average_time_seconds || 60
+    })
+
+    const data = Object.values(topicMap)
+      .map(t => ({
+        topic:    t.topic,
+        subtopic: t.subtopic,
+        accuracy: t.total > 0 ? Math.round((t.correct / t.total) * 100) : 0,
+        correct:  t.correct,
+        total:    t.total,
+        avgTime:  t.total > 0 ? Math.round(t.timeSum / t.total) : 0,
+      }))
+      .sort((a, b) => a.accuracy - b.accuracy)
+
+    res.json({ data, dateAttempted: latest.dateAttempted })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+
+// ─── GRE Papers aggregation ───────────────────────────────────────────────────
+// GET /api/gre_papers  — groups gre_questions by (paper, year) and returns per-paper totals
+router.get('/gre_papers', async (req, res) => {
+  try {
+    const grouped = await GreQuestion.aggregate([
+      {
+        $group: {
+          _id:   { paper: '$paper', year: '$year', subject: '$subject' },
+          count: { $sum: 1 },
+          marks: { $sum: { $ifNull: ['$points', 1] } },
+        },
+      },
+      {
+        $group: {
+          _id:            { paper: '$_id.paper', year: '$_id.year' },
+          totalQuestions: { $sum: '$count' },
+          totalMarks:     { $sum: '$marks' },
+          subjects:       { $push: { subject: '$_id.subject', count: '$count', totalMarks: '$marks' } },
+        },
+      },
+    ])
+
+    const result = grouped.map(p => {
+      const subjects = {}
+      p.subjects.forEach(s => { subjects[s.subject] = { count: s.count, totalMarks: s.totalMarks } })
+      return {
+        paper:          p._id.paper,
+        year:           p._id.year,
+        totalQuestions: p.totalQuestions,
+        totalMarks:     p.totalMarks,
+        subjects,
+      }
+    })
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/gre_full_scores — save one full-paper attempt
+router.post('/gre_full_scores', async (req, res) => {
+  try {
+    const {
+      email, name, paper, year,
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore, sectionScores, responses, totalTimeTaken, essayResponse,
+    } = req.body
+    if (!email || !paper) return res.status(400).json({ error: 'email and paper are required' })
+
+    // Fill in approximate scaled scores per section (Verbal/Quant only) if the client didn't supply them.
+    const finalSectionScores = { ...(sectionScores || {}) }
+    ;['Verbal Reasoning', 'Quantitative Reasoning'].forEach(sec => {
+      if (finalSectionScores[sec] && finalSectionScores[sec].scaledScore == null) {
+        finalSectionScores[sec].scaledScore = greScaledScore(
+          finalSectionScores[sec].correctAnswers, finalSectionScores[sec].totalQuestions
+        )
+      }
+    })
+
+    const doc = new GreFullScore({
+      email, name, paper, year,
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore, sectionScores: finalSectionScores,
+      essayResponse: essayResponse || null,
+      essayStatus:   essayResponse ? 'pending_review' : null,
+      responses: (responses || []).map(r => ({
+        questionId:   r.questionId,
+        subject:      r.subject,
+        userResponse: r.userResponse,
+        isCorrect:    r.isCorrect,
+        marksAwarded: r.marksAwarded,
+        unattempted:  r.unattempted,
+        timeTaken:    r.timeTaken,
+      })),
+      totalTimeTaken,
+      dateAttempted: new Date(),
+    })
+    await doc.save()
+    res.json({ success: true })
+// GET /api/jee_admin/question_stats?subject= — per-question accuracy across all students
+router.get('/jee_admin/question_stats', async (req, res) => {
+  try {
+    const { subject } = req.query
+    if (!subject) return res.status(400).json({ error: 'subject required' })
+
+    const docs = await JeeScore.find({ subject }).lean()
+    const qStats = {}
+    docs.forEach(doc => {
+      const latest = doc.attempts?.[0]
+      if (!latest) return
+      ;(latest.responses || []).forEach(r => {
+        const qId = String(r.questionId)
+        if (!qStats[qId]) qStats[qId] = { questionId: qId, total: 0, correct: 0 }
+        qStats[qId].total++
+        if (r.isCorrect) qStats[qId].correct++
+      })
+    })
+
+    const qIds      = Object.keys(qStats)
+    const questions = await JeeQuestion.find({ _id: { $in: qIds } }).lean()
+    const qMeta     = {}
+    questions.forEach(q => { qMeta[String(q._id)] = q })
+
+    const data = Object.entries(qStats)
+      .map(([qId, stat]) => {
+        const q = qMeta[qId] || {}
+        return {
+          questionId:      qId,
+          topic:           q.topic    || '—',
+          subtopic:        q.subtopic || '—',
+          questionPreview: q.question_text ? q.question_text.substring(0, 100) + '…' : '—',
+          total:           stat.total,
+          correct:         stat.correct,
+          accuracy:        stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0,
+          avgTime:         q.average_time_seconds || 0,
+        }
+      })
+      .sort((a, b) => a.accuracy - b.accuracy)
+
+    res.json({ data })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+
+// GET /api/gre_full_scores?email=x@y.com — all full-paper attempts newest first
+router.get('/gre_full_scores', async (req, res) => {
+  try {
+    const { email } = req.query
+    if (!email) return res.status(400).json({ error: 'email is required' })
+    const docs = await GreFullScore.find({ email }).sort({ dateAttempted: -1 }).lean()
+    res.json(docs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/gre_admin_scores — all attempts per student, grouped by email (for admin dashboard)
+router.get('/gre_admin_scores', async (req, res) => {
+  try {
+    const docs = await GreScore.find({}).lean()
+    const byEmail = {}
+    docs.forEach(doc => {
+      if (!byEmail[doc.email]) {
+        byEmail[doc.email] = { email: doc.email, name: doc.name, quizScores: [] }
+      }
+      ;(doc.attempts || []).forEach((attempt, i) => {
+        const pct = attempt.totalQuestions > 0
+          ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
+          : (attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0)
+        byEmail[doc.email].quizScores.push({
+          topic:          doc.subject,
+          score:          attempt.score,
+          maxScore:       attempt.maxScore,
+          correctAnswers: attempt.correctAnswers,
+          totalQuestions: attempt.totalQuestions,
+          percentage:     pct,
+          scaledScore:    attempt.scaledScore ?? null,
+          essayStatus:    attempt.essayStatus ?? null,
+          timestamp:      attempt.dateAttempted,
+          attemptNumber:  i + 1,
+        })
+      })
+    })
+    res.json({ success: true, data: Object.values(byEmail) })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+
+// GET /api/gre_exam_detail?email=...&subject=...&attemptNumber=... — question-by-question breakdown for one attempt
+router.get('/gre_exam_detail', async (req, res) => {
+  try {
+    const { email, subject, attemptNumber } = req.query
+    if (!email || !subject || !attemptNumber) {
+      return res.status(400).json({ success: false, message: 'email, subject, and attemptNumber are required' })
+    }
+
+    const doc = await GreScore.findOne({ email, subject }).lean()
+    if (!doc) return res.status(404).json({ success: false, message: 'Score record not found' })
+
+    const idx = parseInt(attemptNumber) - 1
+    const attempt = (doc.attempts || [])[idx]
+    if (!attempt) return res.status(404).json({ success: false, message: 'Attempt not found' })
+
+    const questionIds = (attempt.responses || []).map(r => r.questionId).filter(Boolean)
+    const questionMeta = await GreQuestion.find({ _id: { $in: questionIds } }).lean()
+    const metaMap = {}
+    questionMeta.forEach(q => { metaMap[String(q._id)] = q })
+
+    const enrichedResults = (attempt.responses || []).map((r, i) => {
+      const meta = metaMap[String(r.questionId)] || {}
+      return {
+        questionId:     r.questionId,
+        questionNumber: meta.question_number || i + 1,
+        questionText:   meta.question_text || '',
+        userAnswer:     r.userResponse,
+        correctAnswer:  meta.correct_answer,
+        isCorrect:      r.isCorrect,
+        marksAwarded:   r.marksAwarded,
+        difficulty:     meta.difficulty || null,
+        type:           meta.type || null,
+        options:        meta.options || [],
+        explanation:    meta.explanation || null,
+        points:         meta.points || 1,
+      }
+    })
+
+    const totalQuestions = attempt.totalQuestions || enrichedResults.length
+    const correctAnswers = attempt.correctAnswers || 0
+
+    // Compute difficulty breakdown
+    const difficultyStats = { easy: { total: 0, correct: 0 }, medium: { total: 0, correct: 0 }, hard: { total: 0, correct: 0 }, unknown: { total: 0, correct: 0 } }
+    enrichedResults.forEach(r => {
+      const d = r.difficulty || 'unknown'
+      difficultyStats[d].total++
+      if (r.isCorrect) difficultyStats[d].correct++
+    })
+
+    // Compute type breakdown
+    const typeStats = {}
+    enrichedResults.forEach(r => {
+      const t = r.type || 'unknown'
+      if (!typeStats[t]) typeStats[t] = { total: 0, correct: 0 }
+      typeStats[t].total++
+      if (r.isCorrect) typeStats[t].correct++
+    })
+
+    res.json({
+      success: true,
+      data: {
+        student: { email: doc.email, name: doc.name },
+        attempt: {
+          subject:        doc.subject,
+          attemptNumber:  parseInt(attemptNumber),
+          dateAttempted:  attempt.dateAttempted,
+          score:          attempt.score,
+          maxScore:       attempt.maxScore,
+          totalQuestions,
+          correctAnswers,
+          wrongAnswers:   attempt.wrongAnswers,
+          unattempted:    attempt.unattempted,
+          percentage:     totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0,
+          scaledScore:    attempt.scaledScore ?? null,
+          essayResponse:  attempt.essayResponse ?? null,
+          essayStatus:    attempt.essayStatus ?? null,
+        },
+        enrichedResults,
+        insights: {
+          difficultyStats,
+          typeStats,
+          hardestQuestions: enrichedResults
+            .filter(r => !r.isCorrect && r.difficulty === 'hard')
+            .map(r => ({ questionNumber: r.questionNumber, questionText: r.questionText, explanation: r.explanation })),
+        },
+      }
+    })
+// POST /api/fix-jee-papers — one-time migration: relabel 'Single' attempts that
+// were Paper1/Paper2 quizzes (all 3 subjects saved within 10 min = paper session).
+router.post('/fix-jee-papers', async (req, res) => {
+  try {
+    const docs = await JeeScore.find({}).lean()
+    const GAP  = 10 * 60 * 1000
+
+    const allAttempts = []
+    docs.forEach(doc => {
+      ;(doc.attempts || []).forEach((attempt, idx) => {
+        if (!attempt.paper || attempt.paper === 'Single') {
+          allAttempts.push({ email: doc.email, subject: doc.subject, docId: doc._id, idx, ts: new Date(attempt.dateAttempted).getTime() })
+        }
+      })
+    })
+
+    const byEmail = {}
+    allAttempts.forEach(a => { if (!byEmail[a.email]) byEmail[a.email] = []; byEmail[a.email].push(a) })
+
+    const patches = []
+    Object.values(byEmail).forEach(attempts => {
+      attempts.sort((a, b) => a.ts - b.ts)
+      const sessions = []
+      let cur = [attempts[0]]
+      for (let i = 1; i < attempts.length; i++) {
+        if (attempts[i].ts - attempts[i - 1].ts > GAP) { sessions.push(cur); cur = [attempts[i]] }
+        else cur.push(attempts[i])
+      }
+      sessions.push(cur)
+
+      let paperCount = 0
+      const labels = ['Paper1', 'Paper2', 'Paper3', 'Paper4']
+      sessions.forEach(session => {
+        const subs = new Set(session.map(a => a.subject))
+        if (subs.has('Physics') && subs.has('Chemistry') && subs.has('Mathematics')) {
+          const label = labels[paperCount] || `Paper${paperCount + 1}`
+          paperCount++
+          session.forEach(a => patches.push({ docId: a.docId, idx: a.idx, newPaper: label }))
+        }
+      })
+    })
+
+    const byDoc = {}
+    patches.forEach(p => { if (!byDoc[p.docId]) byDoc[p.docId] = []; byDoc[p.docId].push(p) })
+
+    let updated = 0
+    for (const [docId, ps] of Object.entries(byDoc)) {
+      const doc = await JeeScore.findById(docId)
+      if (!doc) continue
+      ps.forEach(p => { if (doc.attempts[p.idx]) doc.attempts[p.idx].paper = p.newPaper })
+      await doc.save()
+      updated += ps.length
+    }
+
+    res.json({ success: true, message: `Fixed ${updated} attempts across ${Object.keys(byDoc).length} documents` })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+
+// ── Stub routes for AdminDashboard counts (models not in this deployment) ─────
+
+router.get('/iitm_stats2_scores_databases', async (req, res) => {
+  res.json([])
+})
+
+router.get('/jee_main_admin_scores', async (req, res) => {
+  res.json({ success: true, data: [] })
+})
+
+router.get('/sat_scores', async (req, res) => {
+  res.json([])
+})
+
+router.get('/mcq-quiz/admin/attempts', async (req, res) => {
+  res.json({ attempts: [] })
+})
+
 module.exports = router
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,25 +1,121 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
-import { Chart, ArcElement, Tooltip, Legend } from 'chart.js'
-
-Chart.register(ArcElement, Tooltip, Legend)
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 const Dashboard = () => {
   const [user, setUser] = useState(null)
-  const [vocabScores, setVocabScores] = useState([])
-  const [mathTopics, setMathTopics] = useState([])
-  const [rcScores, setRcScores] = useState({})
-  const [programmingScores, setProgrammingScores] = useState([])
-  const [ctFingerScores, setCtFingerScores] = useState([])
-  const [programmingFingerScores, setProgrammingFingerScores] = useState([])
   const [loading, setLoading] = useState(true)
   const [streak, setStreak] = useState(0)
+  const [courseProgress, setCourseProgress] = useState({})
+  const [recentActivity, setRecentActivity] = useState([])
 
   const navigate = useNavigate()
-  const chartRefs = useRef({})
+
+  // Define all courses from Home.jsx
+  const allCourses = [
+    {
+      id: 'math',
+      title: 'Mathematics',
+      icon: 'bi-calculator',
+      color: '#5fcf80',
+      route: '/math',
+      description: 'Master algebra, calculus, and more'
+    },
+    {
+      id: 'math2',
+      title: 'Mathematics II',
+      icon: 'bi-graph-up',
+      color: '#4ecdc4',
+      route: '/math2',
+      description: 'Advanced mathematical concepts'
+    },
+    {
+      id: 'statistics',
+      title: 'Statistics',
+      icon: 'bi-bar-chart',
+      color: '#45b7d1',
+      route: '/statistics',
+      description: 'Learn data analysis and probability'
+    },
+    {
+      id: 'statistics2',
+      title: 'Statistics II',
+      icon: 'bi-pie-chart',
+      color: '#96ceb4',
+      route: '/statistics2',
+      description: 'Advanced statistical methods'
+    },
+    {
+      id: 'computational-thinking',
+      title: 'Computational Thinking',
+      icon: 'bi-cpu',
+      color: '#845ec2',
+      route: '/computational-thinking',
+      description: 'Problem-solving approach'
+    },
+    {
+      id: 'python',
+      title: 'Programming in Python',
+      icon: 'bi-filetype-py',
+      color: '#3776ab',
+      route: '/programming/courses/python',
+      description: 'Master Python from basics to advanced'
+    },
+    {
+      id: 'java',
+      title: 'Java Programming',
+      icon: 'bi-cup-hot-fill',
+      color: '#f89820',
+      route: '/programming/courses/java',
+      description: 'Complete Java development'
+    },
+    
+    {
+      id: 'dbms',
+      title: 'Database Management Systems',
+      icon: 'bi-server',
+      color: '#2d4059',
+      route: '/programming/courses/dbms',
+      description: 'Complete DBMS concepts'
+    },
+    {
+      id: 'pdsa',
+      title: 'PDSA using Python',
+      icon: 'bi-code-square',
+      color: '#00b4d8',
+      route: '/courses/pdsa',
+      description: 'Programming, data structures and Algorithms using Python'
+    },
+    
+    {
+      id: 'competitive-exam',
+      title: 'Competitive Exam Foundation',
+      icon: 'bi-trophy',
+      color: '#ff6b6b',
+      route: '/competitive-exam-foundation',
+      description: 'Crack banking, SSC & more'
+    },
+    
+    
+    {
+      id: 'jee',
+      title: 'JEE Advanced',
+      icon: 'bi-lightning',
+      color: '#dc3545',
+      route: '/courses/jee',
+      description: 'Practice JEE Advanced questions'
+    },
+    {
+      id: 'sat',
+      title: 'SAT Practice',
+      icon: 'bi-book',
+      color: '#003D8F',
+      route: '/courses/sat',
+      description: 'SAT preparation & practice'
+    }
+  ]
 
   useEffect(() => {
     fetchUserData()
@@ -29,59 +125,82 @@ const Dashboard = () => {
     try {
       setLoading(true)
 
-      // Check auth first — redirect immediately if not logged in
+      // Check auth
       const authCheck = await axios.get(`${API_URL}/api/check-auth`, {
         withCredentials: true,
       })
       if (!authCheck.data.authenticated) {
-        console.log('User not authenticated, redirecting to login')
         navigate('/login', { state: { from: { pathname: '/dashboard' } }, replace: true })
         return
       }
 
-      // Fetch user dashboard data
+      // Fetch user data
       const dashboardResponse = await axios.get(`${API_URL}/api/dashboard`, {
         withCredentials: true
       })
       
       setUser(dashboardResponse.data)
-      
-      // Fetch all scores in parallel with error handling
-      const [
-        vocabResponse, 
-        mathResponse, 
-        rcResponse, 
-        programmingResponse, 
-        ctFingerResponse, 
-        programmingFingerResponse, 
-        streakResponse
-      ] = await Promise.allSettled([
-        axios.get(`${API_URL}/api/vocabscores?email=${dashboardResponse.data.email}`, { withCredentials: true }),
-        axios.get(`${API_URL}/api/algebra_scores?email=${dashboardResponse.data.email}`, { withCredentials: true }),
-        axios.get(`${API_URL}/api/readingcomprehensionscore?email=${dashboardResponse.data.email}`, { withCredentials: true }),
-        axios.get(`${API_URL}/api/programming?email=${dashboardResponse.data.email}`, { withCredentials: true }),
-        axios.get(`${API_URL}/api/CT_finger_scores/${dashboardResponse.data.email}`, { withCredentials: true }),
-        axios.get(`${API_URL}/api/finger-exercise?email=${dashboardResponse.data.email}`, { withCredentials: true }),
-        axios.get(`${API_URL}/api/login-history?email=${dashboardResponse.data.email}`, { withCredentials: true })
-      ])
-      
-      // Handle each response individually
-      setVocabScores(vocabResponse.status === 'fulfilled' ? (vocabResponse.value?.data?.assessments || []) : [])
-      setMathTopics(mathResponse.status === 'fulfilled' ? (mathResponse.value?.data?.[0]?.topics || []) : [])
-      setRcScores(rcResponse.status === 'fulfilled' ? (rcResponse.value?.data || {}) : {})
-      setProgrammingScores(programmingResponse.status === 'fulfilled' ? (programmingResponse.value?.data?.quizzes || []) : [])
-      setCtFingerScores(ctFingerResponse.status === 'fulfilled' ? (ctFingerResponse.value?.data?.quizzes || []) : [])
-      setProgrammingFingerScores(programmingFingerResponse.status === 'fulfilled' ? (programmingFingerResponse.value?.data?.topics || []) : [])
-      
-      // Calculate streak
-      const loginHistory = (streakResponse.status === 'fulfilled' ? streakResponse.value?.data?.loginHistory : []) || []
+
+      // Fetch progress for all courses
+      const progressData = {}
+      for (const course of allCourses) {
+        try {
+          const response = await axios.get(`${API_URL}/api/mcq-quiz/attempts?email=${dashboardResponse.data.email}&course=${course.id}`, {
+            withCredentials: true
+          })
+          
+          if (response.data?.attempts?.length > 0) {
+            const attempts = response.data.attempts
+            const avgScore = Math.round(
+              attempts.reduce((sum, a) => sum + (a.percentage || 0), 0) / attempts.length
+            )
+            const totalWeeks = course.id === 'python' ? 10 : 
+                             course.id === 'java' ? 12 :
+                             course.id === 'dbms' ? 8 :
+                             course.id === 'pdsa' ? 12 : 0
+            
+            progressData[course.id] = {
+              attempts: attempts.length,
+              averageScore: avgScore,
+              weeksAttempted: new Set(attempts.map(a => a.week)).size,
+              totalWeeks: totalWeeks,
+              lastAttempt: attempts[attempts.length - 1]?.datetime || null,
+              progress: totalWeeks > 0 ? Math.round((new Set(attempts.map(a => a.week)).size / totalWeeks) * 100) : 0,
+              course: course // Store course info
+            }
+          }
+        } catch (error) {
+          // Course not started or error - skip it
+        }
+      }
+      setCourseProgress(progressData)
+
+      // Fetch streak
+      const streakResponse = await axios.get(`${API_URL}/api/login-history?email=${dashboardResponse.data.email}`, {
+        withCredentials: true
+      })
+      const loginHistory = streakResponse.data?.loginHistory || []
       const calculatedStreak = calculateStreak(loginHistory)
       setStreak(calculatedStreak)
-      
+
+      // Generate recent activity from courses that have been started
+      const activities = []
+      Object.values(progressData).forEach(progress => {
+        if (progress && progress.attempts > 0 && progress.course) {
+          activities.push({
+            course: progress.course.title,
+            courseId: progress.course.id,
+            date: progress.lastAttempt || new Date().toISOString(),
+            score: progress.averageScore,
+            action: `Completed ${progress.attempts} quiz${progress.attempts > 1 ? 'zes' : ''}`
+          })
+        }
+      })
+      activities.sort((a, b) => new Date(b.date) - new Date(a.date))
+      setRecentActivity(activities.slice(0, 5))
+
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
-      console.error('Error response:', error.response?.data)
-      console.error('Error status:', error.response?.status)
       navigate('/login', { state: { from: { pathname: '/dashboard' } }, replace: true })
     } finally {
       setLoading(false)
@@ -92,11 +211,9 @@ const Dashboard = () => {
     const uniqueDays = new Set(
       loginHistory.map(entry => new Date(entry.loginTimestamp).setHours(0, 0, 0, 0))
     )
-
     const sortedLogins = Array.from(uniqueDays).sort((a, b) => b - a)
     let streak = 0
     const today = new Date().setHours(0, 0, 0, 0)
-
     for (let i = 0; i < sortedLogins.length; i++) {
       const expectedDate = new Date(today - i * 86400000)
       if (sortedLogins[i] === expectedDate.getTime()) {
@@ -105,516 +222,472 @@ const Dashboard = () => {
         break
       }
     }
-
     return streak
   }
 
-  const displayVocabScores = () => {
-    if (vocabScores.length === 0) {
-      return (
-        <div>
-          <p className="no-data">Start learning and improve your Vocabulary</p>
-          <button className="btn btn-success start-learning-btn" onClick={() => window.location.href = '/vocabulary'}>
-            Start Learning
-          </button>
-        </div>
-      )
-    }
-
-    const recentAssessments = vocabScores.slice(-6).reverse()
-
-    return (
-      <table className="table table-striped table-bordered">
-        <thead>
-          <tr>
-            <th>Topic</th>
-            <th>Date</th>
-            <th>Percentage</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {recentAssessments.map((assessment, index) => {
-            const totalQuestions = assessment.questions.length
-            const correctAnswers = assessment.questions.filter(q => q.is_correct).length
-            const percentage = totalQuestions > 0 ? ((correctAnswers / totalQuestions) * 100).toFixed(2) : '0.00'
-
-            return (
-              <tr key={index}>
-                <td>{assessment.assess_topic || 'N/A'}</td>
-                <td>{new Date(assessment.date).toLocaleDateString()}</td>
-                <td>{percentage}%</td>
-                <td>
-                  <button 
-                    className="btn btn-primary" 
-                    onClick={() => goToQuizAnalytics(assessment.date)}
-                  >
-                    Analytics
-                  </button>
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    )
+  const getScoreColor = (score) => {
+    if (score >= 80) return '#28a745'
+    if (score >= 60) return '#ffc107'
+    if (score >= 40) return '#fd7e14'
+    return '#dc3545'
   }
 
-  const displayMathTopics = () => {
-    if (mathTopics.length === 0) {
-      return (
-        <div className="card-custom">
-          <p className="no-data">No data available for any topic</p>
-        </div>
-      )
-    }
-
-    return (
-      <div className="row">
-        {mathTopics.map((topic, index) => {
-          const { topic: topicName, questions, current_level } = topic
-          const correctAnswers = questions.filter(q => q.correct).length
-          const incorrectAnswers = questions.length - correctAnswers
-
-          return (
-            <div className="col-lg-6 col-md-12 mb-4" key={index}>
-              <div className="card-custom">
-                <div>
-                  <h4>{capitalizeFirstLetter(topicName)} Performance</h4>
-                  <p><strong>Accuracy:</strong> {correctAnswers}/{questions.length}</p>
-                  <p><strong>Current Level:</strong> {capitalizeFirstLetter(current_level)}</p>
-                </div>
-                <div className="canvas-container">
-                  <canvas 
-                    id={`${topicName}-performance-chart`} 
-                    width="500" 
-                    height="500"
-                    ref={(canvas) => {
-                      if (canvas) {
-                        renderTopicPerformanceChart(canvas, correctAnswers, incorrectAnswers)
-                      }
-                    }}
-                  ></canvas>
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    )
+  const getProgressColor = (progress) => {
+    if (progress >= 80) return 'success'
+    if (progress >= 50) return 'warning'
+    if (progress >= 25) return 'info'
+    return 'secondary'
   }
 
-  const displayRCScores = () => {
-    if (!rcScores || Object.keys(rcScores).length === 0) {
-      return (
-        <div>
-          <p className="no-data">Start learning and improve your Reading Comprehension</p>
-          <button className="btn btn-success start-learning-btn" onClick={() => window.location.href = '/reading-comprehension'}>
-            Start Learning
-          </button>
-        </div>
-      )
-    }
-
-    const topicEntries = Object.entries(rcScores.topics || {})
-    
-    if (topicEntries.length === 0) {
-      return (
-        <div>
-          <p className="no-data">Start learning and improve your Reading Comprehension</p>
-          <button className="btn btn-success start-learning-btn" onClick={() => window.location.href = '/reading-comprehension'}>
-            Start Learning
-          </button>
-        </div>
-      )
-    }
-
-    return (
-      <table className="table table-striped table-bordered">
-        <thead>
-          <tr>
-            <th>Sr. No.</th>
-            <th>Topic</th>
-            <th>Total Passages Solved</th>
-            <th>Current Level</th>
-            <th>Last Activity</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {topicEntries.map(([topicName, topicDetails], index) => {
-            const totalPassages = topicDetails.solvedPassages?.length || 0
-            const currentLevel = topicDetails.current_level || 'N/A'
-            
-            const lastActivity = topicDetails.solvedPassages?.reduce((latest, passage) => {
-              const passageDate = new Date(passage.timestamp)
-              return passageDate > latest ? passageDate : latest
-            }, new Date(0))
-            
-            const lastActivityFormatted = lastActivity.getTime() !== 0
-              ? lastActivity.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
-              : 'N/A'
-
-            return (
-              <tr key={index}>
-                <td>{index + 1}</td>
-                <td>{topicName}</td>
-                <td>{totalPassages}</td>
-                <td>{currentLevel}</td>
-                <td>{lastActivityFormatted}</td>
-                <td>
-                  <button 
-                    className="btn btn-sm btn-primary" 
-                    onClick={() => exploreTopic(topicName)}
-                  >
-                    Explore
-                  </button>
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    )
-  }
-
-  const displayProgrammingScores = () => {
-    if (programmingScores.length === 0) {
-      return (
-        <div>
-          <p className="no-data">Start practicing to improve your programming skills</p>
-          <button className="btn btn-success start-learning-btn" onClick={() => window.location.href = '/programming'}>
-            Start Coding
-          </button>
-        </div>
-      )
-    }
-
-    const sortedQuizzes = [...programmingScores].sort((a, b) => new Date(b.datetime) - new Date(a.datetime))
-    const recentQuizzes = sortedQuizzes.slice(0, 1)
-
-    return (
-      <div>
-        <table className="table table-striped table-bordered">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Score(%)</th>
-              <th>Questions Passed Out of 20</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {recentQuizzes.map((quiz, index) => {
-              const quizDate = new Date(quiz.datetime).toLocaleDateString()
-              const passedQuestions = quiz.submissions.filter(sub => sub.test_cases_passed > 0).length
-              
-              return (
-                <tr key={index}>
-                  <td>{quizDate}</td>
-                  <td>{(quiz.score/20*100).toFixed(0)}</td>
-                  <td>{passedQuestions}</td>
-                  <td>
-                    <button 
-                      className="btn btn-primary" 
-                      onClick={() => viewProgrammingQuiz(quiz._id)}
-                    >
-                      View Details
-                    </button>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-        <button 
-          className="btn btn-primary solve-more-btn mt-3" 
-          onClick={() => window.location.href = '/programming'}
-        >
-          Practice More
-        </button>
-      </div>
-    )
-  }
-
-  const displayCTFingerExercises = () => {
-    if (ctFingerScores.length === 0) {
-      return (
-        <div>
-          <p className="no-data">Start practicing CT finger exercises</p>
-          <button className="btn btn-success start-learning-btn" onClick={() => window.location.href = '/programming'}>
-            Start Learning
-          </button>
-        </div>
-      )
-    }
-
-    // Aggregate scores by topic
-    const topicScores = {}
-    ctFingerScores.forEach(quiz => {
-      const correctAnswers = quiz.answers ? quiz.answers.filter(a => a.isCorrect).length : 0
-      if (!topicScores[quiz.topic]) {
-        topicScores[quiz.topic] = 0
-      }
-      topicScores[quiz.topic] += correctAnswers
-    })
-
-    const tableData = Object.entries(topicScores).map(([topic, score], index) => ({
-      srNo: index + 1,
-      topic: topic.replace(/_/g, ' ').toUpperCase(),
-      score: score
-    }))
-
-    return (
-      <table className="table table-striped table-bordered">
-        <thead>
-          <tr>
-            <th>Sr No.</th>
-            <th>Topic</th>
-            <th>Scores(%)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {tableData.map(row => (
-            <tr key={row.srNo}>
-              <td>{row.srNo}</td>
-              <td>{row.topic}</td>
-              <td>{((row.score/30)*100).toFixed(0)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    )
-  }
-
-  const displayProgrammingFingerExercises = () => {
-    if (programmingFingerScores.length === 0) {
-      return (
-        <div>
-          <p className="no-data">Start practicing programming finger exercises</p>
-          <button className="btn btn-success start-learning-btn" onClick={() => window.location.href = '/programming'}>
-            Start Learning
-          </button>
-        </div>
-      )
-    }
-
-    // Calculate scores per topic - only count unique questions answered correctly
-    const topicScores = {}
-    programmingFingerScores.forEach(topic => {
-      const submissions = topic.submissions || []
-      const correctCount = new Set(submissions.filter(sub => sub.isCorrect).map(sub => sub.questionId)).size
-      topicScores[topic.topicName] = correctCount
-    })
-
-    const tableData = Object.entries(topicScores).map(([topic, score], index) => ({
-      srNo: index + 1,
-      topic: topic.replace(/_/g, ' ').toUpperCase(),
-      score: score
-    }))
-
-    return (
-      <table className="table table-striped table-bordered">
-        <thead>
-          <tr>
-            <th>Sr No.</th>
-            <th>Topic</th>
-            <th>Scores(%)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {tableData.map(row => (
-            <tr key={row.srNo}>
-              <td>{row.srNo}</td>
-              <td>{row.topic}</td>
-              <td>{((row.score/20)*100).toFixed(0)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    )
-  }
-
-  const goToQuizAnalytics = (quizId) => {
-    window.location.href = `/vocab-analytics?quizId=${encodeURIComponent(quizId)}`
-  }
-
-  const exploreTopic = (topicName) => {
-    window.location.href = `/english/rc-dashboard?topic=${encodeURIComponent(topicName)}`
-  }
-
-  const viewProgrammingQuiz = (quizId) => {
-    window.location.href = `/programming/details?quizId=${quizId}`
-  }
-
-  const capitalizeFirstLetter = (string) => {
-    return string.charAt(0).toUpperCase() + string.slice(1)
-  }
-
-  const renderTopicPerformanceChart = (canvas, correctAnswers, incorrectAnswers) => {
-    // Simple chart rendering - in a real implementation, you'd use Chart.js
-    const ctx = canvas.getContext('2d')
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    
-    // Draw a simple donut chart representation
-    const centerX = canvas.width / 2
-    const centerY = canvas.height / 2
-    const radius = Math.min(centerX, centerY) - 10
-    
-    ctx.beginPath()
-    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
-    ctx.fillStyle = '#e9ecef'
-    ctx.fill()
-    
-    ctx.beginPath()
-    ctx.arc(centerX, centerY, radius - 20, 0, 2 * Math.PI)
-    ctx.fillStyle = '#fff'
-    ctx.fill()
-    
-    // Draw progress
-    const total = correctAnswers + incorrectAnswers
-    const percentage = total > 0 ? correctAnswers / total : 0
-    const angle = percentage * 2 * Math.PI
-    
-    ctx.beginPath()
-    ctx.moveTo(centerX, centerY)
-    ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + angle)
-    ctx.closePath()
-    ctx.fillStyle = '#5fcf80'
-    ctx.fill()
-  }
 
   if (loading) {
     return (
       <div className="container mt-5">
         <div className="text-center">
-          <div className="spinner-border" role="status">
+          <div className="spinner-border text-success" role="status">
             <span className="visually-hidden">Loading...</span>
           </div>
-          <p className="mt-3">Loading dashboard data...</p>
+          <p className="mt-3 text-muted">Loading your dashboard...</p>
         </div>
       </div>
     )
   }
 
   if (!user) {
-    navigate('/login', { state: { from: { pathname: '/dashboard' } }, replace: true })
-    return (
-      <div className="container mt-5">
-        <div className="text-center">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Redirecting...</span>
-          </div>
-          <p className="mt-3">Redirecting to login...</p>
-        </div>
-      </div>
-    )
+    return null
   }
 
+  // Get only courses that user has started
+  const startedCourses = Object.values(courseProgress)
+    .filter(progress => progress && progress.attempts > 0)
+    .sort((a, b) => new Date(b.lastAttempt) - new Date(a.lastAttempt))
+
+  const totalStarted = startedCourses.length
+  const totalQuizzes = startedCourses.reduce((sum, p) => sum + p.attempts, 0)
+  const avgAllScores = startedCourses.length > 0 
+    ? Math.round(startedCourses.reduce((sum, p) => sum + p.averageScore, 0) / startedCourses.length)
+    : 0
+  const completedCourses = startedCourses.filter(p => p.progress >= 80).length
+
   return (
-    <section className="container mt-5">
-      <div className="row">
-        <div className="col-lg-12 mx-auto">
-          <div className="card shadow-sm mb-4 bg-light">
-            <div className="card-header text-black" style={{ backgroundColor: '#3498db' }}>
-              <h3 className="mb-1">Activity and Performance Dashboard</h3>
-            </div>
-            <div className="card-body">
-              {/* User Information Section */}
-              <div className="card-custom mb-4">
-                <div className="info-container">
-                  <div className="user-info">
-                    <h3>User Information</h3>
-                    <p><strong>Username:</strong> <span>{user.name}</span></p>
-                    <p><strong>Email:</strong> <span>{user.email}</span></p>
-                  </div>
-                  
-                  <div className="quiz-count">
-                    <h3>Quiz Count</h3>
-                    <p>Math: <span>{mathTopics.length}</span></p>
-                    <p>RC: <span>{Object.keys(rcScores.topics || {}).length}</span></p>
-                    <p>Vocabulary: <span>{vocabScores.length}</span></p>
-                    <p>Programming: <span>{programmingScores.length}</span></p>
-                  </div>
+    <div className="dashboard-wrapper">
+      <div className="container-fluid px-4 py-4">
+        <div className="row">
+          {/* Main Content Area */}
+          <div className="col-lg-12">
+            {/* Welcome Section */}
+            <div className="welcome-card mb-4">
+              <div className="row align-items-center">
+                <div className="col-md-8">
+                  <h1 className="display-6 fw-bold mb-2">
+                    <i className="bi bi-person-circle me-2 text-success"></i>
+                    Welcome back, {user.name}!
+                  </h1>
+                  <p className="text-muted mb-0">Track your learning progress across all courses</p>
                 </div>
-                
-                <div className="streak-container">
-                  <div className="streak-title">Current Streak</div>
-                  <div className="streak-circle">
-                    <i className="bi bi-fire"></i>
-                    <span id="userStreak">{streak}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Vocabulary and Mathematics Section */}
-              <div className="row mb-4">
-                <div className="col-lg-6 col-md-12">
-                  <div className="card-custom">
-                    <h3>Vocabulary</h3>
-                    <div id="vocab-quiz-summary">
-                      {displayVocabScores()}
-                    </div>
-                    <button 
-                      className="btn btn-primary solve-more-btn" 
-                      onClick={() => window.location.href = '/vocabulary'}
-                    >
-                      Solve More
-                    </button>
-                  </div>
-                </div>
-                <div className="col-lg-6 col-md-12">
-                  <div className="card-custom">
-                    <h3>Mathematics</h3>
-                    <div id="topics-container">
-                      {displayMathTopics()}
-                    </div>
-                    <button 
-                      className="btn btn-primary solve-more-btn" 
-                      onClick={() => window.location.href = '/math'}
-                    >
-                      Solve More
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Full-Width Reading Comprehension Section */}
-              <div className="row">
-                <div className="col-12">
-                  <div className="card-custom">
-                    <h3>Reading Comprehension</h3>
-                    <div id="rc-table-container">
-                      {displayRCScores()}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Programming Quizzes Section */}
-              <div className="row mt-4">
-                <div className="col-12">
-                  <div className="card-custom">
-                    <h3>CT Finger Exercises</h3>
-                    <div id="ct-finger-container">
-                      {displayCTFingerExercises()}
-                    </div>
-                    <h3>Programming Finger Exercises</h3>
-                    <div id="programming-finger-container">
-                      {displayProgrammingFingerExercises()}
-                    </div>
-                    <h3>Programming Diagnostic</h3>
-                    <div id="programming-container">
-                      {displayProgrammingScores()}
-                    </div>
+                <div className="col-md-4 text-md-end">
+                  <div className="streak-badge">
+                    <i className="bi bi-fire flame-icon"></i>
+                    <span className="streak-number">{streak}</span>
+                    <span className="streak-label">Day Streak</span>
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* Stats Cards */}
+            <div className="row mb-4">
+              <div className="col-md-3 col-6">
+                <div className="stat-card">
+                  <div className="stat-icon bg-success">
+                    <i className="bi bi-book"></i>
+                  </div>
+                  <div className="stat-content">
+                    <h3>{totalStarted}</h3>
+                    <span>Courses Started</span>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-3 col-6">
+                <div className="stat-card">
+                  <div className="stat-icon bg-primary">
+                    <i className="bi bi-check-circle"></i>
+                  </div>
+                  <div className="stat-content">
+                    <h3>{totalQuizzes}</h3>
+                    <span>Total Quizzes</span>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-3 col-6">
+                <div className="stat-card">
+                  <div className="stat-icon bg-warning">
+                    <i className="bi bi-trophy"></i>
+                  </div>
+                  <div className="stat-content">
+                    <h3>{avgAllScores}%</h3>
+                    <span>Average Score</span>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-3 col-6">
+                <div className="stat-card">
+                  <div className="stat-icon bg-info">
+                    <i className="bi bi-award"></i>
+                  </div>
+                  <div className="stat-content">
+                    <h3>{completedCourses}</h3>
+                    <span>Completed</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            {recentActivity.length > 0 && (
+              <div className="activity-card mb-4">
+                <h5 className="mb-3">
+                  <i className="bi bi-clock-history me-2 text-success"></i>
+                  Recent Activity
+                </h5>
+                <div className="activity-list">
+                  {recentActivity.map((activity, index) => (
+                    <div key={index} className="activity-item">
+                      <div className="activity-icon">
+                        <i className={`bi bi-${allCourses.find(c => c.id === activity.courseId)?.icon || 'book'}`}></i>
+                      </div>
+                      <div className="activity-content">
+                        <div className="activity-title">{activity.course}</div>
+                        <div className="activity-action">{activity.action}</div>
+                      </div>
+                      <div className="activity-score">
+                        <span className="badge" style={{ 
+                          backgroundColor: getScoreColor(activity.score),
+                          color: 'white'
+                        }}>
+                          {activity.score}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Started Courses Grid */}
+            {startedCourses.length > 0 ? (
+              <div className="courses-grid">
+                <h5 className="mb-3">
+                  <i className="bi bi-grid-3x3-gap-fill me-2 text-success"></i>
+                  Your Courses
+                </h5>
+                <div className="row g-3">
+                  {startedCourses.map((progress) => {
+                    const course = progress.course
+                    return (
+                      <div key={course.id} className="col-md-6 col-xl-4">
+                        <div className="course-card" style={{ borderLeft: `4px solid ${course.color}` }}>
+                          <div className="course-header">
+                            <div className="course-icon" style={{ backgroundColor: course.color + '20' }}>
+                              <i className={`bi ${course.icon}`} style={{ color: course.color }}></i>
+                            </div>
+                            <Link to={course.route} className="course-title-link">
+                              <h6 className="course-title">{course.title}</h6>
+                            </Link>
+                          </div>
+                          
+                          <p className="course-description">{course.description}</p>
+                          
+                          <div className="progress-info">
+                            <div className="d-flex justify-content-between">
+                              <span className="text-muted small">Progress</span>
+                              <span className="text-muted small">{progress.progress}%</span>
+                            </div>
+                            <div className="progress" style={{ height: '6px' }}>
+                              <div 
+                                className={`progress-bar bg-${getProgressColor(progress.progress)}`}
+                                style={{ width: `${progress.progress}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                          
+                          <div className="course-stats">
+                            <div className="stat-item">
+                              <i className="bi bi-check-circle-fill text-success"></i>
+                              <span>{progress.weeksAttempted || 0} weeks</span>
+                            </div>
+                            <div className="stat-item">
+                              <i className="bi bi-star-fill" style={{ color: getScoreColor(progress.averageScore) }}></i>
+                              <span>{progress.averageScore}% avg</span>
+                            </div>
+                            <div className="stat-item">
+                              <i className="bi bi-play-circle-fill text-primary"></i>
+                              <span>{progress.attempts} attempt{progress.attempts > 1 ? 's' : ''}</span>
+                            </div>
+                          </div>
+                          
+                          <Link to={course.route} className="btn btn-sm btn-outline-success w-100 mt-2">
+                            Continue Learning
+                            <i className="bi bi-arrow-right ms-1"></i>
+                          </Link>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="empty-state-card">
+                <div className="text-center py-5">
+                  <i className="bi bi-book-empty" style={{ fontSize: '4rem', color: '#dee2e6' }}></i>
+                  <h5 className="mt-3">No courses started yet</h5>
+                  <p className="text-muted">Start your learning journey by exploring our courses</p>
+                  <Link to="/" className="btn btn-success">
+                    <i className="bi bi-plus-circle me-2"></i>
+                    Browse Courses
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
+
+          
         </div>
       </div>
-    </section>
+
+      <style>{`
+        .dashboard-wrapper {
+          background: #f8f9fa;
+          min-height: 100vh;
+          padding: 20px 0;
+        }
+
+        .welcome-card {
+          background: white;
+          border-radius: 15px;
+          padding: 25px 30px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .streak-badge {
+          display: inline-flex;
+          align-items: center;
+          background: #fff5f5;
+          padding: 8px 18px;
+          border-radius: 50px;
+          border: 2px solid #ff6b6b;
+          gap: 8px;
+        }
+
+        .flame-icon {
+          color: #ff6b6b;
+          font-size: 1.5rem;
+        }
+
+        .streak-number {
+          font-size: 1.5rem;
+          font-weight: bold;
+          color: #ff6b6b;
+        }
+
+        .streak-label {
+          font-size: 0.8rem;
+          color: #6c757d;
+        }
+
+        .stat-card {
+          background: white;
+          border-radius: 12px;
+          padding: 15px;
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+          transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+          transform: translateY(-3px);
+        }
+
+        .stat-icon {
+          width: 48px;
+          height: 48px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-size: 1.5rem;
+        }
+
+        .stat-content h3 {
+          margin: 0;
+          font-size: 1.5rem;
+          font-weight: bold;
+        }
+
+        .stat-content span {
+          font-size: 0.85rem;
+          color: #6c757d;
+        }
+
+        .activity-card {
+          background: white;
+          border-radius: 15px;
+          padding: 20px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .activity-item {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          padding: 10px 0;
+          border-bottom: 1px solid #f1f3f5;
+        }
+
+        .activity-item:last-child {
+          border-bottom: none;
+        }
+
+        .activity-icon {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background: #f8f9fa;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #28a745;
+        }
+
+        .activity-content {
+          flex: 1;
+        }
+
+        .activity-title {
+          font-weight: 500;
+          font-size: 0.95rem;
+        }
+
+        .activity-action {
+          font-size: 0.8rem;
+          color: #6c757d;
+        }
+
+        .activity-score .badge {
+          font-size: 0.8rem;
+          padding: 4px 10px;
+        }
+
+        .courses-grid {
+          background: white;
+          border-radius: 15px;
+          padding: 20px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .empty-state-card {
+          background: white;
+          border-radius: 15px;
+          padding: 20px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .course-card {
+          background: #f8f9fa;
+          border-radius: 12px;
+          padding: 18px;
+          transition: all 0.3s;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .course-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+        }
+
+        .course-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 10px;
+        }
+
+        .course-icon {
+          width: 40px;
+          height: 40px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.2rem;
+          flex-shrink: 0;
+        }
+
+        .course-title {
+          margin: 0;
+          font-weight: 600;
+          font-size: 0.95rem;
+        }
+
+        .course-title-link {
+          color: #212529;
+          text-decoration: none;
+        }
+
+        .course-title-link:hover {
+          color: #28a745;
+        }
+
+        .course-description {
+          font-size: 0.8rem;
+          color: #6c757d;
+          margin-bottom: 12px;
+          flex: 1;
+        }
+
+        .progress-info {
+          margin-bottom: 10px;
+        }
+
+        .course-stats {
+          display: flex;
+          gap: 15px;
+          margin: 8px 0;
+        }
+
+        .stat-item {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 0.8rem;
+          color: #495057;
+        }
+
+        
+        @media (max-width: 992px) {
+          .col-lg-9 {
+            margin-bottom: 30px;
+          }
+        }
+
+        @media (max-width: 576px) {
+          .stat-card {
+            margin-bottom: 10px;
+          }
+          .welcome-card {
+            padding: 15px;
+          }
+          .streak-badge {
+            margin-top: 10px;
+          }
+        }
+      `}</style>
+    </div>
   )
 }
 

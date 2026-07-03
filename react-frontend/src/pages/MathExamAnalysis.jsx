@@ -8,7 +8,20 @@ const difficultyColor = { easy: '#28a745', medium: '#ffc107', hard: '#dc3545', u
 const difficultyBg   = { easy: 'rgba(40,167,69,0.1)', medium: 'rgba(255,193,7,0.1)', hard: 'rgba(220,53,69,0.1)', unknown: 'rgba(108,117,125,0.1)' };
 
 const pct     = (c, t) => t > 0 ? ((c / t) * 100).toFixed(0) : 0;
-const fmtTime = (s) => s >= 60 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${s}s`;
+const fmtTime = (s) => {
+  if (s >= 3600) {
+    const h = Math.floor(s / 3600)
+    const m = Math.floor((s % 3600) / 60)
+    const sec = s % 60
+    return `${h}h ${m}m ${sec}s`
+  }
+  if (s >= 60) {
+    const m = Math.floor(s / 60)
+    const sec = s % 60
+    return `${m}m ${sec}s`
+  }
+  return `${s}s`
+}
 const Skel    = ({ w = '100%', h = 16 }) => (
   <div style={{ width: w, height: h, background: '#e9ecef', borderRadius: 8, marginBottom: 12, animation: 'pulse 1.5s ease-in-out infinite' }} />
 );

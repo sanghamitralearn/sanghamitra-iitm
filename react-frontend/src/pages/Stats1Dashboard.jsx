@@ -5,6 +5,59 @@ import axios from 'axios'
 
 const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
+const STATS_TOPIC_NAMES = {
+  // Midterm / Endterm
+  'Quiz1_midterm':                           'Quiz 1 Midterm',
+  'Quiz1 midterm':                           'Quiz 1 Midterm',
+  'quiz1_midterm':                           'Quiz 1 Midterm',
+  'end_term':                                'Endterm',
+  'Endterm':                                 'Endterm',
+  // Week 1
+  'Basics of Data':                          'Week 1 - Basics of Data',
+  'basics_of_data':                          'Week 1 - Basics of Data',
+  'Week1_Basics_of_Data':                    'Week 1 - Basics of Data',
+  // Week 2
+  'Categorical Analysis':                    'Week 2 - Categorical Analysis',
+  'categorical_analysis':                    'Week 2 - Categorical Analysis',
+  'Week2_Categorical_Analysis':              'Week 2 - Categorical Analysis',
+  // Week 3
+  'Descriptive Statistics':                  'Week 3 - Descriptive Statistics',
+  'descriptive_statistics':                  'Week 3 - Descriptive Statistics',
+  'Week3_Descriptive_Statistics':            'Week 3 - Descriptive Statistics',
+  // Week 4
+  'Variable Association':                    'Week 4 - Variable Association',
+  'variable_association':                    'Week 4 - Variable Association',
+  'Week4_Variable_Association':              'Week 4 - Variable Association',
+  // Week 5
+  'week-5 - Counting_and_Factorial':         'Week 5 - Counting and Factorial',
+  'Counting_and_Factorial':                  'Week 5 - Counting and Factorial',
+  'counting_and_factorial':                  'Week 5 - Counting and Factorial',
+  // Week 6
+  'week-6_permutations_and_combinations':    'Week 6 - Permutations and Combinations',
+  'permutations_and_combinations':           'Week 6 - Permutations and Combinations',
+  // Week 7
+  'week_7_probability':                      'Week 7 - Probability',
+  'probability':                             'Week 7 - Probability',
+  'Probability':                             'Week 7 - Probability',
+  // Week 8
+  'conditional_probability':                 'Week 8 - Conditional Probability',
+  'Conditional Probability':                 'Week 8 - Conditional Probability',
+  // Week 9
+  'week9_stats1':                            'Week 9 - Random Variables',
+  // Week 10
+  'week10_stats1':                           'Week 10 - Expectation and Variance',
+  // Week 11
+  'week11_stats1':                           'Week 11 - Binomial and Poisson Random Variables',
+  // Week 12
+  'week_12':                                 'Week 12 - Introduction to Continuous Random Variables',
+}
+
+function getDisplayTopicName(topic) {
+  if (!topic) return 'Unknown Topic'
+  if (STATS_TOPIC_NAMES[topic]) return STATS_TOPIC_NAMES[topic]
+  return topic.replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
+
 const Stats1Dashboard = () => {
   const navigate = useNavigate()
   const [data, setData] = useState([])
@@ -36,12 +89,13 @@ const Stats1Dashboard = () => {
     return '#dc3545'
   }
 
+
   const stats = (() => {
     let totalSubmissions = 0, totalCorrect = 0, totalQ = 0
     data.forEach(s => (s.quizScores || []).forEach(q => {
       totalSubmissions++
-      totalCorrect += q.correctAnswers || 0
-      totalQ += q.totalQuestions || 0
+      totalCorrect += q.score || q.correctAnswers || 0
+      totalQ += q.maxScore || q.totalPossible || 50
     }))
     return {
       totalStudents: data.length,
@@ -50,7 +104,7 @@ const Stats1Dashboard = () => {
     }
   })()
 
-  const sortedData = [...data].sort((a, b) => {
+  const sortedData = [...data].filter(s => s.quizScores?.length > 0).sort((a, b) => {
     const aLatest = (a.quizScores || []).reduce((max, q) => Math.max(max, new Date(q.timestamp || 0)), 0)
     const bLatest = (b.quizScores || []).reduce((max, q) => Math.max(max, new Date(q.timestamp || 0)), 0)
     return bLatest - aLatest
@@ -135,22 +189,20 @@ const Stats1Dashboard = () => {
                         const recent = scores.length > 0
                           ? scores.reduce((a, b) => new Date(a.timestamp || 0) > new Date(b.timestamp || 0) ? a : b)
                           : null
-                        const pct = recent
-                          ? Math.round(recent.percentage || ((recent.correctAnswers / (recent.totalQuestions || 1)) * 100))
-                          : 0
+                        const pct = recent ? Math.round(recent.percentage || 0) : 0
                         return (
                           <tr key={i} style={{ cursor: 'pointer' }} onClick={() => setSelectedStudent(student)}>
                             <td><strong>{student.username || student.name || student.email}</strong></td>
                             <td>{student.email}</td>
                             <td>
                               {recent
-                                ? <span className="badge bg-success">{recent.topic || 'Unknown'}</span>
+                                ? <span className="badge bg-success">{getDisplayTopicName(recent.topic)}</span>
                                 : <span className="text-muted">No attempts</span>}
                             </td>
                             <td>
                               {recent
                                 ? <span style={{ color: getScoreColor(pct), fontWeight: 'bold' }}>
-                                    {recent.correctAnswers}/{recent.totalQuestions} ({pct}%)
+                                    {recent.score || 0}/{recent.maxScore || recent.totalPossible || 50} ({pct}%)
                                   </span>
                                 : <span className="text-muted">—</span>}
                             </td>
@@ -211,11 +263,11 @@ const Stats1Dashboard = () => {
                     {[...selectedStudent.quizScores]
                       .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
                       .map((q, i) => {
-                        const pct = Math.round(q.percentage || ((q.correctAnswers / (q.totalQuestions || 1)) * 100))
+                        const pct = Math.round(q.percentage || 0)
                         return (
                           <tr key={i}>
-                            <td><strong>{q.topic || 'Unknown'}</strong></td>
-                            <td>{q.correctAnswers}/{q.totalQuestions}</td>
+                            <td><strong>{getDisplayTopicName(q.topic)}</strong></td>
+                            <td>{q.score || 0}/{q.maxScore || q.totalPossible || 50}</td>
                             <td><span style={{ color: getScoreColor(pct), fontWeight: 'bold' }}>{pct}%</span></td>
                             <td>{q.timestamp ? new Date(q.timestamp).toLocaleDateString() : '—'}</td>
                           </tr>

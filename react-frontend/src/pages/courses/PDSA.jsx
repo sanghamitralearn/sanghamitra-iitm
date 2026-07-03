@@ -245,6 +245,11 @@ const PDSA = () => {
       </div>
 
       <div className="container">
+        <div style={{ padding: '0 0 12px' }} className="d-flex justify-content-end">
+          <Link to="/courses/pdsa/review" className="btn btn-outline-secondary btn-sm">
+            <i className="bi bi-clock-history me-1"></i> Review Past Submissions
+          </Link>
+        </div>
         {/* Auth Warning */}
         {!isAuthenticated && (
           <div className="auth-warning" style={{

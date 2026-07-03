@@ -12,7 +12,7 @@ import ForgotPassword from './pages/ForgotPassword'
 import English from './pages/English'
 import Math from './pages/Math'
 import Statistics from './pages/courses/Statistics'
-import Programming from './pages/Programming'
+// import Programming from './pages/Programming'
 import Grammar from './pages/Grammar'
 import Vocabulary from './pages/Vocabulary'
 import ReadingComprehension from './pages/ReadingComprehension'
@@ -28,7 +28,7 @@ import Stats1Dashboard from './pages/Stats1Dashboard'
 import Stats2Dashboard from './pages/Stats2Dashboard'
 import CTDashboard from './pages/CTDashboard'
 import PythonDashboard from './pages/PythonDashboard'
-import PDSADashboard from './pages/PDSADashboard'
+
 import Algebra from './pages/Algebra'
 import IIITMMath from './pages/courses/IIITM-math'
 import AlgebraSubject from './pages/courses/algebra'
@@ -38,21 +38,64 @@ import PDSA from './pages/courses/PDSA'
 import Math2 from './pages/courses/Math2'
 import StatisticsSubject from './pages/courses/Statistics'
 import Statistics2 from './pages/courses/Statistics2'
-import Python from './pages/courses/Python'
+//import Python from './pages/courses/Python'
 import AdminSubject from './pages/courses/Admin'
 import IITMMathQuiz from './pages/courses/IITMMathQuiz'
 import StatisticsQuiz from './pages/courses/StatisticsQuiz'
 import MathReview from './pages/MathReview'
+import Math2Quiz from './pages/courses/Math2Quiz'
+import MathExamReview from './pages/MathReview'
+
+import DBMS from './pages/courses/DBMS'
+import DBMSQuiz from './pages/courses/DBMSQuiz'
+
 // PDSA quiz type imports
 import PdsaTestQuiz from './pages/courses/PDSA/PdsaTestQuiz'
 import PdsaCodingQuiz from './pages/courses/PDSA/PdsaCodingQuiz'
 import PdsaInterviewQuiz from './pages/courses/PDSA/PdsaInterviewQuiz'
-import Math2Quiz from './pages/courses/Math2Quiz'
-import MathExamReview from './pages/MathReview'
+
+// Statistics - II
+import Stats2Quiz from './pages/courses/Stats2Quiz'
+import Stats2Review from './pages/courses/Stats2Review'
+
+// competitive course
+import CompetitiveExamFoundation from './pages/courses/CompetitiveExamFoundation';
+import MathQuiz from './pages/courses/Competitive/MathQuiz'
+import ReviewPage from './pages/courses/Competitive/MathReview'
+import CompetitiveMath from './pages/courses/Competitive/CompetitiveMath'
+import PhysicsQuiz from './pages/courses/Competitive/PhysicsQuiz'
+
+// import JAVA from './pages/courses/JAVA'
+import JavaQuiz from './pages/courses/JAVA/JavaQuiz'
+
 import JEE from './pages/courses/JEE'
 import JEEQuiz from './pages/courses/JEEQuiz'
-import JEEAdminPage from './pages/JEEAdminPage'
+import JEEAdvancedDashboard from './pages/JEEAdminPage'
+import JEEAdvancedAnalysis from './pages/JEEAdvancedAnalysis'
 import QuestionGeneratorPage from './pages/QuestionGeneratorPage'
+
+import JEEMain from './pages/courses/JEEMain'
+import JEEMainQuiz from './pages/courses/JEEMainQuiz'
+import JEEMainTest from './pages/courses/JEEMainTest'
+import JEEMainAnalysis from './pages/JEEMainAnalysis'
+import JEEMainDashboard from './pages/JEEMainDashboard'
+
+import SAT from './pages/courses/SAT'
+import SATMain from './pages/courses/SATMain'
+import SATQuiz from './pages/courses/SATQuiz'
+import SATFullTest from './pages/courses/SATFullTest'
+import SATDashboard from './pages/SATDashboard'
+import SATAnalysis from './pages/SATAnalysis'
+import SATExamAnalysis from './pages/SATExamAnalysis'
+import SATScoreDashboard from './pages/courses/SATScoreDashboard'
+
+// New Programming course
+import PDSADashboard from './pages/PDSADashboard'
+import ProgrammingCourses from './pages/courses/Programming'
+import ProgrammingDashboard from './pages/ProgrammingDashboard'
+import CoursePage from './pages/courses/Programming_Courses/CoursePage'
+import QuizPage from './pages/courses/Programming_Courses/QuizPage'
+import CodingPage from './pages/courses/Programming_Courses/CodingPage'
 
 
 function App() {
@@ -72,7 +115,7 @@ function App() {
             <Route path="/english" element={<English />} />
             <Route path="/math" element={<Math />} />
             <Route path="/statistics" element={<Statistics />} />
-            <Route path="/programming" element={<Programming />} />
+
             <Route path="/english/grammar" element={<Grammar />} />
             <Route path="/english/vocabulary" element={<Vocabulary />} />
             <Route path="/english/reading-comprehension" element={<ReadingComprehension />} />
@@ -89,14 +132,14 @@ function App() {
             <Route path="/admin/iitm-ct" element={<CTDashboard />} />
             <Route path="/admin/python" element={<PythonDashboard />} />
             <Route path="/admin/dsa" element={<PDSADashboard />} />
-            <Route path="/admin/jee" element={<JEEAdminPage />} />
+            <Route path="/admin/jee-advanced" element={<JEEAdvancedDashboard />} />
             <Route path="/admin/question-generator" element={<QuestionGeneratorPage />} />
             <Route path="/algebra" element={<Algebra />} />
             <Route path="/math2" element={<Math2 />} />
             <Route path="/statistics2" element={<Statistics2 />} />
             <Route path="/computational-thinking" element={<IIITMMath />} />
             <Route path="/dbms" element={<AdminSubject />} />
-            
+
             {/* Course-specific routes */}
             <Route path="/courses/IIITM-math" element={<IIITMMath />} />
             <Route path="/courses/algebra" element={<AlgebraSubject />} />
@@ -106,9 +149,8 @@ function App() {
             <Route path="/courses/math2" element={<Math2 />} />
             <Route path="/courses/statistics" element={<StatisticsSubject />} />
             <Route path="/courses/statistics2" element={<Statistics2 />} />
-            <Route path="/courses/python" element={<Python />} />
             <Route path="/courses/admin" element={<AdminSubject />} />
-            
+
             {/* IIITM Math Quiz — dynamic, DB-driven */}
             <Route path="/courses/IIITM-math/quiz/:topic" element={<IITMMathQuiz />} />
             <Route path="/admin/math/exam/:email/:topic/:attemptNumber" element={<MathReview />} />
@@ -120,13 +162,62 @@ function App() {
             <Route path="/courses/pdsa/test/:weekId" element={<PdsaTestQuiz />} />
             <Route path="/courses/pdsa/coding/:weekId" element={<PdsaCodingQuiz />} />
             <Route path="/courses/pdsa/interview/:weekId" element={<PdsaInterviewQuiz />} />
-      
+
             {/* Math 2 Quiz — week-based, DB-driven */}
             <Route path="/courses/math2/quiz/:week" element={<Math2Quiz />} />
 
-            {/* JEE Advanced — subject-wise quizzes */}
+            {/* Statistics 2 Quiz — week-based, DB-driven */}
+            <Route path="/courses/statistics2/quiz/:week" element={<Stats2Quiz />} />
+            <Route path="/courses/statistics2/review" element={<Stats2Review />} />
+
+            {/* competitive-exam-foundation */}
+            <Route path="/competitive-exam-foundation" element={<CompetitiveExamFoundation />} />
+            <Route path="/courses/competitive-math" element={<CompetitiveMath />} />
+            <Route path="/courses/competitive-math/quiz/:week" element={<MathQuiz />} />
+            <Route path="/courses/competitive-math/review" element={<ReviewPage />} />
+            <Route path="/competitive-exam-foundation/physics" element={<PhysicsQuiz />} />
+
+            {/*
+            <Route path="/courses/python" element={<Python />} />
+            <Route path="/programming" element={<Programming />} />
+            <Route path="/courses/JAVA" element={<JAVA />} />
+            */}
+
+            <Route path="/courses/JAVA/:weekId" element={<JavaQuiz />} />
+
+            {/* JEE Advanced — subject-wise quizzes + analysis */}
             <Route path="/courses/jee" element={<JEE />} />
             <Route path="/courses/jee/quiz/:subject" element={<JEEQuiz />} />
+            <Route path="/courses/jee/analysis" element={<JEEAdvancedAnalysis />} />
+
+            {/* JEE Main — paper listing, full test, analysis + legacy subject quizzes */}
+            <Route path="/courses/jee-main" element={<JEEMain />} />
+            <Route path="/courses/jee-main/test" element={<JEEMainTest />} />
+            <Route path="/courses/jee-main/analysis" element={<JEEMainAnalysis />} />
+            <Route path="/courses/jee-main/quiz/:subject" element={<JEEMainQuiz />} />
+            <Route path="/admin/jee-main" element={<JEEMainDashboard />} />
+
+            {/* SAT — module-based quizzes */}
+            <Route path="/courses/sat" element={<SATMain />} />
+            <Route path="/courses/sat/modules" element={<SAT />} />
+            <Route path="/courses/sat/quiz/:section/:module" element={<SATQuiz />} />
+            <Route path="/courses/sat/full-test" element={<SATFullTest />} />
+            <Route path="/courses/sat/analysis" element={<SATAnalysis />} />
+            <Route path="/admin/sat" element={<SATDashboard />} />
+            <Route path="/courses/sat/ScoreDashboard" element={<SATScoreDashboard />} />
+            <Route path="/admin/sat/exam/:email/:subject/:attemptNumber" element={<SATExamAnalysis />} />
+
+            {/* DBMS COURSE */}
+            <Route path="/courses/DBMS" element={<DBMS />} />
+            <Route path="/courses/DBMS/:weekId" element={<DBMSQuiz />} />
+
+            {/* programming COURSE */}
+            <Route path="/admin/pdsa" element={<PDSADashboard />} />
+            <Route path="/admin/programming" element={<ProgrammingDashboard />} />
+            <Route path="/programming/courses" element={<ProgrammingCourses />} />
+            <Route path="/programming/courses/:course" element={<CoursePage />} />
+            <Route path="/quiz/:course/week/:week" element={<QuizPage />} />
+            <Route path="/coding/:course/week/:week" element={<CodingPage />} />
           </Routes>
         </main>
         <Footer />

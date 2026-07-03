@@ -781,10 +781,11 @@ const JEEQuiz = () => {
             sm += sec?.full ?? q.points ?? 3
             sr.push(r)
           })
-          await axios.post(`${API_URL}/api/jee_scores`, { email: u.email, name: u.username || u.name || u.email, subject: sub, totalQuestions: subQs.length, correctAnswers: sc, wrongAnswers: sw, unattempted: su, score: ss, maxScore: sm, responses: sr }, { withCredentials: true })
+          const paperLabel = isFull ? 'Full' : subject  // 'Paper1' | 'Paper2' | 'Full'
+          await axios.post(`${API_URL}/api/jee_scores`, { email: u.email, name: u.username || u.name || u.email, subject: sub, paper: paperLabel, totalQuestions: subQs.length, correctAnswers: sc, wrongAnswers: sw, unattempted: su, score: ss, maxScore: sm, responses: sr }, { withCredentials: true })
         }))
       } else {
-        await axios.post(`${API_URL}/api/jee_scores`, { email: u.email, name: u.username || u.name || u.email, subject, totalQuestions: questions.length, correctAnswers: correct, wrongAnswers: wrong, unattempted, score: totalScore, maxScore, responses }, { withCredentials: true })
+        await axios.post(`${API_URL}/api/jee_scores`, { email: u.email, name: u.username || u.name || u.email, subject, paper: 'Single', totalQuestions: questions.length, correctAnswers: correct, wrongAnswers: wrong, unattempted, score: totalScore, maxScore, responses }, { withCredentials: true })
       }
     } catch (e) { console.error('Failed to save score:', e) }
     finally { setSaving(false) }

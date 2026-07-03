@@ -121,7 +121,58 @@ const Statistics = () => {
       icon: 'bi-diagram-3',
       url: '/courses/statistics/quiz/conditional_probability',
       linkState: { quizName: 'Week 8 - Conditional Probability' }
+
+    },
+    {
+      id: 'week9',
+      name: 'Week-9 - Random Variables',
+      displayName: 'Week-9 - Random Variables',
+      description: 'Basics of random variables and distributions',
+      icon: 'bi-dice-1',
+      url: '/courses/statistics/quiz/week9_stats1',
+      linkState: { quizName: 'Week-9 - Random Variables' }
+    },
+
+    {
+      id: 'week10',
+      name: 'Week-10 - Expectation and Variance',
+      displayName: 'Week-10 - Expectation and Variance',
+      description: 'Mean, variance, and their properties',
+      icon: 'bi-dice-1',
+      url: '/courses/statistics/quiz/week10_stats1',
+      linkState: { quizName: 'Week-10 - Expectation and Variance' }
+    },
+
+    {
+      id: 'week11',
+      name: 'Week-11 - Binomial and poisson random variables',
+      displayName: 'Week-11 - Binomial and poisson random variables',
+      description: 'Mean, variance, and their properties',
+      icon: 'bi-dice-1',
+      url: '/courses/statistics/quiz/week11_stats1',
+      linkState: { quizName: 'Week-11 - Binomial and poisson random variables' }
+    },
+
+    {
+      id: 'week12',
+      name: 'Week-12 - Introduction to continous random variables',
+      displayName: 'Week-12 - Introduction to continous random variables',
+      description: 'Mean, variance, and their properties',
+      icon: 'bi-dice-1',
+      url: '/courses/statistics/quiz/week_12',
+      linkState: { quizName: 'Week-12 - Introduction to continous random variables' }
+    },
+
+    {
+      id: 'endterm',
+      name: 'Endterm',
+      displayName: 'Endterm',
+      description: 'Covers all week topics',
+      icon: 'bi-dice-1',
+      url: '/courses/statistics/quiz/end_term',
+      linkState: { quizName: 'Endterm' }
     }
+
   ]
 
   // Match saved scores to topics using flexible topic name matching
@@ -134,7 +185,9 @@ const Statistics = () => {
     'Week 5 - Counting and Factorial':   ['week-5 - Counting_and_Factorial','Counting_and_Factorial','counting_and_factorial'],
     'Week 6 - Permutations and Combinations': ['week-6_permutations_and_combinations','permutations_and_combinations'],
     'Week 7 - Probability':              ['week_7_probability','probability','Probability'],
-    'Week 8 - Conditional Probability':  ['conditional_probability','Conditional Probability','Conditional%20Probability']
+    'Week 8 - Conditional Probability':  ['conditional_probability','Conditional Probability','Conditional%20Probability'],
+    'Week 9 - Random Variables':  ['week9_stats1'],
+    'Week-10 - Expectation and Variance'  : ['week10_stats1']
   }
 
   const findTopicAssessment = (topicId) => {
