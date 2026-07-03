@@ -5884,9 +5884,9 @@ router.get('/admin-notifications', async (req, res) => {
     const [
       math1Users, stats1Users, ctUsers,
       math2Users, stats2Users,
-      codingUsers, pdsaUsers, 
-      satDocs, progAttempts
-        
+      codingUsers, pdsaUsers,
+      satDocs, progAttempts,
+      jeeAdvDocs, jeeMainDocs, jeeMainFullDocs, greDocs,
     ] = await Promise.all([
       iitm_math_score.find({}, { email:1, username:1, name:1,
         'quizScores.topic':1, 'quizScores.score':1, 'quizScores.percentage':1,
@@ -5916,6 +5916,17 @@ router.get('/admin-notifications', async (req, res) => {
       SatScore.find({}, { email:1, name:1, subject:1,
         'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
         'attempts.totalQuestions':1, 'attempts.dateAttempted':1}).lean(),
+      JeeScore.find({}, { email:1, name:1, subject:1,
+        'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
+        'attempts.totalQuestions':1, 'attempts.paper':1, 'attempts.dateAttempted':1 }).lean(),
+      JeeMainScore.find({}, { email:1, name:1, subject:1,
+        'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
+        'attempts.totalQuestions':1, 'attempts.dateAttempted':1 }).lean(),
+      JeeMainFullScore.find({}, { email:1, name:1, paper:1, year:1,
+        score:1, maxScore:1, correctAnswers:1, totalQuestions:1, dateAttempted:1 }).lean(),
+      GreScore.find({}, { email:1, name:1, subject:1,
+        'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
+        'attempts.totalQuestions':1, 'attempts.dateAttempted':1 }).lean(),
     ])
 
     const all = []
@@ -6029,6 +6040,68 @@ router.get('/admin-notifications', async (req, res) => {
           userName: doc.name || doc.email,
           subject: 'SAT', subjectKey: 'sat', icon: 'bi-pencil-fill', iconClass: 'sat',
           topic: doc.subject || 'SAT Section',
+          score: pct,
+          timestamp: attempt.dateAttempted
+        })
+      })
+    })
+
+    // JEE Advanced
+    jeeAdvDocs.forEach(doc => {
+      ;(doc.attempts || []).forEach(attempt => {
+        const pct = attempt.totalQuestions > 0
+          ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
+          : (attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0)
+        all.push({
+          userName: doc.name || doc.email,
+          subject: 'JEE Advanced', subjectKey: 'jee_adv', icon: 'bi-trophy-fill', iconClass: 'jee',
+          topic: `${doc.subject}${attempt.paper ? ' — ' + attempt.paper : ''}`,
+          score: pct,
+          timestamp: attempt.dateAttempted
+        })
+      })
+    })
+
+    // JEE Main (subject-wise)
+    jeeMainDocs.forEach(doc => {
+      ;(doc.attempts || []).forEach(attempt => {
+        const pct = attempt.totalQuestions > 0
+          ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
+          : (attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0)
+        all.push({
+          userName: doc.name || doc.email,
+          subject: 'JEE Main', subjectKey: 'jee_main', icon: 'bi-journal-text', iconClass: 'jee',
+          topic: doc.subject || 'JEE Main',
+          score: pct,
+          timestamp: attempt.dateAttempted
+        })
+      })
+    })
+
+    // JEE Main (full paper)
+    jeeMainFullDocs.forEach(doc => {
+      const pct = doc.totalQuestions > 0
+        ? Math.round((doc.correctAnswers / doc.totalQuestions) * 100)
+        : (doc.maxScore > 0 ? Math.round((doc.score / doc.maxScore) * 100) : 0)
+      all.push({
+        userName: doc.name || doc.email,
+        subject: 'JEE Main', subjectKey: 'jee_main', icon: 'bi-journal-text', iconClass: 'jee',
+        topic: doc.paper ? `${doc.paper}${doc.year ? ' ' + doc.year : ''}` : 'Full Paper',
+        score: pct,
+        timestamp: doc.dateAttempted
+      })
+    })
+
+    // GRE
+    greDocs.forEach(doc => {
+      ;(doc.attempts || []).forEach(attempt => {
+        const pct = attempt.totalQuestions > 0
+          ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
+          : (attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0)
+        all.push({
+          userName: doc.name || doc.email,
+          subject: 'GRE', subjectKey: 'gre', icon: 'bi-mortarboard-fill', iconClass: 'gre',
+          topic: doc.subject || 'GRE Section',
           score: pct,
           timestamp: attempt.dateAttempted
         })
