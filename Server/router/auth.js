@@ -5891,42 +5891,42 @@ router.get('/admin-notifications', async (req, res) => {
       iitm_math_score.find({}, { email:1, username:1, name:1,
         'quizScores.topic':1, 'quizScores.score':1, 'quizScores.percentage':1,
         'quizScores.correctAnswers':1, 'quizScores.totalQuestions':1, 'quizScores.timestamp':1
-      }).lean(),
+      }).lean().catch(() => []),
       Statistics_scores.find({}, { email:1, username:1, name:1,
         'quizScores.topic':1, 'quizScores.percentage':1,
         'quizScores.correctAnswers':1, 'quizScores.totalQuestions':1, 'quizScores.timestamp':1
-      }).lean(),
+      }).lean().catch(() => []),
       iitm_ct_scores.find({}, { email:1, username:1, name:1,
         'quizScores.topic':1, 'quizScores.score':1, 'quizScores.percentage':1,
         'quizScores.totalQuestions':1, 'quizScores.timestamp':1
-      }).lean(),
+      }).lean().catch(() => []),
       IITM_Maths_2_Score.find({}, { email:1, name:1,
         'scores.week':1, 'scores.subtopic':1, 'scores.score':1,
         'scores.correctAnswers':1, 'scores.totalQuestions':1, 'scores.dateAttempted':1
-      }).lean(),
+      }).lean().catch(() => []),
       IITStats2Scores.find({}, { email:1, name:1,
         'scores.week':1, 'scores.subtopic':1, 'scores.score':1,
         'scores.correctAnswers':1, 'scores.totalQuestions':1, 'scores.dateAttempted':1
-      }).lean(),
-      pdsaCodingSubmission.find({}, { email:1, username:1, name:1, topic:1, percentage:1, score:1, maxScore:1, timestamp:1 }).lean(),
-      pdsaSubmission.find({}, { email:1, username:1, name:1, topic:1, percentage:1, score:1, maxScore:1, timestamp:1 }).lean(),
+      }).lean().catch(() => []),
+      pdsaCodingSubmission.find({}, { email:1, username:1, name:1, topic:1, percentage:1, score:1, maxScore:1, timestamp:1 }).lean().catch(() => []),
+      pdsaSubmission.find({}, { email:1, username:1, name:1, topic:1, percentage:1, score:1, maxScore:1, timestamp:1 }).lean().catch(() => []),
 
-      ProgrammingQuizAttempt.find({}, { email:1, username:1, course:1, week:1, topic:1, percentage:1, submitted_at:1 }).lean(),
+      ProgrammingQuizAttempt.find({}, { email:1, username:1, course:1, week:1, topic:1, percentage:1, submitted_at:1 }).lean().catch(() => []),
 
       SatScore.find({}, { email:1, name:1, subject:1,
         'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
-        'attempts.totalQuestions':1, 'attempts.dateAttempted':1}).lean(),
+        'attempts.totalQuestions':1, 'attempts.dateAttempted':1}).lean().catch(() => []),
       JeeScore.find({}, { email:1, name:1, subject:1,
         'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
-        'attempts.totalQuestions':1, 'attempts.paper':1, 'attempts.dateAttempted':1 }).lean(),
+        'attempts.totalQuestions':1, 'attempts.paper':1, 'attempts.dateAttempted':1 }).lean().catch(() => []),
       JeeMainScore.find({}, { email:1, name:1, subject:1,
         'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
-        'attempts.totalQuestions':1, 'attempts.dateAttempted':1 }).lean(),
+        'attempts.totalQuestions':1, 'attempts.dateAttempted':1 }).lean().catch(() => []),
       JeeMainFullScore.find({}, { email:1, name:1, paper:1, year:1,
-        score:1, maxScore:1, correctAnswers:1, totalQuestions:1, dateAttempted:1 }).lean(),
+        score:1, maxScore:1, correctAnswers:1, totalQuestions:1, dateAttempted:1 }).lean().catch(() => []),
       GreScore.find({}, { email:1, name:1, subject:1,
         'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
-        'attempts.totalQuestions':1, 'attempts.dateAttempted':1 }).lean(),
+        'attempts.totalQuestions':1, 'attempts.dateAttempted':1 }).lean().catch(() => []),
     ])
 
     const all = []
