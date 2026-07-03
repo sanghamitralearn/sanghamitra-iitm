@@ -94,8 +94,13 @@ app.get('/api/example', function(req, res) {
     res.send("Cookies are set");
 });
 
-// Start server
+// Start server (local dev)
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+    });
+}
+
+// Vercel serverless export
+module.exports = app;
