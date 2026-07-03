@@ -6159,6 +6159,11 @@ router.get('/gre_scores', async (req, res) => {
       }))
     )
     res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // ══ JEE Advanced Admin Routes ════════════════════════════════════════════════
 
 // GET /api/jee_admin — overview table: one row per student with latest score per subject
@@ -6310,6 +6315,11 @@ router.post('/gre_full_scores', async (req, res) => {
     })
     await doc.save()
     res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // GET /api/jee_admin/question_stats?subject= — per-question accuracy across all students
 router.get('/jee_admin/question_stats', async (req, res) => {
   try {
@@ -6490,6 +6500,11 @@ router.get('/gre_exam_detail', async (req, res) => {
         },
       }
     })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // POST /api/fix-jee-papers — one-time migration: relabel 'Single' attempts that
 // were Paper1/Paper2 quizzes (all 3 subjects saved within 10 min = paper session).
 router.post('/fix-jee-papers', async (req, res) => {
