@@ -103,14 +103,14 @@ const PaperInsightsSection = ({ selectedStudent, getScoreColor, handleAnalyze })
                       <tr key={i}
                         style={{ cursor: hasData ? 'pointer' : 'default' }}
                         className="table-row-hover"
-                        onClick={() => hasData && handleAnalyze({ isPaper: true, paper: s.paper, sessionNum: s.n, total: s.total, max: s.max, date: s.date, subjects: s.subs })}
+                        onClick={() => hasData && handleAnalyze({ isPaper: true, paper: s.paper, sessionNum: s.n, total: s.total, max: 180, date: s.date, subjects: s.subs })}
                         title={hasData ? 'Click to view full paper analysis' : ''}>
                         <td><span className="badge" style={{ background: bg, fontSize: '0.65rem' }}>{s.paper === 'Paper1' ? 'P1' : 'P2'}</span></td>
                         <td className="text-muted">#{s.n}</td>
                         <td>{fmt('Physics')}</td>
                         <td>{fmt('Chemistry')}</td>
                         <td>{fmt('Mathematics')}</td>
-                        <td><span style={{ fontWeight: 700, color: getScoreColor(pct) }}>{s.total}/{s.max || 180}</span></td>
+                        <td><span style={{ fontWeight: 700, color: getScoreColor(pct) }}>{s.total}/180</span></td>
                         <td className="text-muted">{s.date ? new Date(s.date).toLocaleDateString() : '—'}</td>
                       </tr>
                     );
@@ -411,7 +411,7 @@ const JEEAdminPage = () => {
     const p1    = getPaperTotal(p1Map);
     const p2    = getPaperTotal(p2Map);
     const grandScore = (p1.totalScore ?? 0) + (p2.totalScore ?? 0);
-    const grandMax   = (p1.totalMax || 0)   + (p2.totalMax || 0);
+    const grandMax   = (p1.totalScore !== null ? 180 : 0) + (p2.totalScore !== null ? 180 : 0);
     const grandPct   = grandMax > 0 ? Math.round((grandScore / grandMax) * 100) : 0;
 
     const singleAttempts = (selectedStudent.quizScores || [])
@@ -676,7 +676,7 @@ const JEEAdminPage = () => {
                       const p1    = getPaperTotal(p1Map);
                       const p2    = getPaperTotal(p2Map);
                       const gScore = (p1.totalScore ?? 0) + (p2.totalScore ?? 0);
-                      const gMax   = (p1.totalMax || 0) + (p2.totalMax || 0);
+                      const gMax   = (p1.totalScore !== null ? 180 : 0) + (p2.totalScore !== null ? 180 : 0);
                       const gPct   = gMax > 0 ? Math.round((gScore / gMax) * 100) : 0;
                       const lastActive = (student.quizScores || []).reduce((m, q) =>
                         !m || new Date(q.timestamp) > new Date(m) ? q.timestamp : m, null);

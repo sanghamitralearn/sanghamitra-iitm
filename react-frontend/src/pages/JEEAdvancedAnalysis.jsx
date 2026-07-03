@@ -175,7 +175,7 @@ export default function JEEAdvancedAnalysis() {
   if (isPaper) {
     const subjects   = results.subjects || {}
     const totalScore = results.total ?? 0
-    const totalMax   = results.max   ?? 180
+    const totalMax   = 180
     const paperStyle = PAPER_STYLE[paper] || PAPER_STYLE.Paper1
     const paperLabel = paper === 'Paper1' ? 'Paper 1' : 'Paper 2'
 
@@ -183,7 +183,7 @@ export default function JEEAdvancedAnalysis() {
     const isSubjectView  = selectedView !== 'overview'
     const subData        = isSubjectView ? subjects[selectedView] : null
     const displayScore   = isSubjectView ? (subData?.score ?? 0)         : totalScore
-    const displayMax     = isSubjectView ? (subData?.maxScore ?? 60)     : totalMax
+    const displayMax     = isSubjectView ? 60                             : totalMax
     const displayCorrect = isSubjectView ? (subData?.correctAnswers ?? 0): SUBJECTS.reduce((s, k) => s + (subjects[k]?.correctAnswers ?? 0), 0)
     const displayWrong   = isSubjectView ? (subData?.wrongAnswers ?? 0)  : SUBJECTS.reduce((s, k) => s + (subjects[k]?.wrongAnswers ?? 0), 0)
     const displayUnatt   = isSubjectView ? (subData?.unattempted ?? 0)   : SUBJECTS.reduce((s, k) => s + (subjects[k]?.unattempted ?? 0), 0)
