@@ -387,7 +387,6 @@ const AdminDashboard = () => {
     { to: '/admin/sat',        icon: 'bi-pencil-fill',    label: 'SAT' },
     { to: '/admin/gre',        icon: 'bi-mortarboard-fill', label: 'GRE' },
     { to: '/admin/jee-main',   icon: 'bi-mortarboard-fill', label: 'JEE Main' },
-    { to: '/admin/jee-main',      icon: 'bi-mortarboard-fill', label: 'JEE Main' },
     { to: '/admin/jee-advanced',  icon: 'bi-trophy-fill',      label: 'JEE Advanced' },
   ]
 
@@ -646,7 +645,6 @@ const AdminDashboard = () => {
                   { key: 'sat', icon: 'bi-pencil-fill',    iconStyle: { background: 'rgba(0,61,143,0.1)',    color: '#003D8F' }, title: 'SAT',           to: '/admin/sat' },
                   { key: 'gre', icon: 'bi-mortarboard-fill', iconStyle: { background: 'rgba(111,66,193,0.1)',  color: '#6f42c1' }, title: 'GRE',           to: '/admin/gre' },
                   { key: 'jee', icon: 'bi-mortarboard-fill', iconStyle: { background: 'rgba(220,53,69,0.1)',   color: '#dc3545' }, title: 'JEE Main',      to: '/admin/jee-main' },
-                  { key: 'jee',     icon: 'bi-mortarboard-fill', iconStyle: { background: 'rgba(220,53,69,0.1)',   color: '#dc3545' }, title: 'JEE Main',      to: '/admin/jee-main' },
                   { key: 'jee_adv', icon: 'bi-trophy-fill',      iconStyle: { background: 'rgba(255,107,0,0.1)',  color: '#ff6b00' }, title: 'JEE Advanced',  to: '/admin/jee-advanced' },
                 ].map((card) => (
                   <div className="col-md-3 mb-4" key={card.key}>
