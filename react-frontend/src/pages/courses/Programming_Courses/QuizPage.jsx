@@ -246,7 +246,7 @@ const QuizPage = () => {
     try {
       setLoading(true)
       const res = await axios.get(
-        `${API}/api/mcq-questions?course=${course}&week=${weekNum}&count=15`,
+        `${API}/api/mcq-questions?course=${course}&week=${weekNum}&count=25`,
         { withCredentials: true }
       )
       const qs = res.data.questions || []
