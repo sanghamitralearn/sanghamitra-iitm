@@ -17,6 +17,8 @@ const attemptSchema = new mongoose.Schema({
   score: Number,
   maxScore: Number,
   responses: [responseSchema],
+  // 'FullTest' when this subject score came from a Full SAT Test session, 'Module' for standalone practice
+  source: { type: String, enum: ['Module', 'FullTest'], default: 'Module' },
   dateAttempted: { type: Date, default: Date.now },
 }, { _id: false });
 
