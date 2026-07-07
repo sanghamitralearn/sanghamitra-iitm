@@ -25,7 +25,7 @@ const greQuestionSchema = new mongoose.Schema({
   question_text: { type: String, required: true },
   type: {
     type: String,
-    enum: ['multiple_choice', 'multiple_select', 'numeric', 'essay'],
+    enum: ['multiple_choice', 'multiple_select', 'numeric', 'essay', 'text_completion_multi_blank'],
     required: true,
   },
   display_type: String,
