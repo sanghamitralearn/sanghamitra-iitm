@@ -4722,127 +4722,198 @@ router.get('/dbms/questions/week/:week', async (req, res) => {
 });
 
 
-// SAT course routes 
-
-// GET /api/sat_admin_scores — all attempts per student, grouped by email (for admin dashboard)
-router.get('/sat_admin_scores', async (req, res) => {
+// ─── SAT Debug — returns total count + distinct subjects in the collection ────
+router.get('/sat_debug', async (req, res) => {
   try {
-    const docs = await SatScore.find({}).lean()
-    const byEmail = {}
-    docs.forEach(doc => {
-      if (!byEmail[doc.email]) {
-        byEmail[doc.email] = { email: doc.email, name: doc.name, quizScores: [] }
-      }
-      ;(doc.attempts || []).forEach((attempt, i) => {
-        const pct = attempt.totalQuestions > 0
-          ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
-          : (attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0)
-        byEmail[doc.email].quizScores.push({
-          topic: doc.subject,
-          score: attempt.score,
-          maxScore: attempt.maxScore,
-          correctAnswers: attempt.correctAnswers,
-          totalQuestions: attempt.totalQuestions,
-          percentage: pct,
-          timestamp: attempt.dateAttempted,
-          attemptNumber: i + 1,
-        })
-      })
-    })
-    res.json({ success: true, data: Object.values(byEmail) })
+    const totalQuestions = await SatQuestion.countDocuments()
+    const distinctSubjects = await SatQuestion.distinct('subject')
+    res.json({ totalQuestions, distinctSubjects })
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message })
+    res.status(500).json({ error: err.message })
   }
 })
 
-// GET /api/sat_exam_detail?email=...&subject=...&attemptNumber=... — question-by-question breakdown for one attempt
-router.get('/sat_exam_detail', async (req, res) => {
+// ─── SAT Questions ────────────────────────────────────────────────────────────
+// GET /api/sat_questions?subject=Reading %26 Writing&paper=Module 1&difficulty=easy&limit=30
+router.get('/sat_questions', async (req, res) => {
   try {
-    const { email, subject, attemptNumber } = req.query
-    if (!email || !subject || !attemptNumber) {
-      return res.status(400).json({ success: false, message: 'email, subject, and attemptNumber are required' })
+    const { subject, difficulty, paper, limit } = req.query
+    const filter = {}
+    if (subject) {
+      // Normalise: treat "Reading & Writing" and "Reading and Writing" as the same.
+      // Build both forms and match either one, case-insensitively.
+      const withAmpersand = subject.replace(/\s+and\s+/gi, ' & ')
+      const withAnd       = subject.replace(/\s*&\s*/g, ' and ')
+      const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      filter.$or = [
+        { subject: { $regex: new RegExp('^' + esc(withAmpersand) + '$', 'i') } },
+        { subject: { $regex: new RegExp('^' + esc(withAnd)       + '$', 'i') } },
+      ]
+    }
+    if (difficulty) filter.difficulty = difficulty
+    if (paper) {
+      const escapedPaper = paper.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      filter.paper = { $regex: new RegExp('^' + escapedPaper + '$', 'i') }
+    }
+    const qs = await SatQuestion.find(filter)
+      .limit(limit ? parseInt(limit) : 0)
+      .lean()
+    res.json(qs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/sat_scores — upsert: one doc per (email+subject), keep last 5 attempts
+router.post('/sat_scores', async (req, res) => {
+  try {
+    const { email, name, subject, totalQuestions, correctAnswers, wrongAnswers,
+            unattempted, score, maxScore, responses, source } = req.body
+    if (!email || !subject) return res.status(400).json({ error: 'email and subject are required' })
+
+    const newAttempt = {
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore,
+      responses: (responses || []).map(r => ({
+        questionId:   r.questionId,
+        userResponse: r.userResponse,
+        isCorrect:    r.isCorrect,
+        marksAwarded: r.marksAwarded,
+      })),
+      source: source === 'FullTest' ? 'FullTest' : 'Module',
+      dateAttempted: new Date(),
     }
 
-    const doc = await SatScore.findOne({ email, subject }).lean()
-    if (!doc) return res.status(404).json({ success: false, message: 'Score record not found' })
-
-    const idx = parseInt(attemptNumber) - 1
-    const attempt = (doc.attempts || [])[idx]
-    if (!attempt) return res.status(404).json({ success: false, message: 'Attempt not found' })
-
-    const questionIds = (attempt.responses || []).map(r => r.questionId).filter(Boolean)
-    const questionMeta = await SatQuestion.find({ _id: { $in: questionIds } }).lean()
-    const metaMap = {}
-    questionMeta.forEach(q => { metaMap[String(q._id)] = q })
-
-    const enrichedResults = (attempt.responses || []).map((r, i) => {
-      const meta = metaMap[String(r.questionId)] || {}
-      return {
-        questionId:     r.questionId,
-        questionNumber: meta.question_number || i + 1,
-        questionText:   meta.question_text || '',
-        userAnswer:     r.userResponse,
-        correctAnswer:  meta.correct_answer,
-        isCorrect:      r.isCorrect,
-        marksAwarded:   r.marksAwarded,
-        difficulty:     meta.difficulty || null,
-        type:           meta.type || null,
-        options:        meta.options || [],
-        explanation:    meta.explanation || null,
-        points:         meta.points || 1,
-      }
-    })
-
-    const totalQuestions = attempt.totalQuestions || enrichedResults.length
-    const correctAnswers = attempt.correctAnswers || 0
-
-    // Compute difficulty breakdown
-    const difficultyStats = { easy: { total: 0, correct: 0 }, medium: { total: 0, correct: 0 }, hard: { total: 0, correct: 0 }, unknown: { total: 0, correct: 0 } }
-    enrichedResults.forEach(r => {
-      const d = r.difficulty || 'unknown'
-      difficultyStats[d].total++
-      if (r.isCorrect) difficultyStats[d].correct++
-    })
-
-    // Compute type breakdown
-    const typeStats = {}
-    enrichedResults.forEach(r => {
-      const t = r.type || 'unknown'
-      if (!typeStats[t]) typeStats[t] = { total: 0, correct: 0 }
-      typeStats[t].total++
-      if (r.isCorrect) typeStats[t].correct++
-    })
-
-    res.json({
-      success: true,
-      data: {
-        student: { email: doc.email, name: doc.name },
-        attempt: {
-          subject:        doc.subject,
-          attemptNumber:  parseInt(attemptNumber),
-          dateAttempted:  attempt.dateAttempted,
-          score:          attempt.score,
-          maxScore:       attempt.maxScore,
-          totalQuestions,
-          correctAnswers,
-          wrongAnswers:   attempt.wrongAnswers,
-          unattempted:    attempt.unattempted,
-          percentage:     totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0,
-        },
-        enrichedResults,
-        insights: {
-          difficultyStats,
-          typeStats,
-          hardestQuestions: enrichedResults
-            .filter(r => !r.isCorrect && r.difficulty === 'hard')
-            .map(r => ({ questionNumber: r.questionNumber, questionText: r.questionText, explanation: r.explanation })),
-        },
-      }
-    })
+    const doc = await SatScore.findOneAndUpdate(
+      { email, subject },
+      {
+        $set:  { name },
+        $push: { attempts: { $each: [newAttempt], $position: 0, $slice: 5 } },
+      },
+      { upsert: true, new: true }
+    )
+    res.json({ success: true, data: { email: doc.email, subject: doc.subject, attemptCount: doc.attempts.length } })
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message })
+    res.status(500).json({ error: err.message })
   }
 })
+
+// GET /api/sat_scores?email=x@y.com  — returns all attempts as flat records (newest first per subject)
+router.get('/sat_scores', async (req, res) => {
+  try {
+    const { email } = req.query
+    const filter = email ? { email } : {}
+    const docs = await SatScore.find(filter).lean()
+    const result = docs.flatMap(doc =>
+      (doc.attempts || []).map(attempt => ({
+        email:   doc.email,
+        name:    doc.name,
+        subject: doc.subject,
+        ...attempt,
+      }))
+    )
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── SAT Papers aggregation ───────────────────────────────────────────────────
+// GET /api/sat_papers  — groups sat_questions by (paper, year) and returns per-paper totals
+router.get('/sat_papers', async (req, res) => {
+  try {
+    const grouped = await SatQuestion.aggregate([
+      {
+        // Normalise subject so both "Reading & Writing" and "Reading and Writing" collapse into one key
+        $addFields: {
+          _normSubject: {
+            $cond: {
+              if: { $regexMatch: { input: { $ifNull: ['$subject', ''] }, regex: /reading/i } },
+              then: 'Reading & Writing',
+              else: '$subject',
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id:   { paper: '$paper', year: '$year', subject: '$_normSubject' },
+          count: { $sum: 1 },
+          marks: { $sum: { $ifNull: ['$points', 1] } },
+        },
+      },
+      {
+        $group: {
+          _id:            { paper: '$_id.paper', year: '$_id.year' },
+          totalQuestions: { $sum: '$count' },
+          totalMarks:     { $sum: '$marks' },
+          subjects:       { $push: { subject: '$_id.subject', count: '$count', totalMarks: '$marks' } },
+        },
+      },
+    ])
+
+    const result = grouped.map(p => {
+      const subjects = {}
+      p.subjects.forEach(s => { subjects[s.subject] = { count: s.count, totalMarks: s.totalMarks } })
+      return {
+        paper:          p._id.paper,
+        year:           p._id.year,
+        totalQuestions: p.totalQuestions,
+        totalMarks:     p.totalMarks,
+        subjects,
+      }
+    })
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/sat_full_scores — save one full-paper attempt
+router.post('/sat_full_scores', async (req, res) => {
+  try {
+    const {
+      email, name, paper, year,
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore, sectionScores, responses, totalTimeTaken,
+    } = req.body
+    if (!email || !paper) return res.status(400).json({ error: 'email and paper are required' })
+
+    const doc = new SatFullScore({
+      email, name, paper, year,
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore, sectionScores,
+      responses: (responses || []).map(r => ({
+        questionId:   r.questionId,
+        subject:      r.subject,
+        userResponse: r.userResponse,
+        isCorrect:    r.isCorrect,
+        marksAwarded: r.marksAwarded,
+        unattempted:  r.unattempted,
+        timeTaken:    r.timeTaken,
+      })),
+      totalTimeTaken,
+      dateAttempted: new Date(),
+    })
+    await doc.save()
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/sat_full_scores?email=x@y.com — all full-paper attempts newest first
+router.get('/sat_full_scores', async (req, res) => {
+  try {
+    const { email } = req.query
+    if (!email) return res.status(400).json({ error: 'email is required' })
+    const docs = await SatFullScore.find({ email }).sort({ dateAttempted: -1 }).lean()
+    res.json(docs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 
 // ─── JEE Questions ────────────────────────────────────────────────────────────
 // GET /api/jee_questions?subject=Physics&difficulty=easy&limit=30
