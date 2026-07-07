@@ -5393,6 +5393,113 @@ router.get('/sat_full_scores', async (req, res) => {
     res.status(500).json({ error: err.message })
   }
 })
+
+// GET /api/sat_admin_scores — all attempts per student, grouped by email (for admin dashboard)
+// Merges standalone module practice (SatScore) with Full SAT Test sessions (SatFullScore)
+router.get('/sat_admin_scores', async (req, res) => {
+  try {
+    const [moduleDocs, fullDocs] = await Promise.all([
+      SatScore.find({}).lean(),
+      SatFullScore.find({}).sort({ dateAttempted: 1 }).lean(),
+    ])
+    const byEmail = {}
+    const ensure = (email, name) => {
+      if (!byEmail[email]) byEmail[email] = { email, name, quizScores: [] }
+      return byEmail[email]
+    }
+
+    moduleDocs.forEach(doc => {
+      const bucket = ensure(doc.email, doc.name)
+      ;(doc.attempts || []).forEach((attempt, i) => {
+        const attempted = (attempt.correctAnswers || 0) + (attempt.wrongAnswers || 0)
+        const accuracy  = attempted > 0 ? Math.round((attempt.correctAnswers / attempted) * 100) : 0
+        const pct = attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0
+        bucket.quizScores.push({
+          type: 'Module',
+          topic: doc.subject,
+          subject: doc.subject,
+          source: attempt.source || 'Module',
+          score: attempt.score,
+          maxScore: attempt.maxScore,
+          correctAnswers: attempt.correctAnswers,
+          wrongAnswers: attempt.wrongAnswers,
+          unattempted: attempt.unattempted,
+          totalQuestions: attempt.totalQuestions,
+          percentage: pct,
+          accuracy,
+          responses: attempt.responses || [],
+          timestamp: attempt.dateAttempted,
+          attemptNumber: i + 1,
+        })
+      })
+    })
+
+    fullDocs.forEach((doc, i) => {
+      const bucket = ensure(doc.email, doc.name)
+      const pct = doc.maxScore > 0 ? Math.round((doc.score / doc.maxScore) * 100) : 0
+      bucket.quizScores.push({
+        type: 'FullTest',
+        attemptId: doc._id,
+        topic: [doc.year, doc.paper].filter(Boolean).join(' · ') || 'Full SAT Test',
+        paper: doc.paper,
+        year: doc.year,
+        score: doc.score,
+        maxScore: doc.maxScore,
+        correctAnswers: doc.correctAnswers,
+        wrongAnswers: doc.wrongAnswers,
+        unattempted: doc.unattempted,
+        totalQuestions: doc.totalQuestions,
+        percentage: pct,
+        sectionScores: doc.sectionScores,
+        totalTimeTaken: doc.totalTimeTaken,
+        timestamp: doc.dateAttempted,
+        attemptNumber: i + 1,
+      })
+    })
+
+    res.json({ success: true, data: Object.values(byEmail) })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// GET /api/sat_full_score_detail?email=...&attemptId=... — full detail for one Full SAT Test session (admin drill-down)
+router.get('/sat_full_score_detail', async (req, res) => {
+  try {
+    const { email, attemptId } = req.query
+    if (!email || !attemptId) {
+      return res.status(400).json({ success: false, message: 'email and attemptId are required' })
+    }
+    const doc = await SatFullScore.findOne({ _id: attemptId, email }).lean()
+    if (!doc) return res.status(404).json({ success: false, message: 'Attempt not found' })
+
+    res.json({
+      success: true,
+      data: {
+        _id: doc._id,
+        testType: 'full',
+        paper: doc.paper,
+        year: doc.year,
+        score: doc.score,
+        maxScore: doc.maxScore,
+        totalQuestions: doc.totalQuestions,
+        correctAnswers: doc.correctAnswers,
+        wrongAnswers: doc.wrongAnswers,
+        unattempted: doc.unattempted,
+        sectionScores: doc.sectionScores,
+        responses: doc.responses || [],
+        totalTimeTaken: doc.totalTimeTaken,
+        dateAttempted: doc.dateAttempted,
+        studentName: doc.name,
+        studentEmail: doc.email,
+      },
+    })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+
 // ============================================
 
 
