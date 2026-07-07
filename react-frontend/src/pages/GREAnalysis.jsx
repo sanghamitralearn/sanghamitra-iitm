@@ -45,6 +45,19 @@ function loadKaTeX() {
   document.head.appendChild(core)
 }
 
+// After KaTeX has decided which $...$ spans are real math (and left backslash-escaped
+// \$ currency amounts alone as plain text, per its own delimiter rules), strip the now
+// no-longer-needed backslash so the user just sees a clean "$" in the leftover text.
+function stripEscapedDollarSigns(element) {
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT)
+  const nodes = []
+  let node
+  while ((node = walker.nextNode())) nodes.push(node)
+  nodes.forEach(n => {
+    if (n.nodeValue.indexOf('\\$') !== -1) n.nodeValue = n.nodeValue.replace(/\\\$/g, '$')
+  })
+}
+
 function renderMath(el) {
   if (!el) return
   const run = () => {
@@ -60,6 +73,7 @@ function renderMath(el) {
       trust: true,
       strict: false,
     })
+    stripEscapedDollarSigns(el)
   }
   setTimeout(run, 50)
 }
@@ -76,18 +90,65 @@ function resolveType(q) {
 
 const imgSrc = f => f ? `/img/Graph_questions/${f}` : null
 
+function processCell(c) {
+  return c.trim()
+    .replace(/\\textbf\{([^}]*)\}/g, '<strong>$1</strong>')
+    .replace(/\\textit\{([^}]*)\}/g, '<em>$1</em>')
+    .replace(/\\text\{([^}]*)\}/g, '$1')
+    .replace(/\\%/g, '%')
+}
+
+function latexTabularToHtml(text) {
+  return text.replace(
+    /\\begin\{(tabular|array)\}\*?(?:\{[^}]*\})?([\s\S]*?)\\end\{\1\}/g,
+    (_match, _env, body) => {
+      const rows = body.split(/\\\\/).map(r => r.replace(/\\hline/g, '').trim()).filter(r => r)
+      if (rows.length === 0) return ''
+      const [header, ...dataRows] = rows
+      const headerCells = header.split('&').map(c => `<th>${processCell(c)}</th>`).join('')
+      const bodyRows = dataRows
+        .map(r => '<tr>' + r.split('&').map(c => `<td>${processCell(c)}</td>`).join('') + '</tr>')
+        .join('')
+      return `<table class="sat-table"><thead><tr>${headerCells}</tr></thead><tbody>${bodyRows}</tbody></table>`
+    }
+  )
+}
+
+function latexListToHtml(text) {
+  text = text.replace(
+    /\\begin\{enumerate\}(?:\[[^\]]*\])?([\s\S]*?)\\end\{enumerate\}/g,
+    (_match, body) => {
+      const items = body.split(/\\item\s*/).slice(1).map(i => `<li>${i.trim()}</li>`).join('')
+      return `<ol style="padding-left:1.5rem;margin:8px 0">${items}</ol>`
+    }
+  )
+  text = text.replace(
+    /\\begin\{itemize\}([\s\S]*?)\\end\{itemize\}/g,
+    (_match, body) => {
+      const items = body.split(/\\item\s*/).slice(1).map(i => `<li>${i.trim()}</li>`).join('')
+      return `<ul style="padding-left:1.5rem;margin:8px 0">${items}</ul>`
+    }
+  )
+  return text
+}
+
 // ─── MathText ─────────────────────────────────────────────────────────────────
 function MathText({ text }) {
   const ref = useRef(null)
   useEffect(() => { if (ref.current) renderMath(ref.current) }, [text])
-  const html = (text || '')
-    .replace(/\\\$/g, '&#36;')
+  let html = (text || '')
+    .replace(/\\%/g, '%')
+    .replace(/\\textit\{([^}]*)\}/g, '<em>$1</em>')
+    .replace(/\\textbf\{([^}]*)\}/g, '<strong>$1</strong>')
     .replace(
       /\(structure\)/g,
       '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;' +
       'background:#fff3cd;border:1px dashed #ffc107;border-radius:4px;font-size:0.8rem;' +
       'color:#856404;vertical-align:middle;margin:0 4px;">⬡ Structure</span>'
     )
+  html = latexTabularToHtml(html)
+  html = latexListToHtml(html)
+  html = html.replace(/\\\\/g, '<br>')
   return (
     <span ref={ref} dangerouslySetInnerHTML={{ __html: html }} />
   )
@@ -95,7 +156,16 @@ function MathText({ text }) {
 
 // ─── Passage block ────────────────────────────────────────────────────────────
 function PassageBlock({ text }) {
+  const ref = useRef(null)
+  useEffect(() => { if (ref.current) renderMath(ref.current) }, [text])
   if (!text) return null
+  let html = (text || '')
+    .replace(/\\%/g, '%')
+    .replace(/\\textit\{([^}]*)\}/g, '<em>$1</em>')
+    .replace(/\\textbf\{([^}]*)\}/g, '<strong>$1</strong>')
+  html = latexTabularToHtml(html)
+  html = latexListToHtml(html)
+  html = html.replace(/\\\\/g, '<br>')
   return (
     <div style={{
       background: '#f8f6ff', border: '1px solid #d9cdf5',
@@ -105,8 +175,8 @@ function PassageBlock({ text }) {
       <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '1px', color: '#6f42c1', marginBottom: 10, textTransform: 'uppercase' }}>
         Passage
       </div>
-      <p style={{ fontSize: '1rem', lineHeight: 1.85, whiteSpace: 'pre-wrap', margin: 0, color: '#1a1a2e' }}
-        dangerouslySetInnerHTML={{ __html: text }} />
+      <div ref={ref} style={{ fontSize: '1rem', lineHeight: 1.85, whiteSpace: 'pre-wrap', margin: 0, color: '#1a1a2e' }}
+        dangerouslySetInnerHTML={{ __html: html }} />
     </div>
   )
 }
@@ -366,7 +436,7 @@ const ResultsPage = ({ results, onReview, allAttempts, activeAttemptId, onSwitch
                       </React.Fragment>
                     )
                   })}
-                  {isFullTest && (
+                  {isFullTest && essayResponse != null && (
                     <button
                       onClick={() => setSelectedView('Analytical Writing')}
                       className="w-100 text-start border-0 px-4 py-2 d-flex align-items-center justify-content-between"
@@ -680,6 +750,32 @@ const ReviewAnswersPage = ({ enriched, onBack }) => {
                                       {isCrr     && <i className="bi bi-check-circle-fill text-success mt-1" />}
                                       {userPicked && !isCrr && <i className="bi bi-x-circle-fill text-danger mt-1" />}
                                       <span style={{ fontSize: '0.9rem' }}><MathText text={opt.text} /></span>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )}
+                            {resolveType(q) === 'text_completion_multi_blank' && (
+                              <div className="mb-3">
+                                {(q.options || []).map((blank, bi) => {
+                                  const corrId = q.correct_answer?.[blank.blank_label]
+                                  const userId = r.userResponse?.[blank.blank_label]
+                                  return (
+                                    <div key={bi} className="mb-3">
+                                      <p className="fw-semibold small mb-1">{blank.blank_label}</p>
+                                      {(blank.choices || []).map((opt, oi) => {
+                                        const isCrr = corrId === opt.option_id
+                                        const userPicked = userId === opt.option_id
+                                        return (
+                                          <div key={oi} className="d-flex align-items-start gap-2 mb-2 px-3 py-2 rounded"
+                                            style={{ background: isCrr ? '#d4edda' : userPicked ? '#f8d7da' : '#f8f9fa' }}>
+                                            <span className="fw-bold text-muted" style={{ minWidth: 24 }}>{opt.option_id}.</span>
+                                            {isCrr && <i className="bi bi-check-circle-fill text-success mt-1" />}
+                                            {userPicked && !isCrr && <i className="bi bi-x-circle-fill text-danger mt-1" />}
+                                            <span style={{ fontSize: '0.9rem' }}><MathText text={opt.text} /></span>
+                                          </div>
+                                        )
+                                      })}
                                     </div>
                                   )
                                 })}
