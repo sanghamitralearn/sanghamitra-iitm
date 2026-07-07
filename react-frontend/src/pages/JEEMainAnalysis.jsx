@@ -553,6 +553,182 @@ const ReviewAnswersPage = ({ enriched, onBack }) => {
   )
 }
 
+// ─── Single Subject Practice view (no full-paper subjectScores) ──────────────
+function SingleSubjectView({ results }) {
+  const navigate = useNavigate()
+  const [page, setPage] = useState('result')
+  const [questions, setQuestions] = useState([])
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [expandIdx, setExpandIdx] = useState(null)
+
+  const subject  = results.subject
+  const gradient = SUBJECT_GRADIENT[subject] || 'linear-gradient(135deg,#6c757d,#495057)'
+  const color    = SUBJECT_COLOR[subject] || '#6c757d'
+  const responses = results.responses || []
+  const responseMap = {}
+  responses.forEach(r => { responseMap[String(r.questionId)] = r })
+
+  useEffect(() => {
+    if (!subject) return
+    axios.get(`${API_URL}/api/jee_main_questions?subject=${encodeURIComponent(subject)}`)
+      .then(r => setQuestions(Array.isArray(r.data) ? r.data : []))
+      .catch(() => {})
+  }, [subject])
+
+  const enriched = questions.map(q => ({ q, res: responseMap[String(q._id)] || null }))
+  const counts = {
+    all:         enriched.length,
+    correct:     enriched.filter(({ res }) => res?.isCorrect).length,
+    incorrect:   enriched.filter(({ res }) => res && !res.isCorrect && !res.unattempted).length,
+    unattempted: enriched.filter(({ res }) => !res || res.unattempted).length,
+  }
+  const filtered = enriched.filter(({ res }) => {
+    if (statusFilter === 'correct')     return res?.isCorrect
+    if (statusFilter === 'incorrect')   return res && !res.isCorrect && !res.unattempted
+    if (statusFilter === 'unattempted') return !res || res.unattempted
+    return true
+  })
+
+  if (page === 'review') {
+    return (
+      <div style={{ minHeight: '100vh', background: '#f0f2f5' }}>
+        <div style={{ background: '#fff', borderBottom: '1px solid #e9ecef', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
+          <button onClick={() => setPage('result')} style={{ background: 'none', border: 'none', fontSize: '1.3rem', color: '#495057', cursor: 'pointer' }}>←</button>
+          <strong>Review Answers</strong>
+        </div>
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px' }}>
+          <div className="row g-4">
+            <div className="col-md-3">
+              <div className="card border-0 shadow-sm" style={{ borderRadius: 12, overflow: 'hidden' }}>
+                {[
+                  { key: 'all',         label: `All (${counts.all})` },
+                  { key: 'incorrect',   label: `Incorrect (${counts.incorrect})` },
+                  { key: 'unattempted', label: `Unattempted (${counts.unattempted})` },
+                  { key: 'correct',     label: `Correct (${counts.correct})` },
+                ].map(({ key, label }) => (
+                  <button key={key} onClick={() => setStatusFilter(key)}
+                    className="w-100 text-start border-0 p-3 d-flex align-items-center justify-content-between"
+                    style={{ borderBottom: '1px solid #e9ecef', background: statusFilter === key ? '#f0f4ff' : '#fff', cursor: 'pointer' }}>
+                    <span style={{ borderLeft: statusFilter === key ? '3px solid #0d6efd' : '3px solid transparent', paddingLeft: 10, color: statusFilter === key ? '#0d6efd' : '#212529', fontWeight: statusFilter === key ? 600 : 400 }}>
+                      {label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="col-md-9">
+              {filtered.length === 0
+                ? <div className="text-center py-5 text-muted">No questions match the selected filter.</div>
+                : filtered.map(({ q, res }, idx) => {
+                    const isOpen      = expandIdx === idx
+                    const statusColor = (!res || res.unattempted) ? '#6c757d' : res.isCorrect ? '#28a745' : '#dc3545'
+                    const marksLabel  = (!res || res.unattempted) ? 'N/A' : res.marksAwarded > 0 ? `+${res.marksAwarded}` : String(res.marksAwarded ?? 0)
+                    return (
+                      <div key={idx} className="card border-0 shadow-sm mb-3" style={{ borderRadius: 12 }}>
+                        <div style={{ padding: '10px 16px', borderBottom: '1px solid #e9ecef', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+                          onClick={() => setExpandIdx(isOpen ? null : idx)}>
+                          <span style={{ color: statusColor, fontWeight: 600, fontSize: '0.82rem' }}>
+                            ⊙ CORRECT: {(!res || res.unattempted) ? 'N/A' : res.isCorrect ? 'Yes' : 'No'} &nbsp;·&nbsp; Marks: {marksLabel}
+                          </span>
+                          <i className={`bi bi-chevron-${isOpen ? 'up' : 'right'} text-muted`} style={{ fontSize: '0.8rem' }} />
+                        </div>
+                        <div className="card-body">
+                          <div className="d-flex align-items-center gap-2 mb-2">
+                            <span className="fw-bold">Question {idx + 1}</span>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: statusColor, display: 'inline-block' }} />
+                            {q.difficulty && <span className={`badge ${q.difficulty === 'hard' ? 'bg-danger' : q.difficulty === 'medium' ? 'bg-warning text-dark' : 'bg-success'}`} style={{ fontSize: '0.7rem' }}>{q.difficulty}</span>}
+                            <span className="ms-auto fw-bold" style={{ color: statusColor }}>{marksLabel}</span>
+                          </div>
+                          <p className="text-muted mb-0" style={{ fontSize: '0.93rem', lineHeight: 1.6 }}>
+                            {isOpen ? q.question_text : (q.question_text?.length > 220 ? q.question_text.slice(0, 220) + '…' : q.question_text)}
+                          </p>
+                          {isOpen && (
+                            <div className="d-flex gap-2 flex-wrap mt-3">
+                              <span className="badge bg-light text-dark border">Your answer: <strong>{res?.userResponse ?? '(not answered)'}</strong></span>
+                              <span className="badge bg-success text-white">Correct answer: <strong>{String(q.correct_answer ?? '?')}</strong></span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#f0f2f5' }}>
+      <div style={{ background: '#fff', borderBottom: '1px solid #e9ecef', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
+        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', fontSize: '1.3rem', color: '#495057', cursor: 'pointer' }}>←</button>
+        <div className="flex-grow-1">
+          <span className="fw-bold">Result: JEE MAIN</span>
+          <span className="ms-2 text-muted fw-normal">— {subject} Practice</span>
+          <span className="ms-2 badge bg-light text-dark border" style={{ fontSize: '0.75rem' }}>JEE (Main)</span>
+        </div>
+        <button className="btn btn-primary btn-sm" onClick={() => setPage('review')}>
+          <i className="bi bi-list-task me-1" />View test solution
+        </button>
+      </div>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px' }}>
+        <div className="row g-4">
+          <div className="col-md-3">
+            <div className="card border-0 shadow-sm" style={{ borderRadius: 12, overflow: 'hidden' }}>
+              <div className="p-3" style={{ borderLeft: `3px solid ${color}`, paddingLeft: 10, fontWeight: 600, color }}>
+                {subject}
+              </div>
+            </div>
+            <div className="d-flex flex-column gap-2 mt-3">
+              <button className="btn btn-outline-secondary btn-sm" onClick={() => navigate(-1)}>
+                <i className="bi bi-arrow-left me-1" />Back
+              </button>
+            </div>
+          </div>
+          <div className="col-md-9">
+            <div className="text-white mb-4" style={{ background: gradient, borderRadius: 16, padding: '32px 24px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', right: -30, top: -30, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+              <h5 className="fw-bold mb-4">{subject} Report</h5>
+              <div className="text-center">
+                <div style={{ width: 150, height: 150, borderRadius: '50%', border: '5px solid rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.12)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                  <span style={{ fontSize: 36, fontWeight: 700, lineHeight: 1 }}>{results.score}</span>
+                  <div style={{ width: '55%', height: 2, background: 'rgba(255,255,255,0.55)', margin: '6px 0' }} />
+                  <span style={{ fontSize: 22, opacity: 0.9 }}>{results.maxScore}</span>
+                </div>
+              </div>
+            </div>
+            <div className="card border-0 shadow-sm" style={{ borderRadius: 12 }}>
+              <div className="card-body p-4">
+                <h5 className="fw-bold mb-1">Marks Summary</h5>
+                <p className="text-muted small mb-4">
+                  You've answered {Math.round((results.correctAnswers ?? 0) / ((results.totalQuestions) || 1) * 100)}% questions correctly
+                </p>
+                <div className="row g-3 text-center">
+                  {[
+                    { label: 'Correct',     count: results.correctAnswers, color: '#28a745', bg: '#d4edda', icon: 'bi-check-circle-fill' },
+                    { label: 'Incorrect',   count: results.wrongAnswers,   color: '#dc3545', bg: '#f8d7da', icon: 'bi-x-circle-fill' },
+                    { label: 'Unattempted', count: results.unattempted,    color: '#6c757d', bg: '#e9ecef', icon: 'bi-dash-circle-fill' },
+                  ].map(({ label, count, color, bg, icon }) => (
+                    <div key={label} className="col-4">
+                      <div style={{ background: bg, borderRadius: 12, padding: '20px 8px' }}>
+                        <i className={`bi ${icon} mb-2`} style={{ fontSize: '1.5rem', color }} />
+                        <div style={{ fontSize: '2rem', fontWeight: 700, color }}>{count}</div>
+                        <div className="text-muted" style={{ fontSize: '0.78rem' }}>{label}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 const JEEMainAnalysis = () => {
   const navigate  = useNavigate()
@@ -661,6 +837,10 @@ const JEEMainAnalysis = () => {
   )
 
   if (!results) return null
+
+  if (results.subject && !results.subjectScores) {
+    return <SingleSubjectView results={results} />
+  }
 
   if (phase === 'results') return (
     <ResultsPage
