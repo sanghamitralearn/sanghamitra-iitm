@@ -214,6 +214,7 @@ const SATFullTest = () => {
         isCorrect,
         marksAwarded,
         unattempted: !!unattempted,
+        timeSpent: timesRef.current[stageKey]?.[i] || 0,
       })
     })
 
@@ -304,12 +305,14 @@ const SATFullTest = () => {
           totalQuestions: rwResult.totalQuestions, correctAnswers: rwResult.correctAnswers,
           wrongAnswers: rwResult.wrongAnswers, unattempted: rwResult.unattempted,
           score: rwResult.score, maxScore: rwResult.maxScore, responses: rwResult.responses,
+          source: 'FullTest',
         }, { withCredentials: true }),
         axios.post(`${API_URL}/api/sat_scores`, {
           email: u.email, name: u.username || u.name || u.email, subject: 'Mathematics',
           totalQuestions: mathResult.totalQuestions, correctAnswers: mathResult.correctAnswers,
           wrongAnswers: mathResult.wrongAnswers, unattempted: mathResult.unattempted,
           score: mathResult.score, maxScore: mathResult.maxScore, responses: mathResult.responses,
+          source: 'FullTest',
         }, { withCredentials: true }),
         // Full-paper score (for the paper listing page)
         ...(paperName ? [
@@ -603,7 +606,7 @@ const SATFullTest = () => {
 
     const sections = Object.entries(sectionResults).map(([label, result]) => ({ label, result }))
     const chapterItems = STAGES.flatMap(s =>
-      buildChapterItems(stageQuestions[s.key], stageResults[s.key]?.responses, s.label)
+      buildChapterItems(stageQuestions[s.key], stageResults[s.key]?.responses, s.label, s.module)
     )
 
     return (
