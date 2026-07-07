@@ -16,10 +16,6 @@ const SECTION_STYLE = {
     color: '#0d6efd', gradient: 'linear-gradient(135deg,#0d6efd,#4dabf7)',
     icon: 'bi-calculator-fill', short: 'Quant',
   },
-  'Analytical Writing': {
-    color: '#d63384', gradient: 'linear-gradient(135deg,#d63384,#f783ac)',
-    icon: 'bi-pencil-square', short: 'AWA',
-  },
 }
 
 // Extract 4-digit year for grouping; fall back to paper name itself
@@ -132,7 +128,7 @@ const GREMain = () => {
                 <h1>GRE</h1>
                 <p className="mb-0">
                   Full-length GRE papers with the official section structure.
-                  Select a paper to attempt Verbal Reasoning, Quantitative Reasoning and Analytical Writing together and get a detailed analysis.
+                  Select a paper to attempt Verbal Reasoning and Quantitative Reasoning together and get a detailed analysis.
                 </p>
               </div>
             </div>
@@ -327,7 +323,7 @@ const GREMain = () => {
           {[
             { icon: 'bi-graph-up-arrow',    color: '#6f42c1', label: '130–170',      desc: 'scaled score per section (Verbal / Quant)' },
             { icon: 'bi-dash-circle-fill',  color: '#6c757d', label: '0 marks',      desc: 'for wrong answers — no penalty' },
-            { icon: 'bi-clock-fill',        color: '#0d6efd', label: '~1h 58m total', desc: 'Verbal + Quant + Analytical Writing' },
+            { icon: 'bi-clock-fill',        color: '#0d6efd', label: '~1h 23m total', desc: 'Verbal + Quant' },
           ].map(item => (
             <div className="col-md-4" key={item.label}>
               <div className="card border-0 shadow-sm text-center py-3" style={{ borderRadius: 12 }}>
@@ -373,7 +369,7 @@ const GREMain = () => {
                   { icon: 'bi-journal-text',    color: ACCENT,    label: 'Paper',           value: selectedPaper.paper || 'GRE Practice Test' },
                   { icon: 'bi-question-circle', color: '#6610f2', label: 'Total Questions', value: selectedPaper.totalQuestions ?? 51 },
                   { icon: 'bi-trophy',          color: '#ffc107', label: 'Total Marks',     value: selectedPaper.totalMarks ?? 51 },
-                  { icon: 'bi-clock',           color: '#28a745', label: 'Duration',        value: '~1h 58m' },
+                  { icon: 'bi-clock',           color: '#28a745', label: 'Duration',        value: '~1h 23m' },
                   { icon: 'bi-check2-circle',   color: '#198754', label: 'Correct Answer',  value: '+1 mark' },
                   { icon: 'bi-dash-circle',     color: '#6c757d', label: 'Wrong Answer',    value: '0 (no penalty)' },
                 ].map(item => (
@@ -431,7 +427,6 @@ const GREMain = () => {
                 <ul className="mb-0 ps-3" style={{ fontSize: '0.8rem', color: '#555', lineHeight: 1.8 }}>
                   <li>+1 mark for each correct MCQ answer, 0 for wrong or unattempted — no negative marking</li>
                   <li>Verbal &amp; Quantitative sections report a scaled score from 130–170</li>
-                  <li>The Analytical Writing task is a free-text essay — it is stored for review, not auto-scored</li>
                   <li>You can navigate freely between sections within the time allotted</li>
                   <li>Do not switch browser tabs — violations are recorded</li>
                 </ul>
