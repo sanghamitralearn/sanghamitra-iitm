@@ -5165,18 +5165,51 @@ router.get('/jee_main_full_scores', async (req, res) => {
   }
 })
 
-// GET /api/jee_main_admin_scores — all full-paper attempts grouped per student (admin dashboard)
+// GET /api/jee_main_admin_scores — all attempts grouped per student (admin dashboard)
+// Merges subject-wise practice (JeeMainScore) with full-length paper attempts (JeeMainFullScore)
 router.get('/jee_main_admin_scores', async (req, res) => {
   try {
-    const docs = await JeeMainFullScore.find({}).sort({ dateAttempted: 1 }).lean()
+    const [practiceDocs, fullDocs] = await Promise.all([
+      JeeMainScore.find({}).lean(),
+      JeeMainFullScore.find({}).sort({ dateAttempted: 1 }).lean(),
+    ])
     const byEmail = {}
-    docs.forEach(doc => {
-      if (!byEmail[doc.email]) {
-        byEmail[doc.email] = { email: doc.email, name: doc.name, quizScores: [] }
-      }
+    const ensure = (email, name) => {
+      if (!byEmail[email]) byEmail[email] = { email, name, quizScores: [] }
+      return byEmail[email]
+    }
+
+    practiceDocs.forEach(doc => {
+      const bucket = ensure(doc.email, doc.name)
+      ;(doc.attempts || []).forEach((attempt, i) => {
+        const attempted = (attempt.correctAnswers || 0) + (attempt.wrongAnswers || 0)
+        const accuracy  = attempted > 0 ? Math.round((attempt.correctAnswers / attempted) * 100) : 0
+        const pct = attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0
+        bucket.quizScores.push({
+          type: 'Practice',
+          topic: doc.subject,
+          subject: doc.subject,
+          score: attempt.score,
+          maxScore: attempt.maxScore,
+          correctAnswers: attempt.correctAnswers,
+          wrongAnswers: attempt.wrongAnswers,
+          unattempted: attempt.unattempted,
+          totalQuestions: attempt.totalQuestions,
+          percentage: pct,
+          accuracy,
+          responses: attempt.responses || [],
+          timestamp: attempt.dateAttempted,
+          attemptNumber: i + 1,
+        })
+      })
+    })
+
+    fullDocs.forEach((doc, i) => {
+      const bucket = ensure(doc.email, doc.name)
       const pct   = doc.maxScore > 0 ? Math.round((doc.score / doc.maxScore) * 100) : 0
       const label = [doc.year, doc.paper].filter(Boolean).join(' · ') || 'JEE Main Paper'
-      byEmail[doc.email].quizScores.push({
+      bucket.quizScores.push({
+        type: 'FullPaper',
         attemptId:      doc._id,
         topic:          label,
         year:           doc.year,
@@ -5192,14 +5225,17 @@ router.get('/jee_main_admin_scores', async (req, res) => {
         responses:      doc.responses,
         totalTimeTaken: doc.totalTimeTaken,
         timestamp:      doc.dateAttempted,
-        attemptNumber:  byEmail[doc.email].quizScores.length + 1,
+        attemptNumber:  i + 1,
       })
     })
+
     res.json({ success: true, data: Object.values(byEmail) })
   } catch (err) {
     res.status(500).json({ success: false, error: err.message })
   }
 })
+
+
 
 
 
@@ -5297,6 +5333,10 @@ router.get('/sat_scores', async (req, res) => {
     res.status(500).json({ error: err.message })
   }
 })
+
+
+
+
 
 // ─── SAT Papers aggregation ───────────────────────────────────────────────────
 // GET /api/sat_papers  — groups sat_questions by (paper, year) and returns per-paper totals
