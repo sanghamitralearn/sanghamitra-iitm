@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import axios from 'axios'
 import {
-  loadKaTeX, SUBJECT_STYLE, calcMarks, greScaledScore,
+  loadKaTeX, SUBJECT_STYLE, calcMarks, greScaledScore, isAnswerFilled,
   QuestionReviewItem, TabWarningBanner, QuizPanel,
 } from './GREQuiz'
 import GREScoreDashboard, { buildChapterItems } from './GREScoreDashboard'
@@ -10,13 +10,13 @@ import GREScoreDashboard, { buildChapterItems } from './GREScoreDashboard'
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 // Official (current, shortened) GRE General Test structure:
-// Verbal Reasoning M1 & 2, Quantitative Reasoning M1 & 2, then Analytical Writing (essay)
+// Verbal Reasoning M1 & 2, Quantitative Reasoning M1 & 2
+// (Analytical Writing is temporarily excluded — no essay questions in the bank yet)
 const STAGES = [
-  { key: 'verbal1', subject: 'Verbal Reasoning',         scoreSubject: 'Verbal Reasoning',         label: 'Verbal Reasoning',         module: 1, questionCount: 12, timeMin: 18, isEssay: false },
-  { key: 'verbal2', subject: 'Verbal Reasoning',         scoreSubject: 'Verbal Reasoning',         label: 'Verbal Reasoning',         module: 2, questionCount: 12, timeMin: 18, isEssay: false },
-  { key: 'quant1',  subject: 'Quantitative Reasoning',   scoreSubject: 'Quantitative Reasoning',   label: 'Quantitative Reasoning',   module: 1, questionCount: 12, timeMin: 21, isEssay: false },
-  { key: 'quant2',  subject: 'Quantitative Reasoning',   scoreSubject: 'Quantitative Reasoning',   label: 'Quantitative Reasoning',   module: 2, questionCount: 15, timeMin: 26, isEssay: false },
-  { key: 'awa1',    subject: 'Analytical Writing',       scoreSubject: 'Analytical Writing',       label: 'Analytical Writing',       module: 1, questionCount: 1,  timeMin: 30, isEssay: true },
+  { key: 'verbal1', subject: 'Verbal Reasoning',         scoreSubject: 'Verbal Reasoning',         label: 'Verbal Reasoning',         module: 1, questionCount: 12, timeMin: 18 },
+  { key: 'verbal2', subject: 'Verbal Reasoning',         scoreSubject: 'Verbal Reasoning',         label: 'Verbal Reasoning',         module: 2, questionCount: 12, timeMin: 18 },
+  { key: 'quant1',  subject: 'Quantitative Reasoning',   scoreSubject: 'Quantitative Reasoning',   label: 'Quantitative Reasoning',   module: 1, questionCount: 12, timeMin: 21 },
+  { key: 'quant2',  subject: 'Quantitative Reasoning',   scoreSubject: 'Quantitative Reasoning',   label: 'Quantitative Reasoning',   module: 2, questionCount: 15, timeMin: 26 },
 ]
 
 const TOTAL_QUESTIONS = STAGES.reduce((s, st) => s + st.questionCount, 0)
@@ -24,13 +24,9 @@ const TOTAL_MINUTES = STAGES.reduce((s, st) => s + st.timeMin, 0)
 
 const FULL_TEST_STYLE = { gradient: 'linear-gradient(135deg, #6f42c1, #0d6efd)', badge: '#0d6efd' }
 
-const EMPTY_ANSWERS = { verbal1: {}, verbal2: {}, quant1: {}, quant2: {}, awa1: {} }
-const EMPTY_TIMES = () => ({ verbal1: {}, verbal2: {}, quant1: {}, quant2: {}, awa1: {} })
-const EMPTY_INDEXES = { verbal1: 0, verbal2: 0, quant1: 0, quant2: 0, awa1: 0 }
-
-function isAnswered(a) {
-  return a !== undefined && a !== null && a !== '' && !(Array.isArray(a) && !a.length)
-}
+const EMPTY_ANSWERS = { verbal1: {}, verbal2: {}, quant1: {}, quant2: {} }
+const EMPTY_TIMES = () => ({ verbal1: {}, verbal2: {}, quant1: {}, quant2: {} })
+const EMPTY_INDEXES = { verbal1: 0, verbal2: 0, quant1: 0, quant2: 0 }
 
 function shuffle(arr) {
   const a = [...arr]
@@ -41,7 +37,7 @@ function shuffle(arr) {
   return a
 }
 
-// Sum a list of per-stage result objects into one combined result (essay stages contribute 0/0)
+// Sum a list of per-stage result objects into one combined result
 function mergeResults(results) {
   return {
     totalQuestions: results.reduce((s, r) => s + r.responses.length, 0),
@@ -114,16 +110,14 @@ const GREFullTest = () => {
     setError(null)
     try {
       const paperParam = paperName ? `&paper=${encodeURIComponent(paperName)}` : ''
-      const [verbalRes, quantRes, awaRes] = await Promise.all([
+      const [verbalRes, quantRes] = await Promise.all([
         axios.get(`${API_URL}/api/gre_questions?subject=${encodeURIComponent('Verbal Reasoning')}${paperParam}`, { withCredentials: true }),
         axios.get(`${API_URL}/api/gre_questions?subject=${encodeURIComponent('Quantitative Reasoning')}${paperParam}`, { withCredentials: true }),
-        axios.get(`${API_URL}/api/gre_questions?subject=${encodeURIComponent('Analytical Writing')}${paperParam}`, { withCredentials: true }),
       ])
       const verbal = shuffle(Array.isArray(verbalRes.data) ? verbalRes.data : [])
       const quant  = shuffle(Array.isArray(quantRes.data)  ? quantRes.data  : [])
-      const awa    = Array.isArray(awaRes.data) ? awaRes.data : []
 
-      if (!verbal.length || !quant.length || !awa.length) {
+      if (!verbal.length || !quant.length) {
         try {
           const dbg = await axios.get(`${API_URL}/api/gre_debug`, { withCredentials: true })
           setDebugInfo(dbg.data)
@@ -141,7 +135,6 @@ const GREFullTest = () => {
         verbal2: verbal.slice(verbalHalf).slice(0, STAGES[1].questionCount),
         quant1:  quant.slice(0, quantHalf).slice(0, STAGES[2].questionCount),
         quant2:  quant.slice(quantHalf).slice(0, STAGES[3].questionCount),
-        awa1:    awa.slice(0, STAGES[4].questionCount),
       })
       setPhase('overview')
     } catch {
@@ -169,6 +162,14 @@ const GREFullTest = () => {
       },
     }
   })
+
+  const setBlankAnswer = (idx, blankLabel, optId) => setStageAnswers(prev => ({
+    ...prev,
+    [stage.key]: {
+      ...prev[stage.key],
+      [idx]: { ...(prev[stage.key][idx] || {}), [blankLabel]: optId },
+    },
+  }))
 
   // Only meaningful while actively viewing a question in the quiz phase
   const recordTime = () => {
@@ -198,28 +199,9 @@ const GREFullTest = () => {
     setPhase('overview')
   }
 
-  // Essay stage contributes zero-scored placeholder result — real payload is the essay text
   const computeStageResult = (stageKey) => {
-    const s = STAGES.find(st => st.key === stageKey)
     const qs = stageQuestions[stageKey]
     const ans = stageAnswers[stageKey]
-
-    if (s.isEssay) {
-      const essayText = ans[0] || ''
-      const totalTime = Object.values(timesRef.current[stageKey]).reduce((a, b) => a + b, 0)
-      return {
-        correctAnswers: 0, wrongAnswers: 0, unattempted: essayText.trim() ? 0 : 1,
-        score: 0, maxScore: 0, percentage: 0, totalTime,
-        essayResponse: essayText,
-        responses: [{
-          questionId: qs[0]?._id,
-          userResponse: essayText,
-          isCorrect: false,
-          marksAwarded: 0,
-          unattempted: !essayText.trim(),
-        }],
-      }
-    }
 
     let correctCount = 0, wrongCount = 0, unattemptedCount = 0, totalScore = 0
     const maxScore = qs.reduce((sum, q) => sum + (q.points || 1), 0)
@@ -254,10 +236,10 @@ const GREFullTest = () => {
     const totalUnanswered = STAGES.reduce((sum, s) => {
       const qs = stageQuestions[s.key]
       const ans = stageAnswers[s.key]
-      return sum + qs.filter((_, i) => !isAnswered(ans[i])).length
+      return sum + qs.filter((q, i) => !isAnswerFilled(q, ans[i])).length
     }, 0)
     if (totalUnanswered > 0 && !window.confirm(
-      `${totalUnanswered} question(s) across all modules are unanswered (including the essay, if blank). Finish the test anyway?`
+      `${totalUnanswered} question(s) across all modules are unanswered. Finish the test anyway?`
     )) return
 
     recordTime()
@@ -269,20 +251,17 @@ const GREFullTest = () => {
   }
 
   const finalizeTest = async (allResults) => {
-    // Combined score/response totals exclude the essay (it has no numeric score)
-    const scorableResults = STAGES.filter(s => !s.isEssay).map(s => allResults[s.key])
-    const combined = mergeResults(scorableResults)
+    const combined = mergeResults(STAGES.map(s => allResults[s.key]))
     combined.percentage = combined.maxScore > 0 ? Math.round(Math.max(0, combined.score / combined.maxScore) * 100) : 0
 
     const verbalResult = mergeResults([allResults.verbal1, allResults.verbal2])
     const quantResult  = mergeResults([allResults.quant1, allResults.quant2])
-    const awaResult     = allResults.awa1
 
     const verbalScaled = greScaledScore(verbalResult.correctAnswers, verbalResult.totalQuestions)
     const quantScaled  = greScaledScore(quantResult.correctAnswers, quantResult.totalQuestions)
 
-    // Tag each scorable response with its section so the analysis page can filter
-    const taggedResponses = STAGES.filter(s => !s.isEssay).flatMap(s =>
+    // Tag each response with its section so the analysis page can filter
+    const taggedResponses = STAGES.flatMap(s =>
       (allResults[s.key]?.responses || []).map(r => ({ ...r, subject: s.scoreSubject }))
     )
     const allQuestions = STAGES.flatMap(s =>
@@ -296,7 +275,7 @@ const GREFullTest = () => {
       correctAnswers: combined.correctAnswers,
       wrongAnswers:   combined.wrongAnswers,
       unattempted:    combined.unattempted,
-      totalTimeTaken: (combined.totalTime || 0) + (awaResult.totalTime || 0),
+      totalTimeTaken: combined.totalTime || 0,
       responses:   taggedResponses,
       sectionScores: {
         'Verbal Reasoning': {
@@ -311,12 +290,7 @@ const GREFullTest = () => {
           unattempted: quantResult.unattempted, totalQuestions: quantResult.totalQuestions,
           scaledScore: quantScaled,
         },
-        'Analytical Writing': {
-          essayResponse: awaResult.essayResponse || '',
-        },
       },
-      essayResponse: awaResult.essayResponse || '',
-      essayStatus: 'pending_review',
       dateAttempted: new Date().toISOString(),
     }
 
@@ -348,12 +322,6 @@ const GREFullTest = () => {
           wrongAnswers: quantResult.wrongAnswers, unattempted: quantResult.unattempted,
           score: quantResult.score, maxScore: quantResult.maxScore, responses: quantResult.responses,
         }, { withCredentials: true }),
-        axios.post(`${API_URL}/api/gre_scores`, {
-          email: u.email, name: u.username || u.name || u.email, subject: 'Analytical Writing',
-          totalQuestions: 1, correctAnswers: 0, wrongAnswers: 0,
-          unattempted: awaResult.unattempted, score: 0, maxScore: 0,
-          essayResponse: awaResult.essayResponse || '', responses: [],
-        }, { withCredentials: true }),
         // Full-paper score (for the paper listing page)
         ...(paperName ? [
           axios.post(`${API_URL}/api/gre_full_scores`, {
@@ -367,7 +335,6 @@ const GREFullTest = () => {
             sectionScores: analysisResults.sectionScores,
             responses: analysisResults.responses,
             totalTimeTaken: analysisResults.totalTimeTaken,
-            essayResponse: awaResult.essayResponse || '',
           }, { withCredentials: true }),
         ] : []),
       ])
@@ -442,7 +409,7 @@ const GREFullTest = () => {
     const totalAnswered = STAGES.reduce((sum, s) => {
       const qs = stageQuestions[s.key]
       const ans = stageAnswers[s.key]
-      return sum + qs.filter((_, i) => isAnswered(ans[i])).length
+      return sum + qs.filter((q, i) => isAnswerFilled(q, ans[i])).length
     }, 0)
 
     return (
@@ -454,7 +421,7 @@ const GREFullTest = () => {
                 <div className="col-lg-8">
                   <h1>Full GRE Test</h1>
                   <p className="mb-0">
-                    {TOTAL_QUESTIONS} questions + essay across 5 modules &nbsp;·&nbsp; ~{TOTAL_MINUTES} minutes total
+                    {TOTAL_QUESTIONS} questions across {STAGES.length} modules &nbsp;·&nbsp; ~{TOTAL_MINUTES} minutes total
                   </p>
                 </div>
               </div>
@@ -494,7 +461,7 @@ const GREFullTest = () => {
             {STAGES.map((s, i) => {
               const qs = stageQuestions[s.key]
               const ans = stageAnswers[s.key]
-              const answered = qs.filter((_, idx) => isAnswered(ans[idx])).length
+              const answered = qs.filter((q, idx) => isAnswerFilled(q, ans[idx])).length
               const total = qs.length
               const sStyle = SUBJECT_STYLE[s.label] || FULL_TEST_STYLE
               const status = answered === 0 ? 'Not Started' : answered === total ? 'Completed' : 'In Progress'
@@ -509,12 +476,12 @@ const GREFullTest = () => {
                       <div className="d-flex justify-content-between align-items-start mb-2">
                         <div>
                           <h5 className="mb-0">{s.label}</h5>
-                          <small className="text-muted">{s.isEssay ? 'Essay Task' : `Module ${s.module}`}</small>
+                          <small className="text-muted">Module {s.module}</small>
                         </div>
                         <span className="badge" style={{ background: statusBg, color: statusColor }}>{status}</span>
                       </div>
                       <p className="text-muted small mb-2">
-                        {s.isEssay ? '1 essay task' : `${total} questions`} · {s.timeMin} min
+                        {total} questions · {s.timeMin} min
                       </p>
                       <div className="progress mb-3" style={{ height: 6 }}>
                         <div
@@ -573,10 +540,8 @@ const GREFullTest = () => {
                 <div className="col-lg-8">
                   <h1>Full GRE Test — {stage.label}</h1>
                   <p className="mb-0">
-                    {stage.isEssay
-                      ? <>Analyze an Issue &nbsp;·&nbsp; {stage.timeMin} min &nbsp;·&nbsp; Scored 0-6 by human/AI review</>
-                      : <>Module {stage.module} &nbsp;·&nbsp; {questions.length} questions
-                          &nbsp;·&nbsp; +1 correct · 0 wrong (no penalty)</>}
+                    Module {stage.module} &nbsp;·&nbsp; {questions.length} questions
+                    &nbsp;·&nbsp; +1 correct · 0 wrong (no penalty)
                   </p>
                 </div>
               </div>
@@ -587,7 +552,7 @@ const GREFullTest = () => {
               <ol>
                 <li><Link to="/">Home</Link></li>
                 <li><Link to="/courses/gre">GRE</Link></li>
-                <li className="current">Full Test — {stage.label}{stage.isEssay ? '' : ` Module ${stage.module}`}</li>
+                <li className="current">Full Test — {stage.label} Module {stage.module}</li>
               </ol>
             </div>
           </nav>
@@ -601,7 +566,7 @@ const GREFullTest = () => {
               const current = i === stageIndex
               const qs = stageQuestions[s.key]
               const ans = stageAnswers[s.key]
-              const answered = qs.filter((_, idx) => isAnswered(ans[idx])).length
+              const answered = qs.filter((q, idx) => isAnswerFilled(q, ans[idx])).length
               const done = answered === qs.length
               return (
                 <button
@@ -617,7 +582,7 @@ const GREFullTest = () => {
                   }}
                 >
                   {done && <i className="bi bi-check-lg me-1" />}
-                  {i + 1}. {s.label} — {s.isEssay ? 'Essay' : `M${s.module}`} ({answered}/{qs.length})
+                  {i + 1}. {s.label} — M{s.module} ({answered}/{qs.length})
                 </button>
               )
             })}
@@ -630,6 +595,7 @@ const GREFullTest = () => {
           answers={answers}
           setAnswer={setAnswer}
           toggleMSQ={toggleMSQ}
+          setBlankAnswer={setBlankAnswer}
           goTo={goTo}
           style={style}
           moduleNum={stage.module}
@@ -650,10 +616,9 @@ const GREFullTest = () => {
     }
 
     const sections = Object.entries(sectionResults).map(([label, result]) => ({ label, result }))
-    const chapterItems = STAGES.filter(s => !s.isEssay).flatMap(s =>
+    const chapterItems = STAGES.flatMap(s =>
       buildChapterItems(stageQuestions[s.key], stageResults[s.key]?.responses, s.label)
     )
-    const awaResponse = stageResults.awa1?.essayResponse || ''
 
     return (
       <main className="main">
@@ -690,32 +655,9 @@ const GREFullTest = () => {
             retakeLabel="Retake Full Test"
           />
 
-          {/* Analytical Writing essay card */}
-          <div className="card border-0 shadow-sm mb-4 mt-4" style={{ borderRadius: 16, overflow: 'hidden' }}>
-            <div style={{ height: 5, background: SUBJECT_STYLE['Analytical Writing'].gradient }} />
-            <div className="card-body p-4">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="mb-0 fw-bold">
-                  <i className="bi bi-pencil-square me-2" style={{ color: '#d63384' }} />
-                  Analytical Writing
-                </h5>
-                <span className="badge text-white" style={{ background: SUBJECT_STYLE['Analytical Writing'].gradient }}>
-                  Pending Review
-                </span>
-              </div>
-              <div style={{
-                background: '#fdf2f8', border: '1px solid #f3c6dd', borderRadius: 10,
-                padding: '14px 18px', whiteSpace: 'pre-wrap', fontSize: '0.92rem', lineHeight: 1.7,
-                maxHeight: 300, overflowY: 'auto',
-              }}>
-                {awaResponse || <span className="text-muted">(no response submitted)</span>}
-              </div>
-            </div>
-          </div>
-
           {/* Per-question review, grouped by module in exam order */}
           <h5 className="fw-bold mb-3 mt-4">Question-by-Question Review</h5>
-          {STAGES.filter(s => !s.isEssay).map(s => (
+          {STAGES.map(s => (
             <div key={s.key} className="mb-4">
               <h5 className="mb-3">
                 <span className="badge text-white" style={{ background: (SUBJECT_STYLE[s.label] || FULL_TEST_STYLE).gradient }}>
