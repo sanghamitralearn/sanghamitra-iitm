@@ -283,7 +283,7 @@ const Home = () => {
             {/* PDSA Course Card */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
               <div className="course-item">
-                <img src="/img/pdsa.png" className="img-fluid" alt="Data Structures and Algorithms Course" />
+                <img src="/img/pdsa.jpg" className="img-fluid" alt="Data Structures and Algorithms Course" />
                 <div className="course-content">
                   <div className="d-flex justify-content-between align-items-center mb-3">
                     <Link to="/courses/pdsa"><button className="category">Data Structures and Algorithms</button></Link>
