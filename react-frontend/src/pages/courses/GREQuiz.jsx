@@ -195,7 +195,14 @@ export function resolveType(q) {
   const hasOptions = Array.isArray(q.options) && q.options.length > 0
   const hasImageOptions = q.option_images && Object.keys(q.option_images).length > 0
   if (!hasOptions && !hasImageOptions) return 'numeric'
-  return q.type || 'multiple_choice'
+
+  const t = q.type || ''
+  if (t === 'multiple_select') return 'multiple_select'
+  if (t === 'text_completion_multi_blank') return 'text_completion_multi_blank'
+  if (t === 'numeric') return 'numeric'
+  // Any other value (e.g. "multiple_choice_single", "quantitative_comparison")
+  // is a single-choice question with an options array, so render it as such.
+  return 'multiple_choice'
 }
 
 // ─── Passage block (GRE Verbal Reasoning reading passages) ───────────────────
