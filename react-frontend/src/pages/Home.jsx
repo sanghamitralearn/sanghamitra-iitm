@@ -324,7 +324,7 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Python Course Card - NEW */}
+            {/* Python Course Card - NEW 
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="200">
               <div className="course-item">
                 <img src="/img/python.jpg" className="img-fluid" alt="Python Programming Course" />
@@ -345,6 +345,7 @@ const Home = () => {
                 </div>
               </div>
             </div>
+            */}
 
             {/* DBMS Course Card - NEW */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="200">
