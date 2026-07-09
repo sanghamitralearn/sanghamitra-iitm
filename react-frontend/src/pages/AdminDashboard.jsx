@@ -255,7 +255,7 @@ const subjectApis = [
   { key: 'm1',        url: '/api/iitmmath_scores',                    countFn: d => (d.data || d || []).length },
   { key: 'm2',        url: '/api/iitm_math2_scores',                  countFn: d => (d.data || d || []).length },
   { key: 's1',        url: '/api/statistics_scores',                  countFn: d => (d.data || d || []).length },
-  { key: 's2',   url: '/api/iitm_stats2_scores',    countFn: d => (Array.isArray(d) ? d : (d.data || [])).length },
+  { key: 's2',   url: '/api/iitm_stats2_scores_databases',    countFn: d => (Array.isArray(d) ? d : (d.data || [])).length },
   { key: 'ct',        url: '/api/iitm_ct_scores',                     countFn: d => (d.data || d || []).length },
   { key: 'prog_java',   url: '/api/mcq-quiz/admin/attempts?course=java',   countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
   { key: 'prog_python', url: '/api/mcq-quiz/admin/attempts?course=python', countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
