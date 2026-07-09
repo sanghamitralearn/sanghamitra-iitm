@@ -894,6 +894,11 @@ router.get('/iitm_stats2_scores_databases', async (req, res) => {
     if (!email) {
       // Admin: group all attempts by email
       const attempts = await QuizAttemptstats2.find().lean();
+      console.log("========== STATS2 DEBUG ==========");
+      console.log("Number of attempts:", attempts.length);
+      console.log(attempts);
+      console.log("==================================");
+    
       const byEmail = {}
       attempts.forEach(a => {
         if (!byEmail[a.email]) byEmail[a.email] = { email: a.email, name: a.username || a.email, scores: [] }
