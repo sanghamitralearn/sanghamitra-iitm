@@ -170,7 +170,7 @@ async function loadStats1() {
 
 async function loadStats2() {
   try {
-    const result = await fetchFromAPI(`${VITE_API_URL}/api/iitm_stats2_scores`)
+    const result = await fetchFromAPI(`${VITE_API_URL}/api/iitm_stats2_scores_databases`)
     const activities = []
     const arr = Array.isArray(result) ? result : []
     arr.forEach(student => {
