@@ -6195,14 +6195,13 @@ router.get('/admin-notifications', async (req, res) => {
     )
 
     // Stats 2
-    push(stats2Users, 'Statistics-2', 'stats2', 'bi-bar-chart', 'stats2', s =>
-      (s.scores || []).map(q => ({
-        userName: s.name || s.email,
-        topic: q.subtopic || `Week ${q.week}`,
-        score: q.totalQuestions ? Math.round((q.correctAnswers/q.totalQuestions)*100) : 0,
-        timestamp: q.dateAttempted
-      }))
-    )
+      
+    push(stats2Users, 'Statistics-2', 'stats2', 'bi-bar-chart', 'stats2', s => [{
+      userName: s.username || s.name || s.email,
+      topic:     s.topic || `Week ${s.week}`,
+      score:     s.percentage || (s.total_questions ? Math.round((s.correct_answers / s.total_questions) * 100) : 0),
+      timestamp: s.submitted_at
+    }])
 
     // Coding
     codingUsers
