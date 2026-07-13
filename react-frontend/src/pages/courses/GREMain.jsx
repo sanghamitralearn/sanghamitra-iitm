@@ -43,6 +43,7 @@ const GREMain = () => {
   const [loading, setLoading]           = useState(true)
   const [papers, setPapers]             = useState([])
   const [myAttempts, setMyAttempts]     = useState([])
+  const [subjectScores, setSubjectScores] = useState([])
   const [apiError, setApiError]         = useState(null)
   const [selectedPaper, setSelectedPaper] = useState(null)
   const [showPreTest, setShowPreTest]   = useState(false)
@@ -55,7 +56,7 @@ const GREMain = () => {
       const res = await axios.get(`${API_URL}/api/session-info`, { withCredentials: true })
       if (res.data?.email) {
         setUserEmail(res.data.email)
-        await Promise.all([fetchPapers(), fetchMyAttempts(res.data.email)])
+        await Promise.all([fetchPapers(), fetchMyAttempts(res.data.email), fetchSubjectScores(res.data.email)])
       } else {
         navigate('/login', { replace: true })
       }
@@ -90,11 +91,65 @@ const GREMain = () => {
     } catch { /* optional */ }
   }
 
-  const getMyAttempt = (paper) =>
-    myAttempts.find(a => a.paper === paper) || null
+  // Per-subject (Verbal/Quant) scores always save independently of the combined
+  // full-paper record, so they're a more reliable signal of "did they finish a
+  // full test" — used as a fallback below if the full-paper save ever fails.
+  const fetchSubjectScores = async (email) => {
+    try {
+      const res = await axios.get(
+        `${API_URL}/api/gre_scores?email=${encodeURIComponent(email)}`,
+        { withCredentials: true }
+      )
+      if (Array.isArray(res.data)) setSubjectScores(res.data)
+    } catch { /* optional */ }
+  }
 
-  const getAttemptCount = (paper) =>
-    myAttempts.filter(a => a.paper === paper).length
+  // Builds a full-test-shaped result by pairing the latest Verbal + Quant
+  // per-subject scores — mirrors GRE.jsx's getFullTestStats(). Used when no
+  // gre_full_scores record exists yet for this paper (there's currently only
+  // one paper in the system, so this pairing is unambiguous).
+  const getSyntheticFullAttempt = () => {
+    const bySubject = sub => subjectScores
+      .filter(s => s.subject === sub)
+      .sort((a, b) => new Date(b.dateAttempted) - new Date(a.dateAttempted))
+    const v = bySubject('Verbal Reasoning')[0]
+    const q = bySubject('Quantitative Reasoning')[0]
+    if (!v || !q) return null
+    return {
+      testType: 'full',
+      score: (v.score || 0) + (q.score || 0),
+      maxScore: (v.maxScore || 0) + (q.maxScore || 0),
+      correctAnswers: (v.correctAnswers || 0) + (q.correctAnswers || 0),
+      wrongAnswers: (v.wrongAnswers || 0) + (q.wrongAnswers || 0),
+      unattempted: (v.unattempted || 0) + (q.unattempted || 0),
+      totalQuestions: (v.totalQuestions || 0) + (q.totalQuestions || 0),
+      dateAttempted: v.dateAttempted,
+      responses: [
+        ...(v.responses || []).map(r => ({ ...r, subject: 'Verbal Reasoning' })),
+        ...(q.responses || []).map(r => ({ ...r, subject: 'Quantitative Reasoning' })),
+      ],
+      sectionScores: {
+        'Verbal Reasoning': {
+          score: v.score, maxScore: v.maxScore, correctAnswers: v.correctAnswers,
+          wrongAnswers: v.wrongAnswers, unattempted: v.unattempted, totalQuestions: v.totalQuestions,
+          scaledScore: v.scaledScore ?? null,
+        },
+        'Quantitative Reasoning': {
+          score: q.score, maxScore: q.maxScore, correctAnswers: q.correctAnswers,
+          wrongAnswers: q.wrongAnswers, unattempted: q.unattempted, totalQuestions: q.totalQuestions,
+          scaledScore: q.scaledScore ?? null,
+        },
+      },
+    }
+  }
+
+  const getMyAttempt = (paper) =>
+    myAttempts.find(a => a.paper === paper) || getSyntheticFullAttempt()
+
+  const getAttemptCount = (paper) => {
+    const real = myAttempts.filter(a => a.paper === paper).length
+    return real > 0 ? real : (getSyntheticFullAttempt() ? 1 : 0)
+  }
 
   const handleOpenPreTest  = (p) => { setSelectedPaper(p); setShowPreTest(true) }
   const handleClosePreTest = () => { setShowPreTest(false); setSelectedPaper(null) }
@@ -297,7 +352,7 @@ const GREMain = () => {
                               <i className={`bi ${attempt ? 'bi-arrow-clockwise' : 'bi-play-fill'} me-2`} />
                               {attempt ? 'Reattempt' : 'Start Test'}
                             </button>
-                            {attempt && (
+                            {attempt ? (
                               <Link
                                 to="/courses/gre/analysis"
                                 state={{ results: { ...attempt, testType: 'full' }, questions: null }}
@@ -306,6 +361,16 @@ const GREMain = () => {
                               >
                                 <i className="bi bi-bar-chart-line me-1" />View Analysis
                               </Link>
+                            ) : (
+                              <button
+                                type="button"
+                                className="btn btn-outline-secondary btn-sm"
+                                style={{ borderRadius: 10, minWidth: 150 }}
+                                disabled
+                                title="Attempt this test to view its analysis"
+                              >
+                                <i className="bi bi-bar-chart-line me-1" />View Analysis
+                              </button>
                             )}
                           </div>
                         </div>
