@@ -242,17 +242,21 @@ const GREScoreDashboard = ({
                       <div className="progress-bar" style={{ width: `${p}%`, background: style.gradient }} />
                     </div>
                     <div className="row text-center">
-                      <div className="col-4">
+                      <div className="col-3">
                         <div className="fw-bold fs-5">{r.score}/{r.maxScore}</div>
                         <div className="text-muted small">Score</div>
                       </div>
-                      <div className="col-4">
+                      <div className="col-3">
                         <div className="fw-bold fs-5 text-success">{r.correctAnswers}</div>
                         <div className="text-muted small">Correct</div>
                       </div>
-                      <div className="col-4">
+                      <div className="col-3">
                         <div className="fw-bold fs-5 text-danger">{r.wrongAnswers}</div>
                         <div className="text-muted small">Wrong</div>
+                      </div>
+                      <div className="col-3">
+                        <div className="fw-bold fs-5 text-secondary">{r.unattempted ?? 0}</div>
+                        <div className="text-muted small">Skipped</div>
                       </div>
                     </div>
                   </div>
