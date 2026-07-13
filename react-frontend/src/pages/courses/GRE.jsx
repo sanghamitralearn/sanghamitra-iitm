@@ -397,6 +397,18 @@ const GRE = () => {
                     <i className={`bi ${awa ? 'bi-arrow-clockwise' : 'bi-play-fill'} me-2`} />
                     {awa ? 'Reattempt Essay' : 'Start Analytical Writing'}
                   </Link>
+                  {awa && (() => {
+                    const latestAwa = getLatestAttempt(AWA_SECTION)
+                    return latestAwa && (
+                      <Link
+                        to="/courses/gre/analysis"
+                        state={{ results: { ...latestAwa, testType: 'module', subject: AWA_SECTION.subject }, questions: [] }}
+                        className="btn btn-outline-secondary btn-sm w-100"
+                        style={{ borderRadius: 10 }}>
+                        <i className="bi bi-bar-chart-line me-1" />View Analysis
+                      </Link>
+                    )
+                  })()}
                 </div>
               </div>
             </div>
