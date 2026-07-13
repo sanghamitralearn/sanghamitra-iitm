@@ -3,9 +3,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import axios from 'axios'
 import {
   loadKaTeX, SUBJECT_STYLE, calcMarks, greScaledScore, isAnswerFilled, formatTime,
-  QuestionReviewItem, TabWarningBanner, QuizPanel,
+  TabWarningBanner, QuizPanel,
 } from './GREQuiz'
-import GREScoreDashboard, { buildChapterItems } from './GREScoreDashboard'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
@@ -59,8 +58,9 @@ const GREFullTest = () => {
   // "View Analysis" card on the papers list never lights up after finishing.
   const paperRef = useRef({ paper: paperName, year: paperYear })
 
-  // phase: loading | error | quiz | review — modules run one after another
-  // automatically; there is no intermediate "choose a module" screen.
+  // phase: loading | error | quiz | finalizing — modules run one after another
+  // automatically; there is no intermediate "choose a module" screen, and
+  // finishing the last module hands off to the separate analysis page.
   const [phase, setPhase] = useState('loading')
   const [error, setError] = useState(null)
   const [debugInfo, setDebugInfo] = useState(null)
@@ -70,8 +70,6 @@ const GREFullTest = () => {
   const [stageAnswers, setStageAnswers] = useState(EMPTY_ANSWERS)
   const [currentIndexByStage, setCurrentIndexByStage] = useState(EMPTY_INDEXES)
   const [stageResults, setStageResults] = useState({})
-  const [combinedResults, setCombinedResults] = useState(null)
-  const [expanded, setExpanded] = useState(null)
   const [saving, setSaving] = useState(false)
   const [tabWarning, setTabWarning] = useState(false)
   const [timeLeft, setTimeLeft] = useState(null)
@@ -355,8 +353,11 @@ const GREFullTest = () => {
       sessionStorage.setItem('greAnalysis', JSON.stringify({ results: analysisResults, questions: allQuestions }))
     } catch { /* ignore quota errors */ }
 
-    setCombinedResults(combined)
-    setPhase('review')
+    // A lightweight "finalizing" spinner, not the full review UI — this page
+    // always hands off to the separate /courses/gre/analysis page next, so
+    // rendering a full results screen here first just flashes one screen
+    // before immediately replacing it with a different one.
+    setPhase('finalizing')
 
     const u = userRef.current
     if (!u?.email) {
@@ -418,19 +419,6 @@ const GREFullTest = () => {
         state: { results: analysisResults, questions: allQuestions, saveWarning },
       })
     }
-  }
-
-  const handleRetake = () => {
-    setStageIndex(0)
-    setCurrentIndexByStage(EMPTY_INDEXES)
-    setStageAnswers(EMPTY_ANSWERS)
-    setStageResults({})
-    setCombinedResults(null)
-    setExpanded(null)
-    setTimeLeft(null)
-    setStageOrder(shuffle(STAGES.map((_, i) => i)))
-    timesRef.current = EMPTY_TIMES()
-    fetchAllQuestions()
   }
 
   submitStageRef.current = submitStage
@@ -580,82 +568,17 @@ const GREFullTest = () => {
     )
   }
 
-  // ── Combined review ──────────────────────────────────────────────────────
-  if (phase === 'review' && combinedResults) {
-    const sectionResults = {
-      'Verbal Reasoning':       mergeResults([stageResults.verbal1, stageResults.verbal2]),
-      'Quantitative Reasoning': mergeResults([stageResults.quant1, stageResults.quant2]),
-    }
-
-    const sections = Object.entries(sectionResults).map(([label, result]) => ({ label, result }))
-    const chapterItems = STAGES.flatMap(s =>
-      buildChapterItems(stageQuestions[s.key], stageResults[s.key]?.responses, s.label)
-    )
-
-    return (
-      <main className="main">
-        <div className="page-title" style={{ marginBottom: '2rem' }}>
-          <div className="heading">
-            <div className="container">
-              <div className="row d-flex justify-content-center text-center">
-                <div className="col-lg-8">
-                  <h1>Full GRE Test — Results</h1>
-                </div>
-              </div>
-            </div>
-          </div>
-          <nav className="breadcrumbs">
-            <div className="container">
-              <ol>
-                <li><Link to="/">Home</Link></li>
-                <li><Link to="/courses/gre">GRE</Link></li>
-                <li className="current">Full Test Review</li>
-              </ol>
-            </div>
-          </nav>
-        </div>
-
-        <div className="container mb-5">
-          <GREScoreDashboard
-            results={combinedResults}
-            sections={sections}
-            chapterItems={chapterItems}
-            onRetake={handleRetake}
-            saving={saving}
-            dateAttempted={new Date().toLocaleDateString()}
-            heroTitle="Full Test Completed!"
-            retakeLabel="Retake Full Test"
-          />
-
-          {/* Per-question review, grouped by module in exam order */}
-          <h5 className="fw-bold mb-3 mt-4">Question-by-Question Review</h5>
-          {STAGES.map(s => (
-            <div key={s.key} className="mb-4">
-              <h5 className="mb-3">
-                <span className="badge text-white" style={{ background: (SUBJECT_STYLE[s.label] || FULL_TEST_STYLE).gradient }}>
-                  {s.label} — Module {s.module}
-                </span>
-              </h5>
-              {stageQuestions[s.key].map((q, idx) => {
-                const itemKey = `${s.key}-${idx}`
-                return (
-                  <QuestionReviewItem
-                    key={q._id || itemKey}
-                    q={q}
-                    idx={idx}
-                    answer={stageAnswers[s.key][idx]}
-                    res={stageResults[s.key].responses[idx]}
-                    isOpen={expanded === itemKey}
-                    onToggle={() => setExpanded(expanded === itemKey ? null : itemKey)}
-                  />
-                )
-              })}
-            </div>
-          ))}
-        </div>
-      </main>
-    )
-  }
+  // ── Finalizing: brief spinner while scores save, then we hand off to the
+  // separate /courses/gre/analysis page — no intermediate results screen here
+  // to avoid flashing two different results UIs back to back.
+  if (phase === 'finalizing') return (
+    <div className="d-flex justify-content-center align-items-center" style={{ height: '60vh' }}>
+      <div className="text-center">
+        <div className="spinner-border mb-3" style={{ color: FULL_TEST_STYLE.badge }} role="status" />
+        <p className="text-muted">Calculating your results…</p>
+      </div>
+    </div>
+  )
 
   return null
 }
