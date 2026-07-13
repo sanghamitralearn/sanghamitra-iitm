@@ -55,6 +55,14 @@ export function greScaledScore(correctAnswers, totalQuestions) {
   return 130 + Math.round(pct * 40)
 }
 
+// ─── Timer formatting (m:ss) ───────────────────────────────────────────────────
+export function formatTime(totalSeconds) {
+  const s = Math.max(0, totalSeconds)
+  const m = Math.floor(s / 60)
+  const sec = s % 60
+  return `${m}:${String(sec).padStart(2, '0')}`
+}
+
 // ─── KaTeX ───────────────────────────────────────────────────────────────────
 export function loadKaTeX() {
   if (window.renderMathInElement) return Promise.resolve()
@@ -93,7 +101,7 @@ function stripEscapedDollarSigns(element) {
 function renderMathContent(element) {
   if (!element) return
   const run = () => {
-    if (typeof window.renderMathInElement === 'undefined') return
+    if (typeof window.renderMathInElement === 'undefined') { setTimeout(run, 300); return }
     window.renderMathInElement(element, {
       delimiters: [
         { left: '$$', right: '$$', display: true },
@@ -135,6 +143,27 @@ function latexTabularToHtml(text) {
   )
 }
 
+// ─── Convert LaTeX blank/underline markers (used by fill-in-the-blank text) ───
+// e.g. "\underline{\hspace{2cm}}" — a GRE text-completion blank — has no $...$
+// delimiters for KaTeX to pick up, so it must be converted to HTML directly or
+// it renders as literal backslash text. Falls back to a real <u> for any other
+// \underline{...} (actual underlined text, not a blank).
+function latexBlanksToHtml(text) {
+  text = text.replace(
+    /\\underline\{\\hspace\{([\d.]+)\s*(cm|mm|in|pt|em|px)?\}\}/g,
+    (_match, num, unit) =>
+      `<span style="display:inline-block;width:${num}${unit || 'cm'};border-bottom:2px solid currentColor;` +
+      `height:1em;vertical-align:text-bottom;margin:0 2px;"></span>`
+  )
+  text = text.replace(/\\rule\{([\d.]+)\s*(cm|mm|in|pt|em|px)?\}\{[^}]*\}/g,
+    (_match, num, unit) =>
+      `<span style="display:inline-block;width:${num}${unit || 'cm'};border-bottom:2px solid currentColor;` +
+      `height:1em;vertical-align:text-bottom;margin:0 2px;"></span>`
+  )
+  text = text.replace(/\\underline\{([^}]*)\}/g, '<u>$1</u>')
+  return text
+}
+
 // ─── Convert \begin{enumerate}/\begin{itemize} to HTML lists ─────────────────
 function latexListToHtml(text) {
   text = text.replace(
@@ -172,6 +201,7 @@ export const MathText = ({ text, style, className }) => {
     )
   html = latexTabularToHtml(html)
   html = latexListToHtml(html)
+  html = latexBlanksToHtml(html)
   html = html.replace(/\\\\/g, '<br>')
 
   return (
@@ -189,28 +219,43 @@ export const imgSrc = (filename) =>
   filename ? `/img/Graph_questions/${filename}` : null
 
 // ─── Normalise question type ──────────────────────────────────────────────────
+// Real `type` values confirmed against the gre_questions collection:
+// multiple_choice_single, multiple_select, numeric_entry, quantitative_comparison,
+// select_in_passage, sentence_equivalence, text_completion_multi_blank, essay.
 export function resolveType(q) {
   if (q.type === 'essay') return 'essay'
-  if (q.type === 'integer') return 'numeric'
+
+  const t = q.type || ''
+  if (t === 'numeric' || t === 'numeric_entry' || t === 'integer') return 'numeric'
+  if (t === 'text_completion_multi_blank') return 'text_completion_multi_blank'
+  // GRE Sentence Equivalence — pick 2 of 6 synonymous choices for one blank —
+  // is its own distinct type in the data, not a variant of multiple_choice.
+  if (t === 'multiple_select' || t === 'sentence_equivalence') return 'multiple_select'
+
   const hasOptions = Array.isArray(q.options) && q.options.length > 0
   const hasImageOptions = q.option_images && Object.keys(q.option_images).length > 0
   if (!hasOptions && !hasImageOptions) return 'numeric'
 
-  const t = q.type || ''
-  if (t === 'multiple_select') return 'multiple_select'
-  if (t === 'text_completion_multi_blank') return 'text_completion_multi_blank'
-  if (t === 'numeric') return 'numeric'
-  // Any other value (e.g. "multiple_choice_single", "quantitative_comparison")
-  // is a single-choice question with an options array, so render it as such.
+  // Safety net: any other single-choice-labeled type whose correct_answer still
+  // turns out to be an array of more than one option should still render as
+  // multi-select rather than silently limiting the user to one pick.
+  if (Array.isArray(q.correct_answer) && q.correct_answer.length > 1) return 'multiple_select'
+
+  // multiple_choice_single, quantitative_comparison, select_in_passage, or any
+  // other single-choice type — render as a standard single-select MCQ.
   return 'multiple_choice'
 }
 
-// ─── Passage block (GRE Verbal Reasoning reading passages) ───────────────────
-function PassageBlock({ text }) {
+// ─── Passage block (shared-context box shown above a question) ───────────────
+// Colour follows the question's subject (SUBJECT_STYLE) so a Quant "passage"
+// (e.g. shared data-analysis context) doesn't clash with the Verbal purple accent.
+function PassageBlock({ text, subject }) {
   const ref = useRef(null)
   useEffect(() => { if (ref.current) renderMathContent(ref.current) }, [text])
 
   if (!text) return null
+
+  const accent = (SUBJECT_STYLE[subject] || SUBJECT_STYLE['Verbal Reasoning']).badge
 
   let html = (text || '')
     .replace(/\\%/g, '%')
@@ -218,20 +263,21 @@ function PassageBlock({ text }) {
     .replace(/\\textbf\{([^}]*)\}/g, '<strong>$1</strong>')
   html = latexTabularToHtml(html)
   html = latexListToHtml(html)
+  html = latexBlanksToHtml(html)
   html = html.replace(/\\\\/g, '<br>')
 
   return (
     <div style={{
-      background: '#f8f6ff',
-      border: '1px solid #d9cdf5',
-      borderLeft: '4px solid #6f42c1',
+      background: `${accent}0d`,
+      border: `1px solid ${accent}44`,
+      borderLeft: `4px solid ${accent}`,
       borderRadius: 10,
       padding: '16px 20px',
       marginBottom: 20,
     }}>
       <div style={{
         fontSize: '0.72rem', fontWeight: 700, letterSpacing: '1px',
-        color: '#6f42c1', marginBottom: 10, textTransform: 'uppercase',
+        color: accent, marginBottom: 10, textTransform: 'uppercase',
       }}>
         Passage
       </div>
@@ -248,14 +294,14 @@ function PassageBlock({ text }) {
 export function QuestionContent({ q }) {
   return (
     <>
-      <PassageBlock text={q.passage} />
+      <PassageBlock text={q.passage} subject={q.subject} />
       <p className="mb-3" style={{ fontSize: '1.05rem', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
         <MathText text={q.question_text} />
       </p>
       {q.image_url && (
         <div className="mb-4 text-center">
           <img src={imgSrc(q.image_url)} alt="Question diagram"
-            style={{ width: '100%', maxHeight: 500, objectFit: 'contain', borderRadius: 10, border: '1px solid #dee2e6' }}
+            style={{ maxWidth: '100%', maxHeight: 500, objectFit: 'contain', borderRadius: 10, border: '1px solid #dee2e6' }}
             onError={e => { e.target.style.display = 'none' }} />
         </div>
       )}
@@ -267,9 +313,20 @@ export function QuestionContent({ q }) {
 export function isAnswerFilled(q, ans) {
   if (resolveType(q) === 'text_completion_multi_blank') {
     if (!ans || typeof ans !== 'object' || Array.isArray(ans)) return false
-    return (q.options || []).every(b => !!ans[b.blank_label])
+    return (q.options || []).every(b => {
+      const v = ans[b.blank_label]
+      return Array.isArray(v) ? v.length > 0 : !!v
+    })
   }
   return ans !== undefined && ans !== null && ans !== '' && !(Array.isArray(ans) && !ans.length)
+}
+
+// A "blank" needs multiple selections (GRE Sentence Equivalence: pick 2 of 6
+// synonymous choices for a single blank) when its correct answer is stored as
+// an array. Data-driven so it works whether a question has one blank or several.
+export function isBlankMultiSelect(q, blankLabel) {
+  const corr = (q.correct_answer || {})[blankLabel]
+  return Array.isArray(corr)
 }
 
 // ─── GRE marking (+1 correct, 0 wrong — no negative marking; N/A for essays) ──
@@ -282,7 +339,16 @@ export function calcMarks(q, userAns) {
   if (type === 'text_completion_multi_blank') {
     if (!isAnswerFilled(q, userAns)) return { isCorrect: false, marksAwarded: scheme.zero ?? 0, unattempted: true }
     const corr = q.correct_answer || {}
-    const ok = Object.keys(corr).every(b => String(userAns[b]).trim() === String(corr[b]).trim())
+    const ok = Object.keys(corr).every(b => {
+      const c = corr[b]
+      const u = userAns[b]
+      if (Array.isArray(c)) {
+        const cSet = new Set(c.map(x => String(x).trim()))
+        const uSet = new Set((Array.isArray(u) ? u : [u]).map(x => String(x).trim()))
+        return cSet.size === uSet.size && [...cSet].every(x => uSet.has(x))
+      }
+      return String(u).trim() === String(c).trim()
+    })
     return { isCorrect: ok, marksAwarded: ok ? (scheme.full ?? 1) : (scheme.negative ?? 0) }
   }
 
@@ -372,13 +438,13 @@ export const QuestionReviewItem = ({ q, idx, answer, res, isOpen, onToggle }) =>
 
         {isOpen && (
           <div className="mt-3 ms-5 ps-2">
-            <PassageBlock text={q.passage} />
+            <PassageBlock text={q.passage} subject={q.subject} />
             {q.image_url && (
               <div className="mb-3">
                 <img
                   src={imgSrc(q.image_url)}
                   alt="Question diagram"
-                  style={{ width: '100%', maxHeight: 500, objectFit: 'contain', borderRadius: 8, border: '1px solid #dee2e6' }}
+                  style={{ maxWidth: '100%', maxHeight: 500, objectFit: 'contain', borderRadius: 8, border: '1px solid #dee2e6' }}
                   onError={e => { e.target.style.display = 'none' }}
                 />
               </div>
@@ -461,14 +527,19 @@ export const QuestionReviewItem = ({ q, idx, answer, res, isOpen, onToggle }) =>
             {resolveType(q) === 'text_completion_multi_blank' && (
               <div className="mb-3">
                 {(q.options || []).map((blank, bi) => {
+                  const multi = isBlankMultiSelect(q, blank.blank_label)
                   const corrId = q.correct_answer?.[blank.blank_label]
                   const userId = answer?.[blank.blank_label]
+                  const corrSet = multi ? new Set((corrId || []).map(String)) : null
+                  const userSet = multi ? new Set((Array.isArray(userId) ? userId : []).map(String)) : null
                   return (
                     <div key={bi} className="mb-3">
-                      <p className="fw-semibold small mb-1">{blank.blank_label}</p>
+                      <p className="fw-semibold small mb-1">
+                        {blank.blank_label}{multi && <span className="text-muted fw-normal"> (select two)</span>}
+                      </p>
                       {(blank.choices || []).map((opt, oi) => {
-                        const isCorrectOpt = corrId === opt.option_id
-                        const userPicked = userId === opt.option_id
+                        const isCorrectOpt = multi ? corrSet.has(opt.option_id) : corrId === opt.option_id
+                        const userPicked = multi ? userSet.has(opt.option_id) : userId === opt.option_id
                         const bg = isCorrectOpt ? '#d4edda' : userPicked ? '#f8d7da' : 'transparent'
                         return (
                           <div
@@ -617,10 +688,10 @@ export const TabWarningBanner = ({ show, onDismiss }) => {
 
 // ─── Quiz panel: question card + sidebar (used by GREQuiz and GREFullTest) ───
 export const QuizPanel = ({
-  questions, currentIndex, answers, setAnswer, toggleMSQ, setBlankAnswer, goTo,
+  questions, currentIndex, answers, setAnswer, toggleMSQ, setBlankAnswer, toggleBlankMSQ, goTo,
   style, moduleNum, saving, onSubmit,
   submitLabel = 'Submit Quiz', exitTo = '/courses/gre', exitLabel = 'Exit',
-  mode = 'single', onBackToOverview, onFinishTest,
+  mode = 'single', onSubmitStage,
 }) => {
   const q = questions[currentIndex]
   const qType = resolveType(q)
@@ -757,34 +828,51 @@ export const QuizPanel = ({
                 </div>
               )}
 
-              {/* ── Text completion (multiple blanks) ── */}
+              {/* ── Text completion (single or multiple blanks) ── */}
               {qType === 'text_completion_multi_blank' && (
                 <div>
-                  {(q.options || []).map((blank, bi) => (
-                    <div key={bi} className="mb-4">
-                      <p className="fw-semibold mb-2" style={{ fontSize: '0.9rem', color: style.badge }}>
-                        {blank.blank_label}
-                      </p>
-                      {(blank.choices || []).map((opt, oi) => {
-                        const selected = (userAns && userAns[blank.blank_label]) === opt.option_id
-                        return (
-                          <div
-                            key={oi}
-                            onClick={() => setBlankAnswer(currentIndex, blank.blank_label, opt.option_id)}
-                            className={`d-flex align-items-start gap-3 mb-2 p-3 rounded border ${selected ? 'border-primary bg-primary bg-opacity-10' : ''}`}
-                            style={{ cursor: 'pointer', transition: 'all 0.15s' }}
-                          >
-                            <div style={{
-                              width: 20, height: 20, borderRadius: '50%', flexShrink: 0, marginTop: 2,
-                              border: `2px solid ${selected ? style.badge : '#adb5bd'}`,
-                              background: selected ? style.badge : 'transparent',
-                            }} />
-                            <MathText text={opt.text} style={{ fontSize: '0.95rem' }} />
-                          </div>
-                        )
-                      })}
-                    </div>
-                  ))}
+                  {(q.options || []).map((blank, bi) => {
+                    const multi = isBlankMultiSelect(q, blank.blank_label)
+                    return (
+                      <div key={bi} className="mb-4">
+                        <p className="fw-semibold mb-2" style={{ fontSize: '0.9rem', color: style.badge }}>
+                          {blank.blank_label}
+                        </p>
+                        {multi && (
+                          <p className="text-muted small mb-2">Select two answer choices</p>
+                        )}
+                        {(blank.choices || []).map((opt, oi) => {
+                          const selected = multi
+                            ? Array.isArray(userAns?.[blank.blank_label]) && userAns[blank.blank_label].includes(opt.option_id)
+                            : (userAns && userAns[blank.blank_label]) === opt.option_id
+                          return (
+                            <div
+                              key={oi}
+                              onClick={() => multi
+                                ? toggleBlankMSQ(currentIndex, blank.blank_label, opt.option_id)
+                                : setBlankAnswer(currentIndex, blank.blank_label, opt.option_id)}
+                              className={`d-flex align-items-start gap-3 mb-2 p-3 rounded border ${selected ? 'border-primary bg-primary bg-opacity-10' : ''}`}
+                              style={{ cursor: 'pointer', transition: 'all 0.15s' }}
+                            >
+                              <div style={multi ? {
+                                width: 20, height: 20, borderRadius: 4, flexShrink: 0, marginTop: 2,
+                                border: `2px solid ${selected ? style.badge : '#adb5bd'}`,
+                                background: selected ? style.badge : 'transparent',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              } : {
+                                width: 20, height: 20, borderRadius: '50%', flexShrink: 0, marginTop: 2,
+                                border: `2px solid ${selected ? style.badge : '#adb5bd'}`,
+                                background: selected ? style.badge : 'transparent',
+                              }}>
+                                {multi && selected && <i className="bi bi-check text-white" style={{ fontSize: 12 }} />}
+                              </div>
+                              <MathText text={opt.text} style={{ fontSize: '0.95rem' }} />
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
 
@@ -824,8 +912,10 @@ export const QuizPanel = ({
                       Next<i className="bi bi-arrow-right ms-1" />
                     </button>
                   ) : mode === 'full' ? (
-                    <button className="btn btn-primary" onClick={onBackToOverview}>
-                      <i className="bi bi-grid me-1" />Module Overview
+                    <button className="btn btn-success" onClick={onSubmitStage} disabled={saving}>
+                      {saving
+                        ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</>
+                        : <><i className="bi bi-check-lg me-1" />Submit Module</>}
                     </button>
                   ) : (
                     <button
@@ -900,18 +990,22 @@ export const QuizPanel = ({
               <p className="text-muted small mb-2">{answeredCount}/{questions.length} answered</p>
               {mode === 'full' ? (
                 <>
-                  <button className="btn btn-primary w-100" onClick={onBackToOverview}>
-                    <i className="bi bi-grid me-1" />Module Overview
-                  </button>
                   <button
-                    className="btn btn-success w-100 mt-2"
-                    onClick={onFinishTest}
+                    className="btn btn-success w-100"
+                    onClick={onSubmitStage}
                     disabled={saving}
                   >
                     {saving
                       ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</>
-                      : <><i className="bi bi-flag-fill me-1" />Finish Test</>}
+                      : <><i className="bi bi-check-lg me-1" />Submit Module</>}
                   </button>
+                  <Link
+                    to={exitTo}
+                    className="btn btn-outline-secondary w-100 mt-2 btn-sm"
+                    onClick={e => { if (!window.confirm('Exit the test? Unsubmitted answers in this module will be lost.')) e.preventDefault() }}
+                  >
+                    <i className="bi bi-arrow-left me-1" />{exitLabel}
+                  </Link>
                 </>
               ) : (
                 <>
@@ -963,13 +1057,23 @@ const GREQuiz = () => {
   const [debugInfo, setDebugInfo] = useState(null)
   const [saving, setSaving]       = useState(false)
   const [tabWarning, setTabWarning] = useState(false)
+  const [timeLeft, setTimeLeft]   = useState(null)
 
   const questionStartRef = useRef(Date.now())
   const timesRef         = useRef({})
   const userRef          = useRef(null)
+  const authCheckedRef   = useRef(false)
+  const handleSubmitRef  = useRef(() => {})
 
   useEffect(() => { loadKaTeX() }, [])
-  useEffect(() => { checkAuth() }, [])
+  useEffect(() => {
+    // Guard against React StrictMode's double-invocation of mount effects in
+    // dev, which otherwise fires two competing fetches and can leave the quiz
+    // looking like it needs a second interaction before it "really" starts.
+    if (authCheckedRef.current) return
+    authCheckedRef.current = true
+    checkAuth()
+  }, [])
 
   useEffect(() => {
     if (submitted || loading) return
@@ -982,6 +1086,15 @@ const GREQuiz = () => {
       window.removeEventListener('focus', onFocus)
     }
   }, [submitted, loading])
+
+  // ── Section timer: starts once questions are loaded, auto-submits at 0 ────
+  useEffect(() => {
+    if (loading || submitted || !questions.length) return
+    if (timeLeft === null) { setTimeLeft(moduleConfig.timeMin * 60); return }
+    if (timeLeft <= 0) { handleSubmitRef.current(true); return }
+    const t = setTimeout(() => setTimeLeft(tl => tl - 1), 1000)
+    return () => clearTimeout(t)
+  }, [loading, submitted, questions.length, timeLeft])
 
   const checkAuth = async () => {
     try {
@@ -1057,6 +1170,18 @@ const GREQuiz = () => {
     ...prev,
     [idx]: { ...(prev[idx] || {}), [blankLabel]: optId },
   }))
+
+  const toggleBlankMSQ = (idx, blankLabel, optId) => setAnswers(prev => {
+    const blankAns = prev[idx] || {}
+    const cur = Array.isArray(blankAns[blankLabel]) ? blankAns[blankLabel] : []
+    return {
+      ...prev,
+      [idx]: {
+        ...blankAns,
+        [blankLabel]: cur.includes(optId) ? cur.filter(x => x !== optId) : [...cur, optId],
+      },
+    }
+  })
 
   const recordTime = () => {
     const elapsed = Math.round((Date.now() - questionStartRef.current) / 1000)
@@ -1185,9 +1310,11 @@ const GREQuiz = () => {
 
   const handleRetake = () => {
     setAnswers({}); setSubmitted(false); setResults(null)
-    setCurrentIndex(0); timesRef.current = {}
+    setCurrentIndex(0); timesRef.current = {}; setTimeLeft(null)
     fetchQuestions()
   }
+
+  handleSubmitRef.current = handleSubmit
 
   if (loading) return (
     <div className="d-flex justify-content-center align-items-center" style={{ height: '60vh' }}>
@@ -1287,6 +1414,21 @@ const GREQuiz = () => {
         </nav>
       </div>
 
+      {timeLeft !== null && (
+        <div className="container mb-3 d-flex justify-content-end">
+          <span
+            className="badge d-inline-flex align-items-center gap-2"
+            style={{
+              background: timeLeft < 120 ? '#dc3545' : timeLeft < 300 ? '#ffc107' : style.badge,
+              color: timeLeft < 300 && timeLeft >= 120 ? '#212529' : '#fff',
+              fontSize: '0.95rem', fontFamily: 'monospace', padding: '0.5rem 0.9rem', borderRadius: 8,
+            }}
+          >
+            <i className="bi bi-clock-history" />Time left: {formatTime(timeLeft)}
+          </span>
+        </div>
+      )}
+
       <QuizPanel
         questions={questions}
         currentIndex={currentIndex}
@@ -1294,6 +1436,7 @@ const GREQuiz = () => {
         setAnswer={setAnswer}
         toggleMSQ={toggleMSQ}
         setBlankAnswer={setBlankAnswer}
+        toggleBlankMSQ={toggleBlankMSQ}
         goTo={goTo}
         style={style}
         moduleNum={moduleNum}
