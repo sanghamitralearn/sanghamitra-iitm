@@ -79,13 +79,38 @@ function renderMath(el) {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+// Real `type` values confirmed against the gre_questions collection:
+// multiple_choice_single, multiple_select, numeric_entry, quantitative_comparison,
+// select_in_passage, sentence_equivalence, text_completion_multi_blank, essay.
 function resolveType(q) {
   if (q.type === 'essay') return 'essay'
-  if (q.type === 'integer') return 'numeric'
+
+  const t = q.type || ''
+  if (t === 'numeric' || t === 'numeric_entry' || t === 'integer') return 'numeric'
+  if (t === 'text_completion_multi_blank') return 'text_completion_multi_blank'
+  // GRE Sentence Equivalence — pick 2 of 6 synonymous choices for one blank —
+  // is its own distinct type in the data, not a variant of multiple_choice.
+  if (t === 'multiple_select' || t === 'sentence_equivalence') return 'multiple_select'
+
   const hasOpts    = Array.isArray(q.options) && q.options.length > 0
   const hasImgOpts = q.option_images && Object.keys(q.option_images).length > 0
   if (!hasOpts && !hasImgOpts) return 'numeric'
-  return q.type || 'multiple_choice'
+
+  // Safety net: any other single-choice-labeled type whose correct_answer still
+  // turns out to be an array of more than one option should still render as
+  // multi-select rather than silently limiting the user to one pick.
+  if (Array.isArray(q.correct_answer) && q.correct_answer.length > 1) return 'multiple_select'
+
+  // multiple_choice_single, quantitative_comparison, select_in_passage, or any
+  // other single-choice type — render as a standard single-select MCQ.
+  return 'multiple_choice'
+}
+
+// A "blank" needs multiple selections (GRE Sentence Equivalence: pick 2 of 6
+// synonymous choices for a single blank) when its correct answer is an array.
+function isBlankMultiSelect(q, blankLabel) {
+  const corr = (q.correct_answer || {})[blankLabel]
+  return Array.isArray(corr)
 }
 
 const imgSrc = f => f ? `/img/Graph_questions/${f}` : null
@@ -132,6 +157,25 @@ function latexListToHtml(text) {
   return text
 }
 
+// Converts LaTeX blank/underline markers (e.g. "\underline{\hspace{2cm}}", a
+// GRE text-completion blank) which have no $...$ delimiters for KaTeX to pick
+// up, so they'd otherwise render as literal backslash text.
+function latexBlanksToHtml(text) {
+  text = text.replace(
+    /\\underline\{\\hspace\{([\d.]+)\s*(cm|mm|in|pt|em|px)?\}\}/g,
+    (_match, num, unit) =>
+      `<span style="display:inline-block;width:${num}${unit || 'cm'};border-bottom:2px solid currentColor;` +
+      `height:1em;vertical-align:text-bottom;margin:0 2px;"></span>`
+  )
+  text = text.replace(/\\rule\{([\d.]+)\s*(cm|mm|in|pt|em|px)?\}\{[^}]*\}/g,
+    (_match, num, unit) =>
+      `<span style="display:inline-block;width:${num}${unit || 'cm'};border-bottom:2px solid currentColor;` +
+      `height:1em;vertical-align:text-bottom;margin:0 2px;"></span>`
+  )
+  text = text.replace(/\\underline\{([^}]*)\}/g, '<u>$1</u>')
+  return text
+}
+
 // ─── MathText ─────────────────────────────────────────────────────────────────
 function MathText({ text }) {
   const ref = useRef(null)
@@ -148,31 +192,34 @@ function MathText({ text }) {
     )
   html = latexTabularToHtml(html)
   html = latexListToHtml(html)
+  html = latexBlanksToHtml(html)
   html = html.replace(/\\\\/g, '<br>')
   return (
     <span ref={ref} dangerouslySetInnerHTML={{ __html: html }} />
   )
 }
 
-// ─── Passage block ────────────────────────────────────────────────────────────
-function PassageBlock({ text }) {
+// ─── Passage block (colour follows the question's subject, same as GREQuiz.jsx) ──
+function PassageBlock({ text, subject }) {
   const ref = useRef(null)
   useEffect(() => { if (ref.current) renderMath(ref.current) }, [text])
   if (!text) return null
+  const accent = SECTION_COLOR[subject] || SECTION_COLOR['Verbal Reasoning']
   let html = (text || '')
     .replace(/\\%/g, '%')
     .replace(/\\textit\{([^}]*)\}/g, '<em>$1</em>')
     .replace(/\\textbf\{([^}]*)\}/g, '<strong>$1</strong>')
   html = latexTabularToHtml(html)
   html = latexListToHtml(html)
+  html = latexBlanksToHtml(html)
   html = html.replace(/\\\\/g, '<br>')
   return (
     <div style={{
-      background: '#f8f6ff', border: '1px solid #d9cdf5',
-      borderLeft: '4px solid #6f42c1', borderRadius: 10,
+      background: `${accent}0d`, border: `1px solid ${accent}44`,
+      borderLeft: `4px solid ${accent}`, borderRadius: 10,
       padding: '16px 20px', marginBottom: 20,
     }}>
-      <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '1px', color: '#6f42c1', marginBottom: 10, textTransform: 'uppercase' }}>
+      <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '1px', color: accent, marginBottom: 10, textTransform: 'uppercase' }}>
         Passage
       </div>
       <div ref={ref} style={{ fontSize: '1rem', lineHeight: 1.85, whiteSpace: 'pre-wrap', margin: 0, color: '#1a1a2e' }}
@@ -187,7 +234,7 @@ function QuestionContent({ q }) {
   useEffect(() => { if (ref.current) renderMath(ref.current) }, [q])
   return (
     <div ref={ref}>
-      {q.passage && <PassageBlock text={q.passage} />}
+      {q.passage && <PassageBlock text={q.passage} subject={q.subject} />}
       <p className="mb-3" style={{ fontSize: '1.05rem', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
         <MathText text={q.question_text} />
       </p>
@@ -594,14 +641,18 @@ const ReviewAnswersPage = ({ enriched, onBack }) => {
 
   useEffect(() => { if (ref.current) renderMath(ref.current) }, [expandedIdx])
 
-  const counts = {
-    all:         enriched.length,
-    correct:     enriched.filter(r => r?.isCorrect).length,
-    incorrect:   enriched.filter(r => r && !r.isCorrect && !r.unattempted).length,
-    unattempted: enriched.filter(r => r?.unattempted).length,
-  }
-
   const availableSections = [...new Set(enriched.map(r => r.subject).filter(Boolean))]
+
+  // Scoped to the selected section chip, so the sidebar counts reflect that
+  // section only instead of always showing the whole test's totals.
+  const sectionScoped = sectionFilter ? enriched.filter(r => r.subject === sectionFilter) : enriched
+
+  const counts = {
+    all:         sectionScoped.length,
+    correct:     sectionScoped.filter(r => r?.isCorrect).length,
+    incorrect:   sectionScoped.filter(r => r && !r.isCorrect && !r.unattempted).length,
+    unattempted: sectionScoped.filter(r => r?.unattempted).length,
+  }
 
   const filtered = enriched.filter(r => {
     if (sectionFilter && r.subject !== sectionFilter) return false
@@ -644,6 +695,11 @@ const ReviewAnswersPage = ({ enriched, onBack }) => {
           {/* Status sidebar */}
           <div className="col-md-3">
             <div className="card border-0 shadow-sm" style={{ borderRadius: 12, overflow: 'hidden' }}>
+              {sectionFilter && (
+                <div className="px-3 pt-3 pb-1 text-muted" style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                  {sectionFilter}
+                </div>
+              )}
               {[
                 { key: 'all',         label: `All (${counts.all})` },
                 { key: 'incorrect',   label: `Incorrect (${counts.incorrect})` },
@@ -758,14 +814,19 @@ const ReviewAnswersPage = ({ enriched, onBack }) => {
                             {resolveType(q) === 'text_completion_multi_blank' && (
                               <div className="mb-3">
                                 {(q.options || []).map((blank, bi) => {
+                                  const multi = isBlankMultiSelect(q, blank.blank_label)
                                   const corrId = q.correct_answer?.[blank.blank_label]
                                   const userId = r.userResponse?.[blank.blank_label]
+                                  const corrSet = multi ? new Set((corrId || []).map(String)) : null
+                                  const userSet = multi ? new Set((Array.isArray(userId) ? userId : []).map(String)) : null
                                   return (
                                     <div key={bi} className="mb-3">
-                                      <p className="fw-semibold small mb-1">{blank.blank_label}</p>
+                                      <p className="fw-semibold small mb-1">
+                                        {blank.blank_label}{multi && <span className="text-muted fw-normal"> (select two)</span>}
+                                      </p>
                                       {(blank.choices || []).map((opt, oi) => {
-                                        const isCrr = corrId === opt.option_id
-                                        const userPicked = userId === opt.option_id
+                                        const isCrr = multi ? corrSet.has(opt.option_id) : corrId === opt.option_id
+                                        const userPicked = multi ? userSet.has(opt.option_id) : userId === opt.option_id
                                         return (
                                           <div key={oi} className="d-flex align-items-start gap-2 mb-2 px-3 py-2 rounded"
                                             style={{ background: isCrr ? '#d4edda' : userPicked ? '#f8d7da' : '#f8f9fa' }}>
@@ -874,6 +935,7 @@ const GREAnalysis = () => {
   const [phase,           setPhase]           = useState('results')
   const [allAttempts,     setAllAttempts]     = useState([])
   const [activeAttemptId, setActiveAttemptId] = useState(null)
+  const [saveWarning,     setSaveWarning]     = useState(location.state?.saveWarning || null)
 
   const questionsRef = useRef([])
 
@@ -1004,14 +1066,22 @@ const GREAnalysis = () => {
   if (!results) return null
 
   if (phase === 'results') return (
-    <ResultsPage
-      results={results}
-      enriched={enriched}
-      onReview={() => setPhase('review')}
-      allAttempts={allAttempts}
-      activeAttemptId={activeAttemptId}
-      onSwitchAttempt={switchAttempt}
-    />
+    <>
+      {saveWarning && (
+        <div className="alert alert-warning d-flex justify-content-between align-items-start m-3" role="alert">
+          <span><i className="bi bi-exclamation-triangle-fill me-2" />{saveWarning}</span>
+          <button type="button" className="btn-close" aria-label="Dismiss" onClick={() => setSaveWarning(null)} />
+        </div>
+      )}
+      <ResultsPage
+        results={results}
+        enriched={enriched}
+        onReview={() => setPhase('review')}
+        allAttempts={allAttempts}
+        activeAttemptId={activeAttemptId}
+        onSwitchAttempt={switchAttempt}
+      />
+    </>
   )
 
   return (
