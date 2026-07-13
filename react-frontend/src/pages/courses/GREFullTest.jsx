@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import axios from 'axios'
 import {
-  loadKaTeX, SUBJECT_STYLE, calcMarks, greScaledScore, isAnswerFilled,
+  loadKaTeX, SUBJECT_STYLE, calcMarks, greScaledScore, isAnswerFilled, formatTime,
   QuestionReviewItem, TabWarningBanner, QuizPanel,
 } from './GREQuiz'
 import GREScoreDashboard, { buildChapterItems } from './GREScoreDashboard'
@@ -18,9 +18,6 @@ const STAGES = [
   { key: 'quant1',  subject: 'Quantitative Reasoning',   scoreSubject: 'Quantitative Reasoning',   label: 'Quantitative Reasoning',   module: 1, questionCount: 12, timeMin: 21 },
   { key: 'quant2',  subject: 'Quantitative Reasoning',   scoreSubject: 'Quantitative Reasoning',   label: 'Quantitative Reasoning',   module: 2, questionCount: 15, timeMin: 26 },
 ]
-
-const TOTAL_QUESTIONS = STAGES.reduce((s, st) => s + st.questionCount, 0)
-const TOTAL_MINUTES = STAGES.reduce((s, st) => s + st.timeMin, 0)
 
 const FULL_TEST_STYLE = { gradient: 'linear-gradient(135deg, #6f42c1, #0d6efd)', badge: '#0d6efd' }
 
@@ -56,8 +53,14 @@ const GREFullTest = () => {
   const location   = useLocation()
   const paperName  = location.state?.paper ?? null
   const paperYear  = location.state?.year  ?? null
+  // Falls back to the paper/year on the fetched questions themselves when the
+  // page was opened without router state (e.g. a hard refresh on /full-test),
+  // so the full-paper score always has somewhere to save to — otherwise the
+  // "View Analysis" card on the papers list never lights up after finishing.
+  const paperRef = useRef({ paper: paperName, year: paperYear })
 
-  // phase: loading | error | overview | quiz | review
+  // phase: loading | error | quiz | review — modules run one after another
+  // automatically; there is no intermediate "choose a module" screen.
   const [phase, setPhase] = useState('loading')
   const [error, setError] = useState(null)
   const [debugInfo, setDebugInfo] = useState(null)
@@ -71,13 +74,26 @@ const GREFullTest = () => {
   const [expanded, setExpanded] = useState(null)
   const [saving, setSaving] = useState(false)
   const [tabWarning, setTabWarning] = useState(false)
+  const [timeLeft, setTimeLeft] = useState(null)
+  // Display order of the 4 module cards — shuffled once per attempt (indices
+  // into STAGES, so stageIndex / STAGES[i] lookups elsewhere stay untouched).
+  const [stageOrder, setStageOrder] = useState(() => shuffle(STAGES.map((_, i) => i)))
 
   const questionStartRef = useRef(Date.now())
   const timesRef = useRef(EMPTY_TIMES())
   const userRef = useRef(null)
+  const authCheckedRef = useRef(false)
+  const submitStageRef = useRef(() => {})
 
   useEffect(() => { loadKaTeX() }, [])
-  useEffect(() => { checkAuth() }, [])
+  useEffect(() => {
+    // Guard against React StrictMode's double-invocation of mount effects in
+    // dev, which otherwise fires two competing fetches right after the test
+    // starts and can make it look like the module didn't really begin.
+    if (authCheckedRef.current) return
+    authCheckedRef.current = true
+    checkAuth()
+  }, [])
 
   useEffect(() => {
     if (phase !== 'quiz') return
@@ -90,6 +106,14 @@ const GREFullTest = () => {
       window.removeEventListener('focus', onFocus)
     }
   }, [phase])
+
+  // ── Per-module timer: counts down while a module is open, auto-submits at 0 ──
+  useEffect(() => {
+    if (phase !== 'quiz' || timeLeft === null) return
+    if (timeLeft <= 0) { submitStageRef.current(true); return }
+    const t = setTimeout(() => setTimeLeft(tl => (tl === null ? null : tl - 1)), 1000)
+    return () => clearTimeout(t)
+  }, [phase, timeLeft])
 
   const checkAuth = async () => {
     try {
@@ -117,6 +141,11 @@ const GREFullTest = () => {
       const verbal = shuffle(Array.isArray(verbalRes.data) ? verbalRes.data : [])
       const quant  = shuffle(Array.isArray(quantRes.data)  ? quantRes.data  : [])
 
+      if (!paperRef.current.paper) {
+        const sample = verbal[0] || quant[0]
+        if (sample?.paper) paperRef.current = { paper: sample.paper, year: sample.year ?? null }
+      }
+
       if (!verbal.length || !quant.length) {
         try {
           const dbg = await axios.get(`${API_URL}/api/gre_debug`, { withCredentials: true })
@@ -136,7 +165,16 @@ const GREFullTest = () => {
         quant1:  quant.slice(0, quantHalf).slice(0, STAGES[2].questionCount),
         quant2:  quant.slice(quantHalf).slice(0, STAGES[3].questionCount),
       })
-      setPhase('overview')
+
+      // Jump straight into the first (randomized) module — no extra
+      // "choose a module" screen between starting the test and question 1.
+      const order = shuffle(STAGES.map((_, i) => i))
+      setStageOrder(order)
+      const firstIdx = order[0]
+      questionStartRef.current = Date.now()
+      setStageIndex(firstIdx)
+      setTimeLeft(STAGES[firstIdx].timeMin * 60)
+      setPhase('quiz')
     } catch {
       setError('Failed to load questions. Please try again.')
       setPhase('error')
@@ -171,6 +209,21 @@ const GREFullTest = () => {
     },
   }))
 
+  const toggleBlankMSQ = (idx, blankLabel, optId) => setStageAnswers(prev => {
+    const blankAns = prev[stage.key][idx] || {}
+    const cur = Array.isArray(blankAns[blankLabel]) ? blankAns[blankLabel] : []
+    return {
+      ...prev,
+      [stage.key]: {
+        ...prev[stage.key],
+        [idx]: {
+          ...blankAns,
+          [blankLabel]: cur.includes(optId) ? cur.filter(x => x !== optId) : [...cur, optId],
+        },
+      },
+    }
+  })
+
   // Only meaningful while actively viewing a question in the quiz phase
   const recordTime = () => {
     if (phase !== 'quiz') return
@@ -185,18 +238,39 @@ const GREFullTest = () => {
     questionStartRef.current = Date.now()
   }
 
-  // Jump to any module, from the overview or from another module — preserves
-  // each module's progress and last-viewed question.
+  // Open a module and start its own timer. Callers that are switching away
+  // from a still-active module should call recordTime() themselves first.
   const selectStage = (idx) => {
-    recordTime()
     setStageIndex(idx)
     questionStartRef.current = Date.now()
     setPhase('quiz')
+    setTimeLeft(STAGES[idx].timeMin * 60)
   }
 
-  const backToOverview = () => {
+  // Submit & permanently lock the current module, then move straight into the
+  // next module in this attempt's (randomized) order — no in-between screen.
+  // If it was the last remaining module, the whole test finalizes immediately.
+  const submitStage = (forced = false) => {
+    if (!forced) {
+      const qs = stageQuestions[stage.key]
+      const ans = stageAnswers[stage.key]
+      const unanswered = qs.filter((q, i) => !isAnswerFilled(q, ans[i])).length
+      if (unanswered > 0 && !window.confirm(
+        `${unanswered} question(s) in this module are unanswered. Submit this module anyway? ` +
+        `You won't be able to change your answers after submitting.`
+      )) return
+    }
     recordTime()
-    setPhase('overview')
+    const result = computeStageResult(stage.key)
+    const updated = { ...stageResults, [stage.key]: result }
+    setStageResults(updated)
+    if (STAGES.every(s => updated[s.key])) {
+      setTimeLeft(null)
+      finalizeTest(updated)
+      return
+    }
+    const nextIdx = stageOrder.find(i => !updated[STAGES[i].key])
+    selectStage(nextIdx)
   }
 
   const computeStageResult = (stageKey) => {
@@ -232,23 +306,6 @@ const GREFullTest = () => {
     }
   }
 
-  const finishTest = async () => {
-    const totalUnanswered = STAGES.reduce((sum, s) => {
-      const qs = stageQuestions[s.key]
-      const ans = stageAnswers[s.key]
-      return sum + qs.filter((q, i) => !isAnswerFilled(q, ans[i])).length
-    }, 0)
-    if (totalUnanswered > 0 && !window.confirm(
-      `${totalUnanswered} question(s) across all modules are unanswered. Finish the test anyway?`
-    )) return
-
-    recordTime()
-
-    const allResults = {}
-    STAGES.forEach(s => { allResults[s.key] = computeStageResult(s.key) })
-    setStageResults(allResults)
-    await finalizeTest(allResults)
-  }
 
   const finalizeTest = async (allResults) => {
     const combined = mergeResults(STAGES.map(s => allResults[s.key]))
@@ -307,9 +364,15 @@ const GREFullTest = () => {
       return
     }
     setSaving(true)
+    let saveWarning = null
+    if (!paperRef.current.paper) {
+      saveWarning = "Couldn't determine which paper this attempt belongs to, so it won't appear on the papers list — your score below is still accurate."
+    }
     try {
-      await Promise.all([
-        // Per-subject scores (existing flow)
+      // Promise.allSettled (not .all) so one failing save doesn't hide the
+      // others, and we can report exactly which save failed instead of a
+      // generic silent console error.
+      const [verbalRes, quantRes, fullRes] = await Promise.allSettled([
         axios.post(`${API_URL}/api/gre_scores`, {
           email: u.email, name: u.username || u.name || u.email, subject: 'Verbal Reasoning',
           totalQuestions: verbalResult.totalQuestions, correctAnswers: verbalResult.correctAnswers,
@@ -323,10 +386,10 @@ const GREFullTest = () => {
           score: quantResult.score, maxScore: quantResult.maxScore, responses: quantResult.responses,
         }, { withCredentials: true }),
         // Full-paper score (for the paper listing page)
-        ...(paperName ? [
+        ...(paperRef.current.paper ? [
           axios.post(`${API_URL}/api/gre_full_scores`, {
             email: u.email, name: u.username || u.name || u.email,
-            paper: paperName, year: paperYear,
+            paper: paperRef.current.paper, year: paperRef.current.year,
             totalQuestions: combined.totalQuestions,
             correctAnswers: combined.correctAnswers,
             wrongAnswers: combined.wrongAnswers,
@@ -338,11 +401,22 @@ const GREFullTest = () => {
           }, { withCredentials: true }),
         ] : []),
       ])
+      if (verbalRes.status === 'rejected') console.error('Failed to save Verbal score:', verbalRes.reason)
+      if (quantRes.status === 'rejected') console.error('Failed to save Quant score:', quantRes.reason)
+      if (fullRes?.status === 'rejected') {
+        console.error('Failed to save full-paper score:', fullRes.reason)
+        const serverMsg = fullRes.reason?.response?.data?.error
+        saveWarning = `Your test result couldn't be saved to the papers list (${serverMsg || fullRes.reason?.message || 'unknown error'}). ` +
+          `Your score below is still accurate — please retry or contact support if this keeps happening.`
+      }
     } catch (e) {
       console.error('Failed to save full test scores:', e)
+      saveWarning = `Your test result couldn't be saved (${e?.message || 'unknown error'}). Your score below is still accurate.`
     } finally {
       setSaving(false)
-      navigate('/courses/gre/analysis', { state: { results: analysisResults, questions: allQuestions } })
+      navigate('/courses/gre/analysis', {
+        state: { results: analysisResults, questions: allQuestions, saveWarning },
+      })
     }
   }
 
@@ -353,9 +427,13 @@ const GREFullTest = () => {
     setStageResults({})
     setCombinedResults(null)
     setExpanded(null)
+    setTimeLeft(null)
+    setStageOrder(shuffle(STAGES.map((_, i) => i)))
     timesRef.current = EMPTY_TIMES()
     fetchAllQuestions()
   }
+
+  submitStageRef.current = submitStage
 
   // ── Loading ──────────────────────────────────────────────────────────────
   if (phase === 'loading') return (
@@ -404,127 +482,6 @@ const GREFullTest = () => {
     </div>
   )
 
-  // ── Module overview / hub ────────────────────────────────────────────────
-  if (phase === 'overview') {
-    const totalAnswered = STAGES.reduce((sum, s) => {
-      const qs = stageQuestions[s.key]
-      const ans = stageAnswers[s.key]
-      return sum + qs.filter((q, i) => isAnswerFilled(q, ans[i])).length
-    }, 0)
-
-    return (
-      <main className="main">
-        <div className="page-title" data-aos="fade" style={{ marginBottom: '2rem' }}>
-          <div className="heading">
-            <div className="container">
-              <div className="row d-flex justify-content-center text-center">
-                <div className="col-lg-8">
-                  <h1>Full GRE Test</h1>
-                  <p className="mb-0">
-                    {TOTAL_QUESTIONS} questions across {STAGES.length} modules &nbsp;·&nbsp; ~{TOTAL_MINUTES} minutes total
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <nav className="breadcrumbs">
-            <div className="container">
-              <ol>
-                <li><Link to="/">Home</Link></li>
-                <li><Link to="/courses/gre">GRE</Link></li>
-                <li className="current">Full Test</li>
-              </ol>
-            </div>
-          </nav>
-        </div>
-
-        <div className="container mb-5">
-          <div className="card border-0 shadow-sm mx-auto mb-4" style={{ maxWidth: 900, borderRadius: 18, overflow: 'hidden' }}>
-            <div style={{ height: 6, background: FULL_TEST_STYLE.gradient }} />
-            <div className="card-body p-4 text-center">
-              <h3 className="mb-2">Choose any module to begin</h3>
-              <p className="text-muted mb-3">
-                Attempt the modules in any order you like, switch between them freely, skip and revisit
-                questions, and finish whenever you're ready. Your progress is saved automatically as you go.
-              </p>
-              <div className="progress mx-auto" style={{ height: 8, maxWidth: 480 }}>
-                <div
-                  className="progress-bar"
-                  style={{ width: `${(totalAnswered / TOTAL_QUESTIONS) * 100}%`, background: FULL_TEST_STYLE.gradient }}
-                />
-              </div>
-              <p className="text-muted small mt-2 mb-0">{totalAnswered}/{TOTAL_QUESTIONS} questions answered</p>
-            </div>
-          </div>
-
-          <div className="row g-3 justify-content-center">
-            {STAGES.map((s, i) => {
-              const qs = stageQuestions[s.key]
-              const ans = stageAnswers[s.key]
-              const answered = qs.filter((q, idx) => isAnswerFilled(q, ans[idx])).length
-              const total = qs.length
-              const sStyle = SUBJECT_STYLE[s.label] || FULL_TEST_STYLE
-              const status = answered === 0 ? 'Not Started' : answered === total ? 'Completed' : 'In Progress'
-              const statusBg = answered === 0 ? '#f8f9fa' : answered === total ? '#d4edda' : '#fff3cd'
-              const statusColor = answered === 0 ? '#6c757d' : answered === total ? '#155724' : '#856404'
-
-              return (
-                <div className="col-md-6 col-lg-5" key={s.key}>
-                  <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 16, overflow: 'hidden' }}>
-                    <div style={{ height: 5, background: sStyle.gradient }} />
-                    <div className="card-body p-4">
-                      <div className="d-flex justify-content-between align-items-start mb-2">
-                        <div>
-                          <h5 className="mb-0">{s.label}</h5>
-                          <small className="text-muted">Module {s.module}</small>
-                        </div>
-                        <span className="badge" style={{ background: statusBg, color: statusColor }}>{status}</span>
-                      </div>
-                      <p className="text-muted small mb-2">
-                        {total} questions · {s.timeMin} min
-                      </p>
-                      <div className="progress mb-3" style={{ height: 6 }}>
-                        <div
-                          className="progress-bar"
-                          style={{ width: `${(answered / total) * 100}%`, background: sStyle.gradient }}
-                        />
-                      </div>
-                      <p className="text-muted small mb-3">{answered}/{total} answered</p>
-                      <button
-                        className="btn text-white w-100"
-                        style={{ background: sStyle.gradient, borderRadius: 8 }}
-                        onClick={() => selectStage(i)}
-                      >
-                        <i className="bi bi-play-fill me-1" />
-                        {answered === 0 ? 'Start Module' : answered === total ? 'Review / Edit' : 'Continue'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          <div className="d-flex gap-2 justify-content-center mt-4">
-            <button
-              className="btn text-white"
-              style={{ background: FULL_TEST_STYLE.gradient, borderRadius: 8, padding: '0.6rem 2rem' }}
-              onClick={finishTest}
-              disabled={saving}
-            >
-              {saving
-                ? <><span className="spinner-border spinner-border-sm me-2" />Saving…</>
-                : <><i className="bi bi-flag-fill me-1" />Finish Test &amp; View Score Report</>}
-            </button>
-            <Link to="/courses/gre" className="btn btn-outline-secondary">
-              <i className="bi bi-arrow-left me-1" />Exit
-            </Link>
-          </div>
-        </div>
-      </main>
-    )
-  }
-
   // ── Active quiz module ───────────────────────────────────────────────────
   if (phase === 'quiz') {
     const style = SUBJECT_STYLE[stage.label] || FULL_TEST_STYLE
@@ -558,32 +515,47 @@ const GREFullTest = () => {
           </nav>
         </div>
 
-        {/* Module switcher — jump to any module at any time */}
+        {timeLeft !== null && (
+          <div className="container mb-3 d-flex justify-content-end">
+            <span
+              className="badge d-inline-flex align-items-center gap-2"
+              style={{
+                background: timeLeft < 120 ? '#dc3545' : timeLeft < 300 ? '#ffc107' : style.badge,
+                color: timeLeft < 300 && timeLeft >= 120 ? '#212529' : '#fff',
+                fontSize: '0.95rem', fontFamily: 'monospace', padding: '0.5rem 0.9rem', borderRadius: 8,
+              }}
+            >
+              <i className="bi bi-clock-history" />Time left: {formatTime(timeLeft)}
+            </span>
+          </div>
+        )}
+
+        {/* Module switcher — other modules are locked while this one is open */}
         <div className="container mb-3">
           <div className="d-flex gap-2 flex-wrap justify-content-center">
-            {STAGES.map((s, i) => {
+            {stageOrder.map((i, displayPos) => {
+              const s = STAGES[i]
               const sStyle = SUBJECT_STYLE[s.label] || FULL_TEST_STYLE
               const current = i === stageIndex
               const qs = stageQuestions[s.key]
               const ans = stageAnswers[s.key]
               const answered = qs.filter((q, idx) => isAnswerFilled(q, ans[idx])).length
-              const done = answered === qs.length
+              const submittedStage = !!stageResults[s.key]
               return (
-                <button
+                <span
                   key={s.key}
-                  type="button"
                   className="badge border-0"
-                  onClick={() => selectStage(i)}
+                  title={current ? undefined : 'Locked — submit the current module to switch'}
                   style={{
-                    background: current ? sStyle.gradient : done ? '#e9ecef' : '#f8f9fa',
-                    color: current ? '#fff' : done ? '#495057' : '#adb5bd',
+                    background: current ? sStyle.gradient : submittedStage ? '#e2e3e5' : '#f8f9fa',
+                    color: current ? '#fff' : submittedStage ? '#495057' : '#adb5bd',
                     border: current ? 'none' : '1px solid #e8ecf0',
-                    fontSize: '0.75rem', padding: '0.4rem 0.7rem', cursor: 'pointer',
+                    fontSize: '0.75rem', padding: '0.4rem 0.7rem', cursor: 'not-allowed',
                   }}
                 >
-                  {done && <i className="bi bi-check-lg me-1" />}
-                  {i + 1}. {s.label} — M{s.module} ({answered}/{qs.length})
-                </button>
+                  {!current && <i className={`bi ${submittedStage ? 'bi-check-lg' : 'bi-lock-fill'} me-1`} />}
+                  {displayPos + 1}. {s.label} — M{s.module} ({answered}/{qs.length})
+                </span>
               )
             })}
           </div>
@@ -596,13 +568,13 @@ const GREFullTest = () => {
           setAnswer={setAnswer}
           toggleMSQ={toggleMSQ}
           setBlankAnswer={setBlankAnswer}
+          toggleBlankMSQ={toggleBlankMSQ}
           goTo={goTo}
           style={style}
           moduleNum={stage.module}
           saving={saving}
           mode="full"
-          onBackToOverview={backToOverview}
-          onFinishTest={finishTest}
+          onSubmitStage={() => submitStage()}
         />
       </main>
     )
