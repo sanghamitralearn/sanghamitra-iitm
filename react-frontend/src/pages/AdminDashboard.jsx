@@ -247,9 +247,7 @@ const iconColors = {
   gre:         { background: 'rgba(111,66,193,0.1)',  color: '#6f42c1' },
   jee:         { background: 'rgba(220,53,69,0.1)',   color: '#dc3545' },
   jee_adv:     { background: 'rgba(255,107,0,0.1)',   color: '#ff6b00' },
-  'gate-da':     { background: 'rgba(32,201,151,0.1)',  color: '#20c997' },
-}
-  
+  gate-da:     { background: 'rgba(32,201,151,0.1)',  color: '#20c997' },
 }
 
 const LAST_SEEN_KEY = 'admin_notif_last_seen'
@@ -653,6 +651,8 @@ const AdminDashboard = () => {
                   { key: 'gre', icon: 'bi-mortarboard-fill', iconStyle: { background: 'rgba(111,66,193,0.1)',  color: '#6f42c1' }, title: 'GRE',           to: '/admin/gre' },
                   { key: 'jee', icon: 'bi-mortarboard-fill', iconStyle: { background: 'rgba(220,53,69,0.1)',   color: '#dc3545' }, title: 'JEE Main',      to: '/admin/jee-main' },
                   { key: 'jee_adv', icon: 'bi-trophy-fill',      iconStyle: { background: 'rgba(255,107,0,0.1)',  color: '#ff6b00' }, title: 'JEE Advanced',  to: '/admin/jee-advanced' },
+                  { key: 'gate-da', icon: 'bi-cpu-fill', iconStyle: { background: 'rgba(32,201,151,0.1)', color: '#20c997' }, title: 'GATE DA', to: '/admin/gate-da' },
+
                 ].map((card) => (
                   <div className="col-md-3 mb-4" key={card.key}>
                     <div style={s.dashCard} className="admin-dash-card">
