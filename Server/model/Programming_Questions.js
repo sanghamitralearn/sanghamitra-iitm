@@ -26,18 +26,19 @@ const QuestionSchema = new mongoose.Schema({
   question_type: {
       type: String,
       required: true,
-      enum: ['mcq', 'msq', 'numeric', 'true-false', 'interview']
+      enum: ['mcq', 'msq', 'numeric', 'true-false', 'interview', 'match-pairs']
     },
     
+  has_latex: {
+    type: Boolean,
+    default: false
+  },
   // ── Question Content ───────────────────────────────────────────────────────
   question_text: {
     type: String,
     required: true
   },
-  has_latex: {
-    type: Boolean,
-    default: false
-  },
+  
   image_url: {
     type: String,
     default: null
@@ -46,6 +47,23 @@ const QuestionSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+
+  // Add to QuestionSchema
+  match_pairs: {
+    left_column: [{
+      id: String,
+      text: String
+    }],
+    right_column: [{
+      id: String,
+      text: String
+    }],
+    correct_matches: {
+      type: Map,
+      of: String
+    }
+  },
+
   options: [
     {
     id: String,
@@ -125,7 +143,5 @@ QuestionSchema.index({
   bloom_level: 1
 });
 
-module.exports = mongoose.model('ProgrammingQuestion', QuestionSchema, 'programming_questions');
 
-// ✅ Model name: 'ProgrammingQuestion'
-// ✅ Collection name: 'programming_questions'
+module.exports = mongoose.model('ProgrammingQuestion', QuestionSchema, 'programming_questions');
