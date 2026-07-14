@@ -6917,9 +6917,13 @@ router.get('/admin-notifications', async (req, res) => {
       math1Users, stats1Users, ctUsers,
       math2Users, stats2Users,
       codingUsers, pdsaUsers,
-      satDocs, progAttempts,
-      jeeAdvDocs, jeeMainDocs, jeeMainFullDocs, greDocs,
+      progAttempts,  // This is ProgrammingQuizAttempt for Java, Python, SQL, DSA
+      satDocs, jeeAdvDocs, jeeMainDocs, jeeMainFullDocs, greDocs,
+      // Add these for additional course data
+      javaSubmissions, pythonSubmissions, sqlSubmissions, dsaSubmissions,
+      dbmsSubmissions
     ] = await Promise.all([
+      // Existing queries
       iitm_math_score.find({}, { email:1, username:1, name:1,
         'quizScores.topic':1, 'quizScores.score':1, 'quizScores.percentage':1,
         'quizScores.correctAnswers':1, 'quizScores.totalQuestions':1, 'quizScores.timestamp':1
@@ -6936,26 +6940,62 @@ router.get('/admin-notifications', async (req, res) => {
         'scores.week':1, 'scores.subtopic':1, 'scores.score':1,
         'scores.correctAnswers':1, 'scores.totalQuestions':1, 'scores.dateAttempted':1
       }).lean().catch(() => []),
-      QuizAttemptstats2.find({}, { email:1, username:1, week:1, topic:1, score:1, correct_answers:1, total_questions:1, percentage:1, submitted_at:1 }).lean(),
-      pdsaCodingSubmission.find({}, { email:1, username:1, name:1, topic:1, percentage:1, score:1, maxScore:1, timestamp:1 }).lean().catch(() => []),
-      pdsaSubmission.find({}, { email:1, username:1, name:1, topic:1, percentage:1, score:1, maxScore:1, timestamp:1 }).lean().catch(() => []),
-
-      ProgrammingQuizAttempt.find({}, { email:1, username:1, course:1, week:1, topic:1, percentage:1, submitted_at:1 }).lean().catch(() => []),
-
+      // FIX: Stats 2 - using QuizAttemptstats2
+      QuizAttemptstats2.find({}, { email:1, username:1, week:1, topic:1, 
+        score:1, correct_answers:1, total_questions:1, percentage:1, submitted_at:1
+      }).lean().catch(() => []),
+      pdsaCodingSubmission.find({}, { email:1, username:1, name:1, topic:1, 
+        percentage:1, score:1, maxScore:1, timestamp:1
+      }).lean().catch(() => []),
+      pdsaSubmission.find({}, { email:1, username:1, name:1, topic:1, 
+        percentage:1, score:1, maxScore:1, timestamp:1
+      }).lean().catch(() => []),
+      // Programming Quiz Attempts (Java, Python, SQL, DSA)
+      ProgrammingQuizAttempt.find({}, { email:1, username:1, course:1, week:1, 
+        topic:1, percentage:1, score:1, submitted_at:1
+      }).lean().catch(() => []),
+      // Exam scores
       SatScore.find({}, { email:1, name:1, subject:1,
         'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
-        'attempts.totalQuestions':1, 'attempts.dateAttempted':1}).lean().catch(() => []),
+        'attempts.totalQuestions':1, 'attempts.dateAttempted':1
+      }).lean().catch(() => []),
       JeeScore.find({}, { email:1, name:1, subject:1,
         'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
-        'attempts.totalQuestions':1, 'attempts.paper':1, 'attempts.dateAttempted':1 }).lean().catch(() => []),
+        'attempts.totalQuestions':1, 'attempts.paper':1, 'attempts.dateAttempted':1
+      }).lean().catch(() => []),
       JeeMainScore.find({}, { email:1, name:1, subject:1,
         'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
-        'attempts.totalQuestions':1, 'attempts.dateAttempted':1 }).lean().catch(() => []),
+        'attempts.totalQuestions':1, 'attempts.dateAttempted':1
+      }).lean().catch(() => []),
       JeeMainFullScore.find({}, { email:1, name:1, paper:1, year:1,
-        score:1, maxScore:1, correctAnswers:1, totalQuestions:1, dateAttempted:1 }).lean().catch(() => []),
+        score:1, maxScore:1, correctAnswers:1, totalQuestions:1, dateAttempted:1
+      }).lean().catch(() => []),
       GreScore.find({}, { email:1, name:1, subject:1,
         'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
-        'attempts.totalQuestions':1, 'attempts.dateAttempted':1 }).lean().catch(() => []),
+        'attempts.totalQuestions':1, 'attempts.dateAttempted':1
+      }).lean().catch(() => []),
+      // ADD: Java submissions from JavaSubmission model
+      JavaSubmission.find({}, { email:1, username:1, topic:1, score:1, 
+        maxScore:1, percentage:1, timestamp:1
+      }).lean().catch(() => []),
+      // ADD: Python submissions (if you have a PythonSubmission model)
+      // If not, you might need to create one or use the same ProgrammingQuizAttempt
+      // For now, using ProgrammingQuizAttempt filtered for python
+      ProgrammingQuizAttempt.find({ course: 'python' }, { email:1, username:1, 
+        topic:1, score:1, maxScore:1, percentage:1, submitted_at:1
+      }).lean().catch(() => []),
+      // ADD: SQL submissions (if you have a SQLSubmission model)
+      ProgrammingQuizAttempt.find({ course: 'sql' }, { email:1, username:1, 
+        topic:1, score:1, maxScore:1, percentage:1, submitted_at:1
+      }).lean().catch(() => []),
+      // ADD: DSA submissions (if you have a DSASubmission model)
+      ProgrammingQuizAttempt.find({ course: 'dsa' }, { email:1, username:1, 
+        topic:1, score:1, maxScore:1, percentage:1, submitted_at:1
+      }).lean().catch(() => []),
+      // ADD: DBMS submissions
+      DBMSSubmission.find({}, { email:1, username:1, topic:1, score:1, 
+        maxScore:1, percentage:1, timestamp:1
+      }).lean().catch(() => [])
     ])
 
     const all = []
@@ -7003,14 +7043,21 @@ router.get('/admin-notifications', async (req, res) => {
       }))
     )
 
-    // Stats 2
-      
-    push(stats2Users, 'Statistics-2', 'stats2', 'bi-bar-chart', 'stats2', s => [{
-      userName: s.username || s.name || s.email,
-      topic:     s.topic || `Week ${s.week}`,
-      score:     s.percentage || (s.total_questions ? Math.round((s.correct_answers / s.total_questions) * 100) : 0),
-      timestamp: s.submitted_at
-    }])
+    // Stats 2 - FIXED: using QuizAttemptstats2
+    stats2Users.forEach(s => {
+      if (s.email) {
+        all.push({
+          userName: s.username || s.name || s.email,
+          subject: 'Statistics-2',
+          subjectKey: 'stats2',
+          icon: 'bi-bar-chart',
+          iconClass: 'stats2',
+          topic: s.topic || `Week ${s.week || '?'}`,
+          score: s.percentage || (s.total_questions ? Math.round((s.correct_answers / s.total_questions) * 100) : 0),
+          timestamp: s.submitted_at
+        })
+      }
+    })
 
     // Coding
     codingUsers
@@ -7034,29 +7081,86 @@ router.get('/admin-notifications', async (req, res) => {
         timestamp: s.timestamp
       }))
 
-     // Programming courses (Java, Python, SQL, DSA)
+    // Programming courses (Java, Python, SQL, DSA)
     const progCourseMap = {
       java:   { label: 'Java Programming',            icon: 'bi-cup-hot-fill',    iconClass: 'java'   },
       python: { label: 'Python Programming',          icon: 'bi-filetype-py',     iconClass: 'python' },
       sql:    { label: 'SQL & Databases',             icon: 'bi-database-fill',   iconClass: 'sql'    },
       dsa:    { label: 'Data Structures & Algorithms',icon: 'bi-diagram-3-fill',  iconClass: 'dsa'    },
     }
+    
+    // Process Programming Quiz Attempts
     progAttempts
       .filter(a => a.email && a.email.toLowerCase() !== 'test@example.com')
       .forEach(a => {
-        const cm = progCourseMap[a.course] || { label: a.course, icon: 'bi-code-slash', iconClass: 'programming' }
+        const cm = progCourseMap[a.course] || { label: a.course || 'Programming', icon: 'bi-code-slash', iconClass: 'programming' }
         all.push({
           userName: a.username || a.email,
           subject: cm.label,
-          subjectKey: a.course,
+          subjectKey: a.course || 'programming',
           icon: cm.icon,
           iconClass: cm.iconClass,
-          topic: a.topic ? `Week ${a.week} — ${a.topic}` : `Week ${a.week}`,
+          topic: a.topic ? `Week ${a.week} — ${a.topic}` : `Week ${a.week || '?'}`,
           score: a.percentage || 0,
           timestamp: a.submitted_at
         })
       })
 
+    // Java Submissions
+    javaSubmissions
+      .filter(s => s.email && s.email.toLowerCase() !== 'test@example.com')
+      .forEach(s => all.push({
+        userName: s.username || s.email,
+        subject: 'Java Programming',
+        subjectKey: 'java',
+        icon: 'bi-cup-hot-fill',
+        iconClass: 'java',
+        topic: s.topic || 'Java Quiz',
+        score: s.percentage || (s.score != null && s.maxScore ? Math.round((s.score/s.maxScore)*100) : 0),
+        timestamp: s.timestamp
+      }))
+
+    // SQL Submissions
+    sqlSubmissions
+      .filter(s => s.email && s.email.toLowerCase() !== 'test@example.com')
+      .forEach(s => all.push({
+        userName: s.username || s.email,
+        subject: 'SQL & Databases',
+        subjectKey: 'sql',
+        icon: 'bi-database-fill',
+        iconClass: 'sql',
+        topic: s.topic || 'SQL Quiz',
+        score: s.percentage || (s.score != null && s.maxScore ? Math.round((s.score/s.maxScore)*100) : 0),
+        timestamp: s.submitted_at
+      }))
+
+    // DSA Submissions
+    dsaSubmissions
+      .filter(s => s.email && s.email.toLowerCase() !== 'test@example.com')
+      .forEach(s => all.push({
+        userName: s.username || s.email,
+        subject: 'Data Structures & Algorithms',
+        subjectKey: 'dsa',
+        icon: 'bi-diagram-3-fill',
+        iconClass: 'dsa',
+        topic: s.topic || 'DSA Quiz',
+        score: s.percentage || (s.score != null && s.maxScore ? Math.round((s.score/s.maxScore)*100) : 0),
+        timestamp: s.submitted_at
+      }))
+
+    // DBMS Submissions
+    dbmsSubmissions
+      .filter(s => s.email && s.email.toLowerCase() !== 'test@example.com')
+      .forEach(s => all.push({
+        userName: s.username || s.email,
+        subject: 'DBMS',
+        subjectKey: 'dbms',
+        icon: 'bi-database-fill',
+        iconClass: 'dbms',
+        topic: s.topic || 'DBMS Quiz',
+        score: s.percentage || (s.score != null && s.maxScore ? Math.round((s.score/s.maxScore)*100) : 0),
+        timestamp: s.timestamp
+      }))
 
     // SAT
     satDocs.forEach(doc => {
@@ -7066,7 +7170,10 @@ router.get('/admin-notifications', async (req, res) => {
           : (attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0)
         all.push({
           userName: doc.name || doc.email,
-          subject: 'SAT', subjectKey: 'sat', icon: 'bi-pencil-fill', iconClass: 'sat',
+          subject: 'SAT',
+          subjectKey: 'sat',
+          icon: 'bi-pencil-fill',
+          iconClass: 'sat',
           topic: doc.subject || 'SAT Section',
           score: pct,
           timestamp: attempt.dateAttempted
@@ -7082,7 +7189,10 @@ router.get('/admin-notifications', async (req, res) => {
           : (attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0)
         all.push({
           userName: doc.name || doc.email,
-          subject: 'JEE Advanced', subjectKey: 'jee_adv', icon: 'bi-trophy-fill', iconClass: 'jee',
+          subject: 'JEE Advanced',
+          subjectKey: 'jee_adv',
+          icon: 'bi-trophy-fill',
+          iconClass: 'jee',
           topic: `${doc.subject}${attempt.paper ? ' — ' + attempt.paper : ''}`,
           score: pct,
           timestamp: attempt.dateAttempted
@@ -7098,7 +7208,10 @@ router.get('/admin-notifications', async (req, res) => {
           : (attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0)
         all.push({
           userName: doc.name || doc.email,
-          subject: 'JEE Main', subjectKey: 'jee_main', icon: 'bi-journal-text', iconClass: 'jee',
+          subject: 'JEE Main',
+          subjectKey: 'jee_main',
+          icon: 'bi-journal-text',
+          iconClass: 'jee',
           topic: doc.subject || 'JEE Main',
           score: pct,
           timestamp: attempt.dateAttempted
@@ -7113,7 +7226,10 @@ router.get('/admin-notifications', async (req, res) => {
         : (doc.maxScore > 0 ? Math.round((doc.score / doc.maxScore) * 100) : 0)
       all.push({
         userName: doc.name || doc.email,
-        subject: 'JEE Main', subjectKey: 'jee_main', icon: 'bi-journal-text', iconClass: 'jee',
+        subject: 'JEE Main',
+        subjectKey: 'jee_main',
+        icon: 'bi-journal-text',
+        iconClass: 'jee',
         topic: doc.paper ? `${doc.paper}${doc.year ? ' ' + doc.year : ''}` : 'Full Paper',
         score: pct,
         timestamp: doc.dateAttempted
@@ -7128,7 +7244,10 @@ router.get('/admin-notifications', async (req, res) => {
           : (attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0)
         all.push({
           userName: doc.name || doc.email,
-          subject: 'GRE', subjectKey: 'gre', icon: 'bi-mortarboard-fill', iconClass: 'gre',
+          subject: 'GRE',
+          subjectKey: 'gre',
+          icon: 'bi-mortarboard-fill',
+          iconClass: 'gre',
           topic: doc.subject || 'GRE Section',
           score: pct,
           timestamp: attempt.dateAttempted
@@ -7136,9 +7255,11 @@ router.get('/admin-notifications', async (req, res) => {
       })
     })
 
+    // Sort and return top 50 most recent
     all.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
     res.json({ success: true, data: all.slice(0, 50) })
   } catch (err) {
+    console.error('Error in admin-notifications:', err)
     res.status(500).json({ success: false, error: err.message })
   }
 })
