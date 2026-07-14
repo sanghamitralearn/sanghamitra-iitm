@@ -247,6 +247,9 @@ const iconColors = {
   gre:         { background: 'rgba(111,66,193,0.1)',  color: '#6f42c1' },
   jee:         { background: 'rgba(220,53,69,0.1)',   color: '#dc3545' },
   jee_adv:     { background: 'rgba(255,107,0,0.1)',   color: '#ff6b00' },
+  'gate-da':     { background: 'rgba(32,201,151,0.1)',  color: '#20c997' },
+}
+  
 }
 
 const LAST_SEEN_KEY = 'admin_notif_last_seen'
@@ -274,6 +277,8 @@ const subjectApis = [
   { key: 'gre',       url: '/api/gre_scores',                         countFn: d => new Set((Array.isArray(d) ? d : []).map(e => e.email).filter(Boolean)).size },
   { key: 'jee',       url: '/api/jee_main_admin_scores',              countFn: d => ((d && d.data) || []).length },
   { key: 'jee_adv',   url: '/api/jee_admin_scores',                   countFn: d => ((d && d.data) || (Array.isArray(d) ? d : [])).length },
+  { key: 'gate-da', url: '/api/gate_da_admin_scores',      countFn: d => ((d && d.data) || (Array.isArray(d) ? d : [])).length },
+
 ]
 
 const AdminDashboard = () => {
@@ -388,6 +393,8 @@ const AdminDashboard = () => {
     { to: '/admin/gre',        icon: 'bi-mortarboard-fill', label: 'GRE' },
     { to: '/admin/jee-main',   icon: 'bi-mortarboard-fill', label: 'JEE Main' },
     { to: '/admin/jee-advanced',  icon: 'bi-trophy-fill',      label: 'JEE Advanced' },
+    { to: '/admin/gate-da',    icon: 'bi-cpu-fill',       label: 'GATE DA' },
+
   ]
 
   return (
@@ -730,6 +737,10 @@ const AdminDashboard = () => {
                           <i className="bi bi-trophy-fill me-2"></i>JEE Advanced
                         </Link>
                       </div>
+                       <div className="col-md-3 mb-2">
+                        <Link to="/admin/gate-da" className="btn w-100 text-white" style={{ background: '#20c997', borderColor: '#20c997' }}>
+                          <i className="bi bi-cpu-fill me-2"></i>GATE DA
+                        </Link>
                     </div>
                   </div>
                 </div>
