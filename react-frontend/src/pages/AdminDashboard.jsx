@@ -247,7 +247,7 @@ const iconColors = {
   gre:         { background: 'rgba(111,66,193,0.1)',  color: '#6f42c1' },
   jee:         { background: 'rgba(220,53,69,0.1)',   color: '#dc3545' },
   jee_adv:     { background: 'rgba(255,107,0,0.1)',   color: '#ff6b00' },
-  gate-da:     { background: 'rgba(32,201,151,0.1)',  color: '#20c997' },
+  "gate-da":     { background: 'rgba(32,201,151,0.1)',  color: '#20c997' },
 }
 }
 const LAST_SEEN_KEY = 'admin_notif_last_seen'
