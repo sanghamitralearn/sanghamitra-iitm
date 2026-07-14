@@ -32,6 +32,17 @@ const COURSE_CONFIG = {
         topic: 'Abstract Classes & Interfaces',        
         description: 'Abstract classes, Interfaces, Private classes, Controlled interaction with objects, Callbacks, Iterators' 
     },
+    // ─── MIDTERM 1 (After Week 4) ────────────────────────────────────────────
+    { 
+        week: 'midterm1',  
+        topic: '📝 Midterm 1',        
+        description: 'Comprehensive exam covering Week 1 to Week 4',
+        isExam: true,
+        examId: 'midterm1',
+        examTitle: 'Midterm 1',
+        weekRange: '1-4',
+        totalQuestions: 30
+    },
     { 
         week: 5,  
         topic: 'Polymorphism & Generics',        
@@ -51,6 +62,17 @@ const COURSE_CONFIG = {
         week: 8,  
         topic: 'Advanced Features',        
         description: 'Cloning, Type interface, Higher order functions, Streams' 
+    },
+    // ─── MIDTERM 2 (After Week 8) ────────────────────────────────────────────
+    { 
+        week: 'midterm2',  
+        topic: '📝 Midterm 2',        
+        description: 'Comprehensive exam covering Week 1 to Week 8',
+        isExam: true,
+        examId: 'midterm2',
+        examTitle: 'Midterm 2',
+        weekRange: '1-8',
+        totalQuestions: 40
     },
     { 
         week: 9,  
@@ -72,6 +94,17 @@ const COURSE_CONFIG = {
         topic: 'GUI Programming & Practice',        
         description: 'Graphical interface and event driven programming, Swing toolkit, Activity questions, Practice questions, Graded questions' 
     },
+    // ─── ENDTERM (After Week 12) ─────────────────────────────────────────────
+    { 
+        week: 'endterm',  
+        topic: '🏆 End Term',        
+        description: 'Final comprehensive exam covering Week 1 to Week 12',
+        isExam: true,
+        examId: 'endterm',
+        examTitle: 'End Term',
+        weekRange: '1-12',
+        totalQuestions: 50
+    },
     ],
   },
 
@@ -86,46 +119,123 @@ const COURSE_CONFIG = {
       { week: 2,  topic: 'Control Flow',            description: 'Conditionals, loops, comprehensions' },
       { week: 3,  topic: 'Functions & Modules',     description: 'def, args/kwargs, modules, packages' },
       { week: 4,  topic: 'Data Structures',         description: 'Lists, tuples, dicts, sets' },
+      // ─── MIDTERM 1 ─────────────────────────────────────────────────────────
+      { 
+        week: 'midterm1',  
+        topic: '📝 Midterm 1',        
+        description: 'Comprehensive exam covering Week 1 to Week 4',
+        isExam: true,
+        examId: 'midterm1',
+        examTitle: 'Midterm 1',
+        weekRange: '1-4',
+        totalQuestions: 30
+      },
       { week: 5,  topic: 'OOP in Python',           description: 'Classes, inheritance, dunder methods' },
       { week: 6,  topic: 'File Handling & I/O',     description: 'Open, read, write, context managers' },
       { week: 7,  topic: 'Error Handling',          description: 'Exceptions, try/except, custom errors' },
       { week: 8,  topic: 'Libraries & Practice',    description: 'NumPy, Pandas, mixed revision' },
+      // ─── MIDTERM 2 ─────────────────────────────────────────────────────────
+      { 
+        week: 'midterm2',  
+        topic: '📝 Midterm 2',        
+        description: 'Comprehensive exam covering Week 1 to Week 8',
+        isExam: true,
+        examId: 'midterm2',
+        examTitle: 'Midterm 2',
+        weekRange: '1-8',
+        totalQuestions: 40
+      },
     ],
   },
   dbms: {
-    title: 'database management systems',
+    title: 'dbms & Databases',
     icon: 'bi-database-fill',
     color: '#4479a1',
     description: 'Database fundamentals, dbms queries, and optimization techniques.',
     weeks: [
-      { week: 1, topic: 'Introduction to DBMS',     description: 'Introduction to DBMS is the foundational study of database systems, covering their purpose, architecture, data models, and how they overcome the limitations of traditional file-based storage systems.' },
-      { week: 2, topic: '',                    description: 'INNER, LEFT, RIGHT, FULL OUTER joins' },
+      { week: 1, topic: 'Introduction to DBMS',               description: 'SELECT, WHERE, ORDER BY, LIMIT' },
+      { week: 2, topic: 'Joins',                    description: 'INNER, LEFT, RIGHT, FULL OUTER joins' },
       { week: 3, topic: 'Aggregate Functions',      description: 'COUNT, SUM, AVG, GROUP BY, HAVING' },
       { week: 4, topic: 'Subqueries & CTEs',        description: 'Nested queries, WITH clause' },
+      // ─── MIDTERM 1 ─────────────────────────────────────────────────────────
+      { 
+        week: 'midterm1',  
+        topic: '📝 Midterm 1',        
+        description: 'Comprehensive exam covering Week 1 to Week 4',
+        isExam: true,
+        examId: 'midterm1',
+        examTitle: 'Midterm 1',
+        weekRange: '1-4',
+        totalQuestions: 30
+      },
       { week: 5, topic: 'DDL & Data Modeling',      description: 'CREATE, ALTER, DROP, normalization' },
       { week: 6, topic: 'Indexing & Optimization',  description: 'Indexes, EXPLAIN, query tuning' },
       { week: 7, topic: 'Transactions & ACID',      description: 'BEGIN, COMMIT, ROLLBACK, isolation' },
       { week: 8, topic: 'Stored Procedures & Views',description: 'Procedures, triggers, views' },
+      // ─── MIDTERM 2 ─────────────────────────────────────────────────────────
+      { 
+        week: 'midterm2',  
+        topic: '📝 Midterm 2',        
+        description: 'Comprehensive exam covering Week 1 to Week 8',
+        isExam: true,
+        examId: 'midterm2',
+        examTitle: 'Midterm 2',
+        weekRange: '1-8',
+        totalQuestions: 40
+      },
     ],
   },
-  pdsa: {
+  dsa: {
     title: 'Data Structures & Algorithms',
     icon: 'bi-diagram-3-fill',
     color: '#f4b41a',
-    description: 'Core pdsa concepts essential for coding interviews and problem solving.',
+    description: 'Core DSA concepts essential for coding interviews and problem solving.',
     weeks: [
       { week: 1,  topic: 'Arrays & Strings',        description: 'Traversal, sliding window, two pointers' },
       { week: 2,  topic: 'Linked Lists',            description: 'Singly, doubly, circular lists' },
       { week: 3,  topic: 'Stacks & Queues',         description: 'LIFO/FIFO, deque, monotonic stack' },
       { week: 4,  topic: 'Hashing',                 description: 'Hash maps, hash sets, collision resolution' },
+      // ─── MIDTERM 1 ─────────────────────────────────────────────────────────
+      { 
+        week: 'midterm1',  
+        topic: '📝 Midterm 1',        
+        description: 'Comprehensive exam covering Week 1 to Week 4',
+        isExam: true,
+        examId: 'midterm1',
+        examTitle: 'Midterm 1',
+        weekRange: '1-4',
+        totalQuestions: 30
+      },
       { week: 5,  topic: 'Binary Trees',            description: 'Traversals, BST, height, diameter' },
       { week: 6,  topic: 'Heaps & Priority Queues', description: 'Min/max heap, heap sort' },
       { week: 7,  topic: 'Graphs',                  description: 'BFS, DFS, topological sort' },
       { week: 8,  topic: 'Sorting Algorithms',      description: 'Merge sort, quick sort, counting sort' },
+      // ─── MIDTERM 2 ─────────────────────────────────────────────────────────
+      { 
+        week: 'midterm2',  
+        topic: '📝 Midterm 2',        
+        description: 'Comprehensive exam covering Week 1 to Week 8',
+        isExam: true,
+        examId: 'midterm2',
+        examTitle: 'Midterm 2',
+        weekRange: '1-8',
+        totalQuestions: 40
+      },
       { week: 9,  topic: 'Dynamic Programming',     description: 'Memoization, tabulation, classic problems' },
       { week: 10, topic: 'Greedy & Backtracking',   description: 'Interval scheduling, N-queens, subsets' },
       { week: 11, topic: 'Divide & Conquer',        description: 'Binary search, merge sort, matrix multiply' },
-      { week: 12, topic: 'Revision & Practice',     description: 'Mixed pdsa revision questions' },
+      { week: 12, topic: 'Revision & Practice',     description: 'Mixed DSA revision questions' },
+      // ─── ENDTERM ──────────────────────────────────────────────────────────
+      { 
+        week: 'endterm',  
+        topic: '🏆 End Term',        
+        description: 'Final comprehensive exam covering Week 1 to Week 12',
+        isExam: true,
+        examId: 'endterm',
+        examTitle: 'End Term',
+        weekRange: '1-12',
+        totalQuestions: 50
+      },
     ],
   },
 }
@@ -144,6 +254,11 @@ function progressBarClass(pct) {
   if (pct >= 40) return 'bg-warning'
   if (pct > 0)   return 'bg-danger'
   return 'bg-primary'
+}
+
+// ─── Check if a week is an exam ─────────────────────────────────────────────
+const isExamWeek = (week) => {
+  return typeof week === 'string' && week.startsWith('midterm') || week === 'endterm'
 }
 
 const CoursePage = () => {
@@ -206,6 +321,13 @@ const CoursePage = () => {
     return weekAttempts.sort((a, b) => b.percentage - a.percentage)[0]
   }
 
+  // Get best attempt for an exam (by topic)
+  const getBestExamAttempt = (examTitle) => {
+    const examAttempts = attempts.filter(a => a.topic && a.topic.includes(examTitle))
+    if (!examAttempts.length) return null
+    return examAttempts.sort((a, b) => b.percentage - a.percentage)[0]
+  }
+
   // Get coding progress for a given week
   const getCodingProgress = (weekNum) => {
     return codingProgress.find(p => p.week === weekNum) || null
@@ -219,8 +341,9 @@ const CoursePage = () => {
 
   if (!config) return null
 
-  // Summary stats
-  const weeksAttempted = config.weeks.filter(w => getBestAttempt(w.week)).length
+  // Summary stats - only count regular weeks (not exams)
+  const regularWeeks = config.weeks.filter(w => !isExamWeek(w.week))
+  const weeksAttempted = regularWeeks.filter(w => getBestAttempt(w.week)).length
   const totalAttempts = attempts.length
   const avgScore = attempts.length > 0
     ? Math.round(attempts.reduce((sum, a) => sum + a.percentage, 0) / attempts.length)
@@ -266,7 +389,7 @@ const CoursePage = () => {
         {user && (
           <div className="row g-3 mb-4" style={{ maxWidth: 820, margin: '0 auto 1.5rem' }}>
             {[
-              { label: 'Weeks Attempted', value: `${weeksAttempted} / ${config.weeks.length}`, icon: 'bi-journals', color: '#0d6efd' },
+              { label: 'Weeks Attempted', value: `${weeksAttempted} / ${regularWeeks.length}`, icon: 'bi-journals', color: '#0d6efd' },
               { label: 'Total Attempts',  value: totalAttempts,  icon: 'bi-arrow-repeat',      color: '#6f42c1' },
               { label: 'Average Score',   value: `${avgScore}%`, icon: 'bi-bar-chart-line',    color: avgScore >= 80 ? '#28a745' : avgScore >= 60 ? '#17a2b8' : avgScore > 0 ? '#ffc107' : '#6c757d' },
               { label: 'Best Score',      value: `${bestScore}%`,icon: 'bi-trophy-fill',       color: bestScore >= 80 ? '#28a745' : bestScore >= 60 ? '#17a2b8' : bestScore > 0 ? '#ffc107' : '#6c757d' },
@@ -285,17 +408,70 @@ const CoursePage = () => {
         {/* Week list */}
         <div style={{ maxWidth: 860, margin: '0 auto', padding: '0 15px' }}>
           {config.weeks.map((w) => {
-            const best = user ? getBestAttempt(w.week) : null
-            const pct = best ? Math.round(best.percentage) : 0
-            const attempted = !!best
-            const codingAttempted = user ? !!getCodingProgress(w.week) : false
-            const lastDate = best?.submitted_at
-              ? new Date(best.submitted_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-              : null
+            const isExam = isExamWeek(w.week)
+            
+            // For exams, get attempt by topic name
+            let best = null
+            let attempted = false
+            let pct = 0
+            let lastDate = null
+            
+            if (user && isExam) {
+              best = getBestExamAttempt(w.examTitle)
+              attempted = !!best
+              pct = best ? Math.round(best.percentage) : 0
+              lastDate = best?.submitted_at
+                ? new Date(best.submitted_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                : null
+            } else if (user && !isExam) {
+              best = getBestAttempt(w.week)
+              attempted = !!best
+              pct = best ? Math.round(best.percentage) : 0
+              lastDate = best?.submitted_at
+                ? new Date(best.submitted_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                : null
+            }
+
+            const codingAttempted = user && !isExam ? !!getCodingProgress(w.week) : false
+
+            // Exam styling
+            let examColor = '#6c757d'
+            let examIcon = 'bi-clipboard-check'
+            let examBadge = ''
+            
+            if (isExam) {
+              if (w.week === 'midterm1') {
+                examColor = '#0d6efd'
+                examIcon = 'bi-clock-history'
+                examBadge = '📝'
+              } else if (w.week === 'midterm2') {
+                examColor = '#fd7e14'
+                examIcon = 'bi-clock'
+                examBadge = '📝'
+              } else if (w.week === 'endterm') {
+                examColor = '#dc3545'
+                examIcon = 'bi-trophy'
+                examBadge = '🏆'
+              }
+            }
+
+            // Get exam stats
+            const getExamStats = () => {
+              if (!user || !isExam) return null
+              const examAttempts = attempts.filter(a => a.topic && a.topic.includes(w.examTitle))
+              if (!examAttempts.length) return null
+              const best = examAttempts.sort((a, b) => b.percentage - a.percentage)[0]
+              return best
+            }
+
+            const examStats = isExam ? getExamStats() : null
 
             return (
               <div key={w.week} className="mb-3">
-                <div className="card border-0 shadow-sm" style={{ borderRadius: 12 }}>
+                <div className="card border-0 shadow-sm" style={{ 
+                  borderRadius: 12,
+                  borderLeft: isExam ? `4px solid ${examColor}` : 'none'
+                }}>
                   <div className="card-body p-3">
                     <div className="row align-items-center">
                       {/* Icon */}
@@ -303,10 +479,14 @@ const CoursePage = () => {
                         <div className="rounded-circle d-flex align-items-center justify-content-center text-white"
                           style={{
                             width: 44, height: 44,
-                            background: attempted ? config.color : '#dee2e6',
+                            background: attempted ? (isExam ? examColor : config.color) : '#dee2e6',
                           }}>
-                          {attempted
+                          {attempted && !isExam
                             ? <i className="bi bi-check-lg fs-5"></i>
+                            : attempted && isExam
+                            ? <i className="bi bi-check-lg fs-5"></i>
+                            : isExam
+                            ? <i className={`bi ${examIcon} fs-5`} style={{ color: '#fff' }}></i>
                             : <span className="fw-bold" style={{ color: '#6c757d', fontSize: '0.9rem' }}>{w.week}</span>
                           }
                         </div>
@@ -314,25 +494,51 @@ const CoursePage = () => {
 
                       {/* Info */}
                       <div className="col">
-                        <h5 className="mb-0 fw-semibold" style={{ fontSize: '1rem' }}>
-                          Week {w.week}: {w.topic}
-                        </h5>
-                        <p className="text-muted mb-1" style={{ fontSize: '0.82rem' }}>{w.description}</p>
-                        {user && (
+                        {isExam ? (
                           <>
-                            <div className="progress" style={{ height: 5 }}>
-                              <div className={`progress-bar ${progressBarClass(pct)}`}
-                                style={{ width: `${pct}%` }} />
-                            </div>
-                            <small className="text-muted">
-                              {lastDate ? `Last attempt: ${lastDate}` : 'Not attempted yet'}
-                            </small>
+                            <h5 className="mb-0 fw-semibold" style={{ fontSize: '1rem', color: examColor }}>
+                              {examBadge} {w.topic}
+                            </h5>
+                            <p className="text-muted mb-1" style={{ fontSize: '0.82rem' }}>{w.description}</p>
+                            {user && examStats && (
+                              <>
+                                <div className="progress" style={{ height: 5 }}>
+                                  <div className={`progress-bar ${progressBarClass(examStats.percentage)}`}
+                                    style={{ width: `${examStats.percentage}%` }} />
+                                </div>
+                                <small className="text-muted">
+                                  Best Score: {Math.round(examStats.percentage)}% | 
+                                  Attempts: {attempts.filter(a => a.topic && a.topic.includes(w.examTitle)).length}
+                                </small>
+                              </>
+                            )}
+                            {user && !examStats && (
+                              <small className="text-muted">Not attempted yet</small>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <h5 className="mb-0 fw-semibold" style={{ fontSize: '1rem' }}>
+                              Week {w.week}: {w.topic}
+                            </h5>
+                            <p className="text-muted mb-1" style={{ fontSize: '0.82rem' }}>{w.description}</p>
+                            {user && (
+                              <>
+                                <div className="progress" style={{ height: 5 }}>
+                                  <div className={`progress-bar ${progressBarClass(pct)}`}
+                                    style={{ width: `${pct}%` }} />
+                                </div>
+                                <small className="text-muted">
+                                  {lastDate ? `Last attempt: ${lastDate}` : 'Not attempted yet'}
+                                </small>
+                              </>
+                            )}
                           </>
                         )}
                       </div>
 
-                      {/* Badge */}
-                      {user && (
+                      {/* Badge - only show for regular weeks or attempted exams */}
+                      {user && !isExam && (
                         <div className="col-auto text-center">
                           <span style={{
                             display: 'inline-block', padding: '0.25rem 0.75rem',
@@ -344,11 +550,44 @@ const CoursePage = () => {
                           </span>
                         </div>
                       )}
+                      {user && isExam && examStats && (
+                        <div className="col-auto text-center">
+                          <span style={{
+                            display: 'inline-block', padding: '0.25rem 0.75rem',
+                            borderRadius: 20, fontWeight: 600, fontSize: '0.88rem',
+                            color: 'white', background: badgeStyle(examStats.percentage),
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
+                          }}>
+                            {Math.round(examStats.percentage)}%
+                          </span>
+                        </div>
+                      )}
 
                       {/* Buttons */}
                       <div className="col-auto d-flex flex-column gap-2">
-                        {user
-                          ? <>
+                        {user ? (
+                          isExam ? (
+                            <Link
+                              to={`/quiz/${course}/exam`}
+                              state={{ 
+                                isExam: true,
+                                examId: w.examId,
+                                examTitle: w.examTitle,
+                                weekRange: w.weekRange,
+                                totalQuestions: w.totalQuestions,
+                                quizName: `${w.examTitle} (Weeks ${w.weekRange})`
+                              }}
+                              className="btn btn-sm"
+                              style={{
+                                background: examStats ? examColor : 'transparent',
+                                color: examStats ? '#fff' : examColor,
+                                border: `1px solid ${examColor}`,
+                                borderRadius: 8, minWidth: 130,
+                              }}>
+                              {examStats ? <><i className="bi bi-arrow-clockwise me-1"></i>Retake {w.examTitle}</> : <><i className="bi bi-play-fill me-1"></i>Start {w.examTitle}</>}
+                            </Link>
+                          ) : (
+                            <>
                               <Link
                                 to={`/quiz/${course}/week/${w.week}`}
                                 state={{ quizName: `Week ${w.week}: ${w.topic}`, course, week: w.week }}
@@ -374,10 +613,12 @@ const CoursePage = () => {
                                 {codingAttempted ? <><i className="bi bi-arrow-clockwise me-1"></i>Retake Coding</> : <><i className="bi bi-code-slash me-1"></i>Take Coding Quiz</>}
                               </Link>
                             </>
-                          : <Link to="/login" className="btn btn-sm btn-outline-secondary" style={{ minWidth: 130, opacity: 0.7 }}>
-                              <i className="bi bi-lock me-1"></i>Login
-                            </Link>
-                        }
+                          )
+                        ) : (
+                          <Link to="/login" className="btn btn-sm btn-outline-secondary" style={{ minWidth: 130, opacity: 0.7 }}>
+                            <i className="bi bi-lock me-1"></i>Login
+                          </Link>
+                        )}
                       </div>
                     </div>
                   </div>
