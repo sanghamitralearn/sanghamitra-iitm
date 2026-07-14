@@ -11,7 +11,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 // Official (current, shortened) GRE General Test structure:
 // Verbal Reasoning M1 & 2, Quantitative Reasoning M1 & 2
 // (Analytical Writing is temporarily excluded — no essay questions in the bank yet)
-const STAGES = [
+// Exported so listing pages (GREMain.jsx) can show the real question/mark totals
+// for a full-test attempt instead of the size of the whole question bank.
+export const STAGES = [
   { key: 'verbal1', subject: 'Verbal Reasoning',         scoreSubject: 'Verbal Reasoning',         label: 'Verbal Reasoning',         module: 1, questionCount: 12, timeMin: 18 },
   { key: 'verbal2', subject: 'Verbal Reasoning',         scoreSubject: 'Verbal Reasoning',         label: 'Verbal Reasoning',         module: 2, questionCount: 12, timeMin: 18 },
   { key: 'quant1',  subject: 'Quantitative Reasoning',   scoreSubject: 'Quantitative Reasoning',   label: 'Quantitative Reasoning',   module: 1, questionCount: 12, timeMin: 21 },
