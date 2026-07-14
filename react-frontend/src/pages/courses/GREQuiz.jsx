@@ -291,10 +291,21 @@ function PassageBlock({ text, subject }) {
 }
 
 // ─── Question content renderer ────────────────────────────────────────────────
+// Quantitative Reasoning: every question renders inside one uniform box, with no
+// "Passage" label — Verbal keeps the labelled passage block since it's a real passage.
 export function QuestionContent({ q }) {
-  return (
+  const isMath = q.subject === 'Quantitative Reasoning'
+  const accent = SUBJECT_STYLE['Quantitative Reasoning'].badge
+
+  const body = (
     <>
-      <PassageBlock text={q.passage} subject={q.subject} />
+      {q.passage && (
+        isMath
+          ? <p className="mb-3" style={{ fontSize: '1rem', lineHeight: 1.85, whiteSpace: 'pre-wrap' }}>
+              <MathText text={q.passage} />
+            </p>
+          : <PassageBlock text={q.passage} subject={q.subject} />
+      )}
       <p className="mb-3" style={{ fontSize: '1.05rem', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
         <MathText text={q.question_text} />
       </p>
@@ -307,6 +318,20 @@ export function QuestionContent({ q }) {
       )}
     </>
   )
+
+  if (isMath) {
+    return (
+      <div style={{
+        background: `${accent}0d`, border: `1px solid ${accent}44`,
+        borderLeft: `4px solid ${accent}`, borderRadius: 10,
+        padding: '16px 20px', marginBottom: 20,
+      }}>
+        {body}
+      </div>
+    )
+  }
+
+  return body
 }
 
 // ─── Checks whether a question has been answered, including multi-blank text-completion ──
@@ -438,7 +463,13 @@ export const QuestionReviewItem = ({ q, idx, answer, res, isOpen, onToggle }) =>
 
         {isOpen && (
           <div className="mt-3 ms-5 ps-2">
-            <PassageBlock text={q.passage} subject={q.subject} />
+            {q.passage && (
+              q.subject === 'Quantitative Reasoning'
+                ? <p className="mb-3" style={{ fontSize: '1rem', lineHeight: 1.85, whiteSpace: 'pre-wrap' }}>
+                    <MathText text={q.passage} />
+                  </p>
+                : <PassageBlock text={q.passage} subject={q.subject} />
+            )}
             {q.image_url && (
               <div className="mb-3">
                 <img
