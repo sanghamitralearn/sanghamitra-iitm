@@ -97,6 +97,7 @@ import ProgrammingDashboard from './pages/ProgrammingDashboard'
 import CoursePage from './pages/courses/Programming_Courses/CoursePage'
 import QuizPage from './pages/courses/Programming_Courses/QuizPage'
 import CodingPage from './pages/courses/Programming_Courses/CodingPage'
+import ExamPage from './pages/courses/Programming_Courses/ExamPage'
 
 //gate da
 
@@ -268,6 +269,10 @@ function App() {
             <Route path="/programming/courses/:course" element={<CoursePage />} />
             <Route path="/quiz/:course/week/:week" element={<QuizPage />} />
             <Route path="/coding/:course/week/:week" element={<CodingPage />} />
+            <Route path="/programming/exams" element={<ExamPage />} />
+            <Route path="/quiz/:course/exam" element={<QuizPage />} />
+
+                 
           </Routes>
         </main>
         <Footer />
