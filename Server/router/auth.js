@@ -84,6 +84,10 @@ const GreQuestion    = require('../model/gre_questions')
 const GreScore       = require('../model/gre_scores')
 const GreFullScore   = require('../model/gre_full_scores')
 
+const GateDaQuestion  = require('../model/gate_da_questions')
+const GateDaScore     = require('../model/gate_da_scores')
+const GateDaFullScore = require('../model/gate_da_full_scores')
+
 const DBMSSubmission = require('../model/DBMS_Submission');
 const DBMSQuestions = require('../model/DBMS_Questions');
 
@@ -4918,6 +4922,200 @@ router.get('/sat_full_scores', async (req, res) => {
     res.status(500).json({ error: err.message })
   }
 })
+
+
+// ─── GATE DA Debug — returns total count + distinct subjects in the collection ────
+router.get('/gate_da_debug', async (req, res) => {
+  try {
+    const totalQuestions = await GateDaQuestion.countDocuments()
+    const distinctSubjects = await GateDaQuestion.distinct('subject')
+    res.json({ totalQuestions, distinctSubjects })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── GATE DA Questions ────────────────────────────────────────────────────────────
+// The full test / dashboard / quiz pages only know about these 6 broad exam
+// subjects, but questions in the DB are tagged with finer-grained subjects
+// (e.g. "Verbal Ability" instead of "General Aptitude"). Map each broad
+// subject to every granular subject value that belongs under it, so a request
+// for the broad name still finds all matching questions.
+const GATE_DA_SUBJECT_BUCKETS = {
+  'general aptitude': ['General Aptitude', 'Verbal Ability', 'Quantitative Aptitude', 'Analytical Aptitude'],
+  'engineering mathematics': ['Engineering Mathematics', 'Linear Algebra', 'Calculus', 'Calculus & Optimization', 'Discrete Mathematics', 'Probability & Statistics'],
+  'programming & data structures': ['Programming & Data Structures', 'Programming', 'Algorithms & Data Structures'],
+  'database management & warehousing': ['Database Management & Warehousing', 'Databases'],
+  'machine learning': ['Machine Learning', 'Deep Learning', 'Data Science Fundamentals'],
+  'artificial intelligence': ['Artificial Intelligence'],
+}
+
+// GET /api/gate_da_questions?subject=Machine Learning&paper=GATE DA Practice Set 1&difficulty=easy&limit=30
+router.get('/gate_da_questions', async (req, res) => {
+  try {
+    const { subject, difficulty, paper, limit } = req.query
+    const filter = {}
+    if (subject) {
+      const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const bucket = GATE_DA_SUBJECT_BUCKETS[subject.trim().toLowerCase()]
+      if (bucket) {
+        filter.subject = { $in: bucket.map(s => new RegExp('^' + esc(s) + '$', 'i')) }
+      } else {
+        filter.subject = { $regex: new RegExp('^' + esc(subject) + '$', 'i') }
+      }
+    }
+    if (difficulty) filter.difficulty = difficulty
+    if (paper) {
+      const escapedPaper = paper.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      filter.paper = { $regex: new RegExp('^' + escapedPaper + '$', 'i') }
+    }
+    const qs = await GateDaQuestion.find(filter)
+      .limit(limit ? parseInt(limit) : 0)
+      .lean()
+    res.json(qs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/gate_da_scores — upsert: one doc per (email+subject), keep last 5 attempts
+router.post('/gate_da_scores', async (req, res) => {
+  try {
+    const { email, name, subject, totalQuestions, correctAnswers, wrongAnswers,
+            unattempted, score, maxScore, responses, source } = req.body
+    if (!email || !subject) return res.status(400).json({ error: 'email and subject are required' })
+
+    const newAttempt = {
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore,
+      responses: (responses || []).map(r => ({
+        questionId:   r.questionId,
+        userResponse: r.userResponse,
+        isCorrect:    r.isCorrect,
+        marksAwarded: r.marksAwarded,
+      })),
+      source: source === 'FullTest' ? 'FullTest' : 'Module',
+      dateAttempted: new Date(),
+    }
+
+    const doc = await GateDaScore.findOneAndUpdate(
+      { email, subject },
+      {
+        $set:  { name },
+        $push: { attempts: { $each: [newAttempt], $position: 0, $slice: 5 } },
+      },
+      { upsert: true, new: true }
+    )
+    res.json({ success: true, data: { email: doc.email, subject: doc.subject, attemptCount: doc.attempts.length } })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/gate_da_scores?email=x@y.com  — returns all attempts as flat records (newest first per subject)
+router.get('/gate_da_scores', async (req, res) => {
+  try {
+    const { email } = req.query
+    const filter = email ? { email } : {}
+    const docs = await GateDaScore.find(filter).lean()
+    const result = docs.flatMap(doc =>
+      (doc.attempts || []).map(attempt => ({
+        email:   doc.email,
+        name:    doc.name,
+        subject: doc.subject,
+        ...attempt,
+      }))
+    )
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── GATE DA Papers aggregation ───────────────────────────────────────────────────
+// GET /api/gate_da_papers  — groups gate_da_questions by (paper, year) and returns per-paper totals
+router.get('/gate_da_papers', async (req, res) => {
+  try {
+    const grouped = await GateDaQuestion.aggregate([
+      {
+        $group: {
+          _id:   { paper: '$paper', year: '$year', subject: '$subject' },
+          count: { $sum: 1 },
+          marks: { $sum: { $ifNull: ['$points', 1] } },
+        },
+      },
+      {
+        $group: {
+          _id:            { paper: '$_id.paper', year: '$_id.year' },
+          totalQuestions: { $sum: '$count' },
+          totalMarks:     { $sum: '$marks' },
+          subjects:       { $push: { subject: '$_id.subject', count: '$count', totalMarks: '$marks' } },
+        },
+      },
+    ])
+
+    const result = grouped.map(p => {
+      const subjects = {}
+      p.subjects.forEach(s => { subjects[s.subject] = { count: s.count, totalMarks: s.totalMarks } })
+      return {
+        paper:          p._id.paper,
+        year:           p._id.year,
+        totalQuestions: p.totalQuestions,
+        totalMarks:     p.totalMarks,
+        subjects,
+      }
+    })
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/gate_da_full_scores — save one full-paper attempt
+router.post('/gate_da_full_scores', async (req, res) => {
+  try {
+    const {
+      email, name, paper, year,
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore, sectionScores, responses, totalTimeTaken,
+    } = req.body
+    if (!email || !paper) return res.status(400).json({ error: 'email and paper are required' })
+
+    const doc = new GateDaFullScore({
+      email, name, paper, year,
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore, sectionScores,
+      responses: (responses || []).map(r => ({
+        questionId:   r.questionId,
+        subject:      r.subject,
+        userResponse: r.userResponse,
+        isCorrect:    r.isCorrect,
+        marksAwarded: r.marksAwarded,
+        unattempted:  r.unattempted,
+        timeTaken:    r.timeTaken,
+      })),
+      totalTimeTaken,
+      dateAttempted: new Date(),
+    })
+    await doc.save()
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/gate_da_full_scores?email=x@y.com — all full-paper attempts newest first
+router.get('/gate_da_full_scores', async (req, res) => {
+  try {
+    const { email } = req.query
+    if (!email) return res.status(400).json({ error: 'email is required' })
+    const docs = await GateDaFullScore.find({ email }).sort({ dateAttempted: -1 }).lean()
+    res.json(docs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 
 
 // ─── JEE Questions ────────────────────────────────────────────────────────────
