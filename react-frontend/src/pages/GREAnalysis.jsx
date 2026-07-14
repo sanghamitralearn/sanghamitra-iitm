@@ -232,9 +232,21 @@ function PassageBlock({ text, subject }) {
 function QuestionContent({ q }) {
   const ref = useRef(null)
   useEffect(() => { if (ref.current) renderMath(ref.current) }, [q])
-  return (
-    <div ref={ref}>
-      {q.passage && <PassageBlock text={q.passage} subject={q.subject} />}
+
+  // Quantitative Reasoning: show every question inside one uniform box, with no
+  // "Passage" label — Verbal keeps the labelled passage block since it's a real passage.
+  const isMath = q.subject === 'Quantitative Reasoning'
+  const accent = SECTION_COLOR['Quantitative Reasoning']
+
+  const body = (
+    <>
+      {q.passage && (
+        isMath
+          ? <p className="mb-3" style={{ fontSize: '1rem', lineHeight: 1.85, whiteSpace: 'pre-wrap' }}>
+              <MathText text={q.passage} />
+            </p>
+          : <PassageBlock text={q.passage} subject={q.subject} />
+      )}
       <p className="mb-3" style={{ fontSize: '1.05rem', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
         <MathText text={q.question_text} />
       </p>
@@ -247,8 +259,24 @@ function QuestionContent({ q }) {
           </a>
         </div>
       )}
-    </div>
+    </>
   )
+
+  if (isMath) {
+    return (
+      <div ref={ref}>
+        <div style={{
+          background: `${accent}0d`, border: `1px solid ${accent}44`,
+          borderLeft: `4px solid ${accent}`, borderRadius: 10,
+          padding: '16px 20px', marginBottom: 20,
+        }}>
+          {body}
+        </div>
+      </div>
+    )
+  }
+
+  return <div ref={ref}>{body}</div>
 }
 
 // ─── Essay card — shows the submitted Analytical Writing response, no numeric score ──
@@ -633,8 +661,9 @@ const ResultsPage = ({ results, onReview, allAttempts, activeAttemptId, onSwitch
 }
 
 // ─── Review Answers Page ──────────────────────────────────────────────────────
-const ReviewAnswersPage = ({ enriched, onBack }) => {
+const ReviewAnswersPage = ({ enriched, onBack, results }) => {
   const [sectionFilter, setSectionFilter] = useState(null)
+  const [moduleFilter,  setModuleFilter]  = useState(null)
   const [statusFilter,  setStatusFilter]  = useState('all')
   const [expandedIdx,   setExpandedIdx]   = useState(null)
   const ref = useRef(null)
@@ -642,10 +671,39 @@ const ReviewAnswersPage = ({ enriched, onBack }) => {
   useEffect(() => { if (ref.current) renderMath(ref.current) }, [expandedIdx])
 
   const availableSections = [...new Set(enriched.map(r => r.subject).filter(Boolean))]
+  const isFullTest = results?.testType === 'full'
 
-  // Scoped to the selected section chip, so the sidebar counts reflect that
-  // section only instead of always showing the whole test's totals.
-  const sectionScoped = sectionFilter ? enriched.filter(r => r.subject === sectionFilter) : enriched
+  // Module 1 / Module 2 split per section — first/second half of that section's
+  // responses in original order, same convention used on the Results page.
+  const moduleOf = {}
+  const moduleCounts = {}
+  if (isFullTest) {
+    for (const sec of GRE_SECTIONS) {
+      const secResps = enriched.filter(r => r.subject === sec)
+      const half = Math.ceil(secResps.length / 2)
+      const calc = resps => ({
+        correct:     resps.filter(r => r?.isCorrect).length,
+        incorrect:   resps.filter(r => r && !r.isCorrect && !r.unattempted).length,
+        unattempted: resps.filter(r => r?.unattempted).length,
+        total:       resps.length,
+      })
+      moduleCounts[sec] = { 'Module 1': calc(secResps.slice(0, half)), 'Module 2': calc(secResps.slice(half)) }
+      secResps.forEach((r, idx) => { moduleOf[r.globalIndex] = idx < half ? 'Module 1' : 'Module 2' })
+    }
+  }
+
+  const selectSection = sec => {
+    setSectionFilter(sectionFilter === sec ? null : sec)
+    setModuleFilter(null)
+  }
+
+  // Scoped to the selected section chip (and module, if chosen), so the sidebar
+  // counts reflect that scope only instead of always showing the whole test's totals.
+  const sectionScoped = enriched.filter(r => {
+    if (sectionFilter && r.subject !== sectionFilter) return false
+    if (moduleFilter && moduleOf[r.globalIndex] !== moduleFilter) return false
+    return true
+  })
 
   const counts = {
     all:         sectionScoped.length,
@@ -656,6 +714,7 @@ const ReviewAnswersPage = ({ enriched, onBack }) => {
 
   const filtered = enriched.filter(r => {
     if (sectionFilter && r.subject !== sectionFilter) return false
+    if (moduleFilter && moduleOf[r.globalIndex] !== moduleFilter) return false
     if (statusFilter === 'correct'     && !r?.isCorrect) return false
     if (statusFilter === 'incorrect'   && (r?.unattempted || r?.isCorrect)) return false
     if (statusFilter === 'unattempted' && !r?.unattempted) return false
@@ -675,7 +734,7 @@ const ReviewAnswersPage = ({ enriched, onBack }) => {
         <div style={{ background: '#fff', borderBottom: '1px solid #e9ecef', padding: '10px 24px' }}>
           <div className="d-flex gap-2 flex-wrap">
             {availableSections.map(sec => (
-              <button key={sec} onClick={() => setSectionFilter(sectionFilter === sec ? null : sec)}
+              <button key={sec} onClick={() => selectSection(sec)}
                 style={{
                   padding: '4px 14px', borderRadius: 20, border: '1px solid', cursor: 'pointer',
                   fontWeight: 500, fontSize: '0.88rem',
@@ -698,6 +757,32 @@ const ReviewAnswersPage = ({ enriched, onBack }) => {
               {sectionFilter && (
                 <div className="px-3 pt-3 pb-1 text-muted" style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
                   {sectionFilter}
+                </div>
+              )}
+              {sectionFilter && isFullTest && (
+                <div className="px-3 pb-2 d-flex flex-column gap-2" style={{ borderBottom: '1px solid #e9ecef', paddingBottom: 12 }}>
+                  {['Module 1', 'Module 2'].map(mod => {
+                    const mc = moduleCounts[sectionFilter]?.[mod] || { correct: 0, incorrect: 0, unattempted: 0, total: 0 }
+                    const active = moduleFilter === mod
+                    const accent = SECTION_COLOR[sectionFilter] || '#0d6efd'
+                    return (
+                      <button key={mod} onClick={() => setModuleFilter(active ? null : mod)}
+                        className="w-100 text-start border-0 rounded"
+                        style={{
+                          padding: '8px 12px', cursor: 'pointer',
+                          background: active ? `${accent}18` : '#f8f9fa',
+                          border: active ? `1px solid ${accent}55` : '1px solid transparent',
+                        }}>
+                        <div className="d-flex justify-content-between align-items-center">
+                          <span style={{ fontWeight: 600, fontSize: '0.85rem', color: active ? accent : '#212529' }}>{mod}</span>
+                          <span style={{ fontSize: '0.72rem' }}>
+                            <span className="text-success me-2">{mc.correct}✓</span>
+                            <span className="text-danger">{mc.incorrect}✗</span>
+                          </span>
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
               )}
               {[
@@ -1087,6 +1172,7 @@ const GREAnalysis = () => {
   return (
     <ReviewAnswersPage
       enriched={enriched}
+      results={results}
       onBack={() => setPhase('results')}
     />
   )
