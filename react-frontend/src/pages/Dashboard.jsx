@@ -13,7 +13,7 @@ const Dashboard = () => {
 
   const navigate = useNavigate()
 
-  // Define all courses from Home.jsx
+  // Define all courses with their API endpoints and data paths
   const allCourses = [
     {
       id: 'math',
@@ -21,7 +21,12 @@ const Dashboard = () => {
       icon: 'bi-calculator',
       color: '#5fcf80',
       route: '/math',
-      description: 'Master algebra, calculus, and more'
+      description: 'Master algebra, calculus, and more',
+      apiEndpoint: `${API_URL}/api/iitmmath_scores`,
+      dataPath: 'data.quizScores',
+      scoreKey: 'percentage',
+      topicKey: 'topic',
+      timestampKey: 'timestamp'
     },
     {
       id: 'math2',
@@ -29,7 +34,12 @@ const Dashboard = () => {
       icon: 'bi-graph-up',
       color: '#4ecdc4',
       route: '/math2',
-      description: 'Advanced mathematical concepts'
+      description: 'Advanced mathematical concepts',
+      apiEndpoint: `${API_URL}/api/iitm_math2_scores`,
+      dataPath: 'scores',
+      scoreKey: 'score',
+      topicKey: 'subtopic',
+      timestampKey: 'dateAttempted'
     },
     {
       id: 'statistics',
@@ -37,7 +47,12 @@ const Dashboard = () => {
       icon: 'bi-bar-chart',
       color: '#45b7d1',
       route: '/statistics',
-      description: 'Learn data analysis and probability'
+      description: 'Learn data analysis and probability',
+      apiEndpoint: `${API_URL}/api/statistics_scores`,
+      dataPath: 'data.quizScores',
+      scoreKey: 'percentage',
+      topicKey: 'topic',
+      timestampKey: 'timestamp'
     },
     {
       id: 'statistics2',
@@ -45,7 +60,12 @@ const Dashboard = () => {
       icon: 'bi-pie-chart',
       color: '#96ceb4',
       route: '/statistics2',
-      description: 'Advanced statistical methods'
+      description: 'Advanced statistical methods',
+      apiEndpoint: `${API_URL}/api/iitm_stats2_scores_databases`,
+      dataPath: 'data.quizScores',
+      scoreKey: 'percentage',
+      topicKey: 'topic',
+      timestampKey: 'timestamp'
     },
     {
       id: 'computational-thinking',
@@ -53,7 +73,12 @@ const Dashboard = () => {
       icon: 'bi-cpu',
       color: '#845ec2',
       route: '/computational-thinking',
-      description: 'Problem-solving approach'
+      description: 'Problem-solving approach',
+      apiEndpoint: `${API_URL}/api/iitm_ct_scores`,
+      dataPath: 'data.quizScores',
+      scoreKey: 'percentage',
+      topicKey: 'topic',
+      timestampKey: 'timestamp'
     },
     {
       id: 'python',
@@ -61,7 +86,12 @@ const Dashboard = () => {
       icon: 'bi-filetype-py',
       color: '#3776ab',
       route: '/programming/courses/python',
-      description: 'Master Python from basics to advanced'
+      description: 'Master Python from basics to advanced',
+      apiEndpoint: `${API_URL}/api/mcq-quiz/attempts?course=python`,
+      dataPath: 'attempts',
+      scoreKey: 'percentage',
+      topicKey: 'topic',
+      timestampKey: 'submitted_at'
     },
     {
       id: 'java',
@@ -69,16 +99,25 @@ const Dashboard = () => {
       icon: 'bi-cup-hot-fill',
       color: '#f89820',
       route: '/programming/courses/java',
-      description: 'Complete Java development'
+      description: 'Complete Java development',
+      apiEndpoint: `${API_URL}/api/mcq-quiz/attempts?course=java`,
+      dataPath: 'attempts',
+      scoreKey: 'percentage',
+      topicKey: 'topic',
+      timestampKey: 'submitted_at'
     },
-    
     {
       id: 'dbms',
       title: 'Database Management Systems',
       icon: 'bi-server',
       color: '#2d4059',
       route: '/programming/courses/dbms',
-      description: 'Complete DBMS concepts'
+      description: 'Complete DBMS concepts',
+      apiEndpoint: `${API_URL}/api/mcq-quiz/attempts?course=dbms`,
+      dataPath: 'attempts',
+      scoreKey: 'percentage',
+      topicKey: 'topic',
+      timestampKey: 'submitted_at'
     },
     {
       id: 'pdsa',
@@ -86,26 +125,38 @@ const Dashboard = () => {
       icon: 'bi-code-square',
       color: '#00b4d8',
       route: '/courses/pdsa',
-      description: 'Programming, data structures and Algorithms using Python'
+      description: 'Programming, data structures and Algorithms using Python',
+      apiEndpoint: `${API_URL}/api/pdsa-submissions`,
+      dataPath: 'data',
+      scoreKey: 'percentage',
+      topicKey: 'topic',
+      timestampKey: 'timestamp'
     },
-    
     {
       id: 'competitive-exam',
       title: 'Competitive Exam Foundation',
       icon: 'bi-trophy',
       color: '#ff6b6b',
       route: '/competitive-exam-foundation',
-      description: 'Crack banking, SSC & more'
+      description: 'Crack banking, SSC & more',
+      apiEndpoint: `${API_URL}/api/competitive_math_quiz_attempts`,
+      dataPath: 'data.quizScores',
+      scoreKey: 'percentage',
+      topicKey: 'topic',
+      timestampKey: 'submitted_at'
     },
-    
-    
     {
       id: 'jee',
       title: 'JEE Advanced',
       icon: 'bi-lightning',
       color: '#dc3545',
       route: '/courses/jee',
-      description: 'Practice JEE Advanced questions'
+      description: 'Practice JEE Advanced questions',
+      apiEndpoint: `${API_URL}/api/jee_scores`,
+      dataPath: '',
+      scoreKey: 'score',
+      topicKey: 'subject',
+      timestampKey: 'dateAttempted'
     },
     {
       id: 'sat',
@@ -113,7 +164,12 @@ const Dashboard = () => {
       icon: 'bi-book',
       color: '#003D8F',
       route: '/courses/sat',
-      description: 'SAT preparation & practice'
+      description: 'SAT preparation & practice',
+      apiEndpoint: `${API_URL}/api/sat_scores`,
+      dataPath: '',
+      scoreKey: 'score',
+      topicKey: 'subject',
+      timestampKey: 'dateAttempted'
     }
   ]
 
@@ -140,64 +196,107 @@ const Dashboard = () => {
       })
       
       setUser(dashboardResponse.data)
+      const userEmail = dashboardResponse.data.email
 
-      // Fetch progress for all courses
+      // Fetch progress for all courses with their specific endpoints
       const progressData = {}
+      const allActivities = []
+
       for (const course of allCourses) {
         try {
-          const response = await axios.get(`${API_URL}/api/mcq-quiz/attempts?email=${dashboardResponse.data.email}&course=${course.id}`, {
+          let response
+          let attempts = []
+          
+          // Build the API URL with email parameter
+          let apiUrl = course.apiEndpoint
+          if (!apiUrl.includes('?') && !apiUrl.includes('email')) {
+            // If no query params, add email
+            apiUrl = `${apiUrl}?email=${userEmail}`
+          } else if (!apiUrl.includes('email')) {
+            // If has query params but no email, add email
+            apiUrl = `${apiUrl}&email=${userEmail}`
+          }
+
+          response = await axios.get(apiUrl, {
             withCredentials: true
           })
-          
-          if (response.data?.attempts?.length > 0) {
-            const attempts = response.data.attempts
-            const avgScore = Math.round(
-              attempts.reduce((sum, a) => sum + (a.percentage || 0), 0) / attempts.length
-            )
-            const totalWeeks = course.id === 'python' ? 10 : 
-                             course.id === 'java' ? 12 :
-                             course.id === 'dbms' ? 8 :
-                             course.id === 'pdsa' ? 12 : 0
+
+          // Extract attempts based on data path
+          if (course.dataPath) {
+            const pathParts = course.dataPath.split('.')
+            let data = response.data
+            for (const part of pathParts) {
+              data = data?.[part]
+            }
+            attempts = Array.isArray(data) ? data : []
+          } else {
+            // For JEE, SAT which return array directly
+            attempts = Array.isArray(response.data) ? response.data : []
+          }
+
+          if (attempts.length > 0) {
+            // Calculate course progress
+            const scores = attempts.map(a => a[course.scoreKey] || 0)
+            const avgScore = Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length)
             
+            // Get unique weeks/topics
+            const uniqueTopics = new Set(attempts.map(a => a[course.topicKey] || '')).size
+            
+            // Total weeks estimate based on course type
+            let totalWeeks = 0
+            if (['python', 'java', 'dbms', 'sql', 'dsa'].includes(course.id)) {
+              totalWeeks = course.id === 'python' ? 10 : course.id === 'java' ? 12 : course.id === 'dbms' ? 8 : 10
+            } else if (['math', 'math2', 'statistics', 'statistics2', 'computational-thinking'].includes(course.id)) {
+              totalWeeks = 12
+            } else {
+              totalWeeks = 10
+            }
+
+            const progress = totalWeeks > 0 ? Math.round((uniqueTopics / totalWeeks) * 100) : 50
+
             progressData[course.id] = {
               attempts: attempts.length,
               averageScore: avgScore,
-              weeksAttempted: new Set(attempts.map(a => a.week)).size,
+              weeksAttempted: uniqueTopics,
               totalWeeks: totalWeeks,
-              lastAttempt: attempts[attempts.length - 1]?.datetime || null,
-              progress: totalWeeks > 0 ? Math.round((new Set(attempts.map(a => a.week)).size / totalWeeks) * 100) : 0,
-              course: course // Store course info
+              lastAttempt: attempts[attempts.length - 1]?.[course.timestampKey] || new Date().toISOString(),
+              progress: Math.min(progress, 100),
+              course: course,
+              latestScore: scores[scores.length - 1] || 0
             }
+
+            // Add to recent activities
+            allActivities.push({
+              course: course.title,
+              courseId: course.id,
+              date: attempts[attempts.length - 1]?.[course.timestampKey] || new Date().toISOString(),
+              score: scores[scores.length - 1] || 0,
+              action: `Completed ${attempts.length} quiz${attempts.length > 1 ? 'zes' : ''}`
+            })
           }
         } catch (error) {
           // Course not started or error - skip it
+          console.log(`No data for ${course.id}:`, error.message)
         }
       }
+
       setCourseProgress(progressData)
 
-      // Fetch streak
-      const streakResponse = await axios.get(`${API_URL}/api/login-history?email=${dashboardResponse.data.email}`, {
-        withCredentials: true
-      })
-      const loginHistory = streakResponse.data?.loginHistory || []
-      const calculatedStreak = calculateStreak(loginHistory)
-      setStreak(calculatedStreak)
+      // Sort activities by date and get most recent
+      allActivities.sort((a, b) => new Date(b.date) - new Date(a.date))
+      setRecentActivity(allActivities.slice(0, 5))
 
-      // Generate recent activity from courses that have been started
-      const activities = []
-      Object.values(progressData).forEach(progress => {
-        if (progress && progress.attempts > 0 && progress.course) {
-          activities.push({
-            course: progress.course.title,
-            courseId: progress.course.id,
-            date: progress.lastAttempt || new Date().toISOString(),
-            score: progress.averageScore,
-            action: `Completed ${progress.attempts} quiz${progress.attempts > 1 ? 'zes' : ''}`
-          })
-        }
-      })
-      activities.sort((a, b) => new Date(b.date) - new Date(a.date))
-      setRecentActivity(activities.slice(0, 5))
+      // Fetch streak
+      try {
+        const streakResponse = await axios.get(`${API_URL}/api/login-history?email=${userEmail}`, {
+          withCredentials: true
+        })
+        const loginHistory = streakResponse.data?.loginHistory || []
+        const calculatedStreak = calculateStreak(loginHistory)
+        setStreak(calculatedStreak)
+      } catch (error) {
+        console.log('Error fetching streak:', error.message)
+      }
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
@@ -238,7 +337,6 @@ const Dashboard = () => {
     if (progress >= 25) return 'info'
     return 'secondary'
   }
-
 
   if (loading) {
     return (
@@ -414,7 +512,7 @@ const Dashboard = () => {
                           <div className="course-stats">
                             <div className="stat-item">
                               <i className="bi bi-check-circle-fill text-success"></i>
-                              <span>{progress.weeksAttempted || 0} weeks</span>
+                              <span>{progress.weeksAttempted || 0} topics</span>
                             </div>
                             <div className="stat-item">
                               <i className="bi bi-star-fill" style={{ color: getScoreColor(progress.averageScore) }}></i>
@@ -450,8 +548,6 @@ const Dashboard = () => {
               </div>
             )}
           </div>
-
-          
         </div>
       </div>
 
@@ -668,7 +764,6 @@ const Dashboard = () => {
           color: #495057;
         }
 
-        
         @media (max-width: 992px) {
           .col-lg-9 {
             margin-bottom: 30px;
