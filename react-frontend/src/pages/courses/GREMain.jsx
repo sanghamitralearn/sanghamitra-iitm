@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import { STAGES } from './GREFullTest'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
@@ -17,6 +18,16 @@ const SECTION_STYLE = {
     icon: 'bi-calculator-fill', short: 'Quant',
   },
 }
+
+// A full-test attempt only ever draws the fixed question set defined by GREFullTest's
+// STAGES (currently 51: 24 Verbal + 27 Quant) — NOT the whole question bank, which
+// /api/gre_papers aggregates over (and can be far larger, e.g. 100). +1 mark per
+// question, no negative marking, so marks == question count.
+const FULL_TEST_SECTION_COUNTS = STAGES.reduce((acc, s) => {
+  acc[s.subject] = (acc[s.subject] || 0) + s.questionCount
+  return acc
+}, {})
+const FULL_TEST_TOTAL_QUESTIONS = STAGES.reduce((sum, s) => sum + s.questionCount, 0)
 
 // Extract 4-digit year for grouping; fall back to paper name itself
 function extractGroupYear(year, paper) {
@@ -293,14 +304,14 @@ const GREMain = () => {
                               <div className="col-6">
                                 <div className="p-2 rounded text-center"
                                   style={{ background: '#f0fff4', border: '1px solid #c3e6cb' }}>
-                                  <div className="fw-bold fs-5" style={{ color: '#28a745' }}>{p.totalQuestions}</div>
+                                  <div className="fw-bold fs-5" style={{ color: '#28a745' }}>{FULL_TEST_TOTAL_QUESTIONS}</div>
                                   <div className="text-muted" style={{ fontSize: '0.68rem' }}>Questions</div>
                                 </div>
                               </div>
                               <div className="col-6">
                                 <div className="p-2 rounded text-center"
                                   style={{ background: '#fff3cd', border: '1px solid #ffc107' }}>
-                                  <div className="fw-bold fs-5" style={{ color: '#856404' }}>{p.totalMarks}</div>
+                                  <div className="fw-bold fs-5" style={{ color: '#856404' }}>{FULL_TEST_TOTAL_QUESTIONS}</div>
                                   <div className="text-muted" style={{ fontSize: '0.68rem' }}>Max Marks</div>
                                 </div>
                               </div>
@@ -432,8 +443,8 @@ const GREMain = () => {
               <div className="row g-2 mb-4">
                 {[
                   { icon: 'bi-journal-text',    color: ACCENT,    label: 'Paper',           value: selectedPaper.paper || 'GRE Practice Test' },
-                  { icon: 'bi-question-circle', color: '#6610f2', label: 'Total Questions', value: selectedPaper.totalQuestions ?? 51 },
-                  { icon: 'bi-trophy',          color: '#ffc107', label: 'Total Marks',     value: selectedPaper.totalMarks ?? 51 },
+                  { icon: 'bi-question-circle', color: '#6610f2', label: 'Total Questions', value: FULL_TEST_TOTAL_QUESTIONS },
+                  { icon: 'bi-trophy',          color: '#ffc107', label: 'Total Marks',     value: FULL_TEST_TOTAL_QUESTIONS },
                   { icon: 'bi-clock',           color: '#28a745', label: 'Duration',        value: '~1h 23m' },
                   { icon: 'bi-check2-circle',   color: '#198754', label: 'Correct Answer',  value: '+1 mark' },
                   { icon: 'bi-dash-circle',     color: '#6c757d', label: 'Wrong Answer',    value: '0 (no penalty)' },
@@ -456,9 +467,8 @@ const GREMain = () => {
               </h6>
               <div className="mb-4">
                 {Object.entries(SECTION_STYLE).map(([sec, s]) => {
-                  const info  = selectedPaper.subjects?.[sec] || { count: 0, totalMarks: 0 }
-                  const total = selectedPaper.totalQuestions || 1
-                  const barW  = Math.round(((info.count || 0) / total) * 100)
+                  const count = FULL_TEST_SECTION_COUNTS[sec] || 0
+                  const barW  = Math.round((count / FULL_TEST_TOTAL_QUESTIONS) * 100)
                   return (
                     <div key={sec} className="mb-2">
                       <div className="d-flex justify-content-between align-items-center mb-1">
@@ -468,11 +478,11 @@ const GREMain = () => {
                         <div className="d-flex gap-2">
                           <span className="badge"
                             style={{ background: `${s.color}18`, color: s.color, border: `1px solid ${s.color}44`, fontSize: '0.68rem' }}>
-                            {info.count ?? 0} Questions
+                            {count} Questions
                           </span>
                           <span className="badge"
                             style={{ background: `${s.color}18`, color: s.color, border: `1px solid ${s.color}44`, fontSize: '0.68rem' }}>
-                            {info.totalMarks ?? 0} Marks
+                            {count} Marks
                           </span>
                         </div>
                       </div>
