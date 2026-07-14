@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom'
 import axios from 'axios'
 import CodingReview from './CodingReview'
+import Editor from '@monaco-editor/react'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
@@ -42,6 +43,7 @@ const CodingPage = () => {
   const [submitted, setSubmitted] = useState(false)
   const [results, setResults] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [javaError, setJavaError] = useState(null)
 
   const userRef = useRef(null)
 
@@ -54,6 +56,12 @@ const CodingPage = () => {
   const sqlJsRef = useRef(null)
   const [sqlReady, setSqlReady] = useState(false)
   const [sqlLoading, setSqlLoading] = useState(false)
+
+  // Java: executed via Piston API (server-side proxy), no client runtime to load
+  const [javaRunning, setJavaRunning] = useState(false)
+
+  // Editor ref for advanced operations
+  const editorRef = useRef(null)
 
   useEffect(() => { checkAuth() }, [])
 
@@ -73,25 +81,44 @@ const CodingPage = () => {
     try {
       setLoading(true)
       const res = await axios.get(
-        `${API}/api/coding-questions?course=${course}&week=${weekNum}`,
+        `${API}/api/coding-questions?course=${course}&week=${weekNum}&limitPerDifficulty=2`,
         { withCredentials: true }
       )
       const qs = res.data.questions || []
-      if (!qs.length) { setError(`No coding questions found for ${course} Week ${weekNum}.`); return }
-      setQuestions(qs)
+      const meta = res.data.meta || {}
+      
+      console.log('📊 Questions fetched:', {
+        total: qs.length,
+        difficulties: meta.difficulties || {},
+        questions: qs.map(q => ({ title: q.title, difficulty: q.difficulty }))
+      })
+      
+      if (!qs.length) { 
+        setError(`No coding questions found for ${course} Week ${weekNum}.`)
+        setLoading(false)
+        return 
+      }
+      
+      const formattedQs = qs.map(q => ({
+        ...q,
+        testCases: q.test_cases || q.testCases || []
+      }))
+      
+      setQuestions(formattedQs)
 
       const initCodes = {}
-      qs.forEach(q => {
+      formattedQs.forEach(q => {
         initCodes[q._id] = q.starter_code || defaultStarter(q)
       })
       setCodes(initCodes)
 
-      // Lazily load runtimes needed for the languages present
-      const languages = new Set(qs.map(q => q.language))
+      const languages = new Set(formattedQs.map(q => q.language))
       if (languages.has('python')) loadPyodide()
       if (languages.has('sql')) loadSqlJs()
-    } catch {
+      
+    } catch (err) {
       setError('Failed to load coding questions. Please try again.')
+      console.error('Fetch error:', err)
     } finally {
       setLoading(false)
     }
@@ -100,7 +127,7 @@ const CodingPage = () => {
   const defaultStarter = (q) => {
     if (q.language === 'python') return `def ${q.expected_function_name || 'solution'}():\n    pass\n`
     if (q.language === 'sql') return '-- write your SQL query here\n'
-    if (q.language === 'java') return `public class Solution {\n    // write your code here\n}\n`
+    if (q.language === 'java') return `import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // write your code here\n        // read input with sc.nextLine(), sc.nextInt(), etc.\n        // print output with System.out.println()\n    }\n}\n`
     return ''
   }
 
@@ -120,6 +147,7 @@ const CodingPage = () => {
         setPyodideReady(true)
       } catch (e) {
         console.error('Pyodide load error:', e)
+        setPyodideLoading(false)
       } finally {
         setPyodideLoading(false)
       }
@@ -161,6 +189,7 @@ for _k in list(globals().keys()):
         setSqlReady(true)
       } catch (e) {
         console.error('sql.js load error:', e)
+        setSqlLoading(false)
       } finally {
         setSqlLoading(false)
       }
@@ -236,6 +265,148 @@ for _k in list(globals().keys()):
     return out
   }
 
+  const runJavaTests = async (q, code) => {
+    console.log('🔍 Running Java tests for question:', q._id);
+    const out = []
+    
+    if (!code || code.trim() === '') {
+      out.push({
+        testcase_number: 0,
+        input: '',
+        expected_output: '',
+        output: null,
+        passed: false,
+        is_hidden: false,
+        error: 'No code provided'
+      });
+      return out;
+    }
+
+    let testCases = q.testCases || q.test_cases || [];
+    
+    if (testCases.length === 0) {
+      const expectedOutput = q.expected_output || 'Alice';
+      testCases = [{
+        testcase_number: 1,
+        input: '',
+        expected_output: expectedOutput,
+        is_hidden: false,
+        is_sample: true,
+        weightage: 1
+      }];
+    }
+    
+    const hasMainClass = code.includes('public class Main');
+    let fullCode = code;
+    
+    if (!hasMainClass) {
+      if (code.includes('public class Student')) {
+        fullCode = code + `
+
+public class Main {
+    public static void main(String[] args) {
+        try {
+            Student student = new Student("Alice", 20);
+            String result = student.getName();
+            System.out.println(result);
+        } catch (Exception e) {
+            System.err.println("Runtime Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+}`;
+      } else {
+        fullCode = code + `
+
+public class Main {
+    public static void main(String[] args) {
+        try {
+            // Test execution
+            System.out.println("Test execution completed");
+        } catch (Exception e) {
+            System.err.println("Runtime Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+}`;
+      }
+    }
+    
+    for (const tc of testCases) {
+      try {
+        const response = await axios.post(
+          `${API}/api/run-code`,
+          { 
+            language: 'java', 
+            source: fullCode, 
+            stdin: tc.input || '' 
+          },
+          { 
+            withCredentials: true,
+            timeout: 30000
+          }
+        );
+        
+        const stdout = response.data.stdout || '';
+        const stderr = response.data.stderr || '';
+        const compile_output = response.data.compile_output || '';
+        
+        if (compile_output) {
+          out.push({
+            testcase_number: tc.testcase_number,
+            input: tc.input,
+            expected_output: tc.expected_output,
+            output: null,
+            passed: false,
+            is_hidden: tc.is_hidden,
+            error: `Compilation error:\n${compile_output}`
+          });
+          continue;
+        }
+        
+        if (stderr) {
+          out.push({
+            testcase_number: tc.testcase_number,
+            input: tc.input,
+            expected_output: tc.expected_output,
+            output: null,
+            passed: false,
+            is_hidden: tc.is_hidden,
+            error: `Runtime error:\n${stderr}`
+          });
+          continue;
+        }
+        
+        const actual = stdout.trim();
+        const expected = (tc.expected_output || '').trim();
+        const passed = actual === expected;
+        
+        out.push({
+          testcase_number: tc.testcase_number,
+          input: tc.input,
+          expected_output: tc.expected_output,
+          output: actual || '',
+          passed: passed,
+          is_hidden: tc.is_hidden,
+          error: null
+        });
+        
+      } catch (error) {
+        out.push({
+          testcase_number: tc.testcase_number,
+          input: tc.input,
+          expected_output: tc.expected_output,
+          output: null,
+          passed: false,
+          is_hidden: tc.is_hidden,
+          error: error.response?.data?.error || error.message || 'Unknown error occurred'
+        });
+      }
+    }
+    
+    return out;
+  }
+
   const runTestsForQuestion = async (q, code) => {
     if (q.language === 'python') {
       if (!pyodideReady || !pyodideRef.current) return null
@@ -245,24 +416,52 @@ for _k in list(globals().keys()):
       if (!sqlReady || !sqlJsRef.current) return null
       return runSqlTests(q, code)
     }
-    return null // java: no client-side execution available
+    if (q.language === 'java') {
+      return runJavaTests(q, code)
+    }
+    return null
+  }
+
+  const runtimeReadyFor = (q) => {
+    if (q.language === 'python') return pyodideReady
+    if (q.language === 'sql') return sqlReady
+    return true
   }
 
   const runTests = async () => {
     const q = questions[currentIndex]
-    if (!q) return
-    if (q.language === 'java') {
-      alert('Auto-grading for Java is not available yet. Your code will be saved for manual review on submit.')
+    if (!q) {
+      console.error('No question found at index:', currentIndex);
+      return;
+    }
+    
+    if (!runtimeReadyFor(q)) {
+      alert('Runtime is still loading. Please wait a moment.')
       return
     }
-    if ((q.language === 'python' && !pyodideReady) || (q.language === 'sql' && !sqlReady)) {
-      alert('The runtime for this language is still loading. Please wait a moment.')
-      return
-    }
+    
     setRunningTests(true)
-    const out = await runTestsForQuestion(q, codes[q._id] || '')
-    if (out) setTestResults(prev => ({ ...prev, [q._id]: out }))
-    setRunningTests(false)
+    setJavaError(null)
+    
+    try {
+      if (q.language === 'java') setJavaRunning(true)
+      
+      const out = await runTestsForQuestion(q, codes[q._id] || '')
+      
+      if (out) {
+        setTestResults(prev => ({ ...prev, [q._id]: out }))
+        console.log('✅ Test results saved:', out);
+      } else {
+        console.error('❌ No test results returned');
+        setJavaError('Failed to run tests. Please try again.');
+      }
+    } catch (error) {
+      console.error('❌ Error running tests:', error);
+      setJavaError(error.message || 'Failed to run tests');
+    } finally {
+      setRunningTests(false)
+      setJavaRunning(false)
+    }
   }
 
   // ─── Submit ──────────────────────────────────────────────────────────────
@@ -278,14 +477,14 @@ for _k in list(globals().keys()):
       const code = codes[q._id] || ''
       let qResults = testResults[q._id]
 
-      if (!qResults && q.language !== 'java') {
+      if (!qResults) {
         qResults = await runTestsForQuestion(q, code)
         if (qResults) setTestResults(prev => ({ ...prev, [q._id]: qResults }))
       }
 
       let verdict, passed, total, score, percentage
 
-      if (q.language === 'java' || !qResults) {
+      if (!qResults) {
         verdict = 'Pending Review'
         passed = 0
         total = (q.testCases || []).length
@@ -322,7 +521,15 @@ for _k in list(globals().keys()):
         total_testcases: total,
         score,
         percentage,
-        topic: q.topic
+        topic: q.topic,
+        test_case_results: qResults ? qResults.map(r => ({
+          testcase_number: r.testcase_number,
+          passed: r.passed,
+          output: r.output,
+          expected_output: r.expected_output,
+          error: r.error,
+          is_hidden: r.is_hidden
+        })) : []
       })
     }
 
@@ -363,6 +570,45 @@ for _k in list(globals().keys()):
     fetchQuestions()
   }
 
+  // ─── Editor mount handler ──────────────────────────────────────────────
+  const handleEditorMount = (editor, monaco) => {
+    editorRef.current = editor
+    
+    editor.updateOptions({
+      bracketPairColorization: { enabled: true },
+      autoClosingBrackets: 'always',
+      autoIndent: 'full',
+      formatOnPaste: true,
+      formatOnType: true,
+      lineNumbers: 'on',
+      renderWhitespace: 'selection',
+      smoothScrolling: true,
+      cursorBlinking: 'smooth',
+      cursorSmoothCaretAnimation: true,
+    })
+
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+      // Prevent default save
+    })
+
+    editor.onDidPaste(() => {
+      editor.getAction('editor.action.formatDocument')?.run()
+    })
+  }
+
+  // ─── Editor language mapping ──────────────────────────────────────────
+  const getEditorLanguage = (lang) => {
+    const map = {
+      'python': 'python',
+      'sql': 'sql',
+      'java': 'java',
+      'javascript': 'javascript',
+      'cpp': 'cpp',
+      'c': 'c'
+    }
+    return map[lang] || 'plaintext'
+  }
+
   // ─── Render states ───────────────────────────────────────────────────────
   if (loading) return (
     <div className="d-flex justify-content-center align-items-center" style={{ height: '60vh' }}>
@@ -389,8 +635,9 @@ for _k in list(globals().keys()):
   const q = questions[currentIndex]
   const code = codes[q._id] || ''
   const qResults = testResults[q._id] || []
-  const runtimeReady = q.language === 'python' ? pyodideReady : q.language === 'sql' ? sqlReady : true
+  const runtimeReady = runtimeReadyFor(q)
   const runtimeLoading = q.language === 'python' ? pyodideLoading : q.language === 'sql' ? sqlLoading : false
+  const editorLanguage = getEditorLanguage(q.language)
 
   return (
     <main className="main">
@@ -413,143 +660,329 @@ for _k in list(globals().keys()):
       </div>
 
       <div className="container mb-5" style={{ maxWidth: 1200 }}>
-        {/* Header */}
+        {/* Header with question info and difficulty badges */}
         <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-          <span className="text-muted small">Question {currentIndex + 1} of {questions.length}</span>
+          <div className="d-flex align-items-center gap-3">
+            <span className="text-muted small">Question {currentIndex + 1} of {questions.length}</span>
+            
+            {/* ✅ Difficulty distribution badges */}
+            <div className="d-flex gap-1">
+              <span className="badge bg-success">
+                Easy: {questions.filter(q => q.difficulty === 'easy').length}
+              </span>
+              <span className="badge bg-warning text-dark">
+                Medium: {questions.filter(q => q.difficulty === 'medium').length}
+              </span>
+              <span className="badge bg-danger">
+                Hard: {questions.filter(q => q.difficulty === 'hard').length}
+              </span>
+            </div>
+          </div>
+          
           <div className="d-flex gap-2 align-items-center flex-wrap">
             <span className="badge bg-primary">{q.language}</span>
-            {q.difficulty && <span className="badge bg-light text-dark border">{q.difficulty}</span>}
+            {q.difficulty && (
+              <span className={`badge ${
+                q.difficulty === 'easy' ? 'bg-success' : 
+                q.difficulty === 'medium' ? 'bg-warning text-dark' : 
+                'bg-danger'
+              }`}>
+                {q.difficulty}
+              </span>
+            )}
             <span className="badge bg-light text-dark border">{q.points || 10} pts</span>
           </div>
         </div>
 
         {(pyodideLoading || sqlLoading) && (
-          <div className="alert alert-info d-flex align-items-center gap-2 mb-3">
+          <div className="alert alert-info d-flex align-items-center gap-2 ">
             <span className="spinner-border spinner-border-sm"></span>
             <span>Loading {pyodideLoading ? 'Python' : 'SQL'} environment… this may take a moment.</span>
           </div>
         )}
+        {javaRunning && (
+          <div className="alert alert-secondary d-flex align-items-center gap-2 mb-3">
+            <span className="spinner-border spinner-border-sm"></span>
+            <span>Running Java code on server… please wait.</span>
+          </div>
+        )}
+        {javaError && (
+          <div className="alert alert-danger d-flex align-items-center gap-2 mb-3">
+            <i className="bi bi-exclamation-triangle-fill"></i>
+            <span>{javaError}</span>
+          </div>
+        )}
 
+        {/* ✅ MODIFIED: Stacked layout - Problem panel on top, Code editor below */}
         <div className="row g-3">
-          {/* Problem panel */}
-          <div className="col-lg-5">
-            <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12 }}>
+          {/* Problem panel - TOP */}
+          <div className="col-12">
+            <div className="card border-0 shadow-sm" style={{ borderRadius: 12 }}>
               <div className="card-body p-4">
-                <div className="d-flex justify-content-between align-items-start mb-2">
+                <div className="d-flex justify-content-between align-items-start mb-3">
                   <h5 className="mb-0">{q.title || `Question ${currentIndex + 1}`}</h5>
+                  <button 
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={() => {
+                      // Regenerate questions
+                      if (confirm('Generate new set of questions?')) {
+                        setSubmitted(false)
+                        setResults(null)
+                        setCurrentIndex(0)
+                        setTestResults({})
+                        fetchQuestions()
+                      }
+                    }}
+                    title="Get a new set of random questions"
+                  >
+                    🔄 New Set
+                  </button>
                 </div>
-                <p style={{ whiteSpace: 'pre-wrap', fontSize: '0.95rem', lineHeight: 1.7 }}>{q.question_text}</p>
-
-                {q.input_description && (
-                  <p className="small mb-1"><strong>Input:</strong> {q.input_description}</p>
-                )}
-                {q.output_description && (
-                  <p className="small mb-2"><strong>Output:</strong> {q.output_description}</p>
-                )}
-
-                {Array.isArray(q.constraints) && q.constraints.length > 0 && (
-                  <>
-                    <h6 className="mt-3 mb-1">Constraints:</h6>
-                    <ul className="small mb-2">
-                      {q.constraints.map((c, i) => <li key={i}>{c}</li>)}
-                    </ul>
-                  </>
-                )}
-
-                {Array.isArray(q.examples) && q.examples.length > 0 && (
-                  <>
-                    <h6 className="mt-3 mb-2">Examples:</h6>
-                    {q.examples.map((ex, i) => (
-                      <div key={i} className="small mb-2 p-2 rounded" style={{ background: '#f8f9fa', fontFamily: 'monospace' }}>
-                        <div>Input: {ex.input}</div>
-                        <div>Output: {ex.output}</div>
-                        {ex.explanation && <div className="text-muted">Explanation: {ex.explanation}</div>}
-                      </div>
-                    ))}
-                  </>
-                )}
-
+                <div style={{ 
+                  whiteSpace: 'pre-wrap', 
+                  fontSize: '1.05rem', 
+                  lineHeight: 1.8,
+                  background: '#f8f9fa',
+                  padding: '1rem',
+                  borderRadius: 8,
+                  border: '1px solid #e9ecef'
+                }}>
+                  {q.question_text}
+                </div>
+                
                 {/* Sample test cases */}
-                {Array.isArray(q.testCases) && q.testCases.some(tc => !tc.is_hidden) && (
+                {Array.isArray(q.testCases || q.test_cases) && 
+                  (q.testCases || q.test_cases).some(tc => !tc.is_hidden) && (
                   <>
-                    <h6 className="mt-3 mb-2">Sample Test Cases:</h6>
-                    {q.testCases.filter(tc => !tc.is_hidden).map((tc, i) => {
-                      const result = qResults.find(r => r.testcase_number === tc.testcase_number)
-                      return (
-                        <div key={i} className="small mb-2 p-2 rounded" style={{ background: '#f8f9fa', fontFamily: 'monospace' }}>
-                          {tc.input && <div>Input: {tc.input}</div>}
-                          <div>Expected: {tc.expected_output}</div>
-                          {result && (
-                            <span className={`badge mt-1 ${result.passed ? 'bg-success' : 'bg-danger'}`}>
-                              {result.passed ? '✓ Passed' : `✗ Got: ${result.output ?? result.error}`}
-                            </span>
-                          )}
-                        </div>
-                      )
-                    })}
+                    <h6 className="mt-4 mb-2">📋 Sample Test Cases:</h6>
+                    <div className="row g-2">
+                      {(q.testCases || q.test_cases).filter(tc => !tc.is_hidden).map((tc, i) => {
+                        const result = qResults.find(r => r.testcase_number === tc.testcase_number)
+                        return (
+                          <div key={i} className="col-md-6">
+                            <div className="p-2 rounded" style={{ 
+                              background: '#f8f9fa', 
+                              fontFamily: 'monospace', 
+                              fontSize: '0.9rem',
+                              border: '1px solid #e9ecef'
+                            }}>
+                              {tc.input && <div><strong>Input:</strong> {tc.input}</div>}
+                              <div><strong>Expected:</strong> {tc.expected_output}</div>
+                              {result && (
+                                <span className={`badge mt-1 ${result.passed ? 'bg-success' : 'bg-danger'}`}>
+                                  {result.passed ? '✓ Passed' : `✗ Got: ${result.output ?? result.error}`}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
                   </>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Code editor */}
-          <div className="col-lg-7">
+          {/* Code editor panel - BOTTOM */}
+          <div className="col-12">
             <div className="card border-0 shadow-sm" style={{ borderRadius: 12 }}>
-              <div className="card-body p-3">
+              <div className="card-body p-0">
                 <div className="d-flex justify-content-between align-items-center mb-2">
                   <h6 className="mb-0"><i className="bi bi-code-slash me-2"></i>Code ({q.language})</h6>
-                  {q.language === 'java'
-                    ? <small className="text-muted">Manual review</small>
-                    : runtimeReady
-                      ? <small className="text-success"><i className="bi bi-check-circle me-1"></i>Ready</small>
-                      : <small className="text-warning"><span className="spinner-border spinner-border-sm me-1"></span>Loading…</small>
-                  }
+                  
+                    {q.language === 'java'
+                      ? <small className="text-info"><i className="bi bi-cloud-arrow-up me-1"></i></small>
+                      : runtimeReady
+                        ? <small className="text-success"><i className="bi bi-check-circle me-1"></i>Ready</small>
+                        : <small className="text-warning"><span className="spinner-border spinner-border-sm me-1"></span>Loading…</small>
+                    }
+                  
                 </div>
-                <textarea
-                  style={{ width: '100%', minHeight: 320, fontFamily: 'JetBrains Mono, Consolas, monospace', fontSize: '0.88rem', background: '#1e1e1e', color: '#d4d4d4', border: 'none', borderRadius: 8, resize: 'vertical', padding: '12px', lineHeight: 1.6 }}
-                  value={code}
-                  onChange={e => setCodes(prev => ({ ...prev, [q._id]: e.target.value }))}
-                  spellCheck={false}
-                />
-                <div className="d-flex justify-content-between mt-2">
-                  <button className="btn btn-sm btn-outline-secondary"
-                    onClick={() => setCodes(prev => ({ ...prev, [q._id]: q.starter_code || defaultStarter(q) }))}>
-                    Reset Code
-                  </button>
+                
+                {/* ✅ Monaco Editor with grey background */}
+                <div style={{ 
+                  border: '1px solid #444', 
+                  borderRadius: 2, 
+                  overflow: 'hidden',
+                  height: '550px', // Slightly taller for better visibility
+                  background: '#9e9393' // Dark background for editor
+                }}>
+                  <Editor
+                    height="100%"
+                    language={editorLanguage}
+                    value={code}
+                    onChange={(value) => setCodes(prev => ({ ...prev, [q._id]: value || '' }))}
+                    onMount={handleEditorMount}
+                    // theme="github-light"  // vs-dark, hc-black, vs
+                    options={{
+                      // ✅ VS Code-like features
+                      minimap: { enabled: false },
+                      lineNumbers: 'on',
+                      lineNumbersMinChars: 3,
+                      bracketPairColorization: { enabled: true },
+                      autoClosingBrackets: 'always',
+                      autoIndent: 'full',
+                      formatOnPaste: true,
+                      formatOnType: true,
+                      tabSize: 4,
+                      insertSpaces: true,
+                      detectIndentation: true,
+                      automaticLayout: true,
+                      renderWhitespace: 'selection',
+                      smoothScrolling: true,
+                      cursorBlinking: 'smooth',
+                      cursorSmoothCaretAnimation: true,
+                      // ✅ INCREASED FONT SIZE
+                      fontFamily: 'JetBrains Mono, Consolas, "Courier New", monospace',
+                      fontSize: 18, // Increased from 13 to 16
+                      fontWeight: '400',
+                      fontLigatures: true,
+                      suggest: {
+                        showKeywords: true,
+                        showSnippets: true,
+                        showFunctions: true,
+                        showConstructors: true,
+                      },
+                      matchBrackets: 'always',
+                      renderIndentGuides: true,
+                      highlightActiveIndentGuide: true,
+                      colorDecorators: true,
+                      folding: true,
+                      foldingStrategy: 'auto',
+                      showFoldingControls: 'always',
+                      wordWrap: 'on',
+                      wrappingStrategy: 'advanced',
+                    }}
+                  />
+                </div>
+
+                <div className="d-flex justify-content-between ">
+                  <div className="d-flex">
+                    <button className="btn btn-sm btn-outline-secondary"
+                      onClick={() => setCodes(prev => ({ ...prev, [q._id]: q.starter_code || defaultStarter(q) }))}>
+                      🔄 Reset Code
+                    </button>
+                    <button className="btn btn-sm btn-outline-info"
+                      onClick={() => {
+                        if (editorRef.current) {
+                          editorRef.current.getAction('editor.action.formatDocument')?.run()
+                        }
+                      }}>
+                      📐 Format
+                    </button>
+                  </div>
                   <button className="btn btn-sm" style={{ background: '#17a2b8', color: 'white' }}
-                    onClick={runTests} disabled={runningTests || (q.language !== 'java' && !runtimeReady)}>
+                    onClick={runTests} disabled={runningTests || !runtimeReady}>
                     {runningTests ? <><span className="spinner-border spinner-border-sm me-1"></span>Running…</> : <>🧪 Run Tests</>}
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Navigation */}
-            <div className="d-flex justify-content-between align-items-center mt-3">
-              <button className="btn btn-outline-secondary" onClick={() => setCurrentIndex(i => Math.max(0, i - 1))} disabled={currentIndex === 0}>
+            {/* Test Results */}
+            <div className="card border-0 shadow-sm mt-3" style={{ borderRadius: 12 }}>
+              <div className="card-body p-3">
+                <h6 className="mb-3"><i className="bi bi-list-check me-2"></i>Test Results</h6>
+                {qResults.length === 0 && !runningTests && (
+                  <p className="text-muted small">Run tests to see results here.</p>
+                )}
+                {runningTests && (
+                  <div className="text-center py-3">
+                    <div className="spinner-border spinner-border-sm me-2" role="status" />
+                    <span className="small">Running tests...</span>
+                  </div>
+                )}
+                {qResults.length > 0 && !runningTests && (
+                  <div className="small">
+                    <div className="mb-3 p-2 rounded bg-light">
+                      <div className="d-flex justify-content-between align-items-center">
+                        <span>
+                          <strong>Summary:</strong> 
+                          <span className="text-success ms-2">✓ {qResults.filter(r => r.passed).length} passed</span>
+                          <span className="text-danger ms-2">✗ {qResults.filter(r => !r.passed).length} failed</span>
+                        </span>
+                        <span className="badge bg-secondary">
+                          {Math.round((qResults.filter(r => r.passed).length / qResults.length) * 100)}%
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {qResults.map((result, idx) => (
+                      <div key={idx} className={`p-2 mb-2 rounded ${result.passed ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10'}`}>
+                        <div className="d-flex justify-content-between">
+                          <span>
+                            <span className={`badge ${result.passed ? 'bg-success' : 'bg-danger'} me-2`}>
+                              {result.passed ? '✓' : '✗'}
+                            </span>
+                            Test Case #{result.testcase_number || idx + 1}
+                            {result.is_hidden && <span className="badge bg-secondary ms-1">Hidden</span>}
+                          </span>
+                          <span className={`fw-bold ${result.passed ? 'text-success' : 'text-danger'}`}>
+                            {result.passed ? 'PASSED' : 'FAILED'}
+                          </span>
+                        </div>
+                        {!result.passed && (
+                          <div className="mt-1">
+                            {result.error && (
+                              <div className="text-danger small" style={{ whiteSpace: 'pre-wrap' }}>
+                                <strong>Error:</strong> {result.error}
+                              </div>
+                            )}
+                            {result.output !== undefined && result.output !== null && (
+                              <div className="text-muted small">
+                                <strong>Got:</strong> <code className="bg-light px-1">{result.output || '(empty)'}</code>
+                              </div>
+                            )}
+                            {result.expected_output !== undefined && (
+                              <div className="text-muted small">
+                                <strong>Expected:</strong> <code className="bg-light px-1">{result.expected_output || '(empty)'}</code>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ✅ Navigation at the bottom */}
+            <div className="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+              <button className="btn btn-outline-secondary" 
+                onClick={() => setCurrentIndex(i => Math.max(0, i - 1))} 
+                disabled={currentIndex === 0}>
                 <i className="bi bi-arrow-left me-1" />Prev
               </button>
-              <div className="d-flex gap-1 flex-wrap">
+              
+              <div className="d-flex gap-1 flex-wrap justify-content-center">
                 {questions.map((qq, i) => {
                   const r = testResults[qq._id]
                   const done = !!r
                   const allPass = done && r.every(x => x.passed)
+                  const isCurrent = i === currentIndex
+                  let btnClass = 'btn-outline-secondary'
+                  if (isCurrent) btnClass = 'btn-primary'
+                  else if (done && allPass) btnClass = 'btn-success'
+                  else if (done) btnClass = 'btn-warning'
+                  
                   return (
                     <button key={i} onClick={() => setCurrentIndex(i)}
-                      className={`btn btn-sm rounded-circle p-0 ${i === currentIndex ? 'btn-primary' : done ? (allPass ? 'btn-success' : 'btn-warning') : 'btn-outline-secondary'}`}
-                      style={{ width: 32, height: 32, fontSize: '0.78rem' }}>
+                      className={`btn btn-sm rounded-circle p-0 ${btnClass}`}
+                      style={{ width: 36, height: 36, fontSize: '0.85rem', fontWeight: isCurrent ? 'bold' : 'normal' }}>
                       {i + 1}
                     </button>
                   )
                 })}
               </div>
+              
               {currentIndex < questions.length - 1
                 ? <button className="btn btn-primary" onClick={() => setCurrentIndex(i => i + 1)}>
                     Next<i className="bi bi-arrow-right ms-1" />
                   </button>
                 : <button className="btn btn-success" onClick={handleSubmit} disabled={saving}>
-                    {saving ? <><span className="spinner-border spinner-border-sm me-2" />Submitting…</> : <><i className="bi bi-check-lg me-1" />Submit</>}
+                    {saving ? <><span className="spinner-border spinner-border-sm me-2" />Submitting…</> : <><i className="bi bi-check-lg me-1" />Submit All</>}
                   </button>
               }
             </div>
