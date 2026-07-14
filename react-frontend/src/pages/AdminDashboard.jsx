@@ -741,7 +741,8 @@ const AdminDashboard = () => {
                         <Link to="/admin/gate-da" className="btn w-100 text-white" style={{ background: '#20c997', borderColor: '#20c997' }}>
                           <i className="bi bi-cpu-fill me-2"></i>GATE DA
                         </Link>
-                    </div>
+                      </div>
+                    </div>     
                   </div>
                 </div>
               </div>
@@ -750,6 +751,7 @@ const AdminDashboard = () => {
         </div>
       </div>
     </>
+
   )
 }
 
