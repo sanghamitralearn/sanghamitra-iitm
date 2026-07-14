@@ -98,6 +98,20 @@ import CoursePage from './pages/courses/Programming_Courses/CoursePage'
 import QuizPage from './pages/courses/Programming_Courses/QuizPage'
 import CodingPage from './pages/courses/Programming_Courses/CodingPage'
 
+//gate da
+
+import GATEDA from './pages/courses/GATEDA'
+import GATEDAMain from './pages/courses/GATEDAMain'
+import GATEDAQuiz from './pages/courses/GATEDAQuiz'
+import GATEDAFullTest from './pages/courses/GATEDAFullTest'
+import GATEDADashboard from './pages/GATEDADashboard'
+import GATEDAExamAnalysis from './pages/GATEDAExamAnalysis'
+import GATEDAAnalysis from './pages/GATEDAAnalysis'
+import GATEDAScoreDashboard from './pages/courses/GATEDAScoreDashboard'
+
+
+
+       
 //gre 
 import GRE from './pages/courses/GRE'
 import GREMain from './pages/courses/GREMain'
@@ -228,6 +242,19 @@ function App() {
             <Route path="/admin/gre" element={<GREDashboard />} />
             <Route path="/courses/gre/ScoreDashboard" element={<GREScoreDashboard />} />
             <Route path="/admin/gre/exam/:email/:subject/:attemptNumber" element={<GREExamAnalysis />} />
+
+
+            {/* GATE DA — paper listing (like SAT) + module-based quizzes, with negative marking */}
+            <Route path="/courses/gate-da" element={<GATEDAMain />} />
+            <Route path="/courses/gate-da/modules" element={<GATEDA />} />
+            <Route path="/courses/gate-da/quiz/:section/:module" element={<GATEDAQuiz />} />
+            <Route path="/courses/gate-da/full-test" element={<GATEDAFullTest />} />
+            <Route path="/courses/gate-da/analysis" element={<GATEDAAnalysis />} />
+            <Route path="/admin/gate-da" element={<GATEDADashboard />} />
+            <Route path="/courses/gate-da/ScoreDashboard" element={<GATEDAScoreDashboard />} />
+            <Route path="/admin/gate-da/exam/:email/:subject/:attemptNumber" element={<GATEDAExamAnalysis />} />
+
+            
 
 
             {/* DBMS COURSE */}
