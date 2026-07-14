@@ -5116,6 +5116,197 @@ router.get('/gate_da_full_scores', async (req, res) => {
   }
 })
 
+// GET /api/gate_da_admin_scores — all attempts per student, grouped by email (for admin dashboard)
+// Merges standalone module practice (GateDaScore) with Full GATE DA Test sessions (GateDaFullScore)
+router.get('/gate_da_admin_scores', async (req, res) => {
+  try {
+    const [moduleDocs, fullDocs] = await Promise.all([
+      GateDaScore.find({}).lean(),
+      GateDaFullScore.find({}).sort({ dateAttempted: 1 }).lean(),
+    ])
+    const byEmail = {}
+    const ensure = (email, name) => {
+      if (!byEmail[email]) byEmail[email] = { email, name, quizScores: [] }
+      return byEmail[email]
+    }
+
+    moduleDocs.forEach(doc => {
+      const bucket = ensure(doc.email, doc.name)
+      ;(doc.attempts || []).forEach((attempt, i) => {
+        const attempted = (attempt.correctAnswers || 0) + (attempt.wrongAnswers || 0)
+        const accuracy  = attempted > 0 ? Math.round((attempt.correctAnswers / attempted) * 100) : 0
+        const pct = attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0
+        bucket.quizScores.push({
+          type: 'Module',
+          topic: doc.subject,
+          subject: doc.subject,
+          source: attempt.source || 'Module',
+          score: attempt.score,
+          maxScore: attempt.maxScore,
+          correctAnswers: attempt.correctAnswers,
+          wrongAnswers: attempt.wrongAnswers,
+          unattempted: attempt.unattempted,
+          totalQuestions: attempt.totalQuestions,
+          percentage: pct,
+          accuracy,
+          responses: attempt.responses || [],
+          timestamp: attempt.dateAttempted,
+          attemptNumber: i + 1,
+        })
+      })
+    })
+
+    fullDocs.forEach((doc, i) => {
+      const bucket = ensure(doc.email, doc.name)
+      const pct = doc.maxScore > 0 ? Math.round((doc.score / doc.maxScore) * 100) : 0
+      bucket.quizScores.push({
+        type: 'FullTest',
+        attemptId: doc._id,
+        topic: [doc.year, doc.paper].filter(Boolean).join(' · ') || 'Full GATE DA Test',
+        paper: doc.paper,
+        year: doc.year,
+        score: doc.score,
+        maxScore: doc.maxScore,
+        correctAnswers: doc.correctAnswers,
+        wrongAnswers: doc.wrongAnswers,
+        unattempted: doc.unattempted,
+        totalQuestions: doc.totalQuestions,
+        percentage: pct,
+        sectionScores: doc.sectionScores,
+        totalTimeTaken: doc.totalTimeTaken,
+        timestamp: doc.dateAttempted,
+        attemptNumber: i + 1,
+      })
+    })
+
+    res.json({ success: true, data: Object.values(byEmail) })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// GET /api/gate_da_full_score_detail?email=...&attemptId=... — full detail for one Full GATE DA Test session (admin drill-down)
+router.get('/gate_da_full_score_detail', async (req, res) => {
+  try {
+    const { email, attemptId } = req.query
+    if (!email || !attemptId) {
+      return res.status(400).json({ success: false, message: 'email and attemptId are required' })
+    }
+    const doc = await GateDaFullScore.findOne({ _id: attemptId, email }).lean()
+    if (!doc) return res.status(404).json({ success: false, message: 'Attempt not found' })
+
+    res.json({
+      success: true,
+      data: {
+        _id: doc._id,
+        testType: 'full',
+        paper: doc.paper,
+        year: doc.year,
+        score: doc.score,
+        maxScore: doc.maxScore,
+        totalQuestions: doc.totalQuestions,
+        correctAnswers: doc.correctAnswers,
+        wrongAnswers: doc.wrongAnswers,
+        unattempted: doc.unattempted,
+        sectionScores: doc.sectionScores,
+        responses: doc.responses || [],
+        totalTimeTaken: doc.totalTimeTaken,
+        dateAttempted: doc.dateAttempted,
+        studentName: doc.name,
+        studentEmail: doc.email,
+      },
+    })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// GET /api/gate_da_exam_detail?email=...&subject=...&attemptNumber=... — question-by-question breakdown for one attempt
+router.get('/gate_da_exam_detail', async (req, res) => {
+  try {
+    const { email, subject, attemptNumber } = req.query
+    if (!email || !subject || !attemptNumber) {
+      return res.status(400).json({ success: false, message: 'email, subject, and attemptNumber are required' })
+    }
+
+    const doc = await GateDaScore.findOne({ email, subject }).lean()
+    if (!doc) return res.status(404).json({ success: false, message: 'Score record not found' })
+
+    const idx = parseInt(attemptNumber) - 1
+    const attempt = (doc.attempts || [])[idx]
+    if (!attempt) return res.status(404).json({ success: false, message: 'Attempt not found' })
+
+    const questionIds = (attempt.responses || []).map(r => r.questionId).filter(Boolean)
+    const questionMeta = await GateDaQuestion.find({ _id: { $in: questionIds } }).lean()
+    const metaMap = {}
+    questionMeta.forEach(q => { metaMap[String(q._id)] = q })
+
+    const enrichedResults = (attempt.responses || []).map((r, i) => {
+      const meta = metaMap[String(r.questionId)] || {}
+      return {
+        questionId:     r.questionId,
+        questionNumber: meta.question_number || i + 1,
+        questionText:   meta.question_text || '',
+        userAnswer:     r.userResponse,
+        correctAnswer:  meta.correct_answer,
+        isCorrect:      r.isCorrect,
+        marksAwarded:   r.marksAwarded,
+        difficulty:     meta.difficulty || null,
+        type:           meta.type || null,
+        options:        meta.options || [],
+        explanation:    meta.explanation || null,
+        points:         meta.points || 1,
+      }
+    })
+
+    const totalQuestions = attempt.totalQuestions || enrichedResults.length
+    const correctAnswers = attempt.correctAnswers || 0
+
+    const difficultyStats = { easy: { total: 0, correct: 0 }, medium: { total: 0, correct: 0 }, hard: { total: 0, correct: 0 }, unknown: { total: 0, correct: 0 } }
+    enrichedResults.forEach(r => {
+      const d = r.difficulty || 'unknown'
+      difficultyStats[d].total++
+      if (r.isCorrect) difficultyStats[d].correct++
+    })
+
+    const typeStats = {}
+    enrichedResults.forEach(r => {
+      const t = r.type || 'unknown'
+      if (!typeStats[t]) typeStats[t] = { total: 0, correct: 0 }
+      typeStats[t].total++
+      if (r.isCorrect) typeStats[t].correct++
+    })
+
+    res.json({
+      success: true,
+      data: {
+        student: { email: doc.email, name: doc.name },
+        attempt: {
+          subject:        doc.subject,
+          attemptNumber:  parseInt(attemptNumber),
+          dateAttempted:  attempt.dateAttempted,
+          score:          attempt.score,
+          maxScore:       attempt.maxScore,
+          totalQuestions,
+          correctAnswers,
+          wrongAnswers:   attempt.wrongAnswers,
+          unattempted:    attempt.unattempted,
+          percentage:     totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0,
+        },
+        enrichedResults,
+        insights: {
+          difficultyStats,
+          typeStats,
+          hardestQuestions: enrichedResults
+            .filter(r => !r.isCorrect && r.difficulty === 'hard')
+            .map(r => ({ questionNumber: r.questionNumber, questionText: r.questionText, explanation: r.explanation })),
+        },
+      }
+    })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
 
 
 // ─── JEE Questions ────────────────────────────────────────────────────────────
