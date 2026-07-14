@@ -565,8 +565,7 @@ const Home = () => {
 
 
 
-            {/* GRE Course Card */}
-      
+                    {/* GRE Course Card */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4" data-aos="zoom-in" data-aos-delay="500">
               <div className="course-item" style={{ width: '100%' }}>
                 <div style={{
@@ -580,7 +579,6 @@ const Home = () => {
                   position: 'relative',
                   overflow: 'hidden',
                 }}>
-
                   {/* Decorative circles */}
                   <div style={{
                     position: 'absolute', top: -35, right: -35,
@@ -592,7 +590,6 @@ const Home = () => {
                     width: 80, height: 80, borderRadius: '50%',
                     background: 'rgba(255,255,255,0.06)',
                   }} />
-
 
                   {/* Section icons */}
                   <div style={{ display: 'flex', gap: '22px', zIndex: 1 }}>
@@ -609,7 +606,6 @@ const Home = () => {
                       <div style={{ fontSize: '0.75rem', marginTop: 4 }}>Writing</div>
                     </div>
                   </div>
-
 
                   {/* Label row */}
                   <div style={{ zIndex: 1, textAlign: 'center' }}>
@@ -631,7 +627,27 @@ const Home = () => {
                     </div>
                   </div>
                 </div>
-                 {/* GATE DA Course Card */}
+
+                <div className="course-content">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <Link to="/courses/gre"><button className="category">GRE</button></Link>
+                    <span className="badge" style={{ background: '#6f42c1', fontSize: '0.75rem' }}>130&ndash;170 scaled</span>
+                  </div>
+                  <p className="description">
+                    Practice GRE questions section-wise — Verbal Reasoning, Quantitative Reasoning, and Analytical Writing.
+                    Official GRE scoring: 130&ndash;170 scaled score per section, no negative marking.
+                    Includes full-length mock tests and detailed score analysis.
+                  </p>
+                  <div className="trainer d-flex justify-content-between align-items-center">
+                    <div className="trainer-rank d-flex align-items-center">
+                      <i className="bi bi-heart heart-icon"></i>&nbsp;92
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          {/* GATE DA Course Card */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4" data-aos="zoom-in" data-aos-delay="600">
               <div className="course-item" style={{ width: '100%' }}>
                 <div style={{
@@ -715,34 +731,6 @@ const Home = () => {
           </div>
         </div>
       </section>
-            
-
-                <div className="course-content">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Link to="/courses/gre"><button className="category">GRE</button></Link>
-                    <span className="badge" style={{ background: '#6f42c1', fontSize: '0.75rem' }}>130&ndash;170 scaled</span>
-                  </div>
-                  <p className="description">
-                    Practice GRE questions section-wise — Verbal Reasoning, Quantitative Reasoning, and Analytical Writing.
-                    Official GRE scoring: 130&ndash;170 scaled score per section, no negative marking.
-                    Includes full-length mock tests and detailed score analysis.
-                  </p>
-                  <div className="trainer d-flex justify-content-between align-items-center">
-                    <div className="trainer-rank d-flex align-items-center">
-
-                      <i className="bi bi-heart heart-icon"></i>&nbsp;92
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          
-          </div>
-        </div>
-      </section>
-
-          
 
       {/* About Section */}
       <section id="about" className="about section">
