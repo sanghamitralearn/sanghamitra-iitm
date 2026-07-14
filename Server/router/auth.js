@@ -5942,38 +5942,66 @@ router.get('/sat_full_score_detail', async (req, res) => {
 
 // NEW PROGRAMMING SINGLE COLLECTION/SCHEMA DESIGN ROUTES----->>>>>>
 //GET QUESTIONS for quiz ( java , python, pdsa, dbms
+// GET QUESTIONS for quiz (with week range support)
+// ============================================
 router.get('/mcq-questions', async (req, res) => {
   try {
     const { 
       course,      // Required: 'java', 'python', 'sql', etc.
-      week,        // Required: week number
+      week,        // Optional: single week number OR range like '1-4'
+      week_start,  // Optional: start week for range
+      week_end,    // Optional: end week for range
       email,       // Optional: for logging/analytics
       count = 10,  // Number of questions to return
       difficulty,  // Optional: 'easy', 'medium', 'hard'
-      question_type, // Optional: 'mcq', 'msq', 'true-false'
+      question_type, // Optional: 'mcq', 'msq', 'true-false', 'match-pairs'
       topic,       // Optional: filter by topic
       subtopic     // Optional: filter by subtopic
     } = req.query;
 
     // Validation
-    if (!course || !week) {
+    if (!course) {
       return res.status(400).json({
-        error: 'course and week are required',
-        example: '/api/questions?course=java&week=3&count=10'
+        error: 'course is required',
+        example: '/api/questions?course=java&week=1-4&count=10'
       });
     }
 
-    const weekNum = parseInt(week);
-    if (isNaN(weekNum) || weekNum < 1) {
-      return res.status(400).json({ error: 'week must be a positive number' });
+    // ─── Build week filter ─────────────────────────────────────────
+    let weekFilter = {};
+    
+    if (week) {
+      // Check if week is a range (e.g., '1-4')
+      if (week.includes('-')) {
+        const [start, end] = week.split('-').map(Number);
+        if (!isNaN(start) && !isNaN(end) && start <= end) {
+          weekFilter = { $gte: start, $lte: end };
+        }
+      } else {
+        // Single week
+        const weekNum = parseInt(week);
+        if (!isNaN(weekNum) && weekNum > 0) {
+          weekFilter = { $eq: weekNum };
+        }
+      }
+    } else if (week_start && week_end) {
+      // Using separate start/end parameters
+      const start = parseInt(week_start);
+      const end = parseInt(week_end);
+      if (!isNaN(start) && !isNaN(end) && start <= end) {
+        weekFilter = { $gte: start, $lte: end };
+      }
     }
 
     // Build filter
     const filter = {
       course: course,
-      week: weekNum,
       is_active: true
     };
+    
+    if (Object.keys(weekFilter).length > 0) {
+      filter.week = weekFilter;
+    }
     
     if (difficulty) filter.difficulty = difficulty;
     if (question_type) filter.question_type = question_type;
@@ -5985,7 +6013,7 @@ router.get('/mcq-questions', async (req, res) => {
 
     if (pool.length === 0) {
       return res.status(404).json({ 
-        error: `No active questions found for ${course} week ${weekNum}`,
+        error: `No active questions found for ${course}`,
         filter_used: filter
       });
     }
@@ -6001,29 +6029,42 @@ router.get('/mcq-questions', async (req, res) => {
     const selected = pool.slice(0, requestedCount);
 
     // Remove answer data before sending to client
-    const questionsForClient = selected.map(q => ({
-      _id: q._id,
-      question_text: q.question_text,
-      question_type: q.question_type,
-      options: q.options,
-      has_latex: q.has_latex,
-      image_url: q.image_url,
-      code_snippet: q.code_snippet,
-      points: q.points,
-      difficulty: q.difficulty,
-      topic: q.topic,
-      subtopic: q.subtopic,
-      concept_tags: q.concept_tags,
-      bloom_level: q.bloom_level
-      // Note: answers field is NOT sent to client
-    }));
+    const questionsForClient = selected.map(q => {
+      const questionData = {
+        _id: q._id,
+        question_text: q.question_text,
+        question_type: q.question_type,
+        has_latex: q.has_latex,
+        image_url: q.image_url,
+        code_snippet: q.code_snippet,
+        points: q.points,
+        difficulty: q.difficulty,
+        topic: q.topic,
+        subtopic: q.subtopic,
+        concept_tags: q.concept_tags,
+        bloom_level: q.bloom_level,
+        week: q.week, // Include week for reference
+        solution: q.solution
+      };
+
+      if (q.question_type === 'mcq' || q.question_type === 'msq') {
+        questionData.options = q.options;
+      } else if (q.question_type === 'match-pairs') {
+        questionData.match_pairs = {
+          left_column: q.match_pairs?.left_column || [],
+          right_column: q.match_pairs?.right_column || []
+        };
+      }
+
+      return questionData;
+    });
 
     return res.status(200).json({
       success: true,
       questions: questionsForClient,
       metadata: {
         course: course,
-        week: weekNum,
+        week_range: Object.keys(weekFilter).length > 0 ? weekFilter : 'all',
         pool_size: pool.length,
         returned: questionsForClient.length,
         requested: requestedCount,
@@ -6047,6 +6088,7 @@ router.get('/mcq-questions', async (req, res) => {
 
 // ============================================
 // SUBMIT QUIZ ANSWERS (server-side grading)
+// ============================================
 router.post('/mcq-quiz/submit', async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -6105,22 +6147,61 @@ router.post('/mcq-quiz/submit', async (req, res) => {
       const correct = q.answers?.correct;
       let isCorrect = false;
 
+      // ─── Grade based on question type ─────────────────────────────
       if (q.question_type === 'mcq') {
-        // options are {id, text}; correct is an option id or text
         const correctOpt = q.options?.find(o => o.id === correct || o.text === correct);
         const userOpt = q.options?.find(o => o.id === userAns || o.text === userAns);
         isCorrect = !!(correctOpt && userOpt && correctOpt.id === userOpt.id);
+        
       } else if (q.question_type === 'msq') {
         const correctArr = (Array.isArray(correct) ? correct : [correct]).map(String).sort();
         const userArr = (Array.isArray(userAns) ? userAns : (userAns ? [userAns] : [])).map(String).sort();
         isCorrect = JSON.stringify(correctArr) === JSON.stringify(userArr);
+        
+      } else if (q.question_type === 'match-pairs') {
+        // For match-pairs: userAnswer should be an object mapping left_id to right_id
+        // Example: { "left_1": "right_3", "left_2": "right_1" }
+        const correctMatches = q.match_pairs?.correct_matches || new Map();
+        const userMatches = userAns || {};
+        
+        // Count how many matches are correct
+        let correctMatchesCount = 0;
+        let totalMatches = Object.keys(userMatches).length;
+        
+        // Convert Map to object for comparison
+        const correctMatchesObj = {};
+        if (correctMatches instanceof Map) {
+          correctMatches.forEach((value, key) => {
+            correctMatchesObj[key] = value;
+          });
+        } else {
+          Object.assign(correctMatchesObj, correctMatches);
+        }
+        
+        // Check each user match
+        Object.keys(userMatches).forEach(leftId => {
+          if (correctMatchesObj[leftId] === userMatches[leftId]) {
+            correctMatchesCount++;
+          }
+        });
+        
+        // All matches must be correct for full credit
+        // You could also award partial credit if needed
+        isCorrect = correctMatchesCount === totalMatches && totalMatches > 0;
+        
       } else if (q.question_type === 'numeric') {
         const tolerance = q.answers?.tolerance || 0;
         const userNum = parseFloat(userAns);
         const correctNum = parseFloat(correct);
         isCorrect = !isNaN(userNum) && Math.abs(userNum - correctNum) <= tolerance;
+        
       } else if (q.question_type === 'true-false') {
         isCorrect = String(userAns).toLowerCase() === String(correct).toLowerCase();
+        
+      } else if (q.question_type === 'interview') {
+        // Interview questions are manually graded, so mark as pending
+        // For now, we'll mark them as correct (they'll be reviewed later)
+        isCorrect = true; // Or you could set a flag for manual review
       }
 
       const marksAwarded = isCorrect ? (q.points || 1) : 0;
@@ -6132,16 +6213,16 @@ router.post('/mcq-quiz/submit', async (req, res) => {
         if (isCorrect) difficultyBreakdown[diff].correct++;
       }
 
-      return {
+      // ─── Build result object ────────────────────────────────────────
+      const result = {
         questionId: cr.questionId,
         isCorrect,
         marksAwarded,
         userAnswer: userAns ?? null,
         timeTaken: cr.timeTaken || 0,
-        // Question metadata (for review)
         question_text: q.question_text,
         question_type: q.question_type,
-        options: q.options,
+        options: q.options || [],
         correct_answer: q.answers?.correct,
         code_snippet: q.code_snippet || null,
         image_url: q.image_url || null,
@@ -6153,6 +6234,17 @@ router.post('/mcq-quiz/submit', async (req, res) => {
         concept_tags: q.concept_tags || [],
         bloom_level: q.bloom_level || 'apply'
       };
+
+      // Add match_pairs data if applicable
+      if (q.question_type === 'match-pairs') {
+        result.match_pairs = {
+          left_column: q.match_pairs?.left_column || [],
+          right_column: q.match_pairs?.right_column || [],
+          correct_matches: q.match_pairs?.correct_matches || {}
+        };
+      }
+
+      return result;
     });
 
     const maxPossibleScore = questions.reduce((sum, q) => sum + (q.points || 1), 0);
@@ -6230,6 +6322,7 @@ router.post('/mcq-quiz/submit', async (req, res) => {
 
 // ============================================
 // GET ALL ATTEMPTS for a user (with filters)
+// ============================================
 router.get('/mcq-quiz/attempts', async (req, res) => {
   try {
     const { email, course } = req.query;
@@ -6250,7 +6343,8 @@ router.get('/mcq-quiz/attempts', async (req, res) => {
 });
 
 // ============================================
-// ADMIN: GET ALL ATTEMPTS ACROSS ALL STUDENTS (optional course filter)
+// ADMIN: GET ALL ATTEMPTS ACROSS ALL STUDENTS
+// ============================================
 router.get('/mcq-quiz/admin/attempts', async (req, res) => {
   try {
     const { course } = req.query;
@@ -6270,40 +6364,81 @@ router.get('/mcq-quiz/admin/attempts', async (req, res) => {
 });
 
 // ============================================
-// ADMIN: GET PER-QUESTION RESULTS FOR ONE ATTEMPT (with question text/answers)
-
-router.get('/mcq-quiz/admin/attempts/:attemptId/results', async (req, res) => {
+// GET question results for a specific attempt
+// ============================================
+router.get('/mcq-quiz/attempt/:attemptId/results', async (req, res) => {
   try {
     const { attemptId } = req.params;
+    
+    const results = await ProgrammingQuizResult.find({ attempt_id: attemptId })
+      .sort({ _id: 1 })
+      .lean();
+    
+    return res.status(200).json({ success: true, results });
+  } catch (error) {
+    console.error('❌ Error fetching question results:', error);
+    return res.status(500).json({ error: 'Failed to fetch question results', details: error.message });
+  }
+});
 
-    const results = await ProgrammingQuizResult.find({ attempt_id: attemptId }).lean();
-    if (!results.length) {
-      return res.status(404).json({ error: 'No results found for this attempt' });
+// ============================================
+// GET questions by multiple IDs (for review page)
+// ============================================
+router.get('/mcq-questions/by-ids', async (req, res) => {
+  try {
+    const { ids } = req.query;
+    if (!ids) {
+      return res.status(400).json({ error: 'ids parameter is required' });
     }
 
-    const questionIds = results.map(r => r.question_id).filter(Boolean);
-    const questions = await ProgrammingQuizQuestion.find({ _id: { $in: questionIds } }).lean();
-    const questionMap = {};
-    questions.forEach(q => { questionMap[String(q._id)] = q; });
+    const idArray = ids.split(',').filter(Boolean);
+    if (idArray.length === 0) {
+      return res.status(400).json({ error: 'No valid question IDs provided' });
+    }
 
-    const enriched = results.map(r => {
-      const q = questionMap[String(r.question_id)];
-      return {
-        ...r,
-        question_text: q?.question_text || '',
-        options: q?.options || [],
-        correct_answer: q?.answers?.correct,
-        code_snippet: q?.code_snippet || null,
-        image_url: q?.image_url || null,
-        solution: q?.solution || null,
-        points: q?.points || 1
+    const questions = await ProgrammingQuizQuestion.find({
+      _id: { $in: idArray }
+    }).lean();
+
+    // Remove sensitive data before sending
+    const sanitizedQuestions = questions.map(q => {
+      const questionData = {
+        _id: q._id,
+        question_text: q.question_text,
+        question_type: q.question_type,
+        has_latex: q.has_latex,
+        image_url: q.image_url,
+        code_snippet: q.code_snippet,
+        points: q.points,
+        difficulty: q.difficulty,
+        topic: q.topic,
+        subtopic: q.subtopic,
+        concept_tags: q.concept_tags,
+        bloom_level: q.bloom_level,
+        solution: q.solution
       };
+
+      if (q.question_type === 'mcq' || q.question_type === 'msq') {
+        questionData.options = q.options;
+      } else if (q.question_type === 'match-pairs') {
+        // Include match_pairs data for review (including correct_matches)
+        questionData.match_pairs = {
+          left_column: q.match_pairs?.left_column || [],
+          right_column: q.match_pairs?.right_column || [],
+          correct_matches: q.match_pairs?.correct_matches || {}
+        };
+      }
+
+      return questionData;
     });
 
-    return res.status(200).json({ success: true, results: enriched });
+    return res.status(200).json({
+      success: true,
+      questions: sanitizedQuestions
+    });
   } catch (error) {
-    console.error('❌ Error fetching admin results:', error);
-    return res.status(500).json({ error: 'Failed to fetch results', details: error.message });
+    console.error('❌ Error fetching questions by IDs:', error);
+    return res.status(500).json({ error: 'Failed to fetch questions', details: error.message });
   }
 });
 
@@ -6316,76 +6451,156 @@ router.get('/mcq-quiz/admin/attempts/:attemptId/results', async (req, res) => {
 // GET /api/coding-questions?course=&week=&topic=&difficulty=&language=
 router.get('/coding-questions', async (req, res) => {
   try {
-    const { course, week, topic, difficulty, language } = req.query;
+    const { 
+      course, 
+      week, 
+      topic, 
+      difficulty, 
+      language,
+      limitPerDifficulty // ✅ NEW: limit per difficulty level
+    } = req.query;
+    
     if (!course || !week) {
       return res.status(400).json({ error: 'course and week are required' });
     }
 
-    const filter = { course, week: Number(week), is_active: true };
+    // ✅ Build base filter
+    const filter = { 
+      course, 
+      week: Number(week), 
+      is_active: true 
+    };
+    
     if (topic) filter.topic = topic;
-    if (difficulty) filter.difficulty = difficulty;
     if (language) filter.language = language;
 
-    const questions = await CodingQuestion.find(filter).sort({ difficulty: 1 }).lean();
+    let questions = [];
+
+    // ✅ NEW: Handle difficulty-based random selection
+    if (limitPerDifficulty) {
+      const limit = parseInt(limitPerDifficulty, 10);
+      
+      // Define difficulties to fetch
+      const difficulties = ['easy', 'medium', 'hard'];
+      
+      // Fetch questions for each difficulty
+      for (const diff of difficulties) {
+        const diffFilter = { ...filter, difficulty: diff };
+        
+        // Get all questions for this difficulty
+        const diffQuestions = await CodingQuestion.find(diffFilter)
+          .lean();
+        
+        // Shuffle and pick 'limit' number of questions
+        const shuffled = shuffleArray(diffQuestions);
+        const selected = shuffled.slice(0, limit);
+        
+        questions = [...questions, ...selected];
+        
+        console.log(`📊 ${diff}: found ${diffQuestions.length}, selected ${selected.length}`);
+      }
+      
+      // ✅ Shuffle the combined questions to mix difficulties
+      questions = shuffleArray(questions);
+      
+    } else {
+      // ✅ Original behavior: fetch all questions
+      questions = await CodingQuestion.find(filter)
+        .sort({ difficulty: 1 })
+        .lean();
+    }
+
     if (questions.length === 0) {
       return res.status(200).json({ success: true, questions: [] });
     }
 
-    const questionIds = questions.map(q => q._id);
-    const testCases = await CodingTestCase.find({
-      question_id: { $in: questionIds },
-      is_active: true
-    }).sort({ testcase_number: 1 }).lean();
+    // Remove solution and format test_cases
+    const result = questions.map(({ solution, ...rest }) => ({
+      ...rest,
+      test_cases: rest.test_cases || [],
+      testCases: rest.test_cases || []
+    }));
 
-    const testCasesByQuestion = {};
-    testCases.forEach(tc => {
-      const qid = String(tc.question_id);
-      if (!testCasesByQuestion[qid]) testCasesByQuestion[qid] = [];
-      testCasesByQuestion[qid].push({
-        testcase_number: tc.testcase_number,
-        input: tc.input,
-        expected_output: tc.expected_output,
-        explanation: tc.explanation,
-        is_hidden: tc.is_hidden,
-        is_sample: tc.is_sample,
-        weightage: tc.weightage
-      });
+    console.log(`📋 Returning ${result.length} questions with embedded test cases`);
+
+    return res.status(200).json({ 
+      success: true, 
+      questions: result,
+      meta: {
+        total: result.length,
+        difficulties: {
+          easy: result.filter(q => q.difficulty === 'easy').length,
+          medium: result.filter(q => q.difficulty === 'medium').length,
+          hard: result.filter(q => q.difficulty === 'hard').length
+        }
+      }
     });
-
-    const result = questions.map(q => {
-      const { solution, ...rest } = q;
-      return {
-        ...rest,
-        testCases: testCasesByQuestion[String(q._id)] || []
-      };
-    });
-
-    return res.status(200).json({ success: true, questions: result });
+    
   } catch (error) {
     console.error('❌ Error fetching coding questions:', error);
-    return res.status(500).json({ error: 'Failed to fetch coding questions', details: error.message });
+    return res.status(500).json({ 
+      error: 'Failed to fetch coding questions', 
+      details: error.message 
+    });
   }
 });
 
+// ✅ Helper function to shuffle array (Fisher-Yates algorithm)
+function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 // POST /api/coding-submit
-// body: { email, username, course, week, topic, results: [{ questionId, language, sourceCode, verdict, passed_testcases, total_testcases, score, percentage, execution_time_ms }] }
 router.post('/coding-submit', async (req, res) => {
   try {
-    const { email, username, course, week, topic, results } = req.body;
+    const { 
+      email, 
+      username, 
+      course, 
+      week, 
+      topic, 
+      results 
+    } = req.body;
+    
     if (!email || !course || !week || !Array.isArray(results) || results.length === 0) {
-      return res.status(400).json({ error: 'email, course, week and results are required' });
+      return res.status(400).json({ 
+        error: 'email, course, week and results are required' 
+      });
     }
 
     const docs = [];
+    const bulkOps = [];
+
     for (const r of results) {
-      const { questionId, language, sourceCode, verdict, passed_testcases, total_testcases, score, percentage, execution_time_ms } = r;
+      const { 
+        questionId, 
+        language, 
+        sourceCode, 
+        verdict, 
+        passed_testcases, 
+        total_testcases, 
+        score, 
+        percentage, 
+        execution_time_ms,
+        test_case_results = [] // ✅ NEW: Store individual test results
+      } = r;
+      
       if (!questionId || !language || sourceCode === undefined) continue;
 
-      const submissionCount = await CodingSubmission.countDocuments({ email, question_id: questionId });
+      // Get submission count for this question
+      const submissionCount = await CodingSubmission.countDocuments({ 
+        email, 
+        question_id: questionId 
+      });
 
-      docs.push({
+      const submission = {
         email,
-        username,
+        username: username || email.split('@')[0],
         question_id: questionId,
         course,
         week: Number(week),
@@ -6398,7 +6613,27 @@ router.post('/coding-submit', async (req, res) => {
         score: score || 0,
         percentage: percentage || 0,
         execution_time_ms: execution_time_ms ?? null,
-        submission_number: submissionCount + 1
+        submission_number: submissionCount + 1,
+        test_case_results: test_case_results || [], // ✅ NEW
+        is_best_attempt: false // Will be updated later
+      };
+
+      docs.push(submission);
+      
+      // ✅ Track for best attempt update
+      bulkOps.push({
+        updateOne: {
+          filter: { 
+            email, 
+            question_id: questionId,
+            is_best_attempt: true 
+          },
+          update: { 
+            $set: { 
+              is_best_attempt: false 
+            } 
+          }
+        }
       });
     }
 
@@ -6406,58 +6641,124 @@ router.post('/coding-submit', async (req, res) => {
       return res.status(400).json({ error: 'No valid submission results provided' });
     }
 
+    // ✅ Save submissions
     const saved = await CodingSubmission.insertMany(docs);
+    
+    // ✅ Mark the best submission per question (highest percentage)
+    for (const doc of saved) {
+      // Find the best submission for this question
+      const best = await CodingSubmission.findOne({
+        email,
+        question_id: doc.question_id
+      }).sort({ 
+        percentage: -1,  // Higher percentage is better
+        passed_testcases: -1, // If same percentage, more passed is better
+        createdAt: -1 // If same, latest is better
+      });
+      
+      if (best) {
+        await CodingSubmission.updateMany(
+          { 
+            email, 
+            question_id: doc.question_id,
+            _id: { $ne: best._id }
+          },
+          { $set: { is_best_attempt: false } }
+        );
+        
+        await CodingSubmission.updateOne(
+          { _id: best._id },
+          { $set: { is_best_attempt: true } }
+        );
+      }
+    }
 
-    return res.status(201).json({ success: true, message: 'Submissions saved', count: saved.length, submissions: saved });
+    return res.status(201).json({ 
+      success: true, 
+      message: 'Submissions saved', 
+      count: saved.length, 
+      submissions: saved 
+    });
+
   } catch (error) {
     console.error('❌ Error saving coding submission:', error);
-    return res.status(500).json({ error: 'Failed to save submission', details: error.message });
+    return res.status(500).json({ 
+      error: 'Failed to save submission', 
+      details: error.message 
+    });
   }
 });
 
-// GET /api/coding-submissions?email=&course=&week=
+// GET /api/coding-submissions?email=&course=&week=&questionId=
 router.get('/coding-submissions', async (req, res) => {
   try {
-    const { email, course, week } = req.query;
-    if (!email) return res.status(400).json({ error: 'email is required' });
+    const { email, course, week, questionId } = req.query;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'email is required' });
+    }
 
     const filter = { email };
     if (course) filter.course = course;
     if (week) filter.week = Number(week);
+    if (questionId) filter.question_id = questionId;
 
+    // ✅ Get submissions with populated question details
     const submissions = await CodingSubmission.find(filter)
+      .populate('question_id', 'title question_text difficulty language') // Populate question fields
       .sort({ createdAt: -1 })
       .lean();
 
-    return res.status(200).json({ success: true, submissions });
+    // ✅ Format response
+    const formatted = submissions.map(s => ({
+      ...s,
+      question_title: s.question_id?.title || 'Unknown Question',
+      question_difficulty: s.question_id?.difficulty || 'unknown'
+    }));
+
+    return res.status(200).json({ 
+      success: true, 
+      submissions: formatted,
+      count: formatted.length 
+    });
+
   } catch (error) {
     console.error('❌ Error fetching coding submissions:', error);
-    return res.status(500).json({ error: 'Failed to fetch coding submissions', details: error.message });
+    return res.status(500).json({ 
+      error: 'Failed to fetch coding submissions', 
+      details: error.message 
+    });
   }
 });
 
-// GET /api/coding-progress?email=&course=
 // Returns per-week best-attempt progress, used by CoursePage to show coding progress
+// GET /api/coding-progress?email=&course=
 router.get('/coding-progress', async (req, res) => {
   try {
     const { email, course } = req.query;
-    if (!email) return res.status(400).json({ error: 'email is required' });
+    
+    if (!email) {
+      return res.status(400).json({ error: 'email is required' });
+    }
 
     const filter = { email };
     if (course) filter.course = course;
 
-    const submissions = await CodingSubmission.find(filter).lean();
+    // ✅ Get all submissions with best attempts flagged
+    const submissions = await CodingSubmission.find(filter)
+      .sort({ createdAt: -1 })
+      .lean();
 
-    // Keep only the best (highest percentage) submission per question
+    // ✅ Group by question and get best attempt
     const bestByQuestion = {};
     submissions.forEach(s => {
-      const qid = String(s.question_id);
+      const qid = s.question_id.toString();
       if (!bestByQuestion[qid] || s.percentage > bestByQuestion[qid].percentage) {
         bestByQuestion[qid] = s;
       }
     });
 
-    // Aggregate per course/week
+    // ✅ Aggregate per week
     const weekMap = {};
     Object.values(bestByQuestion).forEach(s => {
       const key = `${s.course}_${s.week}`;
@@ -6468,25 +6769,144 @@ router.get('/coding-progress', async (req, res) => {
           topic: s.topic,
           totalQuestions: 0,
           solvedQuestions: 0,
-          totalPercentage: 0
+          totalPercentage: 0,
+          submissions: []
         };
       }
+      
       weekMap[key].totalQuestions += 1;
       weekMap[key].totalPercentage += s.percentage;
-      if (s.verdict === 'Accepted') weekMap[key].solvedQuestions += 1;
+      weekMap[key].submissions.push(s);
+      
+      // ✅ Check if solved (100% or 'Accepted' verdict)
+      if (s.verdict === 'Accepted' || s.percentage === 100) {
+        weekMap[key].solvedQuestions += 1;
+      }
     });
 
     const progress = Object.values(weekMap).map(w => ({
       ...w,
-      averagePercentage: w.totalQuestions > 0 ? Math.round(w.totalPercentage / w.totalQuestions) : 0
+      averagePercentage: w.totalQuestions > 0 ? Math.round(w.totalPercentage / w.totalQuestions) : 0,
+      // ✅ Add progress bar data
+      progressData: w.submissions.map(s => ({
+        questionId: s.question_id,
+        title: s.title || 'Question',
+        percentage: s.percentage,
+        verdict: s.verdict
+      }))
     }));
 
-    return res.status(200).json({ success: true, progress });
+    // ✅ Sort by week
+    progress.sort((a, b) => a.week - b.week);
+
+    return res.status(200).json({ 
+      success: true, 
+      progress,
+      totalQuestions: Object.keys(bestByQuestion).length,
+      totalSolved: Object.values(bestByQuestion).filter(s => 
+        s.verdict === 'Accepted' || s.percentage === 100
+      ).length
+    });
+
   } catch (error) {
     console.error('❌ Error fetching coding progress:', error);
-    return res.status(500).json({ error: 'Failed to fetch coding progress', details: error.message });
+    return res.status(500).json({ 
+      error: 'Failed to fetch coding progress', 
+      details: error.message 
+    });
   }
 });
+
+
+// POST /api/run-code — JDoodle API proxy
+router.post('/run-code', async (req, res) => {
+  try {
+    const { language = 'java', source, stdin = '' } = req.body;
+
+    // Map your frontend language names to JDoodle's expected format
+    const languageMap = {
+      java: { language: 'java', versionIndex: '4' },      // Java 17
+      python: { language: 'python3', versionIndex: '4' },  // Python 3
+      sql: { language: 'sql', versionIndex: '1' },         // SQLite
+      // add more languages as needed
+    };
+
+    // Check if source is provided
+    if (!source) {
+      return res.status(400).json({ error: 'source is required' });
+    }
+
+    // Get the language configuration
+    const langConfig = languageMap[language];
+    if (!langConfig) {
+      return res.status(400).json({ 
+        error: `Unsupported language: ${language}. Supported languages: ${Object.keys(languageMap).join(', ')}` 
+      });
+    }
+
+    // Check credentials
+    const clientId = process.env.JDOODLE_CLIENT_ID;
+    const clientSecret = process.env.JDOODLE_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      return res.status(500).json({ 
+        error: 'JDoodle credentials missing. Please set JDOODLE_CLIENT_ID and JDOODLE_CLIENT_SECRET in .env' 
+      });
+    }
+
+    // Make JDoodle API call
+    const response = await fetch('https://api.jdoodle.com/v1/execute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        script: source,
+        stdin: stdin || '',
+        language: langConfig.language,      // ✅ Use the mapped language
+        versionIndex: langConfig.versionIndex, // ✅ Use the mapped version
+        clientId: clientId,
+        clientSecret: clientSecret
+      })
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(502).json({ 
+        error: 'JDoodle API error', 
+        details: text 
+      });
+    }
+
+    const data = await response.json();
+    
+    // Check if there's an error from JDoodle
+    if (data.error) {
+      console.error('❌ JDoodle execution error:', data.error);
+      return res.status(200).json({
+        success: false,
+        stdout: '',
+        stderr: data.error,
+        compile_output: data.error,
+        exit_code: -1
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      stdout: data.output || '',
+      stderr: data.error || '',
+      compile_output: '',
+      exit_code: data.statusCode || 0
+    });
+
+  } catch (error) {
+    console.error('❌ JDoodle error:', error);
+    return res.status(500).json({ 
+      error: 'Code execution failed', 
+      details: error.message 
+    });
+  }
+});
+
 
 // ─── Aggregated Admin Notifications ────────────────────────────────────────
 // Single endpoint that replaces 8 separate frontend calls.
