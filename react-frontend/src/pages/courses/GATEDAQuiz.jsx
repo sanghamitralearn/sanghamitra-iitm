@@ -76,13 +76,41 @@ function renderMathContent(element) {
   })
 }
 
-// ─── Convert \begin{tabular} or \begin{array} to an HTML table ───────────────
-function processCell(c) {
-  return c.trim()
+// ─── Convert common LaTeX/pandoc text-mode macros & escapes to plain HTML ────
+// KaTeX's auto-render only touches text between math delimiters, so any of
+// these left outside $...$ (e.g. \emph{...}, \textquotedbl) show up as
+// literal backslash-commands unless converted here first.
+function unescapeLatexText(text) {
+  return text
     .replace(/\\textbf\{([^}]*)\}/g, '<strong>$1</strong>')
     .replace(/\\textit\{([^}]*)\}/g, '<em>$1</em>')
+    .replace(/\\emph\{([^}]*)\}/g, '<em>$1</em>')
+    .replace(/\\underline\{([^}]*)\}/g, '<u>$1</u>')
+    .replace(/\\textsuperscript\{([^}]*)\}/g, '<sup>$1</sup>')
+    .replace(/\\textsubscript\{([^}]*)\}/g, '<sub>$1</sub>')
+    // \texttt{...} commonly wraps code (dicts/lists), which contains its own
+    // literal { } — a plain [^}]* group would stop at the first inner brace,
+    // so allow one level of nested { ... } before requiring the closing brace.
+    .replace(/\\texttt\{((?:[^{}]|\{[^{}]*\})*)\}/g,
+      '<code style="font-family:monospace;background:#f1f3f5;padding:1px 5px;border-radius:4px;">$1</code>')
     .replace(/\\text\{([^}]*)\}/g, '$1')
+    .replace(/\\textquotedbl(?:\{\})?/g, '"')
+    .replace(/\\textquotesingle(?:\{\})?/g, "'")
+    .replace(/\\textbackslash(?:\{\})?/g, '\\')
+    .replace(/\\textasciitilde(?:\{\})?/g, '~')
+    .replace(/\\textasciicircum(?:\{\})?/g, '^')
+    .replace(/\\(?:ldots|dots|textellipsis)/g, '…')
+    .replace(/\\&/g, '&amp;')
+    .replace(/\\#/g, '#')
+    .replace(/\\\$/g, '&#36;')
+    .replace(/\\_/g, '_')
     .replace(/\\%/g, '%')
+    .replace(/\\\{/g, '{')
+    .replace(/\\\}/g, '}')
+}
+
+function processCell(c) {
+  return unescapeLatexText(c.trim())
 }
 
 function latexTabularToHtml(text) {
@@ -132,11 +160,7 @@ export const MathText = ({ text, style, className }) => {
   const ref = useRef(null)
   useEffect(() => { if (ref.current) renderMathContent(ref.current) }, [text])
 
-  let html = (text || '')
-    .replace(/\\\$/g, '&#36;')
-    .replace(/\\%/g, '%')
-    .replace(/\\textit\{([^}]*)\}/g, '<em>$1</em>')
-    .replace(/\\textbf\{([^}]*)\}/g, '<strong>$1</strong>')
+  let html = unescapeLatexText(text || '')
     .replace(/\(structure\)/g,
       '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;' +
       'background:#fff3cd;border:1px dashed #ffc107;border-radius:4px;font-size:0.8rem;' +
@@ -215,10 +239,7 @@ function PassageBlock({ text }) {
 
   if (!text) return null
 
-  let html = (text || '')
-    .replace(/\\%/g, '%')
-    .replace(/\\textit\{([^}]*)\}/g, '<em>$1</em>')
-    .replace(/\\textbf\{([^}]*)\}/g, '<strong>$1</strong>')
+  let html = unescapeLatexText(text || '')
   html = escapeCurrencyDollars(html)
   html = latexTabularToHtml(html)
   html = latexListToHtml(html)
