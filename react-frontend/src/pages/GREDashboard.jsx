@@ -349,9 +349,7 @@ const GREDashboard = () => {
 
         {combinedScaled != null && (
           <div className="mb-4" style={{
-            background: (combinedScaled / 340 * 100) >= 50
-              ? `linear-gradient(135deg, ${NAVY}, #7C3AED)`
-              : `linear-gradient(135deg, #e67e22, #f39c12)`,
+            background: `linear-gradient(135deg, #e67e22, #f39c12)`,
             borderRadius: 16, padding: '28px 36px', color: '#fff',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16,
           }}>
