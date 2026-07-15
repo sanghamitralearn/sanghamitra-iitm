@@ -96,7 +96,28 @@ function MathText({ text }) {
   const ref = useRef(null)
   useEffect(() => { if (ref.current) renderMath(ref.current) }, [text])
   const html = (text || '')
+    .replace(/\\textbf\{([^}]*)\}/g, '<strong>$1</strong>')
+    .replace(/\\textit\{([^}]*)\}/g, '<em>$1</em>')
+    .replace(/\\emph\{([^}]*)\}/g, '<em>$1</em>')
+    .replace(/\\underline\{([^}]*)\}/g, '<u>$1</u>')
+    .replace(/\\textsuperscript\{([^}]*)\}/g, '<sup>$1</sup>')
+    .replace(/\\textsubscript\{([^}]*)\}/g, '<sub>$1</sub>')
+    .replace(/\\texttt\{((?:[^{}]|\{[^{}]*\})*)\}/g,
+      '<code style="font-family:monospace;background:#f1f3f5;padding:1px 5px;border-radius:4px;">$1</code>')
+    .replace(/\\text\{([^}]*)\}/g, '$1')
+    .replace(/\\textquotedbl(?:\{\})?/g, '"')
+    .replace(/\\textquotesingle(?:\{\})?/g, "'")
+    .replace(/\\textbackslash(?:\{\})?/g, '\\')
+    .replace(/\\textasciitilde(?:\{\})?/g, '~')
+    .replace(/\\textasciicircum(?:\{\})?/g, '^')
+    .replace(/\\(?:ldots|dots|textellipsis)/g, '…')
+    .replace(/\\&/g, '&amp;')
+    .replace(/\\#/g, '#')
     .replace(/\\\$/g, '&#36;')
+    .replace(/\\_/g, '_')
+    .replace(/\\%/g, '%')
+    .replace(/\\\{/g, '{')
+    .replace(/\\\}/g, '}')
     .replace(
       /\(structure\)/g,
       '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;' +
