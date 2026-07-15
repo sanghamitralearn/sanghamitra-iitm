@@ -3,9 +3,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import axios from 'axios'
 import {
   loadKaTeX, SUBJECT_STYLE, calcMarks,
-  QuestionReviewItem, TabWarningBanner, QuizPanel,
+  TabWarningBanner, QuizPanel,
 } from './SATQuiz'
-import SATScoreDashboard, { buildChapterItems } from './SATScoreDashboard'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
@@ -60,7 +59,7 @@ const SATFullTest = () => {
   const paperName  = location.state?.paper ?? null
   const paperYear  = location.state?.year  ?? null
 
-  // phase: loading | error | overview | quiz | review
+  // phase: loading | error | overview | quiz | saving
   const [phase, setPhase] = useState('loading')
   const [error, setError] = useState(null)
   const [debugInfo, setDebugInfo] = useState(null)
@@ -69,9 +68,6 @@ const SATFullTest = () => {
   const [stageQuestions, setStageQuestions] = useState(null)
   const [stageAnswers, setStageAnswers] = useState(EMPTY_ANSWERS)
   const [currentIndexByStage, setCurrentIndexByStage] = useState(EMPTY_INDEXES)
-  const [stageResults, setStageResults] = useState({})
-  const [combinedResults, setCombinedResults] = useState(null)
-  const [expanded, setExpanded] = useState(null)
   const [saving, setSaving] = useState(false)
   const [tabWarning, setTabWarning] = useState(false)
 
@@ -241,7 +237,6 @@ const SATFullTest = () => {
 
     const allResults = {}
     STAGES.forEach(s => { allResults[s.key] = computeStageResult(s.key) })
-    setStageResults(allResults)
     await finalizeTest(allResults)
   }
 
@@ -288,8 +283,7 @@ const SATFullTest = () => {
       sessionStorage.setItem('satAnalysis', JSON.stringify({ results: analysisResults, questions: allQuestions }))
     } catch { /* ignore quota errors */ }
 
-    setCombinedResults(combined)
-    setPhase('review')
+    setPhase('saving')
 
     const u = userRef.current
     if (!u?.email) {
@@ -336,17 +330,6 @@ const SATFullTest = () => {
       setSaving(false)
       navigate('/courses/sat/analysis', { state: { results: analysisResults, questions: allQuestions } })
     }
-  }
-
-  const handleRetake = () => {
-    setStageIndex(0)
-    setCurrentIndexByStage(EMPTY_INDEXES)
-    setStageAnswers(EMPTY_ANSWERS)
-    setStageResults({})
-    setCombinedResults(null)
-    setExpanded(null)
-    timesRef.current = EMPTY_TIMES()
-    fetchAllQuestions()
   }
 
   // ── Loading ──────────────────────────────────────────────────────────────
@@ -597,82 +580,15 @@ const SATFullTest = () => {
     )
   }
 
-  // ── Combined review ──────────────────────────────────────────────────────
-  if (phase === 'review' && combinedResults) {
-    const sectionResults = {
-      'Reading & Writing': mergeResults([stageResults.rw1, stageResults.rw2]),
-      'Mathematics':       mergeResults([stageResults.math1, stageResults.math2]),
-    }
-
-    const sections = Object.entries(sectionResults).map(([label, result]) => ({ label, result }))
-    const chapterItems = STAGES.flatMap(s =>
-      buildChapterItems(stageQuestions[s.key], stageResults[s.key]?.responses, s.label, s.module)
-    )
-
-    return (
-      <main className="main">
-        <div className="page-title" style={{ marginBottom: '2rem' }}>
-          <div className="heading">
-            <div className="container">
-              <div className="row d-flex justify-content-center text-center">
-                <div className="col-lg-8">
-                  <h1>Full SAT Test — Results</h1>
-                </div>
-              </div>
-            </div>
-          </div>
-          <nav className="breadcrumbs">
-            <div className="container">
-              <ol>
-                <li><Link to="/">Home</Link></li>
-                <li><Link to="/courses/sat">SAT</Link></li>
-                <li className="current">Full Test Review</li>
-              </ol>
-            </div>
-          </nav>
-        </div>
-
-        <div className="container mb-5">
-          <SATScoreDashboard
-            results={combinedResults}
-            sections={sections}
-            chapterItems={chapterItems}
-            onRetake={handleRetake}
-            saving={saving}
-            dateAttempted={new Date().toLocaleDateString()}
-            heroTitle="Full Test Completed!"
-            retakeLabel="Retake Full Test"
-          />
-
-          {/* Per-question review, grouped by module in exam order */}
-          <h5 className="fw-bold mb-3 mt-4">Question-by-Question Review</h5>
-          {STAGES.map(s => (
-            <div key={s.key} className="mb-4">
-              <h5 className="mb-3">
-                <span className="badge text-white" style={{ background: (SUBJECT_STYLE[s.label] || FULL_TEST_STYLE).gradient }}>
-                  {s.label} — Module {s.module}
-                </span>
-              </h5>
-              {stageQuestions[s.key].map((q, idx) => {
-                const itemKey = `${s.key}-${idx}`
-                return (
-                  <QuestionReviewItem
-                    key={q._id || itemKey}
-                    q={q}
-                    idx={idx}
-                    answer={stageAnswers[s.key][idx]}
-                    res={stageResults[s.key].responses[idx]}
-                    isOpen={expanded === itemKey}
-                    onToggle={() => setExpanded(expanded === itemKey ? null : itemKey)}
-                  />
-                )
-              })}
-            </div>
-          ))}
-        </div>
-      </main>
-    )
-  }
+  // ── Saving / redirecting to the analysis page ───────────────────────────
+  if (phase === 'saving') return (
+    <div className="d-flex justify-content-center align-items-center" style={{ height: '60vh' }}>
+      <div className="text-center">
+        <div className="spinner-border mb-3" style={{ color: FULL_TEST_STYLE.badge }} role="status" />
+        <p className="text-muted">Saving your results…</p>
+      </div>
+    </div>
+  )
 
   return null
 }
