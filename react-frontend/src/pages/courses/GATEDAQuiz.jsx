@@ -18,31 +18,50 @@ export const SECTION_CONFIG = {
 }
 
 // ─── KaTeX ───────────────────────────────────────────────────────────────────
+// Cache the load promise on `window` (not a module-level let) so that every
+// page which copy-pastes its own loadKaTeX() still shares one in-flight load
+// and nobody double-appends <script> tags (also survives React StrictMode's
+// double-invoked effects in dev).
 export function loadKaTeX() {
   if (window.renderMathInElement) return Promise.resolve()
-  return new Promise((resolve) => {
+  if (window._katexLoadPromise) return window._katexLoadPromise
+  window._katexLoadPromise = new Promise((resolve) => {
     if (!document.querySelector('link[href*="katex"]')) {
       const link = document.createElement('link')
       link.rel = 'stylesheet'
       link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css'
       document.head.appendChild(link)
     }
-    const core = document.createElement('script')
-    core.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js'
-    core.onload = () => {
+    const loadAutoRender = () => {
+      if (window.renderMathInElement) { resolve(); return }
+      const existingAr = document.querySelector('script[src*="auto-render"]')
+      if (existingAr) { existingAr.addEventListener('load', () => resolve()); return }
       const ar = document.createElement('script')
       ar.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js'
       ar.onload = () => resolve()
       document.head.appendChild(ar)
     }
-    document.head.appendChild(core)
+    const existingCore = document.querySelector('script[src*="katex.min.js"]')
+    if (existingCore) {
+      if (window.katex) loadAutoRender()
+      else existingCore.addEventListener('load', loadAutoRender)
+    } else {
+      const core = document.createElement('script')
+      core.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js'
+      core.onload = loadAutoRender
+      document.head.appendChild(core)
+    }
   })
+  return window._katexLoadPromise
 }
 
+// Waits for KaTeX to actually finish loading before rendering, instead of
+// guessing with a fixed setTimeout — fixes questions that silently never
+// rendered when the CDN script hadn't loaded in time yet.
 function renderMathContent(element) {
   if (!element) return
-  const run = () => {
-    if (typeof window.renderMathInElement === 'undefined') return
+  loadKaTeX().then(() => {
+    if (!element.isConnected || !window.renderMathInElement) return
     window.renderMathInElement(element, {
       delimiters: [
         { left: '$$', right: '$$', display: true },
@@ -54,8 +73,7 @@ function renderMathContent(element) {
       trust: true,
       strict: false,
     })
-  }
-  setTimeout(run, 50)
+  })
 }
 
 // ─── Convert \begin{tabular} or \begin{array} to an HTML table ───────────────
