@@ -21,6 +21,9 @@ const SUBJECT_LIST = [
 
 const FULL_TEST_STYLE = { gradient: 'linear-gradient(135deg, #198754, #0d6efd)', badge: '#0d6efd' }
 
+// The full test is split into two sections: General Aptitude, then everything else
+const SUBJECT_SECTION_LABEL = 'Main Subject (Data Science & Artificial Intelligence)'
+
 function isAnswered(a) {
   return a !== undefined && a !== null && a !== '' && !(Array.isArray(a) && !a.length)
 }
@@ -338,10 +341,17 @@ const GATEDAFullTest = () => {
     </div>
   )
 
-  // ── Active quiz — one continuous list of every question ─────────────────
+  // ── Active quiz — Aptitude section, then Subject section ────────────────
   if (phase === 'quiz') {
     const q = allQuestions[currentIndex]
     const style = SUBJECT_STYLE[q.subject] || FULL_TEST_STYLE
+    const aptitudeCount = allQuestions.filter(qq => qq.subject === 'General Aptitude').length
+    const subjectCount = allQuestions.length - aptitudeCount
+    const navSections = [
+      { label: 'Aptitude', count: aptitudeCount },
+      { label: SUBJECT_SECTION_LABEL, count: subjectCount },
+    ]
+    const currentSection = currentIndex < aptitudeCount ? 'Aptitude' : SUBJECT_SECTION_LABEL
 
     return (
       <main className="main">
@@ -354,8 +364,9 @@ const GATEDAFullTest = () => {
                 <div className="col-lg-8">
                   <h1>Full GATE DA Test</h1>
                   <p className="mb-0">
-                    <span className="fw-semibold">{q.subject}</span>
-                    &nbsp;·&nbsp; {allQuestions.length} questions across 6 subjects
+                    <span className="fw-semibold">{currentSection} section</span>
+                    &nbsp;·&nbsp; {q.subject}
+                    &nbsp;·&nbsp; {aptitudeCount} Aptitude + {subjectCount} {SUBJECT_SECTION_LABEL} questions
                     &nbsp;·&nbsp; +1/+2 correct · negative marking for wrong MCQ
                   </p>
                 </div>
@@ -386,6 +397,7 @@ const GATEDAFullTest = () => {
           submitLabel="Finish Test"
           exitTo="/courses/gate-da/modules"
           exitLabel="Exit"
+          navSections={navSections}
         />
       </main>
     )
@@ -451,19 +463,31 @@ const GATEDAFullTest = () => {
             backLabel="Back to GATE DA"
           />
 
-          {/* Per-question review, in exam order */}
+          {/* Per-question review, in exam order, split into Aptitude / Subject sections */}
           <h5 className="fw-bold mb-3 mt-4">Question-by-Question Review</h5>
-          {allQuestions.map((q, idx) => (
-            <QuestionReviewItem
-              key={q._id || idx}
-              q={q}
-              idx={idx}
-              answer={answers[idx]}
-              res={results.responses[idx]}
-              isOpen={expanded === idx}
-              onToggle={() => setExpanded(expanded === idx ? null : idx)}
-            />
-          ))}
+          {(() => {
+            const aptitudeCount = allQuestions.filter(q => q.subject === 'General Aptitude').length
+            return allQuestions.map((q, idx) => (
+              <React.Fragment key={q._id || idx}>
+                {idx === 0 && aptitudeCount > 0 && (
+                  <h6 className="fw-bold text-uppercase text-muted small mt-2 mb-2">Aptitude ({aptitudeCount})</h6>
+                )}
+                {idx === aptitudeCount && (
+                  <h6 className="fw-bold text-uppercase text-muted small mt-4 mb-2">
+                    {SUBJECT_SECTION_LABEL} ({allQuestions.length - aptitudeCount})
+                  </h6>
+                )}
+                <QuestionReviewItem
+                  q={q}
+                  idx={idx}
+                  answer={answers[idx]}
+                  res={results.responses[idx]}
+                  isOpen={expanded === idx}
+                  onToggle={() => setExpanded(expanded === idx ? null : idx)}
+                />
+              </React.Fragment>
+            ))
+          })()}
         </div>
       </main>
     )
