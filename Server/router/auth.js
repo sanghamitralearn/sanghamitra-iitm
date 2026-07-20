@@ -4951,6 +4951,8 @@ const GATE_DA_SUBJECT_BUCKETS = {
 }
 
 
+// Top-level exam split: Aptitude vs everything else ("Main Subject")
+const GATE_DA_APTITUDE_TAGS = new Set(GATE_DA_SUBJECT_BUCKETS['general aptitude'].map(s => s.toLowerCase()))
 
 // GET /api/gate_da_questions?subject=Machine Learning&paper=GATE DA Practice Set 1&difficulty=easy&limit=30
 router.get('/gate_da_questions', async (req, res) => {
@@ -5058,20 +5060,13 @@ router.get('/gate_da_papers', async (req, res) => {
 
     const result = grouped.map(p => {
       const subjects = {}
-      p.subjects.forEach(s => { subjects[s.subject] = { count: s.count, totalMarks: s.totalMarks } })
-      return {
-        paper:          p._id.paper,
-        year:           p._id.year,
-        totalQuestions: p.totalQuestions,
-        totalMarks:     p.totalMarks,
-        subjects,
-      }
-    })
-    res.json(result)
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
+      const sections = { Aptitude: { count: 0, totalMarks: 0 }, 'Main Subject': { count: 0, totalMarks: 0 } }
+      p.subjects.forEach(s => {
+        subjects[s.subject] = { count: s.count, totalMarks: s.totalMarks }
+        const bucket = GATE_DA_APTITUDE_TAGS.has(String(s.subject).trim().toLowerCase()) ? 'Aptitude' : 'Main Subject'
+        sections[bucket].count += s.count
+        sections[bucket].totalMarks += s.totalMarks
+      })
 
 // POST /api/gate_da_full_scores — save one full-paper attempt
 router.post('/gate_da_full_scores', async (req, res) => {
