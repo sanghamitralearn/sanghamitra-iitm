@@ -227,6 +227,7 @@ const GATEDAFullTest = () => {
       testType:    'full',
       score:       combined.score,
       maxScore:    combined.maxScore,
+      percentage:  combined.percentage,
       correctAnswers: combined.correctAnswers,
       wrongAnswers:   combined.wrongAnswers,
       unattempted:    combined.unattempted,
