@@ -7,30 +7,15 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 const ACCENT      = '#5fcf80'
 const ACCENT_DARK = '#37423b'
 
+// The GATE DA Full Test is split into two top-level sections
 const SECTION_STYLE = {
-  'General Aptitude': {
+  Aptitude: {
     color: '#fd7e14', gradient: 'linear-gradient(135deg,#fd7e14,#ffc107)',
-    icon: 'bi-lightbulb-fill', short: 'GA',
+    icon: 'bi-lightbulb-fill', label: 'Aptitude',
   },
-  'Engineering Mathematics': {
-    color: '#0d6efd', gradient: 'linear-gradient(135deg,#0d6efd,#4dabf7)',
-    icon: 'bi-calculator-fill', short: 'Math',
-  },
-  'Programming & Data Structures': {
-    color: '#6610f2', gradient: 'linear-gradient(135deg,#6610f2,#8540f5)',
-    icon: 'bi-code-slash', short: 'Prog & DS',
-  },
-  'Database Management & Warehousing': {
-    color: '#20c997', gradient: 'linear-gradient(135deg,#20c997,#0dcaf0)',
-    icon: 'bi-database-fill', short: 'DBMS',
-  },
-  'Machine Learning': {
-    color: '#d63384', gradient: 'linear-gradient(135deg,#d63384,#f783ac)',
-    icon: 'bi-cpu-fill', short: 'ML',
-  },
-  'Artificial Intelligence': {
-    color: '#198754', gradient: 'linear-gradient(135deg,#198754,#20c997)',
-    icon: 'bi-robot', short: 'AI',
+  'Main Subject': {
+    color: '#198754', gradient: 'linear-gradient(135deg,#198754,#0d6efd)',
+    icon: 'bi-mortarboard-fill', label: 'Main Subject (Data Science & Artificial Intelligence)',
   },
 }
 
@@ -407,14 +392,14 @@ const GATEDAMain = () => {
               </h6>
               <div className="mb-4">
                 {Object.entries(SECTION_STYLE).map(([sec, s]) => {
-                  const info  = selectedPaper.subjects?.[sec] || { count: 0, totalMarks: 0 }
+                  const info  = selectedPaper.sections?.[sec] || { count: 0, totalMarks: 0 }
                   const total = selectedPaper.totalQuestions || 1
                   const barW  = Math.round(((info.count || 0) / total) * 100)
                   return (
                     <div key={sec} className="mb-2">
                       <div className="d-flex justify-content-between align-items-center mb-1">
                         <span className="small fw-semibold d-flex align-items-center gap-1">
-                          <i className={`bi ${s.icon}`} style={{ color: s.color }} />{sec}
+                          <i className={`bi ${s.icon}`} style={{ color: s.color }} />{s.label}
                         </span>
                         <div className="d-flex gap-2">
                           <span className="badge"
