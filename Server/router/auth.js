@@ -4950,6 +4950,8 @@ const GATE_DA_SUBJECT_BUCKETS = {
   'artificial intelligence': ['Artificial Intelligence'],
 }
 
+
+
 // GET /api/gate_da_questions?subject=Machine Learning&paper=GATE DA Practice Set 1&difficulty=easy&limit=30
 router.get('/gate_da_questions', async (req, res) => {
   try {
