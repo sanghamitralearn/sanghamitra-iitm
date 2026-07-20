@@ -322,7 +322,7 @@ const GATEDADashboard = () => {
   };
 
   const getLatestModule = (student, subject) => {
-    const entries = (student.quizScores || []).filter(q => q.type === 'Module' && q.subject === subject)
+    const entries = (student.quizScores || []).filter(q => q.type === 'Module' && q.subject === subject && q.source !== 'FullTest')
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     return entries[0] || null;
   };
@@ -364,7 +364,7 @@ const GATEDADashboard = () => {
   if (selectedStudent) {
     const latestFullTest = getLatestFullTest(selectedStudent);
     const moduleAttempts = (selectedStudent.quizScores || [])
-      .filter(q => q.type === 'Module')
+      .filter(q => q.type === 'Module' && q.source !== 'FullTest')
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     const fullTestCount = (selectedStudent.quizScores || []).filter(q => q.type === 'FullTest').length;
     const attemptedSections = SECTIONS.filter(sub =>
