@@ -5067,6 +5067,21 @@ router.get('/gate_da_papers', async (req, res) => {
         sections[bucket].count += s.count
         sections[bucket].totalMarks += s.totalMarks
       })
+      return {
+        paper:          p._id.paper,
+        year:           p._id.year,
+        totalQuestions: p.totalQuestions,
+        totalMarks:     p.totalMarks,
+        subjects,
+        sections,
+      }
+    })
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 
 // POST /api/gate_da_full_scores — save one full-paper attempt
 router.post('/gate_da_full_scores', async (req, res) => {
