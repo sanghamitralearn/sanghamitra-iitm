@@ -6931,6 +6931,7 @@ router.get('/admin-notifications', async (req, res) => {
       codingUsers, pdsaUsers,
       progAttempts,  // This is ProgrammingQuizAttempt for Java, Python, SQL, DSA
       satDocs, jeeAdvDocs, jeeMainDocs, jeeMainFullDocs, greDocs,
+      gateDaDocs, gateDaFullDocs,
       // Add these for additional course data
       javaSubmissions, pythonSubmissions, sqlSubmissions, dsaSubmissions,
       dbmsSubmissions
