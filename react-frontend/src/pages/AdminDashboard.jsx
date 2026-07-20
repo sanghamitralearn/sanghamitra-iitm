@@ -493,7 +493,9 @@ const AdminDashboard = () => {
                                 </small>
                                 {n.score != null && (
                                   <span className={getScoreClass(n.score)} style={{ display: 'inline-block', marginTop: '0.25rem' }}>
-                                    {Math.round(n.score)}%
+                                    {n.marks != null && n.maxMarks != null
+                                      ? `${Math.round(n.marks * 100) / 100}/${n.maxMarks} · ${Math.round(n.score)}%`
+                                      : `${Math.round(n.score)}%`}
                                   </span>
                                 )}
                                 <div style={{ fontSize: '0.7rem', color: '#adb5bd', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
