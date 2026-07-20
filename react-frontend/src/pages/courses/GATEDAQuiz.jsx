@@ -649,6 +649,7 @@ export const QuizPanel = ({
   style, moduleNum, saving, onSubmit,
   submitLabel = 'Submit Quiz', exitTo = '/courses/gate-da/modules', exitLabel = 'Exit',
   mode = 'single', onBackToOverview, onFinishTest,
+  navSections, // optional: [{ label, count }] — splits the Navigator/questions into labeled groups (e.g. Aptitude / Subject)
 }) => {
   const q = questions[currentIndex]
   const userAns = answers[currentIndex]
@@ -662,6 +663,15 @@ export const QuizPanel = ({
 
   const { full: schemeFull, wrongText: schemeWrongText } = formatMarkingScheme(q)
 
+  let currentSectionLabel = null
+  if (navSections) {
+    let offset = 0
+    for (const sec of navSections) {
+      if (currentIndex < offset + sec.count) { currentSectionLabel = sec.label; break }
+      offset += sec.count
+    }
+  }
+
   return (
     <div className="container mb-5">
       <div className="row g-4">
@@ -673,6 +683,9 @@ export const QuizPanel = ({
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <span className="text-muted small">Question {currentIndex + 1} of {questions.length}</span>
                 <div className="d-flex gap-2 flex-wrap">
+                  {currentSectionLabel && (
+                    <span className="badge bg-dark">{currentSectionLabel}</span>
+                  )}
                   <span className={`badge ${isAnswered ? 'bg-success' : 'bg-secondary'}`}>
                     {isAnswered ? 'Answered' : 'Not answered'}
                   </span>
@@ -827,22 +840,58 @@ export const QuizPanel = ({
           <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 16 }}>
             <div className="card-body p-3">
               <h6 className="fw-bold mb-3">Question Navigator</h6>
-              <div className="d-flex flex-wrap gap-2">
-                {questions.map((qn, i) => {
-                  const a = answers[i]
-                  const done = a !== undefined && a !== null && a !== '' && !(Array.isArray(a) && !a.length)
+              {navSections ? (() => {
+                let offset = 0
+                return navSections.map((sec, si) => {
+                  const start = offset
+                  offset += sec.count
+                  const answeredInSec = questions.slice(start, start + sec.count).filter((_, ii) => {
+                    const a = answers[start + ii]
+                    return a !== undefined && a !== null && a !== '' && !(Array.isArray(a) && !a.length)
+                  }).length
                   return (
-                    <button
-                      key={i}
-                      onClick={() => goTo(i)}
-                      className={`btn btn-sm ${i === currentIndex ? 'btn-primary' : done ? 'btn-success' : 'btn-outline-secondary'}`}
-                      style={{ width: 36, height: 36, padding: 0, fontWeight: 600 }}
-                    >
-                      {i + 1}
-                    </button>
+                    <div key={si} className={si > 0 ? 'mt-3' : ''}>
+                      <div className="text-uppercase text-muted small fw-semibold mb-2" style={{ letterSpacing: '0.03em' }}>
+                        {sec.label} <span className="text-secondary fw-normal">({answeredInSec}/{sec.count})</span>
+                      </div>
+                      <div className="d-flex flex-wrap gap-2">
+                        {questions.slice(start, start + sec.count).map((qn, ii) => {
+                          const i = start + ii
+                          const a = answers[i]
+                          const done = a !== undefined && a !== null && a !== '' && !(Array.isArray(a) && !a.length)
+                          return (
+                            <button
+                              key={i}
+                              onClick={() => goTo(i)}
+                              className={`btn btn-sm ${i === currentIndex ? 'btn-primary' : done ? 'btn-success' : 'btn-outline-secondary'}`}
+                              style={{ width: 36, height: 36, padding: 0, fontWeight: 600 }}
+                            >
+                              {i + 1}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
                   )
-                })}
-              </div>
+                })
+              })() : (
+                <div className="d-flex flex-wrap gap-2">
+                  {questions.map((qn, i) => {
+                    const a = answers[i]
+                    const done = a !== undefined && a !== null && a !== '' && !(Array.isArray(a) && !a.length)
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => goTo(i)}
+                        className={`btn btn-sm ${i === currentIndex ? 'btn-primary' : done ? 'btn-success' : 'btn-outline-secondary'}`}
+                        style={{ width: 36, height: 36, padding: 0, fontWeight: 600 }}
+                      >
+                        {i + 1}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
               <hr />
               <div className="d-flex justify-content-between small text-muted">
                 <span><span className="badge bg-success me-1">■</span>Answered</span>
