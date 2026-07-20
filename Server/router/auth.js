@@ -5303,7 +5303,8 @@ router.get('/gate_da_exam_detail', async (req, res) => {
           correctAnswers,
           wrongAnswers:   attempt.wrongAnswers,
           unattempted:    attempt.unattempted,
-          percentage:     totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0,
+          percentage: attempt.maxScore > 0 ? Math.round(Math.max(0, attempt.score / attempt.maxScore) * 100) : 0,
+
         },
         enrichedResults,
         insights: {
