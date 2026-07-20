@@ -40,8 +40,15 @@ function shuffleWithinSubject(qs) {
 const GATEDAFullTest = () => {
   const navigate   = useNavigate()
   const location   = useLocation()
-  const paperName  = location.state?.paper ?? null
-  const paperYear  = location.state?.year  ?? null
+  // When the test is started generically (e.g. from the modules page, without
+  // picking a specific paper), resolve it to the newest paper in the database
+  // instead of saving under a generic label — that way the attempt lines up
+  // with the paper card on the GATE DA home page (and with any paper added
+  // later) instead of going unmatched. See fetchAllQuestions().
+  const paperInfoRef = useRef({
+    name: location.state?.paper ?? null,
+    year: location.state?.year  ?? null,
+  })
 
   // phase: loading | error | quiz | review
   const [phase, setPhase] = useState('loading')
@@ -93,6 +100,16 @@ const GATEDAFullTest = () => {
     setPhase('loading')
     setError(null)
     try {
+      if (!paperInfoRef.current.name) {
+        try {
+          const papersRes = await axios.get(`${API_URL}/api/gate_da_papers`, { withCredentials: true })
+          const papers = Array.isArray(papersRes.data) ? papersRes.data : []
+          // Prefer the most recently added paper when several exist in the database.
+          const [chosen] = [...papers].sort((a, b) => String(b.year || '').localeCompare(String(a.year || '')))
+          if (chosen) paperInfoRef.current = { name: chosen.paper, year: chosen.year }
+        } catch { /* no papers yet — fall back to the generic label at save time */ }
+      }
+      const paperName = paperInfoRef.current.name
       const paperParam = paperName ? `&paper=${encodeURIComponent(paperName)}` : ''
       const responses = await Promise.all(
         SUBJECT_LIST.map(s =>
@@ -250,8 +267,15 @@ const GATEDAFullTest = () => {
       return
     }
     setSaving(true)
+    let saveWarning = null
+    if (!paperInfoRef.current.name) {
+      saveWarning = "Couldn't determine which paper this attempt belongs to, so it won't appear on the papers list — your score below is still accurate."
+    }
     try {
-      await Promise.all([
+      // Promise.allSettled (not .all) so one failing save doesn't hide the
+      // others, and we can report exactly which save failed instead of a
+      // generic silent console error.
+      const results2 = await Promise.allSettled([
         // Per-subject scores (6x — one per GATE DA subject)
         ...SUBJECT_LIST.map(s => {
           const r = perSubjectResult[s.subject]
@@ -263,26 +287,40 @@ const GATEDAFullTest = () => {
             source: 'FullTest',
           }, { withCredentials: true })
         }),
-        // Full-paper score (always saved, so it shows up on the admin dashboard
-        // and the paper listing page even when started without a named paper)
-        axios.post(`${API_URL}/api/gate_da_full_scores`, {
-          email: u.email, name: u.username || u.name || u.email,
-          paper: paperName || 'GATE DA Full Test', year: paperYear,
-          totalQuestions: combined.totalQuestions,
-          correctAnswers: combined.correctAnswers,
-          wrongAnswers: combined.wrongAnswers,
-          unattempted: combined.unattempted,
-          score: combined.score, maxScore: combined.maxScore,
-          sectionScores: analysisResults.sectionScores,
-          responses: analysisResults.responses,
-          totalTimeTaken: combined.totalTime || 0,
-        }, { withCredentials: true }),
+        // Full-paper score — only attempted when we actually know which paper
+        // this is (a fabricated name here would never match any paper on the
+        // listing page, permanently orphaning the attempt).
+        ...(paperInfoRef.current.name ? [
+          axios.post(`${API_URL}/api/gate_da_full_scores`, {
+            email: u.email, name: u.username || u.name || u.email,
+            paper: paperInfoRef.current.name, year: paperInfoRef.current.year,
+            totalQuestions: combined.totalQuestions,
+            correctAnswers: combined.correctAnswers,
+            wrongAnswers: combined.wrongAnswers,
+            unattempted: combined.unattempted,
+            score: combined.score, maxScore: combined.maxScore,
+            sectionScores: analysisResults.sectionScores,
+            responses: analysisResults.responses,
+            totalTimeTaken: combined.totalTime || 0,
+          }, { withCredentials: true }),
+        ] : []),
       ])
+      const fullRes = paperInfoRef.current.name ? results2[results2.length - 1] : null
+      results2.slice(0, SUBJECT_LIST.length).forEach((r, i) => {
+        if (r.status === 'rejected') console.error(`Failed to save ${SUBJECT_LIST[i].subject} score:`, r.reason)
+      })
+      if (fullRes?.status === 'rejected') {
+        console.error('Failed to save full-paper score:', fullRes.reason)
+        const serverMsg = fullRes.reason?.response?.data?.error
+        saveWarning = `Your test result couldn't be saved to the papers list (${serverMsg || fullRes.reason?.message || 'unknown error'}). ` +
+          `Your score below is still accurate — please retry or contact support if this keeps happening.`
+      }
     } catch (e) {
       console.error('Failed to save full test scores:', e)
+      saveWarning = `Your test result couldn't be saved (${e?.message || 'unknown error'}). Your score below is still accurate.`
     } finally {
       setSaving(false)
-      navigate('/courses/gate-da/analysis', { state: { results: analysisResults, questions: allQuestions } })
+      navigate('/courses/gate-da/analysis', { state: { results: analysisResults, questions: allQuestions, saveWarning } })
     }
   }
 
