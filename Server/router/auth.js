@@ -6986,6 +6986,14 @@ router.get('/admin-notifications', async (req, res) => {
         'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
         'attempts.totalQuestions':1, 'attempts.dateAttempted':1
       }).lean().catch(() => []),
+      GateDaScore.find({}, { email:1, name:1, subject:1,
+        'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
+        'attempts.totalQuestions':1, 'attempts.dateAttempted':1
+      }).lean().catch(() => []),
+      GateDaFullScore.find({}, { email:1, name:1, paper:1, year:1,
+        score:1, maxScore:1, correctAnswers:1, totalQuestions:1, dateAttempted:1
+      }).lean().catch(() => []),
+        
       // ADD: Java submissions from JavaSubmission model
       JavaSubmission.find({}, { email:1, username:1, topic:1, score:1, 
         maxScore:1, percentage:1, timestamp:1
@@ -7266,6 +7274,43 @@ router.get('/admin-notifications', async (req, res) => {
         })
       })
     })
+
+       // GATE DA (module-wise)
+    gateDaDocs.forEach(doc => {
+      ;(doc.attempts || []).forEach(attempt => {
+        const pct = attempt.totalQuestions > 0
+          ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
+          : (attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0)
+        all.push({
+          userName: doc.name || doc.email,
+          subject: 'GATE DA',
+          subjectKey: 'gate_da',
+          icon: 'bi-graph-up',
+          iconClass: 'gate-da',
+          topic: doc.subject || 'GATE DA Module',
+          score: pct,
+          timestamp: attempt.dateAttempted
+        })
+      })
+    })
+
+    // GATE DA (full test)
+    gateDaFullDocs.forEach(doc => {
+      const pct = doc.totalQuestions > 0
+        ? Math.round((doc.correctAnswers / doc.totalQuestions) * 100)
+        : (doc.maxScore > 0 ? Math.round((doc.score / doc.maxScore) * 100) : 0)
+      all.push({
+        userName: doc.name || doc.email,
+        subject: 'GATE DA',
+        subjectKey: 'gate_da',
+        icon: 'bi-graph-up',
+        iconClass: 'gate-da',
+        topic: doc.paper ? `${doc.paper}${doc.year ? ' ' + doc.year : ''}` : 'Full GATE DA Test',
+        score: pct,
+        timestamp: doc.dateAttempted
+      })
+    })
+
 
     // Sort and return top 50 most recent
     all.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
