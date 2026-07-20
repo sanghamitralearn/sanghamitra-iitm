@@ -298,7 +298,7 @@ const GATEDAMain = () => {
                               <i className={`bi ${attempt ? 'bi-arrow-clockwise' : 'bi-play-fill'} me-2`} />
                               {attempt ? 'Reattempt' : 'Start Test'}
                             </button>
-                            {attempt && (
+                            {attempt ? (
                               <Link
                                 to="/courses/gate-da/analysis"
                                 state={{ results: { ...attempt, testType: 'full' }, questions: null }}
@@ -307,6 +307,16 @@ const GATEDAMain = () => {
                               >
                                 <i className="bi bi-bar-chart-line me-1" />View Analysis
                               </Link>
+                            ) : (
+                              <button
+                                type="button"
+                                className="btn btn-outline-secondary btn-sm"
+                                style={{ borderRadius: 10, minWidth: 150 }}
+                                disabled
+                                title="Attempt this test to view its analysis"
+                              >
+                                <i className="bi bi-bar-chart-line me-1" />View Analysis
+                              </button>
                             )}
                           </div>
                         </div>
