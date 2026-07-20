@@ -14,17 +14,25 @@ const GATE_DA_SECTIONS = [
   'Artificial Intelligence',
 ]
 
-const SECTION_ICON = {
-  'General Aptitude':                    'bi-lightbulb-fill',
-  'Engineering Mathematics':              'bi-calculator-fill',
-  'Programming & Data Structures':        'bi-code-slash',
-  'Database Management & Warehousing':    'bi-database-fill',
-  'Machine Learning':                     'bi-cpu-fill',
-  'Artificial Intelligence':              'bi-robot',
-}
-
 const sectionColor    = sec => (SUBJECT_STYLE[sec] || {}).badge    || '#6c757d'
 const sectionGradient = sec => (SUBJECT_STYLE[sec] || {}).gradient || 'linear-gradient(135deg,#6c757d,#495057)'
+
+// The GATE DA full test is split into two top-level exam sections: General
+// Aptitude on its own, and everything else grouped as the Main Subject
+// (Data Science & Artificial Intelligence) — mirrors GATE_DA_APTITUDE_TAGS
+// on the server.
+const TOP_LEVEL_SECTIONS = [
+  {
+    key: 'Aptitude', label: 'Aptitude', icon: 'bi-lightbulb-fill',
+    color: '#fd7e14', gradient: 'linear-gradient(135deg,#fd7e14,#ffc107)',
+    subjects: ['General Aptitude'],
+  },
+  {
+    key: 'Main Subject', label: 'Main Subject (Data Science & Artificial Intelligence)', icon: 'bi-mortarboard-fill',
+    color: '#198754', gradient: 'linear-gradient(135deg,#198754,#0d6efd)',
+    subjects: GATE_DA_SECTIONS.filter(s => s !== 'General Aptitude'),
+  },
+]
 
 // Format a (possibly negative, possibly fractional) marks value with an explicit
 // sign, e.g. 1 -> "+1", -0.66 -> "-0.66", 0 -> "0". GATE DA has real negative
@@ -207,8 +215,32 @@ const ResultsPage = ({ results, enriched, onReview, allAttempts, activeAttemptId
     ? GATE_DA_SECTIONS.filter(sec => sectionStats[sec])
     : (results.subject ? [results.subject] : [])
 
+  // Aptitude vs Main Subject totals, summed from whichever of the 6 subjects
+  // are present in this attempt.
+  const topLevelStats = TOP_LEVEL_SECTIONS.map(bucket => {
+    const present = bucket.subjects.filter(sub => sectionStats[sub])
+    if (!present.length) return { ...bucket, stats: null }
+    const stats = present.reduce((acc, sub) => {
+      const st = sectionStats[sub]
+      acc.score += st.score; acc.max += st.max
+      acc.correct += st.correct; acc.wrong += st.wrong; acc.unattempted += st.unattempted
+      return acc
+    }, { score: 0, max: 0, correct: 0, wrong: 0, unattempted: 0 })
+    return { ...bucket, stats }
+  }).filter(b => b.stats)
+
+  // The left-hand "Sections" tabs show the same two top-level exam sections
+  // (Aptitude / Main Subject) as the pre-test modal and quiz's Question
+  // Navigator, rather than all 6 individual subjects — only for full tests,
+  // where the 2-way split applies. Single-subject practice attempts still
+  // show their one subject.
+  const sidebarItems = isFullTest
+    ? topLevelStats.map(b => ({ key: b.key, label: b.label, color: b.color }))
+    : sidebarSections.map(sec => ({ key: sec, label: sec, color: sectionColor(sec) }))
+
+  const currentBucket = topLevelStats.find(b => b.key === selectedView) || null
   const isSectionView = selectedView !== 'overview'
-  const currentStats  = isSectionView ? sectionStats[selectedView] : null
+  const currentStats  = isSectionView ? (currentBucket?.stats ?? sectionStats[selectedView]) : null
 
   const displayScore       = isSectionView ? (currentStats?.score ?? 0) : (results.score ?? 0)
   const displayMax         = isSectionView ? (currentStats?.max ?? 0) : (results.maxScore ?? 0)
@@ -218,14 +250,17 @@ const ResultsPage = ({ results, enriched, onReview, allAttempts, activeAttemptId
   const total              = displayCorrect + displayWrong + displayUnattempted || 1
 
   // Marks actually lost to negative marking, scoped to the current view.
-  const relevantResponses = isSectionView ? enriched.filter(r => r.subject === selectedView) : enriched
+  const relevantResponses = isSectionView
+    ? (currentBucket ? enriched.filter(r => currentBucket.subjects.includes(r.subject)) : enriched.filter(r => r.subject === selectedView))
+    : enriched
   const marksDeducted = relevantResponses
     .filter(r => r && !r.isCorrect && !r.unattempted && (r.marksAwarded ?? 0) < 0)
     .reduce((sum, r) => sum + (r.marksAwarded ?? 0), 0)
 
   const cardGradient = isSectionView
-    ? sectionGradient(selectedView)
+    ? (currentBucket?.gradient ?? sectionGradient(selectedView))
     : 'linear-gradient(135deg,#198754,#0d6efd)'
+  const sectionViewLabel = currentBucket?.label ?? selectedView
   const testLabel = isFullTest ? 'Full GATE DA Test' : `GATE DA — ${results.subject || 'Practice'}`
 
   return (
@@ -295,23 +330,24 @@ const ResultsPage = ({ results, enriched, onReview, allAttempts, activeAttemptId
           {/* Sidebar */}
           <div className="col-md-3">
             <div className="card border-0 shadow-sm" style={{ borderRadius: 12, overflow: 'hidden' }}>
-              {sidebarSections.length > 0 && (
+              {sidebarItems.length > 0 && (
                 <>
                   <div className="w-100 p-3 d-flex align-items-center justify-content-between"
                     style={{ background: '#fff', borderBottom: '1px solid #e9ecef' }}>
                     <span style={{ paddingLeft: 10, fontWeight: 500, color: '#495057', fontSize: '0.9rem' }}>Sections</span>
                   </div>
-                  {sidebarSections.map(sec => {
-                    const secActive = selectedView === sec
+                  {sidebarItems.map(item => {
+                    const bucket    = topLevelStats.find(b => b.key === item.key)
+                    const secActive = selectedView === item.key || (bucket ? bucket.subjects.includes(selectedView) : false)
                     return (
-                      <button key={sec}
-                        onClick={() => setSelectedView(sec)}
+                      <button key={item.key}
+                        onClick={() => setSelectedView(item.key)}
                         className="w-100 text-start border-0 px-4 py-2 d-flex align-items-center justify-content-between"
                         style={{ background: secActive ? '#f8f9fa' : '#fff', borderBottom: '1px solid #f0f0f0', cursor: 'pointer' }}>
-                        <span style={{ borderLeft: secActive ? `3px solid ${sectionColor(sec)}` : '3px solid transparent', paddingLeft: 10, color: secActive ? sectionColor(sec) : '#495057', fontWeight: secActive ? 600 : 400, fontSize: '0.95rem' }}>
-                          {sec}
+                        <span style={{ borderLeft: secActive ? `3px solid ${item.color}` : '3px solid transparent', paddingLeft: 10, color: secActive ? item.color : '#495057', fontWeight: secActive ? 600 : 400, fontSize: '0.95rem' }}>
+                          {item.label}
                         </span>
-                        {secActive && <span style={{ width: 8, height: 8, borderRadius: '50%', background: sectionColor(sec), display: 'inline-block' }} />}
+                        {secActive && <span style={{ width: 8, height: 8, borderRadius: '50%', background: item.color, display: 'inline-block' }} />}
                       </button>
                     )
                   })}
@@ -333,7 +369,7 @@ const ResultsPage = ({ results, enriched, onReview, allAttempts, activeAttemptId
               <div style={{ position: 'absolute', right: -30, top: -30, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
               <div style={{ position: 'absolute', right: 60, bottom: -40, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
               <h5 className="fw-bold mb-4" style={{ opacity: 0.95 }}>
-                {isSectionView ? `${selectedView} Report` : 'Overall'}
+                {isSectionView ? `${sectionViewLabel} Report` : 'Overall'}
               </h5>
               <div className="text-center">
                 <div style={{ width: 150, height: 150, borderRadius: '50%', border: '5px solid rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.12)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
@@ -347,31 +383,31 @@ const ResultsPage = ({ results, enriched, onReview, allAttempts, activeAttemptId
               </div>
             </div>
 
-            {/* Section cards — full test overview only */}
-            {selectedView === 'overview' && isFullTest && sidebarSections.length > 0 && (
+            {/* Exam section cards (Aptitude / Main Subject) — full test overview only */}
+            {selectedView === 'overview' && isFullTest && topLevelStats.length > 0 && (
               <div className="row g-3 mb-4">
-                {sidebarSections.map(sec => {
-                  const st = sectionStats[sec]
-                  return (
-                    <div key={sec} className="col-md-6 col-lg-4">
-                      <div className="card border-0 shadow-sm h-100 text-center" style={{ borderRadius: 12, cursor: 'pointer' }}
-                        onClick={() => setSelectedView(sec)}>
-                        <div style={{ height: 4, background: sectionGradient(sec), borderRadius: '12px 12px 0 0' }} />
-                        <div className="card-body py-3">
-                          <i className={`bi ${SECTION_ICON[sec] || 'bi-journal-text'} mb-2`} style={{ fontSize: '1.3rem', color: sectionColor(sec) }} />
-                          <div className="fw-bold mb-1" style={{ color: sectionColor(sec), fontSize: '0.85rem' }}>{sec}</div>
-                          <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#212529' }}>{fmtMarks(st.score)}</div>
-                          <div className="text-muted" style={{ fontSize: '0.82rem' }}>/ {st.max}</div>
-                          <div className="d-flex justify-content-center gap-3 mt-2" style={{ fontSize: '0.75rem' }}>
-                            <span className="text-success">{st.correct}✓</span>
-                            <span className="text-danger">{st.wrong}✗</span>
-                            <span className="text-muted">{st.unattempted}—</span>
+                {topLevelStats.map(bucket => (
+                  <div key={bucket.key} className="col-md-6">
+                    <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12 }}>
+                      <div style={{ height: 4, background: bucket.gradient, borderRadius: '12px 12px 0 0' }} />
+                      <div className="card-body py-3 d-flex align-items-center gap-3">
+                        <i className={`bi ${bucket.icon}`} style={{ fontSize: '1.6rem', color: bucket.color }} />
+                        <div className="flex-grow-1">
+                          <div className="fw-bold" style={{ color: bucket.color, fontSize: '0.85rem' }}>{bucket.label}</div>
+                          <div className="d-flex align-items-baseline gap-2">
+                            <span style={{ fontSize: '1.4rem', fontWeight: 700, color: '#212529' }}>{fmtMarks(bucket.stats.score)}</span>
+                            <span className="text-muted" style={{ fontSize: '0.82rem' }}>/ {bucket.stats.max}</span>
+                          </div>
+                          <div className="d-flex gap-3 mt-1" style={{ fontSize: '0.75rem' }}>
+                            <span className="text-success">{bucket.stats.correct}✓</span>
+                            <span className="text-danger">{bucket.stats.wrong}✗</span>
+                            <span className="text-muted">{bucket.stats.unattempted}—</span>
                           </div>
                         </div>
                       </div>
                     </div>
-                  )
-                })}
+                  </div>
+                ))}
               </div>
             )}
 
@@ -652,7 +688,7 @@ function buildFullAttempt(group) {
 // field (set server-side for records saved together); falls back to positional
 // pairing across subjects sorted chronologically when no attemptId is present.
 function groupFullTestAttempts(records) {
-  const fullRecords = (records || []).filter(r => r.testType === 'full')
+  const fullRecords = (records || []).filter(r => r.source === 'FullTest')
   if (!fullRecords.length) return []
 
   if (fullRecords.some(r => r.attemptId)) {
@@ -694,6 +730,7 @@ const GATEDAAnalysis = () => {
   const [phase,           setPhase]           = useState('results')
   const [allAttempts,     setAllAttempts]     = useState([])
   const [activeAttemptId, setActiveAttemptId] = useState(null)
+  const [saveWarning,     setSaveWarning]     = useState(location.state?.saveWarning || null)
 
   const questionsRef = useRef([])
 
@@ -815,14 +852,22 @@ const GATEDAAnalysis = () => {
   if (!results) return null
 
   if (phase === 'results') return (
-    <ResultsPage
-      results={results}
-      enriched={enriched}
-      onReview={() => setPhase('review')}
-      allAttempts={allAttempts}
-      activeAttemptId={activeAttemptId}
-      onSwitchAttempt={switchAttempt}
-    />
+    <>
+      {saveWarning && (
+        <div className="alert alert-warning d-flex justify-content-between align-items-start m-3" role="alert">
+          <span><i className="bi bi-exclamation-triangle-fill me-2" />{saveWarning}</span>
+          <button type="button" className="btn-close" aria-label="Dismiss" onClick={() => setSaveWarning(null)} />
+        </div>
+      )}
+      <ResultsPage
+        results={results}
+        enriched={enriched}
+        onReview={() => setPhase('review')}
+        allAttempts={allAttempts}
+        activeAttemptId={activeAttemptId}
+        onSwitchAttempt={switchAttempt}
+      />
+    </>
   )
 
   return (
