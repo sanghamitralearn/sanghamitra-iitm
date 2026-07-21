@@ -5067,9 +5067,9 @@ router.get('/gate_da_papers', async (req, res) => {
         sections[bucket].count += s.count
         sections[bucket].totalMarks += s.totalMarks
       })
-      return {
-        paper:          p._id.paper,
-        year:           p._id.year,
+     return {
+        paper:          p._id.paper || GATE_DA_UNNAMED_PAPER,
+        year:           p._id.year ?? null,
         totalQuestions: p.totalQuestions,
         totalMarks:     p.totalMarks,
         subjects,
