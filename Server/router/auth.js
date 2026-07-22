@@ -4954,6 +4954,8 @@ const GATE_DA_SUBJECT_BUCKETS = {
 // Top-level exam split: Aptitude vs everything else ("Main Subject")
 const GATE_DA_APTITUDE_TAGS = new Set(GATE_DA_SUBJECT_BUCKETS['general aptitude'].map(s => s.toLowerCase()))
 
+const GATE_DA_UNNAMED_PAPER = 'GATE DA Practice Test'
+
 // GET /api/gate_da_questions?subject=Machine Learning&paper=GATE DA Practice Set 1&difficulty=easy&limit=30
 router.get('/gate_da_questions', async (req, res) => {
   try {
