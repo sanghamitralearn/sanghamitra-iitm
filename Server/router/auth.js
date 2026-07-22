@@ -4970,11 +4970,14 @@ router.get('/gate_da_questions', async (req, res) => {
         filter.subject = { $regex: new RegExp('^' + esc(subject) + '$', 'i') }
       }
     }
-    if (difficulty) filter.difficulty = difficulty
-    if (paper) {
-      const escapedPaper = paper.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      filter.paper = { $regex: new RegExp('^' + escapedPaper + '$', 'i') }
+    if (paper && paper !== GATE_DA_UNNAMED_PAPER) {
+      const anyPaperTagged = await GateDaQuestion.exists({ paper: { $exists: true, $ne: null } })
+       if (anyPaperTagged) {
+        const escapedPaper = paper.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        filter.paper = { $regex: new RegExp('^' + escapedPaper + '$', 'i') }
+      }
     }
+
     const qs = await GateDaQuestion.find(filter)
       .limit(limit ? parseInt(limit) : 0)
       .lean()
