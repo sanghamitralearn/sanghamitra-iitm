@@ -193,11 +193,22 @@ export function resolveType(q) {
   const hasOptions = Array.isArray(q.options) && q.options.length > 0
   const hasImageOptions = q.option_images && Object.keys(q.option_images).length > 0
   if (!hasOptions && !hasImageOptions) return 'numeric'
-  if (q.type === 'multiple_select') return 'multiple_select'
+  // "multiple_choice_multiple" is how the imported GATE-DA2024 paper tags MSQ
+  // questions (correct_answer is a ";"-joined string, e.g. "A;D") — treat it
+  // the same as "multiple_select" or it silently renders as single-choice.
+  if (q.type === 'multiple_select' || q.type === 'multiple_choice_multiple') return 'multiple_select'
   if (q.type === 'numeric') return 'numeric'
   // Any other value (e.g. "multiple_choice_single", "quantitative_comparison")
   // is a single-choice question with an options array, so render it as such.
   return 'multiple_choice'
+}
+
+// ─── Normalise a multi-answer correct_answer into an array of option ids ─────
+// Handles both the real array form and the imported ";"-joined string form
+// (e.g. "A;D") used by the GATE-DA2024 "multiple_choice_multiple" questions.
+function normalizeMultiAnswer(ca) {
+  if (Array.isArray(ca)) return ca.map(a => String(a).trim())
+  return String(ca ?? '').split(';').map(s => s.trim()).filter(Boolean)
 }
 
 // ─── Parse List-I / List-II from question text ────────────────────────────────
@@ -368,10 +379,7 @@ export function calcMarks(q, userAns) {
   }
 
   if (type === 'multiple_select') {
-    const corrSet = new Set(
-      (Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer])
-        .map(a => String(a).trim())
-    )
+    const corrSet = new Set(normalizeMultiAnswer(q.correct_answer))
     const userSet = new Set((Array.isArray(userAns) ? userAns : [userAns]).map(a => String(a).trim()))
     const ok = corrSet.size === userSet.size && [...corrSet].every(a => userSet.has(a))
     return { isCorrect: ok, marksAwarded: ok ? (scheme.full ?? 1) : 0 }
@@ -512,9 +520,7 @@ export const QuestionReviewItem = ({ q, idx, answer, res, isOpen, onToggle }) =>
             {resolveType(q) === 'multiple_select' && (
               <div className="mb-3">
                 {q.options.map((opt, oi) => {
-                  const corrArr = Array.isArray(q.correct_answer)
-                    ? q.correct_answer.map(String)
-                    : [String(q.correct_answer)]
+                  const corrArr = normalizeMultiAnswer(q.correct_answer)
                   const isCorrectOpt = corrArr.includes(opt.option_id)
                   const userPicked = Array.isArray(answer)
                     ? answer.includes(opt.option_id)
