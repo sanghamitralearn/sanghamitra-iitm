@@ -41,17 +41,17 @@ const COURSE_CONFIG = {
         examId: 'midterm1',
         examTitle: 'Midterm 1',
         weekRange: '1-4',
-        totalQuestions: 30
+        totalQuestions: 20
     },
     { 
         week: 5,  
-        topic: 'Polymorphism & Generics',        
+        topic: 'Polymorphism',        
         description: 'Polymorphism, Generic programming, Java Generics and Subtyping, Reflection' 
     },
     { 
         week: 6,  
-        topic: 'Collections & Indirection',        
-        description: 'Indirection, Collection, MAP' 
+        topic: 'The Benefits of Indirection',        
+        description: 'Indirection, Collection, Concrete Collections, MAPs' 
     },
     { 
         week: 7,  
@@ -72,7 +72,7 @@ const COURSE_CONFIG = {
         examId: 'midterm2',
         examTitle: 'Midterm 2',
         weekRange: '1-8',
-        totalQuestions: 40
+        totalQuestions: 20
     },
     { 
         week: 9,  
@@ -103,7 +103,7 @@ const COURSE_CONFIG = {
         examId: 'endterm',
         examTitle: 'End Term',
         weekRange: '1-12',
-        totalQuestions: 50
+        totalQuestions: 20
     },
     ],
   },
@@ -191,10 +191,10 @@ const COURSE_CONFIG = {
     color: '#f4b41a',
     description: 'Core DSA concepts essential for coding interviews and problem solving.',
     weeks: [
-      { week: 1,  topic: 'Arrays & Strings',        description: 'Traversal, sliding window, two pointers' },
-      { week: 2,  topic: 'Linked Lists',            description: 'Singly, doubly, circular lists' },
-      { week: 3,  topic: 'Stacks & Queues',         description: 'LIFO/FIFO, deque, monotonic stack' },
-      { week: 4,  topic: 'Hashing',                 description: 'Hash maps, hash sets, collision resolution' },
+      { week: 1,  topic: 'Python Basics',        description: '' },
+      { week: 2,  topic: 'Sorting Algorithms',            description: 'Assessment on Quick Sort, Merge Sort, Selection Sort, Insertion Sort, and Bubble Sort' },
+      { week: 3,  topic: 'Linear Data Structures',         description: 'Assessment on Linked Lists, Arrays, Stacks, Queues, and Hashing' },
+      { week: 4,  topic: 'Introduction to Graphs',                 description: 'Assessment on BFS (Breadth-First Search), DFS (Depth-First Search), Directed Acyclic Graphs (DAGs), and Topological Sorting' },
       // ─── MIDTERM 1 ─────────────────────────────────────────────────────────
       { 
         week: 'midterm1',  
@@ -206,10 +206,10 @@ const COURSE_CONFIG = {
         weekRange: '1-4',
         totalQuestions: 30
       },
-      { week: 5,  topic: 'Binary Trees',            description: 'Traversals, BST, height, diameter' },
-      { week: 6,  topic: 'Heaps & Priority Queues', description: 'Min/max heap, heap sort' },
-      { week: 7,  topic: 'Graphs',                  description: 'BFS, DFS, topological sort' },
-      { week: 8,  topic: 'Sorting Algorithms',      description: 'Merge sort, quick sort, counting sort' },
+      { week: 5,  topic: 'Graph Algorithms',            description: 'Assessment on Dijkstra's Algorithm, Bellman-Ford Algorithm, Floyd-Warshall Algorithm, Prim's Algorithm, and Kruskal's Algorithm' },
+      { week: 6,  topic: 'Advanced Data Structures', description: 'Assessment on Union-Find Data Structure, Priority Queues, Heaps, and Binary Search Trees' },
+      { week: 7,  topic: 'Advanced Algorithms',                  description: 'Assessment on Balanced search tree, Scheduling algorithms, Huffman algorithms.' },
+      { week: 8,  topic: 'Divide and Conquer Algorithms',      description: 'Assessment on Closest Pair of Points, Integer Multiplication, Recursion Trees, Quick Select/Fast Select Algorithms' },
       // ─── MIDTERM 2 ─────────────────────────────────────────────────────────
       { 
         week: 'midterm2',  
@@ -219,12 +219,12 @@ const COURSE_CONFIG = {
         examId: 'midterm2',
         examTitle: 'Midterm 2',
         weekRange: '1-8',
-        totalQuestions: 40
+        totalQuestions: 20
       },
-      { week: 9,  topic: 'Dynamic Programming',     description: 'Memoization, tabulation, classic problems' },
-      { week: 10, topic: 'Greedy & Backtracking',   description: 'Interval scheduling, N-queens, subsets' },
-      { week: 11, topic: 'Divide & Conquer',        description: 'Binary search, merge sort, matrix multiply' },
-      { week: 12, topic: 'Revision & Practice',     description: 'Mixed DSA revision questions' },
+      { week: 9,  topic: 'Dynamic Programming',     description: 'Assessment on Fibonacci & Staircase Problems, 0/1 Knapsack, Rod Cutting, Longest Increasing Subsequence, Longest Common Subsequence, Matrix Chain Multiplication, Edit Distance, Coin Change Problem, Weighted Interval Scheduling, Grid Path Problems (Minimum Path Sum, Unique Paths), Palindrome Partitioning' },
+      { week: 10, topic: 'Linear Programming',   description: 'Assessment on Graphical Method (2 variables), Simplex Method, Duality Theory, Sensitivity Analysis, Transportation Problem, Assignment Problem, Blending Problems, Diet Problems, Production Planning, Resource Allocation, Cutting Stock Problem, Scheduling Problems, Investment Portfolio Optimization, Supply Chain Optimization, Network Flow (Max Flow, Min Cut), Integer Linear Programming, Branch and Bound Method, Game Theory (Zero-Sum Games), Markov Decision Processes, Stochastic Programming' },
+    
+      { week: 11, topic: 'Revision & Practice',     description: 'Mixed DSA revision questions' },
       // ─── ENDTERM ──────────────────────────────────────────────────────────
       { 
         week: 'endterm',  
@@ -233,8 +233,8 @@ const COURSE_CONFIG = {
         isExam: true,
         examId: 'endterm',
         examTitle: 'End Term',
-        weekRange: '1-12',
-        totalQuestions: 50
+        weekRange: '1-11',
+        totalQuestions: 20
       },
     ],
   },
