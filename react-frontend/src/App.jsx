@@ -99,6 +99,17 @@ import QuizPage from './pages/courses/Programming_Courses/QuizPage'
 import CodingPage from './pages/courses/Programming_Courses/CodingPage'
 import ExamPage from './pages/courses/Programming_Courses/ExamPage'
 
+//GMAT
+import GMAT from './pages/courses/GMAT'
+import GMATMain from './pages/courses/GMATMain'
+import GMATQuiz from './pages/courses/GMATQuiz'
+import GMATFullTest from './pages/courses/GMATFullTest'
+import GMATDashboard from './pages/GMATDashboard'
+import GMATExamAnalysis from './pages/GMATExamAnalysis'
+import GMATAnalysis from './pages/GMATAnalysis'
+import GMATScoreDashboard from './pages/courses/GMATScoreDashboard'
+
+
 //gate da
 
 import GATEDA from './pages/courses/GATEDA'
@@ -252,7 +263,18 @@ function App() {
             <Route path="/courses/gre/ScoreDashboard" element={<GREScoreDashboard />} />
             <Route path="/admin/gre/exam/:email/:subject/:attemptNumber" element={<GREExamAnalysis />} />
 
+                 
+           {/* GMAT — paper listing (like GRE) + section-based quizzes */}
+            <Route path="/courses/gmat" element={<GMATMain />} />
+            <Route path="/courses/gmat/modules" element={<GMAT />} />
+            <Route path="/courses/gmat/quiz/:section/:module" element={<GMATQuiz />} />
+            <Route path="/courses/gmat/full-test" element={<GMATFullTest />} />
+            <Route path="/courses/gmat/analysis" element={<GMATAnalysis />} />
+            <Route path="/admin/gmat" element={<GMATDashboard />} />
+            <Route path="/courses/gmat/ScoreDashboard" element={<GMATScoreDashboard />} />
+            <Route path="/admin/gmat/exam/:email/:subject/:attemptNumber" element={<GMATExamAnalysis />} />
 
+                 
             {/* GATE DA — paper listing (like SAT) + module-based quizzes, with negative marking */}
             <Route path="/courses/gate-da" element={<GATEDAMain />} />
             <Route path="/courses/gate-da/modules" element={<GATEDA />} />
