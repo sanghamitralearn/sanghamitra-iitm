@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 // Real CAT format: VARC, DILR, QA — each a single fixed-length section (no
