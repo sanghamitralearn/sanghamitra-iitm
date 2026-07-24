@@ -8,6 +8,7 @@ import {
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
+
 // Real CAT format: VARC, DILR, QA — each a single fixed-length, fixed-order
 // section (no adaptive modules, no essay). Sections run strictly in this
 // order and, once submitted, cannot be reopened — matching the real exam
