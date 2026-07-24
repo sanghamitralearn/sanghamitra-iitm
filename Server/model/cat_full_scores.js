@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+
 const sectionScoreSchema = new mongoose.Schema({
   totalQuestions: Number,
   correctAnswers: Number,
