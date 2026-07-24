@@ -5,6 +5,7 @@ import CATScoreDashboard, { buildChapterItems } from './CATScoreDashboard'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
+
 // ─── Real CAT section names ─────────────────────────────────────────────────
 export const VARC = 'Verbal Ability & Reading Comprehension'
 export const DILR = 'Data Interpretation & Logical Reasoning'
