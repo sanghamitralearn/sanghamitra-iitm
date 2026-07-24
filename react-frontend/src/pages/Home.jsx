@@ -647,7 +647,28 @@ const Home = () => {
                 </div>
               </div>
             </div>
+            {/* CAT Course Card */}
+              <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4" data-aos="zoom-in" data-aos-delay="800">
+                <div className="course-item" style={{ width: '100%' }}>
+                  ...
+                  <div className="course-content">
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <Link to="/courses/cat"><button className="category">CAT</button></Link>
+                      <span className="badge" style={{ background: '#e8590c', fontSize: '0.75rem' }}>MCQ +3/&minus;1</span>
+                    </div>
+                    <p className="description">
+                      Practice CAT questions section-wise — Verbal Ability &amp; Reading Comprehension, Data Interpretation &amp; Logical Reasoning,
+                      and Quantitative Ability. Real CAT marking: +3 for a correct MCQ, &minus;1 for a wrong MCQ (no penalty for TITA).
+                      Includes a full-length mock test and detailed score analysis.
+                    </p>
+                    ...
+                  </div>
+                </div>
+              </div>
 
+            
+            
+  
           {/* GATE DA Course Card */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4" data-aos="zoom-in" data-aos-delay="600">
               <div className="course-item" style={{ width: '100%' }}>
