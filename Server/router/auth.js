@@ -88,6 +88,9 @@ const GateDaQuestion  = require('../model/gate_da_questions')
 const GateDaScore     = require('../model/gate_da_scores')
 const GateDaFullScore = require('../model/gate_da_full_scores')
 
+const GmatQuestion   = require('../model/gmat_questions')
+const GmatScore      = require('../model/gmat_scores')
+const GmatFullScore  = require('../model/gmat_full_scores')
 
 const CatQuestion    = require('../model/cat_questions')
 const CatScore       = require('../model/cat_scores')
