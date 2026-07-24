@@ -88,6 +88,11 @@ const GateDaQuestion  = require('../model/gate_da_questions')
 const GateDaScore     = require('../model/gate_da_scores')
 const GateDaFullScore = require('../model/gate_da_full_scores')
 
+
+const CatQuestion    = require('../model/cat_questions')
+const CatScore       = require('../model/cat_scores')
+const CatFullScore   = require('../model/cat_full_scores')
+
 const DBMSSubmission = require('../model/DBMS_Submission');
 const DBMSQuestions = require('../model/DBMS_Questions');
 
@@ -7449,6 +7454,314 @@ router.get('/gre_scores', async (req, res) => {
     res.status(500).json({ error: err.message })
   }
 })
+
+
+
+// ══════════════════════════════════════════════════════════════════════════
+// ─── CAT (Common Admission Test) ───────────────────────────────────────────
+// Real CAT format: 3 fixed sections (VARC, DILR, QA), each a single timed
+// section — no adaptive modules, no essay. Marking is real CAT marking
+// (+3 correct MCQ / -1 wrong MCQ / 0 TITA wrong), stored per-question via
+// marking_scheme, so no server-side scaled-score helper is needed here
+// (unlike GRE's greScaledScore) — raw score/percentage is reported directly.
+// ══════════════════════════════════════════════════════════════════════════
+
+router.get('/cat_debug', async (req, res) => {
+  try {
+    const totalQuestions = await CatQuestion.countDocuments()
+    const distinctSubjects = await CatQuestion.distinct('subject')
+    res.json({ totalQuestions, distinctSubjects })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── CAT Questions ────────────────────────────────────────────────────────────
+// GET /api/cat_questions?subject=Quantitative Ability&paper=CAT Practice Test 1&difficulty=easy&limit=30
+router.get('/cat_questions', async (req, res) => {
+  try {
+    const { subject, difficulty, paper, limit } = req.query
+    // Exclude docs with no question_text (e.g. imported from answer-key-only
+    // sources where the original question wording was never available).
+    const filter = { question_text: { $exists: true, $ne: null, $ne: '' } }
+    if (subject) {
+      const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      filter.subject = { $regex: new RegExp('^' + esc(subject) + '$', 'i') }
+    }
+    if (difficulty) filter.difficulty = difficulty
+    if (paper) {
+      const escapedPaper = paper.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      filter.paper = { $regex: new RegExp('^' + escapedPaper + '$', 'i') }
+    }
+    const qs = await CatQuestion.find(filter)
+      .limit(limit ? parseInt(limit) : 0)
+      .lean()
+    res.json(qs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/cat_scores — upsert: one doc per (email+subject), keep last 5 attempts
+router.post('/cat_scores', async (req, res) => {
+  try {
+    const { email, name, subject, totalQuestions, correctAnswers, wrongAnswers,
+            unattempted, score, maxScore, responses, source } = req.body
+    if (!email || !subject) return res.status(400).json({ error: 'email and subject are required' })
+
+    const newAttempt = {
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore,
+      responses: (responses || []).map(r => ({
+        questionId:   r.questionId,
+        userResponse: r.userResponse,
+        isCorrect:    r.isCorrect,
+        marksAwarded: r.marksAwarded,
+      })),
+      source: source === 'FullTest' ? 'FullTest' : 'Module',
+      dateAttempted: new Date(),
+    }
+
+    const doc = await CatScore.findOneAndUpdate(
+      { email, subject },
+      {
+        $set:  { name },
+        $push: { attempts: { $each: [newAttempt], $position: 0, $slice: 5 } },
+      },
+      { upsert: true, new: true }
+    )
+    res.json({ success: true, data: { email: doc.email, subject: doc.subject, attemptCount: doc.attempts.length } })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/cat_scores?email=x@y.com  — returns all attempts as flat records (newest first per subject)
+router.get('/cat_scores', async (req, res) => {
+  try {
+    const { email } = req.query
+    const filter = email ? { email } : {}
+    const docs = await CatScore.find(filter).lean()
+    const result = docs.flatMap(doc =>
+      (doc.attempts || []).map(attempt => ({
+        email:   doc.email,
+        name:    doc.name,
+        subject: doc.subject,
+        ...attempt,
+      }))
+    )
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── CAT Papers aggregation ───────────────────────────────────────────────────
+// GET /api/cat_papers — groups cat_questions by (paper, year) and returns per-paper totals
+router.get('/cat_papers', async (req, res) => {
+  try {
+    const grouped = await CatQuestion.aggregate([
+      {
+        $group: {
+          _id:   { paper: '$paper', year: '$year', subject: '$subject' },
+          count: { $sum: 1 },
+          marks: { $sum: { $ifNull: ['$points', 3] } },
+        },
+      },
+      {
+        $group: {
+          _id:            { paper: '$_id.paper', year: '$_id.year' },
+          totalQuestions: { $sum: '$count' },
+          totalMarks:     { $sum: '$marks' },
+          subjects:       { $push: { subject: '$_id.subject', count: '$count', totalMarks: '$marks' } },
+        },
+      },
+    ])
+
+    const result = grouped.map(p => {
+      const subjects = {}
+      p.subjects.forEach(s => { subjects[s.subject] = { count: s.count, totalMarks: s.totalMarks } })
+      return {
+        paper:          p._id.paper,
+        year:           p._id.year,
+        totalQuestions: p.totalQuestions,
+        totalMarks:     p.totalMarks,
+        subjects,
+      }
+    })
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/cat_full_scores — save one full-paper attempt
+router.post('/cat_full_scores', async (req, res) => {
+  try {
+    const {
+      email, name, paper, year,
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore, sectionScores, responses, totalTimeTaken,
+    } = req.body
+    if (!email || !paper) return res.status(400).json({ error: 'email and paper are required' })
+
+    const doc = new CatFullScore({
+      email, name, paper, year,
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore, sectionScores: sectionScores || {},
+      responses: (responses || []).map(r => ({
+        questionId:   r.questionId,
+        subject:      r.subject,
+        userResponse: r.userResponse,
+        isCorrect:    r.isCorrect,
+        marksAwarded: r.marksAwarded,
+        unattempted:  r.unattempted,
+        timeTaken:    r.timeTaken,
+      })),
+      totalTimeTaken,
+      dateAttempted: new Date(),
+    })
+    await doc.save()
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/cat_full_scores?email=x@y.com — all full-paper attempts newest first
+router.get('/cat_full_scores', async (req, res) => {
+  try {
+    const { email } = req.query
+    if (!email) return res.status(400).json({ error: 'email is required' })
+    const docs = await CatFullScore.find({ email }).sort({ dateAttempted: -1 }).lean()
+    res.json(docs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/cat_admin_scores — all attempts per student, grouped by email (for admin dashboard)
+router.get('/cat_admin_scores', async (req, res) => {
+  try {
+    const docs = await CatScore.find({}).lean()
+    const byEmail = {}
+    docs.forEach(doc => {
+      if (!byEmail[doc.email]) {
+        byEmail[doc.email] = { email: doc.email, name: doc.name, quizScores: [] }
+      }
+      ;(doc.attempts || []).forEach((attempt, i) => {
+        const pct = attempt.totalQuestions > 0
+          ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
+          : (attempt.maxScore > 0 ? Math.round(Math.max(0, attempt.score / attempt.maxScore) * 100) : 0)
+        byEmail[doc.email].quizScores.push({
+          topic:          doc.subject,
+          score:          attempt.score,
+          maxScore:       attempt.maxScore,
+          correctAnswers: attempt.correctAnswers,
+          totalQuestions: attempt.totalQuestions,
+          percentage:     pct,
+          timestamp:      attempt.dateAttempted,
+          attemptNumber:  i + 1,
+        })
+      })
+    })
+    res.json({ success: true, data: Object.values(byEmail) })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// GET /api/cat_exam_detail?email=...&subject=...&attemptNumber=... — question-by-question breakdown for one attempt
+router.get('/cat_exam_detail', async (req, res) => {
+  try {
+    const { email, subject, attemptNumber } = req.query
+    if (!email || !subject || !attemptNumber) {
+      return res.status(400).json({ success: false, message: 'email, subject, and attemptNumber are required' })
+    }
+
+    const doc = await CatScore.findOne({ email, subject }).lean()
+    if (!doc) return res.status(404).json({ success: false, message: 'Score record not found' })
+
+    const idx = parseInt(attemptNumber) - 1
+    const attempt = (doc.attempts || [])[idx]
+    if (!attempt) return res.status(404).json({ success: false, message: 'Attempt not found' })
+
+    const questionIds = (attempt.responses || []).map(r => r.questionId).filter(Boolean)
+    const questionMeta = await CatQuestion.find({ _id: { $in: questionIds } }).lean()
+    const metaMap = {}
+    questionMeta.forEach(q => { metaMap[String(q._id)] = q })
+
+    const enrichedResults = (attempt.responses || []).map((r, i) => {
+      const meta = metaMap[String(r.questionId)] || {}
+      return {
+        questionId:     r.questionId,
+        questionNumber: meta.question_number || i + 1,
+        questionText:   meta.question_text || '',
+        userAnswer:     r.userResponse,
+        correctAnswer:  meta.correct_answer,
+        isCorrect:      r.isCorrect,
+        marksAwarded:   r.marksAwarded,
+        difficulty:     meta.difficulty || null,
+        type:           meta.type || null,
+        options:        meta.options || [],
+        explanation:    meta.explanation || null,
+        points:         meta.points || 3,
+      }
+    })
+
+    const totalQuestions = attempt.totalQuestions || enrichedResults.length
+    const correctAnswers = attempt.correctAnswers || 0
+
+    const difficultyStats = { easy: { total: 0, correct: 0 }, medium: { total: 0, correct: 0 }, hard: { total: 0, correct: 0 }, unknown: { total: 0, correct: 0 } }
+    enrichedResults.forEach(r => {
+      const d = r.difficulty || 'unknown'
+      difficultyStats[d].total++
+      if (r.isCorrect) difficultyStats[d].correct++
+    })
+
+    const typeStats = {}
+    enrichedResults.forEach(r => {
+      const t = r.type || 'unknown'
+      if (!typeStats[t]) typeStats[t] = { total: 0, correct: 0 }
+      typeStats[t].total++
+      if (r.isCorrect) typeStats[t].correct++
+    })
+
+    res.json({
+      success: true,
+      data: {
+        student: { email: doc.email, name: doc.name },
+        attempt: {
+          subject:        doc.subject,
+          attemptNumber:  parseInt(attemptNumber),
+          dateAttempted:  attempt.dateAttempted,
+          score:          attempt.score,
+          maxScore:       attempt.maxScore,
+          totalQuestions,
+          correctAnswers,
+          wrongAnswers:   attempt.wrongAnswers,
+          unattempted:    attempt.unattempted,
+          percentage:     totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0,
+        },
+        enrichedResults,
+        insights: {
+          difficultyStats,
+          typeStats,
+          hardestQuestions: enrichedResults
+            .filter(r => !r.isCorrect && r.difficulty === 'hard')
+            .map(r => ({ questionNumber: r.questionNumber, questionText: r.questionText, explanation: r.explanation })),
+        },
+      }
+    })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+
+
+
+
 
 // ══ JEE Advanced Admin Routes ════════════════════════════════════════════════
 
