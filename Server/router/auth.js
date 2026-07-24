@@ -7841,62 +7841,9 @@ function gmatTotalScaledScore(quantScaled, verbalScaled, diScaled) {
 
 // ─── GMAT Questions ────────────────────────────────────────────────────────────
 // GET /api/gmat_questions?subject=Verbal Reasoning&paper=Module 1&difficulty=easy&limit=30
-router.get('/gmat_questions', async (req, res) => {
-  try {
-    const { subject, difficulty, paper, limit } = req.query
-    const filter = {}
-    if (subject) {
-      const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      filter.subject = { $regex: new RegExp('^' + esc(subject) + '$', 'i') }
-    }
-    if (difficulty) filter.difficulty = difficulty
-    if (paper) {
-      const escapedPaper = paper.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      filter.paper = { $regex: new RegExp('^' + escapedPaper + '$', 'i') }
-    }
-    const qs = await .find(filter)
-      .limit(limit ? parseInt(limit) : 0)
-      .lean()
-    res.json(qs)
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
+
 
 // POST /api/gmat_scores — upsert: one doc per (email+subject), keep last 5 attempts
-router.post('/gmat_scores', async (req, res) => {
-  try {
-    const { email, name, subject, totalQuestions, correctAnswers, wrongAnswers,
-            unattempted, score, maxScore, responses, source } = req.body
-    if (!email || !subject) return res.status(400).json({ error: 'email and subject are required' })
-
-    const newAttempt = {
-      totalQuestions, correctAnswers, wrongAnswers, unattempted,
-      score, maxScore,
-      scaledScore: gmatScaledScore(correctAnswers, totalQuestions),
-      responses: (responses || []).map(r => ({
-        questionId:   r.questionId,
-        userResponse: r.userResponse,
-        isCorrect:    r.isCorrect,
-        marksAwarded: r.marksAwarded,
-      })),
-      source: source === 'FullTest' ? 'FullTest' : 'Module',
-      dateAttempted: new Date(),
-    }
-
-    const doc = await GmatScore.findOneAndUpdate(
-      { email, subject },
-      {
-        $set:  { name },
-        $push: { attempts: { $each: [newAttempt], $position: 0, $slice: 5 } },
-      },
-      { upsert: true, new: true }
-    )
-    res.json({ success: true, data: { email: doc.email, subject: doc.subject, attemptCount: doc.attempts.length } })
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
 
 // GET /api/gmat_scores?email=x@y.com  — returns all attempts as flat records (newest first per subject)
 router.get('/gmat_scores', async (req, res) => {
