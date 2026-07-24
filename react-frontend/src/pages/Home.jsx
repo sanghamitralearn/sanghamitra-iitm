@@ -647,8 +647,7 @@ const Home = () => {
                 </div>
               </div>
             </div>
-
-             {/* CAT Course Card */}
+           {/* CAT Course Card */}
               <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4" data-aos="zoom-in" data-aos-delay="800">
                 <div className="course-item" style={{ width: '100%' }}>
                   <div style={{
@@ -732,6 +731,8 @@ const Home = () => {
 
             
            
+
+            
             
             
   
