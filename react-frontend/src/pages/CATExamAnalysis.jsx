@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 const difficultyColor = { easy: '#28a745', medium: '#ffc107', hard: '#dc3545', unknown: '#6c757d' };
