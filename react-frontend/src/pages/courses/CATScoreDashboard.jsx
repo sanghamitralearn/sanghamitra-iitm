@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 // ─── Overall hero gradient — orange→red, matching the CAT brand accent ────────
 const OVERALL_GRADIENT = 'linear-gradient(135deg, #e8590c 0%, #c92a2a 100%)'
 
+
 // ─── Section accent colours — must match CATQuiz.jsx's SUBJECT_STYLE exactly ──
 const SUBJECT_STYLE = {
   'Verbal Ability & Reading Comprehension':  { gradient: 'linear-gradient(135deg,#e8590c,#ff922b)', badge: '#e8590c' },
