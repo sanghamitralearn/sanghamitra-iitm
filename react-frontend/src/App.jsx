@@ -110,7 +110,15 @@ import GATEDAExamAnalysis from './pages/GATEDAExamAnalysis'
 import GATEDAAnalysis from './pages/GATEDAAnalysis'
 import GATEDAScoreDashboard from './pages/courses/GATEDAScoreDashboard'
 
-
+//cat
+import CAT from './pages/courses/CAT'
+import CATMain from './pages/courses/CATMain'
+import CATQuiz from './pages/courses/CATQuiz'
+import CATFullTest from './pages/courses/CATFullTest'
+import CATDashboard from './pages/CATDashboard'
+import CATExamAnalysis from './pages/CATExamAnalysis'
+import CATAnalysis from './pages/CATAnalysis'
+import CATScoreDashboard from './pages/courses/CATScoreDashboard'
 
        
 //gre 
@@ -255,7 +263,19 @@ function App() {
             <Route path="/courses/gate-da/ScoreDashboard" element={<GATEDAScoreDashboard />} />
             <Route path="/admin/gate-da/exam/:email/:subject/:attemptNumber" element={<GATEDAExamAnalysis />} />
 
-            
+                 
+           {/* CAT — paper listing (like GRE) + real 3-section (VARC/DILR/QA) structure, real negative marking */}
+            <Route path="/courses/cat" element={<CATMain />} />
+            <Route path="/courses/cat/modules" element={<CAT />} />
+            <Route path="/courses/cat/quiz/:section/:module" element={<CATQuiz />} />
+            <Route path="/courses/cat/full-test" element={<CATFullTest />} />
+            <Route path="/courses/cat/analysis" element={<CATAnalysis />} />
+            <Route path="/admin/cat" element={<CATDashboard />} />
+            <Route path="/courses/cat/ScoreDashboard" element={<CATScoreDashboard />} />
+            <Route path="/admin/cat/exam/:email/:subject/:attemptNumber" element={<CATExamAnalysis />} />    
+                               
+
+
 
 
             {/* DBMS COURSE */}
