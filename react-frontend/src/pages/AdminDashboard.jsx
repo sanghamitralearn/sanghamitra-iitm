@@ -247,8 +247,9 @@ const iconColors = {
   gre:         { background: 'rgba(111,66,193,0.1)',  color: '#6f42c1' },
   jee:         { background: 'rgba(220,53,69,0.1)',   color: '#dc3545' },
   jee_adv:     { background: 'rgba(255,107,0,0.1)',   color: '#ff6b00' },
+  gmat:        { background: 'rgba(0,137,123,0.1)', color: '#00897b' },
   cat:         { background: 'rgba(232,89,12,0.1)',   color: '#e8590c' },
-  "gate-da" :     { background: 'rgba(32,201,151,0.1)',  color: '#20c997' },
+  "gate-da" :  { background: 'rgba(32,201,151,0.1)',  color: '#20c997' },
 }
 
 const LAST_SEEN_KEY = 'admin_notif_last_seen'
@@ -276,6 +277,7 @@ const subjectApis = [
   { key: 'gre',       url: '/api/gre_scores',                         countFn: d => new Set((Array.isArray(d) ? d : []).map(e => e.email).filter(Boolean)).size },
   { key: 'jee',       url: '/api/jee_main_admin_scores',              countFn: d => ((d && d.data) || []).length },
   { key: 'jee_adv',   url: '/api/jee_admin_scores',                   countFn: d => ((d && d.data) || (Array.isArray(d) ? d : [])).length },
+  { key: 'gmat', url: '/api/gmat_scores', countFn: d => new Set((Array.isArray(d) ? d : []).map(e => e.email).filter(Boolean)).size },
   { key: 'cat',     url: '/api/cat_scores',                countFn: d => new Set((Array.isArray(d) ? d : (d.data || [])).map(e => e.email).filter(Boolean)).size },
   { key: 'gate-da', url: '/api/gate_da_admin_scores',      countFn: d => ((d && d.data) || (Array.isArray(d) ? d : [])).length },
 
@@ -393,6 +395,7 @@ const AdminDashboard = () => {
     { to: '/admin/gre',        icon: 'bi-mortarboard-fill', label: 'GRE' },
     { to: '/admin/jee-main',   icon: 'bi-mortarboard-fill', label: 'JEE Main' },
     { to: '/admin/jee-advanced',  icon: 'bi-trophy-fill',      label: 'JEE Advanced' },
+    { to: '/admin/gmat', icon: 'bi-briefcase-fill',   label: 'GMAT' },
     { to: '/admin/cat',        icon: 'bi-journal-check',  label: 'CAT' },
     { to: '/admin/gate-da',    icon: 'bi-cpu-fill',       label: 'GATE DA' },
 
@@ -656,6 +659,7 @@ const AdminDashboard = () => {
                   { key: 'gre', icon: 'bi-mortarboard-fill', iconStyle: { background: 'rgba(111,66,193,0.1)',  color: '#6f42c1' }, title: 'GRE',           to: '/admin/gre' },
                   { key: 'jee', icon: 'bi-mortarboard-fill', iconStyle: { background: 'rgba(220,53,69,0.1)',   color: '#dc3545' }, title: 'JEE Main',      to: '/admin/jee-main' },
                   { key: 'jee_adv', icon: 'bi-trophy-fill',      iconStyle: { background: 'rgba(255,107,0,0.1)',  color: '#ff6b00' }, title: 'JEE Advanced',  to: '/admin/jee-advanced' },
+                  { key: 'gmat', icon: 'bi-briefcase-fill',   iconStyle: { background: 'rgba(0,137,123,0.1)',  color: '#00897b' }, title: 'GMAT', to: '/admin/gmat' },
                   { key: 'cat', icon: 'bi-journal-check', iconStyle: { background: 'rgba(232,89,12,0.1)', color: '#e8590c' }, title: 'CAT', to: '/admin/cat' },
                   { key: 'gate-da', icon: 'bi-cpu-fill', iconStyle: { background: 'rgba(32,201,151,0.1)', color: '#20c997' }, title: 'GATE DA', to: '/admin/gate-da' },
 
@@ -746,6 +750,11 @@ const AdminDashboard = () => {
                         <div className="col-md-3 mb-2">
                         <Link to="/admin/cat" className="btn w-100 text-white" style={{ background: '#e8590c', borderColor: '#e8590c' }}>
                           <i className="bi bi-journal-check me-2"></i>CAT
+                        </Link>
+                      </div>
+                      <div className="col-md-3 mb-2">
+                        <Link to="/admin/gmat" className="btn w-100 text-white" style={{ background: '#00897b', borderColor: '#00897b' }}>
+                          <i className="bi bi-briefcase-fill me-2"></i>GMAT
                         </Link>
                       </div>
                        <div className="col-md-3 mb-2">
