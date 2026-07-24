@@ -7295,12 +7295,14 @@ router.get('/admin-notifications', async (req, res) => {
       })
     })
 
-       // GATE DA (module-wise)
+     // GATE DA (module-wise practice only — attempts made as part of a Full Test
+       // are reported once as a single combined notification below, not per-section)
     gateDaDocs.forEach(doc => {
       ;(doc.attempts || []).forEach(attempt => {
-        const pct = attempt.totalQuestions > 0
-          ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
-          : (attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0)
+        if (attempt.source === 'FullTest') return
+        const pct = attempt.maxScore > 0
+          ? Math.round(Math.max(0, attempt.score / attempt.maxScore) * 100)
+          : 0
         all.push({
           userName: doc.name || doc.email,
           subject: 'GATE DA',
@@ -7312,12 +7314,54 @@ router.get('/admin-notifications', async (req, res) => {
           timestamp: attempt.dateAttempted
         })
       })
-        // CAT (section-wise)
-    catDocs.forEach(doc => {
+    })
+
+    // GATE DA (full test) — one combined notification per full-test attempt,
+    // covering both exam sections: General Aptitude and the Main Subject (Data Science & AI)
+    gateDaFullDocs.forEach(doc => {
+      const pct = doc.maxScore > 0
+        ? Math.round(Math.max(0, doc.score / doc.maxScore) * 100)
+        : 0
+      all.push({
+        userName: doc.name || doc.email,
+        subject: 'GATE DA',
+        subjectKey: 'gate_da',
+        icon: 'bi-graph-up',
+        iconClass: 'gate-da',
+        topic: 'Aptitude and Main Subject (Data Science & Artificial Intelligence)',
+        score: pct,
+        marks: doc.score,
+        maxMarks: doc.maxScore,
+        timestamp: doc.dateAttempted
+      })
+    })
+
+    // GMAT
+    gmatDocs.forEach(doc => {
       ;(doc.attempts || []).forEach(attempt => {
         const pct = attempt.totalQuestions > 0
           ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
           : (attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0)
+        all.push({
+          userName: doc.name || doc.email,
+          subject: 'GMAT',
+          subjectKey: 'gmat',
+          icon: 'bi-mortarboard-fill',
+          iconClass: 'gmat',
+          topic: doc.subject || 'GMAT Section',
+          score: pct,
+          timestamp: attempt.dateAttempted
+        })
+      })
+    })
+
+
+    // CAT
+    catDocs.forEach(doc => {
+      ;(doc.attempts || []).forEach(attempt => {
+        const pct = attempt.totalQuestions > 0
+          ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
+          : (attempt.maxScore > 0 ? Math.round(Math.max(0, attempt.score / attempt.maxScore) * 100) : 0)
         all.push({
           userName: doc.name || doc.email,
           subject: 'CAT',
@@ -7331,42 +7375,6 @@ router.get('/admin-notifications', async (req, res) => {
       })
     })
 
-    // CAT (full test)
-    catFullDocs.forEach(doc => {
-      const pct = doc.totalQuestions > 0
-        ? Math.round((doc.correctAnswers / doc.totalQuestions) * 100)
-        : (doc.maxScore > 0 ? Math.round((doc.score / doc.maxScore) * 100) : 0)
-      all.push({
-        userName: doc.name || doc.email,
-        subject: 'CAT',
-        subjectKey: 'cat',
-        icon: 'bi-journal-check',
-        iconClass: 'cat',
-        topic: doc.paper ? `${doc.paper}${doc.year ? ' ' + doc.year : ''}` : 'Full CAT Test',
-        score: pct,
-        timestamp: doc.dateAttempted
-      })
-    })
-
-
-
-    // GATE DA (full test)
-    gateDaFullDocs.forEach(doc => {
-      const pct = doc.totalQuestions > 0
-        ? Math.round((doc.correctAnswers / doc.totalQuestions) * 100)
-        : (doc.maxScore > 0 ? Math.round((doc.score / doc.maxScore) * 100) : 0)
-      all.push({
-        userName: doc.name || doc.email,
-        subject: 'GATE DA',
-        subjectKey: 'gate_da',
-        icon: 'bi-graph-up',
-        iconClass: 'gate-da',
-        topic: doc.paper ? `${doc.paper}${doc.year ? ' ' + doc.year : ''}` : 'Full GATE DA Test',
-        score: pct,
-        timestamp: doc.dateAttempted
-      })
-    })
-
 
     // Sort and return top 50 most recent
     all.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
@@ -7376,8 +7384,6 @@ router.get('/admin-notifications', async (req, res) => {
     res.status(500).json({ success: false, error: err.message })
   }
 })
-
-
 
 
 // ─── GRE Debug — returns total count + distinct subjects in the collection ────
