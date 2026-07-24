@@ -206,7 +206,7 @@ const COURSE_CONFIG = {
         weekRange: '1-4',
         totalQuestions: 30
       },
-      { week: 5,  topic: 'Graph Algorithms',            description: 'Assessment on Dijkstra's Algorithm, Bellman-Ford Algorithm, Floyd-Warshall Algorithm, Prim's Algorithm, and Kruskal's Algorithm' },
+      { week: 5,  topic: 'Graph Algorithms', description: "Assessment on Dijkstra's Algorithm, Bellman-Ford Algorithm, Floyd-Warshall Algorithm, Prim's Algorithm, and Kruskal's Algorithm" },
       { week: 6,  topic: 'Advanced Data Structures', description: 'Assessment on Union-Find Data Structure, Priority Queues, Heaps, and Binary Search Trees' },
       { week: 7,  topic: 'Advanced Algorithms',                  description: 'Assessment on Balanced search tree, Scheduling algorithms, Huffman algorithms.' },
       { week: 8,  topic: 'Divide and Conquer Algorithms',      description: 'Assessment on Closest Pair of Points, Integer Multiplication, Recursion Trees, Quick Select/Fast Select Algorithms' },
