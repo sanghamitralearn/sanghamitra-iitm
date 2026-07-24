@@ -7812,7 +7812,6 @@ router.get('/cat_exam_detail', async (req, res) => {
 })
 
 
-/ ─── GMAT Debug — returns total count + distinct subjects in the collection ───
 router.get('/gmat_debug', async (req, res) => {
   try {
     const totalQuestions = await GmatQuestion.countDocuments()
@@ -7855,7 +7854,7 @@ router.get('/gmat_questions', async (req, res) => {
       const escapedPaper = paper.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       filter.paper = { $regex: new RegExp('^' + escapedPaper + '$', 'i') }
     }
-    const qs = await GmatQuestion.find(filter)
+    const qs = await .find(filter)
       .limit(limit ? parseInt(limit) : 0)
       .lean()
     res.json(qs)
@@ -7923,7 +7922,7 @@ router.get('/gmat_scores', async (req, res) => {
 // GET /api/gmat_papers  — groups gmat_questions by (paper, year) and returns per-paper totals
 router.get('/gmat_papers', async (req, res) => {
   try {
-    const grouped = await GmatQuestion.aggregate([
+    const grouped = await .aggregate([
       {
         $group: {
           _id:   { paper: '$paper', year: '$year', subject: '$subject' },
@@ -8067,7 +8066,7 @@ router.get('/gmat_exam_detail', async (req, res) => {
     if (!attempt) return res.status(404).json({ success: false, message: 'Attempt not found' })
 
     const questionIds = (attempt.responses || []).map(r => r.questionId).filter(Boolean)
-    const questionMeta = await GmatQuestion.find({ _id: { $in: questionIds } }).lean()
+    const questionMeta = await .find({ _id: { $in: questionIds } }).lean()
     const metaMap = {}
     questionMeta.forEach(q => { metaMap[String(q._id)] = q })
 
