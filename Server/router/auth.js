@@ -7008,6 +7008,10 @@ router.get('/admin-notifications', async (req, res) => {
       GateDaFullScore.find({}, { email:1, name:1, paper:1, year:1,
         score:1, maxScore:1, correctAnswers:1, totalQuestions:1, dateAttempted:1
       }).lean().catch(() => []),
+      GmatScore.find({}, { email:1, name:1, subject:1,
+        'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
+        'attempts.totalQuestions':1, 'attempts.dateAttempted':1
+      }).lean().catch(() => []),  
       CatScore.find({}, { email:1, name:1, subject:1,
         'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
         'attempts.totalQuestions':1, 'attempts.dateAttempted':1
