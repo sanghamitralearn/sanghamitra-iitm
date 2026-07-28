@@ -8,7 +8,8 @@ const COURSES = [
   { id: 'all',    label: 'All Courses',                  fullTitle: 'Programming Courses Dashboard',            subtitle: 'Java, Python, DBMS & PDSA — quiz attempts and answer-level review', icon: 'bi-collection',      color: '#667eea' },
   { id: 'java',   label: 'Java',                         fullTitle: 'Java Dashboard',                           subtitle: 'Weekly assessments — Java Programming',                          icon: 'bi-cup-hot-fill',    color: '#f89820' },
   { id: 'python', label: 'Python',                       fullTitle: 'Python Dashboard',                         subtitle: 'Weekly assessments — Python Programming',                        icon: 'bi-filetype-py',     color: '#3776ab' },
-  { id: 'dbms',    label: 'DBMS',                          fullTitle: 'DBMS Dashboard',                            subtitle: 'Weekly assessments — DBMS & Databases',                           icon: 'bi-database-fill',   color: '#4479a1' },
+  { id: 'dbms',    label: 'DBMS',                          fullTitle: 'DBMS Dashboard',                            subtitle: 'Weekly assessments — DBMS & Databases',                  icon: 'bi-database-fill',   color: '#4479a1' },
+  { id: 'pdsa',    label: 'PDSA',                          fullTitle: 'PDSA Dashboard',                            subtitle: 'Weekly assessments — PDSA Programming',                           icon: 'bi-database-fill',   color: '#4479a1' },
 ]
 
 const courseInfo = (id) => COURSES.find(c => c.id === id) || { label: id, fullTitle: id, subtitle: '', icon: 'bi-code-slash', color: '#6c757d' }
