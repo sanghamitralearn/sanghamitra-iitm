@@ -254,6 +254,28 @@ const Home = () => {
                 </div>
               </div>
 
+              PDSA Course Card 
+            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
+              <div className="course-item">
+                <img src="/img/pdsa.jpg" className="img-fluid" alt="Data Structures and Algorithms Course" />
+                <div className="course-content">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <Link to="/courses/pdsa"><button className="category">Data Structures and Algorithms</button></Link>
+                  </div>
+                  <p className="description">
+                    Welcome to our Python Data Structures & Algorithms Hub, where programming meets 
+                    efficient problem-solving. Master Python fundamentals, explore data structures, 
+                    and implement powerful algorithms through hands-on coding exercises and interactive lessons.
+                  </p>
+                  <div className="trainer d-flex justify-content-between align-items-center">
+                    <div className="trainer-rank d-flex align-items-center">
+                      <i className="bi bi-heart heart-icon"></i>&nbsp;89
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
 */}
           
 
@@ -281,27 +303,7 @@ const Home = () => {
               </div>
             </div>
 
-            {/* PDSA Course Card */}
-            <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
-              <div className="course-item">
-                <img src="/img/pdsa.jpg" className="img-fluid" alt="Data Structures and Algorithms Course" />
-                <div className="course-content">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Link to="/courses/pdsa"><button className="category">Data Structures and Algorithms</button></Link>
-                  </div>
-                  <p className="description">
-                    Welcome to our Python Data Structures & Algorithms Hub, where programming meets 
-                    efficient problem-solving. Master Python fundamentals, explore data structures, 
-                    and implement powerful algorithms through hands-on coding exercises and interactive lessons.
-                  </p>
-                  <div className="trainer d-flex justify-content-between align-items-center">
-                    <div className="trainer-rank d-flex align-items-center">
-                      <i className="bi bi-heart heart-icon"></i>&nbsp;89
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+      
 
             {/* Java Course Card - NEW */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="200">
@@ -355,13 +357,15 @@ const Home = () => {
             {/* NEW - PDSA Course Card */}
             <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4 mt-md-0" data-aos="zoom-in" data-aos-delay="300">
               <div className="course-item">
-                <img src="" className="img-fluid" alt="Data Structures and Algorithms Course" />
+                <img src="/img/pdsa.jpg" className="img-fluid" alt="Data Structures and Algorithms Course" />
                 <div className="course-content">
                   <div className="d-flex justify-content-between align-items-center mb-3">
                     <Link to="/programming/courses/PDSA"><button className="category">PDSA Programming</button></Link>
                   </div>
                   <p className="description">
-
+                    Welcome to our Python Data Structures & Algorithms Hub, where programming meets 
+                    efficient problem-solving. Master Python fundamentals, explore data structures, 
+                    and implement powerful algorithms through hands-on coding exercises and interactive lessons.
                   </p>
                   <div className="trainer d-flex justify-content-between align-items-center">
                     <div className="trainer-rank d-flex align-items-center">
