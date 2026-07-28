@@ -263,7 +263,8 @@ const subjectApis = [
   { key: 'prog_java',   url: '/api/mcq-quiz/admin/attempts?course=java',   countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
   { key: 'prog_python', url: '/api/mcq-quiz/admin/attempts?course=python', countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
   { key: 'prog_dbms',    url: '/api/mcq-quiz/admin/attempts?course=dbms',    countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
-  { key: 'prog_pdsa',      url: '/api/pdsa-submissions',                   countFn: d => {
+  { key: 'prog_pdsa',    url: '/api/mcq-quiz/admin/attempts?course=pdsa',    countFn: d => new Set((d.attempts || []).map(a => a.email).filter(Boolean)).size },
+  { key: 'pdsa',      url: '/api/pdsa-submissions',                   countFn: d => {
       const arr = Array.isArray(d) ? d : (d.submissions || d.data || [])
       const uniqueStudents = new Set(
         arr
@@ -390,6 +391,7 @@ const AdminDashboard = () => {
     { to: '/admin/programming?course=java',   icon: 'bi-cup-hot-fill',   label: 'Java' },
     { to: '/admin/programming?course=python', icon: 'bi-filetype-py',    label: 'Python' },
     { to: '/admin/programming?course=dbms',    icon: 'bi-database-fill',  label: 'DBMS' },
+    { to: '/admin/programming?course=pdsa',    icon: 'bi-database-fill',  label: 'PDSA' },
     { to: '/admin/pdsa',       icon: 'bi-diagram-3-fill', label: 'PDSA' },
     { to: '/admin/sat',        icon: 'bi-pencil-fill',    label: 'SAT' },
     { to: '/admin/gre',        icon: 'bi-mortarboard-fill', label: 'GRE' },
@@ -628,7 +630,8 @@ const AdminDashboard = () => {
                   { key: 'prog_java',   icon: 'bi-cup-hot-fill',   iconStyle: { background: 'rgba(248,152,32,0.1)',  color: '#f89820' }, title: 'Java',    to: '/admin/programming?course=java' },
                   { key: 'prog_python', icon: 'bi-filetype-py',    iconStyle: { background: 'rgba(55,118,171,0.1)',  color: '#3776ab' }, title: 'Python',  to: '/admin/programming?course=python' },
                   { key: 'prog_dbms',   icon: 'bi-database-fill',  iconStyle: { background: 'rgba(68,121,161,0.1)',  color: '#4479a1' }, title: 'DBMS',     to: '/admin/programming?course=dbms' },
-                  { key: 'prog_pdsa',   icon: 'bi-diagram-3-fill', iconStyle: { background: 'rgba(155,89,182,0.1)',  color: '#9b59b6' }, title: 'PDSA',     to: '/admin/pdsa' },
+                  { key: 'prog_pdsa',   icon: 'bi-database-fill',  iconStyle: { background: 'rgba(68,121,161,0.1)',  color: '#4479a1' }, title: 'PDSA',     to: '/admin/programming?course=pdsa' },
+                  { key: 'pdsa',   icon: 'bi-diagram-3-fill', iconStyle: { background: 'rgba(155,89,182,0.1)',  color: '#9b59b6' }, title: 'PDSA(html)',     to: '/admin/pdsa' },
                 ].map((card) => (
                   <div className="col-md-3 mb-4" key={card.key}>
                     <div style={s.dashCard} className="admin-dash-card">
@@ -718,7 +721,7 @@ const AdminDashboard = () => {
                         </Link>
                       </div>
                       <div className="col-md-3 mb-2">
-                        <Link to="/admin/pdsa" className="btn btn-danger w-100">
+                        <Link to="/admin/programming?course=pdsa" className="btn btn-danger w-100">
                           <i className="bi bi-diagram-3 me-2"></i>DSA
                         </Link>
                       </div>
