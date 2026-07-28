@@ -277,7 +277,7 @@ const subjectApis = [
   { key: 'gre',       url: '/api/gre_scores',                         countFn: d => new Set((Array.isArray(d) ? d : []).map(e => e.email).filter(Boolean)).size },
   { key: 'jee',       url: '/api/jee_main_admin_scores',              countFn: d => ((d && d.data) || []).length },
   { key: 'jee_adv',   url: '/api/jee_admin_scores',                   countFn: d => ((d && d.data) || (Array.isArray(d) ? d : [])).length },
-  { key: 'gmat', url: '/api/gmat_scores', countFn: d => new Set((Array.isArray(d) ? d : []).map(e => e.email).filter(Boolean)).size },
+  { key: 'gmat',      url: '/api/gmat_scores',                        countFn: d => new Set((Array.isArray(d) ? d : []).map(e => e.email).filter(Boolean)).size },
   { key: 'cat',     url: '/api/cat_scores',                countFn: d => new Set((Array.isArray(d) ? d : (d.data || [])).map(e => e.email).filter(Boolean)).size },
   { key: 'gate-da', url: '/api/gate_da_admin_scores',      countFn: d => ((d && d.data) || (Array.isArray(d) ? d : [])).length },
 
