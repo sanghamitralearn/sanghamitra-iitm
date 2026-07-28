@@ -110,15 +110,15 @@ const COURSE_CONFIG = {
 
   
   python: {
-    title: 'Python Programming',
+    title: 'Programming in Python',
     icon: 'bi-filetype-py',
     color: '#3776ab',
     description: 'Python fundamentals to advanced topics for data science and web development.',
     weeks: [
-      { week: 1,  topic: 'Python Basics',           description: 'Syntax, variables, data types, operators' },
-      { week: 2,  topic: 'Control Flow',            description: 'Conditionals, loops, comprehensions' },
-      { week: 3,  topic: 'Functions & Modules',     description: 'def, args/kwargs, modules, packages' },
-      { week: 4,  topic: 'Data Structures',         description: 'Lists, tuples, dicts, sets' },
+      { week: 1,  topic: 'Introduction to basics in Python',           description: 'Introduction to Replit, Syntax, variables, data types, operators' },
+      { week: 2,  topic: 'Control Flow - Conditionals',            description: '' },
+      { week: 3,  topic: 'Control Flow - Loops',     description: '' },
+      { week: 4,  topic: 'Matrix Multiplication',         description: '' },
       // ─── MIDTERM 1 ─────────────────────────────────────────────────────────
       { 
         week: 'midterm1',  
@@ -130,10 +130,11 @@ const COURSE_CONFIG = {
         weekRange: '1-4',
         totalQuestions: 30
       },
-      { week: 5,  topic: 'OOP in Python',           description: 'Classes, inheritance, dunder methods' },
-      { week: 6,  topic: 'File Handling & I/O',     description: 'Open, read, write, context managers' },
-      { week: 7,  topic: 'Error Handling',          description: 'Exceptions, try/except, custom errors' },
-      { week: 8,  topic: 'Libraries & Practice',    description: 'NumPy, Pandas, mixed revision' },
+      { week: 5,  topic: 'Introduction to Functions',           description: '' },
+      { week: 6,  topic: 'Data Structures',     description: 'LIsts, Sets, Dictionaries, Tuples' },
+      { week: 7,  topic: 'Revision Week',          description: '' },
+      { week: 8,  topic: 'Introduction to recursion',    description: '' },
+
       // ─── MIDTERM 2 ─────────────────────────────────────────────────────────
       { 
         week: 'midterm2',  
@@ -144,19 +145,34 @@ const COURSE_CONFIG = {
         examTitle: 'Midterm 2',
         weekRange: '1-8',
         totalQuestions: 40
+      },
+      { week: 9,  topic: 'Introduction to File Handling',    description: '' },
+      { week: 10,  topic: 'Introduction to Object Oriented Programming',    description: '' },
+      { week: 11,  topic: 'Exception handling',    description: '' },
+      { week: 12,  topic: 'Revision Week',    description: '' },
+       // ─── ENDTERM ──────────────────────────────────────────────────────────
+      { 
+        week: 'endterm',  
+        topic: '🏆 End Term',        
+        description: 'Final comprehensive exam covering Week 1 to Week 12',
+        isExam: true,
+        examId: 'endterm',
+        examTitle: 'End Term',
+        weekRange: '1-12',
+        totalQuestions: 20
       },
     ],
   },
   dbms: {
-    title: 'dbms & Databases',
+    title: 'database management systems',
     icon: 'bi-database-fill',
     color: '#4479a1',
     description: 'Database fundamentals, dbms queries, and optimization techniques.',
     weeks: [
-      { week: 1, topic: 'Introduction to DBMS',               description: 'SELECT, WHERE, ORDER BY, LIMIT' },
-      { week: 2, topic: 'Joins',                    description: 'INNER, LEFT, RIGHT, FULL OUTER joins' },
-      { week: 3, topic: 'Aggregate Functions',      description: 'COUNT, SUM, AVG, GROUP BY, HAVING' },
-      { week: 4, topic: 'Subqueries & CTEs',        description: 'Nested queries, WITH clause' },
+      { week: 1, topic: 'Introduction to DBMS',     description: ''},
+      { week: 2, topic: 'SQL Fundamentals',         description: '' },
+      { week: 3, topic: 'Intermediate SQL',      description: '' },
+      { week: 4, topic: 'Entity-Relationship (ER) Model',        description: '' },
       // ─── MIDTERM 1 ─────────────────────────────────────────────────────────
       { 
         week: 'midterm1',  
@@ -168,10 +184,10 @@ const COURSE_CONFIG = {
         weekRange: '1-4',
         totalQuestions: 30
       },
-      { week: 5, topic: 'DDL & Data Modeling',      description: 'CREATE, ALTER, DROP, normalization' },
-      { week: 6, topic: 'Indexing & Optimization',  description: 'Indexes, EXPLAIN, query tuning' },
-      { week: 7, topic: 'Transactions & ACID',      description: 'BEGIN, COMMIT, ROLLBACK, isolation' },
-      { week: 8, topic: 'Stored Procedures & Views',description: 'Procedures, triggers, views' },
+      { week: 5, topic: 'Relational Database Design',      description: 'Closure of attributes, Super Keys and Candidate Keys, Lossless Join Decomposition, Canonical Cover, Dependency Preservation' },
+      { week: 6, topic: 'Normal Forms',  description: 'Case Study, MVD & 4NF, Design Summary & Temporal Data, Problem solving on normalization, Multivalued Dependency ' },
+      { week: 7, topic: 'Application Design and Development',      description: 'Architecture, Web Applications, SQL and Native Language, Python and PostgreSQL, Application Development and Mobile' },
+      { week: 8, topic: 'Algorithms and Data Structures',    description: 'Algorithms & Complexity Analysis, Data Structures, Physical Storage, File Structure ' },
       // ─── MIDTERM 2 ─────────────────────────────────────────────────────────
       { 
         week: 'midterm2',  
@@ -183,15 +199,31 @@ const COURSE_CONFIG = {
         weekRange: '1-8',
         totalQuestions: 40
       },
+      { week: 9,  topic: 'Indexing and Hashing',     description: 'Indexing, Index Design, B Trees' },
+      { week: 10, topic: 'Transactions',   description: 'Serializability, Recoverability, Concurrency Control' },
+      { week: 11, topic: 'Backup & Recovery',     description: 'Backup, Recovery, RAID' },
+      { week: 12, topic: 'Query Processing and Optimization',     description: 'Processing, Optimization, RDBMS Performance & Architecture' },
+      
+      // ─── ENDTERM ──────────────────────────────────────────────────────────
+      { 
+        week: 'endterm',  
+        topic: '🏆 End Term',        
+        description: 'Final comprehensive exam covering Week 1 to Week 12',
+        isExam: true,
+        examId: 'endterm',
+        examTitle: 'End Term',
+        weekRange: '1-12',
+        totalQuestions: 20
+      },
     ],
   },
-  dsa: {
-    title: 'Data Structures & Algorithms',
+  pdsa: {
+    title: 'Programming, Data Structures & Algorithms',
     icon: 'bi-diagram-3-fill',
     color: '#f4b41a',
     description: 'Core DSA concepts essential for coding interviews and problem solving.',
     weeks: [
-      { week: 1,  topic: 'Python Basics',        description: '' },
+      { week: 1,  topic: 'Python Basics',        description: 'Exception handling, Classes and Objects, Why Efficicency matters?' },
       { week: 2,  topic: 'Sorting Algorithms',            description: 'Assessment on Quick Sort, Merge Sort, Selection Sort, Insertion Sort, and Bubble Sort' },
       { week: 3,  topic: 'Linear Data Structures',         description: 'Assessment on Linked Lists, Arrays, Stacks, Queues, and Hashing' },
       { week: 4,  topic: 'Introduction to Graphs',                 description: 'Assessment on BFS (Breadth-First Search), DFS (Depth-First Search), Directed Acyclic Graphs (DAGs), and Topological Sorting' },
@@ -223,7 +255,6 @@ const COURSE_CONFIG = {
       },
       { week: 9,  topic: 'Dynamic Programming',     description: 'Assessment on Fibonacci & Staircase Problems, 0/1 Knapsack, Rod Cutting, Longest Increasing Subsequence, Longest Common Subsequence, Matrix Chain Multiplication, Edit Distance, Coin Change Problem, Weighted Interval Scheduling, Grid Path Problems (Minimum Path Sum, Unique Paths), Palindrome Partitioning' },
       { week: 10, topic: 'Linear Programming',   description: 'Assessment on Graphical Method (2 variables), Simplex Method, Duality Theory, Sensitivity Analysis, Transportation Problem, Assignment Problem, Blending Problems, Diet Problems, Production Planning, Resource Allocation, Cutting Stock Problem, Scheduling Problems, Investment Portfolio Optimization, Supply Chain Optimization, Network Flow (Max Flow, Min Cut), Integer Linear Programming, Branch and Bound Method, Game Theory (Zero-Sum Games), Markov Decision Processes, Stochastic Programming' },
-    
       { week: 11, topic: 'Revision & Practice',     description: 'Mixed DSA revision questions' },
       // ─── ENDTERM ──────────────────────────────────────────────────────────
       { 
