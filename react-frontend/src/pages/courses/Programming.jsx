@@ -33,7 +33,7 @@ const courses = [
     features: ['CRUD Operations', 'Joins & Subqueries', 'Normalization', 'Indexing', 'Transactions'],
   },
   {
-    id: 'dsa',
+    id: 'pdsa',
     title: 'Data Structures & Algorithms',
     description: 'Arrays, trees, graphs, dynamic programming, sorting — essential for coding interviews.',
     icon: 'bi-diagram-3-fill',
