@@ -7417,24 +7417,25 @@ router.get('/admin-notifications', async (req, res) => {
 
 
 
-    // CAT
-    catDocs.forEach(doc => {
-      ;(doc.attempts || []).forEach(attempt => {
-        const pct = attempt.totalQuestions > 0
-          ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
-          : (attempt.maxScore > 0 ? Math.round(Math.max(0, attempt.score / attempt.maxScore) * 100) : 0)
-        all.push({
-          userName: doc.name || doc.email,
-          subject: 'CAT',
-          subjectKey: 'cat',
-          icon: 'bi-journal-check',
-          iconClass: 'cat',
-          topic: doc.subject || 'CAT Section',
-          score: pct,
-          timestamp: attempt.dateAttempted
-        })
+    // CAT — section attempts from the same sitting (Quant, Verbal & RC, DILR)
+    // are combined into a single notification instead of one per section
+    groupSectionAttempts(catDocs).forEach(session => {
+      all.push({
+        userName: session.userName,
+        subject: 'CAT',
+        subjectKey: 'cat',
+        icon: 'bi-journal-check',
+        iconClass: 'cat',
+        topic: session.sections.length > 1
+          ? `Full Test — ${session.sections.join(', ')}`
+          : (session.sections[0] || 'CAT Section'),
+        score: session.score,
+        marks: session.marks,
+        maxMarks: session.maxMarks,
+        timestamp: session.timestamp
       })
     })
+
 
 
     // Sort and return top 50 most recent
