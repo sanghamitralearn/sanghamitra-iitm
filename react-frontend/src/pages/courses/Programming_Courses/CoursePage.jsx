@@ -60,7 +60,7 @@ const COURSE_CONFIG = {
     },
     { 
         week: 8,  
-        topic: 'Advanced Features',        
+        topic: 'Advanced Java Programming',        
         description: 'Cloning, Type interface, Higher order functions, Streams' 
     },
     // ─── MIDTERM 2 (After Week 8) ────────────────────────────────────────────
