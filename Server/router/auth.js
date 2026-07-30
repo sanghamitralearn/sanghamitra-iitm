@@ -7396,24 +7396,25 @@ router.get('/admin-notifications', async (req, res) => {
       })
     })
 
-    // GMAT
-    gmatDocs.forEach(doc => {
-      ;(doc.attempts || []).forEach(attempt => {
-        const pct = attempt.totalQuestions > 0
-          ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
-          : (attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0)
-        all.push({
-          userName: doc.name || doc.email,
-          subject: 'GMAT',
-          subjectKey: 'gmat',
-          icon: 'bi-mortarboard-fill',
-          iconClass: 'gmat',
-          topic: doc.subject || 'GMAT Section',
-          score: pct,
-          timestamp: attempt.dateAttempted
-        })
+       // GMAT — section attempts from the same sitting (Quant, Verbal, Data Insights)
+    // are combined into a single notification instead of one per section
+    groupSectionAttempts(gmatDocs).forEach(session => {
+      all.push({
+        userName: session.userName,
+        subject: 'GMAT',
+        subjectKey: 'gmat',
+        icon: 'bi-mortarboard-fill',
+        iconClass: 'gmat',
+        topic: session.sections.length > 1
+          ? `Full Test — ${session.sections.join(', ')}`
+          : (session.sections[0] || 'GMAT Section'),
+        score: session.score,
+        marks: session.marks,
+        maxMarks: session.maxMarks,
+        timestamp: session.timestamp
       })
     })
+
 
 
     // CAT
