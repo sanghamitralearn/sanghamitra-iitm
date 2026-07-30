@@ -7051,6 +7051,57 @@ router.get('/admin-notifications', async (req, res) => {
     const push = (arr, subject, subjectKey, icon, iconClass, mapFn) =>
       arr.forEach(s => mapFn(s).forEach(n => all.push({ ...n, subject, subjectKey, icon, iconClass })))
 
+    // (each section is posted via its own request a few seconds/minutes apart).
+    const SESSION_GAP_MS = 15 * 60 * 1000
+    const groupSectionAttempts = (docs) => {
+      const byUser = {}
+      docs.forEach(doc => {
+        ;(doc.attempts || []).forEach(attempt => {
+          if (!attempt.dateAttempted) return
+          const key = doc.email || doc.name
+          if (!byUser[key]) byUser[key] = []
+          byUser[key].push({
+            userName: doc.name || doc.email,
+            section: doc.subject,
+            score: attempt.score || 0,
+            maxScore: attempt.maxScore || 0,
+            timestamp: attempt.dateAttempted,
+          })
+        })
+      })
+
+      const sessions = []
+      Object.values(byUser).forEach(attempts => {
+        attempts.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+        let current = null
+        attempts.forEach(a => {
+          const t = new Date(a.timestamp).getTime()
+          if (current && t - current.lastTs <= SESSION_GAP_MS) {
+            current.items.push(a)
+            current.lastTs = t
+          } else {
+            current = { items: [a], lastTs: t }
+            sessions.push(current)
+          }
+        })
+      })
+
+      return sessions.map(({ items }) => {
+        const totalScore = items.reduce((sum, a) => sum + a.score, 0)
+        const totalMax = items.reduce((sum, a) => sum + a.maxScore, 0)
+        const pct = totalMax > 0 ? Math.round(Math.max(0, totalScore / totalMax) * 100) : 0
+        const latest = items[items.length - 1]
+        return {
+          userName: latest.userName,
+          score: pct,
+          marks: totalScore,
+          maxMarks: totalMax,
+          sections: items.map(a => a.section),
+          timestamp: latest.timestamp,
+        }
+      })
+    }
+
     // Math 1
     push(math1Users, 'Mathematics-1', 'math1', 'bi-calculator', 'math', s =>
       (s.quizScores || []).map(q => ({
