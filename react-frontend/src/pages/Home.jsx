@@ -382,7 +382,7 @@ const Home = () => {
                 <img src="/img/pdsa.jpg" className="img-fluid" alt="Data Structures and Algorithms Course" />
                 <div className="course-content">
                   <div className="d-flex justify-content-between align-items-center mb-3">
-                    <Link to="/programming/courses/PDSA"><button className="category">PDSA Programming</button></Link>
+                    <Link to="/programming/courses/pdsa"><button className="category">PDSA Programming</button></Link>
                   </div>
                   <p className="description">
                     Welcome to our Python Data Structures & Algorithms Hub, where programming meets 
