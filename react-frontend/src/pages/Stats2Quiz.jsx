@@ -4,6 +4,8 @@ import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
+const MIDTERM_DURATION = 60 * 60  // 3600 seconds — fixed 1-hour window for week 100
+
 // Topic map: each week number maps to the exact topic string the backend expects.
 const WEEK_TOPIC_MAP = {
   1:  'Multiple Random Variables',
@@ -173,8 +175,35 @@ const answerNormalizer = {
   },
 }
 
+function resolveOptionLabel(option, index) {
+  if (option && typeof option === 'object') {
+    if (option.option_id !== undefined && option.option_id !== null) return String(option.option_id)
+    if (option.label !== undefined && option.label !== null) return String(option.label)
+  }
+  return OPTION_LABELS[index] || String(index + 1)
+}
+
+function resolveOptionText(option) {
+  if (option && typeof option === 'object') return String(option.text ?? option.option_id ?? '')
+  return String(option || '')
+}
+
+function resolveOptionValue(option, index) {
+  return resolveOptionLabel(option, index)
+}
+
+function matchesOptionAnswer(answer, option, index) {
+  if (answer === undefined || answer === null) return false
+  const normalizedAnswer = answerNormalizer.normalizeAnswer(answer, 'text_input')
+  const normalizedLabel = answerNormalizer.normalizeAnswer(resolveOptionLabel(option, index), 'text_input')
+  const normalizedText = answerNormalizer.normalizeAnswer(resolveOptionText(option), 'text_input')
+  return normalizedAnswer === normalizedLabel || normalizedAnswer === normalizedText
+}
+
+const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+
 function gradeQuestion(question, userAnswer) {
-  if (userAnswer === undefined || userAnswer === null) return false
+  if (userAnswer === undefined || userAnswer === null || userAnswer === '') return false
 
   const type = question.type
   const normUser = answerNormalizer.normalizeAnswer(userAnswer, type)
@@ -187,14 +216,75 @@ function gradeQuestion(question, userAnswer) {
     )
   }
 
-  if (type === 'multiple_choice' || type === 'text_input') {
+  if (type === 'multiple_choice') {
+    if (Array.isArray(question.options)) {
+      const correctValues = []
+      if (typeof question.correct_answer === 'number') {
+        const correctOpt = question.options[question.correct_answer]
+        if (correctOpt !== undefined) {
+          correctValues.push(resolveOptionLabel(correctOpt, question.correct_answer), resolveOptionText(correctOpt))
+        } else {
+          correctValues.push(String(question.correct_answer))
+        }
+      } else if (typeof question.correct_answer === 'string') {
+        const trimmedAnswer = question.correct_answer.trim()
+        correctValues.push(trimmedAnswer)
+        const matchedIndex = question.options.findIndex((opt, idx) => {
+          const label = resolveOptionLabel(opt, idx).trim()
+          const text = resolveOptionText(opt).trim()
+          return label.toLowerCase() === trimmedAnswer.toLowerCase() || text.toLowerCase() === trimmedAnswer.toLowerCase()
+        })
+        if (matchedIndex !== -1) {
+          const opt = question.options[matchedIndex]
+          correctValues.push(resolveOptionLabel(opt, matchedIndex), resolveOptionText(opt))
+        }
+      }
+      const normalizedCorrect = [...new Set(correctValues)]
+        .map(v => answerNormalizer.normalizeAnswer(v, 'text_input'))
+        .filter(Boolean)
+      return normalizedCorrect.includes(normUser) || normUser === normCorrect
+    }
     return normUser === normCorrect
   }
 
   if (type === 'multiple_select') {
-    if (!Array.isArray(userAnswer) || !Array.isArray(question.correct_answer)) return false
-    const ua = userAnswer.map(a => answerNormalizer.normalizeGeneral(a)).sort()
-    const ca = question.correct_answer.map(a => answerNormalizer.normalizeGeneral(a)).sort()
+    if (!Array.isArray(userAnswer)) return false
+    const expected = []
+    const addExpected = (ans) => {
+      if (typeof ans === 'number' && Array.isArray(question.options)) {
+        const opt = question.options[ans]
+        if (opt !== undefined) {
+          expected.push(resolveOptionLabel(opt, ans), resolveOptionText(opt))
+          return
+        }
+      }
+      if (typeof ans === 'string') {
+        const trimmedAns = ans.trim()
+        expected.push(trimmedAns)
+        if (Array.isArray(question.options)) {
+          const matchedIndex = question.options.findIndex((opt, idx) => {
+            const label = resolveOptionLabel(opt, idx).trim()
+            const text = resolveOptionText(opt).trim()
+            return label.toLowerCase() === trimmedAns.toLowerCase() || text.toLowerCase() === trimmedAns.toLowerCase()
+          })
+          if (matchedIndex !== -1) {
+            const opt = question.options[matchedIndex]
+            expected.push(resolveOptionLabel(opt, matchedIndex), resolveOptionText(opt))
+          }
+        }
+        return
+      }
+      expected.push(String(ans))
+    }
+
+    if (Array.isArray(question.correct_answer)) {
+      question.correct_answer.forEach(addExpected)
+    } else if (question.correct_answer !== undefined && question.correct_answer !== null) {
+      addExpected(question.correct_answer)
+    }
+
+    const ua = userAnswer.map(a => answerNormalizer.normalizeAnswer(a, 'text_input')).sort()
+    const ca = expected.map(a => answerNormalizer.normalizeAnswer(a, 'text_input')).filter(Boolean).sort()
     return ua.length === ca.length && ua.every((a, i) => a === ca[i])
   }
 
@@ -503,16 +593,18 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake }) => {
                     {q.type === 'multiple_choice' && Array.isArray(q.options) && (
                       <div className="mb-3">
                         {q.options.map((opt, oi) => {
-                          const isCorrectOpt = opt.option_id === q.correct_answer
-                          const userPicked   = answers[idx] === opt.option_id
+                          const optionLabel = resolveOptionLabel(opt, oi)
+                          const optionText = resolveOptionText(opt)
+                          const isCorrectOpt = matchesOptionAnswer(q.correct_answer, opt, oi)
+                          const userPicked = matchesOptionAnswer(answers[idx], opt, oi)
                           const bg = isCorrectOpt ? '#d4edda' : userPicked ? '#f8d7da' : 'transparent'
                           return (
                             <div key={oi} className="d-flex align-items-center gap-2 mb-1 px-2 py-1 rounded" style={{ background: bg }}>
                               {isCorrectOpt && <i className="bi bi-check-circle-fill text-success" />}
                               {userPicked && !isCorrectOpt && <i className="bi bi-x-circle-fill text-danger" />}
                               {!isCorrectOpt && !userPicked && <i className="bi bi-circle text-muted" />}
-                              <strong className="me-1">{opt.option_id}.</strong>
-                              <MathText text={opt.text} style={{ fontSize: '0.9rem' }} />
+                              <strong className="me-1">{optionLabel}.</strong>
+                              <MathText text={optionText} style={{ fontSize: '0.9rem' }} />
                             </div>
                           )
                         })}
@@ -522,17 +614,19 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake }) => {
                     {q.type === 'multiple_select' && Array.isArray(q.options) && (
                       <div className="mb-3">
                         {q.options.map((opt, oi) => {
-                          const correctArr   = Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer]
-                          const isCorrectOpt = correctArr.includes(opt.option_id)
-                          const userPicked   = Array.isArray(answers[idx]) && answers[idx].includes(opt.option_id)
+                          const optionLabel = resolveOptionLabel(opt, oi)
+                          const optionText = resolveOptionText(opt)
+                          const correctArr = Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer]
+                          const isCorrectOpt = correctArr.some(ans => matchesOptionAnswer(ans, opt, oi))
+                          const userPicked = Array.isArray(answers[idx]) && answers[idx].some(ans => matchesOptionAnswer(ans, opt, oi))
                           const bg = isCorrectOpt ? '#d4edda' : userPicked ? '#f8d7da' : 'transparent'
                           return (
                             <div key={oi} className="d-flex align-items-center gap-2 mb-1 px-2 py-1 rounded" style={{ background: bg }}>
                               {isCorrectOpt && <i className="bi bi-check-circle-fill text-success" />}
                               {userPicked && !isCorrectOpt && <i className="bi bi-x-circle-fill text-danger" />}
                               {!isCorrectOpt && !userPicked && <i className="bi bi-circle text-muted" />}
-                              <strong className="me-1">{opt.option_id}.</strong>
-                              <MathText text={opt.text} style={{ fontSize: '0.9rem' }} />
+                              <strong className="me-1">{optionLabel}.</strong>
+                              <MathText text={optionText} style={{ fontSize: '0.9rem' }} />
                             </div>
                           )
                         })}
@@ -596,6 +690,7 @@ const Stats2Quiz = () => {
   const [saving, setSaving] = useState(false)
   const [showCalc, setShowCalc] = useState(false)
   const [tabWarning, setTabWarning] = useState(false)
+  const [timeLeft, setTimeLeft] = useState(null)  // seconds; null = no timer active
 
   const questionStartRef = useRef(Date.now())
   const quizStartRef = useRef(Date.now())
@@ -603,6 +698,7 @@ const Stats2Quiz = () => {
   const cheatingRef = useRef(0)
   const userRef = useRef(null)
   const questionRef = useRef(null)
+  const timerRef = useRef(null)
 
   // Load KaTeX once on mount
   useEffect(() => { loadKaTeX() }, [])
@@ -611,6 +707,14 @@ const Stats2Quiz = () => {
   useEffect(() => {
     if (questionRef.current) renderMathContent(questionRef.current)
   }, [currentIndex, questions])
+
+  // 1-hour countdown for Midterm Assessment (week 100) — auto-submits on expiry
+  useEffect(() => {
+    if (validWeekNum !== 100 || timeLeft === null || submitted) return
+    if (timeLeft === 0) { handleSubmit(true); return }
+    timerRef.current = setTimeout(() => setTimeLeft(t => t - 1), 1000)
+    return () => clearTimeout(timerRef.current)
+  }, [timeLeft, submitted])
 
   // Reset quiz state when week parameter changes
   useEffect(() => {
@@ -652,7 +756,7 @@ const Stats2Quiz = () => {
   const fetchQuestions = async () => {
     setLoading(true);
     try {
-      const url = `${API_URL}/api/iitm_stats2_questions_databases?week=${validWeekNum}&email=${encodeURIComponent(userRef.current.email)}&count=25`;
+      const url = `${API_URL}/api/iitm_stats2_questions_databases?week=${validWeekNum}&email=${encodeURIComponent(userRef.current.email)}&count=${validWeekNum === 100 ? 22 : 25}`;
       const res  = await axios.get(url, { withCredentials: true });
       const qs   = res.data.questions || [];
 
@@ -663,6 +767,7 @@ const Stats2Quiz = () => {
       }
       setQuestions(qs);
       quizStartRef.current = Date.now();
+      if (validWeekNum === 100) setTimeLeft(MIDTERM_DURATION)
     } catch (e) {
       console.error('Fetch questions error:', e);
       setError('Failed to load questions. Please try again.');
@@ -852,6 +957,7 @@ const Stats2Quiz = () => {
     timesRef.current = {}
     cheatingRef.current = 0
     quizStartRef.current = Date.now()
+    if (validWeekNum === 100) setTimeLeft(MIDTERM_DURATION)
     if (userRef.current?.email) fetchQuestions()
   }
 
@@ -894,12 +1000,31 @@ const Stats2Quiz = () => {
 
   const diffColor = { easy: '#28a745', medium: '#ffc107', hard: '#dc3545' }
 
+  // Timer helpers (midterm only)
+  const formatTime = (secs) => {
+    const m = Math.floor(secs / 60)
+    const s = secs % 60
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  }
+  const timerColor = timeLeft === null ? '#6c757d'
+    : timeLeft > 1200 ? '#28a745'
+    : timeLeft > 600  ? '#ffc107'
+    : timeLeft > 300  ? '#fd7e14'
+    : '#dc3545'
+  const showTimerWarning = timeLeft !== null && timeLeft <= 300 && timeLeft > 0
+
   return (
     <main className="main">
       {tabWarning && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10000, background: '#dc3545', color: '#fff', textAlign: 'center', padding: '8px', fontWeight: 600 }}>
           ⚠️ Tab switching detected!
           <button onClick={() => setTabWarning(false)} style={{ marginLeft: 16, background: 'none', border: '1px solid #fff', color: '#fff', borderRadius: 4, padding: '2px 10px', cursor: 'pointer' }}>Dismiss</button>
+        </div>
+      )}
+      {showTimerWarning && (
+        <div style={{ position: 'fixed', top: tabWarning ? 40 : 0, left: 0, right: 0, zIndex: 9999, background: '#fd7e14', color: '#fff', textAlign: 'center', padding: '6px 16px', fontWeight: 600, fontSize: '0.95rem' }}>
+          <i className="bi bi-clock-fill me-2" />
+          Only {formatTime(timeLeft)} remaining — your quiz will auto-submit when time is up!
         </div>
       )}
 
@@ -949,20 +1074,25 @@ const Stats2Quiz = () => {
 
                 {q.type === 'multiple_choice' && Array.isArray(q.options) && (
                   <div>
-                    {q.options.map((opt, oi) => (
-                      <div key={oi}
-                        onClick={() => setAnswer(currentIndex, opt.option_id)}
-                        className={`d-flex align-items-center gap-2 mb-2 p-3 rounded border ${userAns === opt.option_id ? 'border-primary bg-primary bg-opacity-10' : ''}`}
-                        style={{ cursor: 'pointer', transition: 'all 0.15s' }}>
-                        <div style={{
-                          width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-                          border: `2px solid ${userAns === opt.option_id ? '#0d6efd' : '#adb5bd'}`,
-                          background: userAns === opt.option_id ? '#0d6efd' : 'transparent',
-                        }} />
-                        <strong className="me-1" style={{ minWidth: 20 }}>{opt.option_id}.</strong>
-                        <MathText text={opt.text} style={{ fontSize: '0.95rem' }} />
-                      </div>
-                    ))}
+                    {q.options.map((opt, oi) => {
+                      const optionLabel = resolveOptionLabel(opt, oi)
+                      const optionText = resolveOptionText(opt)
+                      const selected = userAns === optionLabel || userAns === optionText
+                      return (
+                        <div key={oi}
+                          onClick={() => setAnswer(currentIndex, optionLabel)}
+                          className={`d-flex align-items-center gap-2 mb-2 p-3 rounded border ${selected ? 'border-primary bg-primary bg-opacity-10' : ''}`}
+                          style={{ cursor: 'pointer', transition: 'all 0.15s' }}>
+                          <div style={{
+                            width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                            border: `2px solid ${selected ? '#0d6efd' : '#adb5bd'}`,
+                            background: selected ? '#0d6efd' : 'transparent',
+                          }} />
+                          <strong className="me-1" style={{ minWidth: 20 }}>{optionLabel}.</strong>
+                          <MathText text={optionText} style={{ fontSize: '0.95rem' }} />
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
 
@@ -970,10 +1100,15 @@ const Stats2Quiz = () => {
                   <div>
                     <p className="text-muted small mb-2">Select all that apply</p>
                     {q.options.map((opt, oi) => {
-                      const selected = Array.isArray(userAns) && userAns.includes(opt.option_id)
+                      const optionLabel = resolveOptionLabel(opt, oi)
+                      const optionText = resolveOptionText(opt)
+                      const selected = Array.isArray(userAns) && userAns.some(ans => (
+                        answerNormalizer.normalizeAnswer(ans, 'text_input') === answerNormalizer.normalizeAnswer(optionLabel, 'text_input') ||
+                        answerNormalizer.normalizeAnswer(ans, 'text_input') === answerNormalizer.normalizeAnswer(optionText, 'text_input')
+                      ))
                       return (
                         <div key={oi}
-                          onClick={() => toggleMSQ(currentIndex, opt.option_id)}
+                          onClick={() => toggleMSQ(currentIndex, optionLabel)}
                           className={`d-flex align-items-center gap-2 mb-2 p-3 rounded border ${selected ? 'border-primary bg-primary bg-opacity-10' : ''}`}
                           style={{ cursor: 'pointer', transition: 'all 0.15s' }}>
                           <div style={{
@@ -984,8 +1119,8 @@ const Stats2Quiz = () => {
                           }}>
                             {selected && <i className="bi bi-check text-white" style={{ fontSize: 12 }} />}
                           </div>
-                          <strong className="me-1" style={{ minWidth: 20 }}>{opt.option_id}.</strong>
-                          <MathText text={opt.text} style={{ fontSize: '0.95rem' }} />
+                          <strong className="me-1" style={{ minWidth: 20 }}>{optionLabel}.</strong>
+                          <MathText text={optionText} style={{ fontSize: '0.95rem' }} />
                         </div>
                       )
                     })}
@@ -1037,6 +1172,22 @@ const Stats2Quiz = () => {
           </div>
 
           <div className="col-lg-4">
+            {validWeekNum === 100 && timeLeft !== null && (
+              <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 16, border: `2px solid ${timerColor}` }}>
+                <div className="card-body p-3 text-center">
+                  <div className="text-muted small fw-semibold mb-1">
+                    <i className="bi bi-clock me-1" />Time Remaining
+                  </div>
+                  <div style={{ fontSize: '2rem', fontWeight: 700, color: timerColor, fontVariantNumeric: 'tabular-nums', letterSpacing: 2 }}>
+                    {formatTime(timeLeft)}
+                  </div>
+                  <div className="text-muted" style={{ fontSize: '0.72rem', marginTop: 4 }}>
+                    Auto-submits when timer reaches 00:00
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 16 }}>
               <div className="card-body p-3">
                 <h6 className="fw-bold mb-3">Question Navigator</h6>
