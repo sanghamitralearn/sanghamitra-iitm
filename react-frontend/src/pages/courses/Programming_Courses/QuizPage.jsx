@@ -1124,7 +1124,7 @@ const QuizPage = () => {
   const checkPreviousAttempts = async (email) => {
     try {
       const res = await axios.get(
-        `${API}/api/mcq-quiz/attempts?email=${encodeURIComponent(email)}&course=${course}`,
+        `${API}/api/mcq-quiz/attempts?email=${encodeURIComponent(email)}&course=${course.toLowerCase()}`,
         { withCredentials: true }
       )
       
@@ -1383,7 +1383,7 @@ const QuizPage = () => {
       <i className="bi bi-exclamation-triangle fs-1 text-danger" />
       <h4 className="mt-3">{error}</h4>
       <button className="btn btn-primary mt-3" onClick={fetchQuestions}>Retry</button>
-      <Link to={`/programming/courses/${course}`} className="btn btn-outline-secondary mt-3 ms-2">Back</Link>
+      <Link to={`/programming/courses/${course.toLowerCase()}`} className="btn btn-outline-secondary mt-3 ms-2">Back</Link>
     </div>
   )
 
