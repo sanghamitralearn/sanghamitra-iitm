@@ -41,6 +41,7 @@ function loadKaTeX() {
       document.head.appendChild(ar)
     }
     document.head.appendChild(core)
+    
   })
 }
 
@@ -177,14 +178,29 @@ const answerNormalizer = {
 
 function resolveOptionLabel(option, index) {
   if (option && typeof option === 'object') {
-    if (option.option_id !== undefined && option.option_id !== null) return String(option.option_id)
-    if (option.label !== undefined && option.label !== null) return String(option.label)
+    const id = option.option_id
+    const idStr = id !== undefined && id !== null ? String(id).trim() : ''
+    // If option_id is a single letter A-H, use it as label
+    if (/^[A-H]$/i.test(idStr)) return idStr.toUpperCase()
+    // If option_id is non-empty but not a label letter, fall through to index label
+    const lbl = option.label
+    if (lbl !== undefined && lbl !== null && String(lbl).trim() !== '') return String(lbl)
   }
   return OPTION_LABELS[index] || String(index + 1)
 }
 
 function resolveOptionText(option) {
-  if (option && typeof option === 'object') return String(option.text ?? option.option_id ?? '')
+  if (option && typeof option === 'object') {
+    const t = option.text
+    if (t !== undefined && t !== null && String(t).trim() !== '') return String(t)
+    // If option_id is not a single letter, it likely IS the text
+    const id = option.option_id
+    if (id !== undefined && id !== null) {
+      const idStr = String(id).trim()
+      if (idStr !== '' && !/^[A-H]$/i.test(idStr)) return idStr
+    }
+    return ''
+  }
   return String(option || '')
 }
 
