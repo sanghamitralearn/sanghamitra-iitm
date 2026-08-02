@@ -180,11 +180,13 @@ function resolveOptionLabel(option, index) {
   if (option && typeof option === 'object') {
     const id = option.option_id
     const idStr = id !== undefined && id !== null ? String(id).trim() : ''
-    // If option_id is a single letter A-H, use it as label
     if (/^[A-H]$/i.test(idStr)) return idStr.toUpperCase()
-    // If option_id is non-empty but not a label letter, fall through to index label
     const lbl = option.label
     if (lbl !== undefined && lbl !== null && String(lbl).trim() !== '') return String(lbl)
+  }
+  if (typeof option === 'string') {
+    const m = option.match(/^([A-H])[\.\)\s]/i)
+    if (m) return m[1].toUpperCase()
   }
   return OPTION_LABELS[index] || String(index + 1)
 }
@@ -193,13 +195,16 @@ function resolveOptionText(option) {
   if (option && typeof option === 'object') {
     const t = option.text
     if (t !== undefined && t !== null && String(t).trim() !== '') return String(t)
-    // If option_id is not a single letter, it likely IS the text
     const id = option.option_id
     if (id !== undefined && id !== null) {
       const idStr = String(id).trim()
       if (idStr !== '' && !/^[A-H]$/i.test(idStr)) return idStr
     }
     return ''
+  }
+  if (typeof option === 'string') {
+    // Strip leading "A. ", "B) ", etc. — label is shown separately
+    return option.replace(/^[A-H][\.\)\s]+/i, '').trim()
   }
   return String(option || '')
 }
