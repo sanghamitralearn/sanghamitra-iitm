@@ -1,4 +1,4 @@
-﻿const jwt = require('jsonwebtoken'); 
+const jwt = require('jsonwebtoken'); 
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
@@ -6951,7 +6951,7 @@ router.get('/admin-notifications', async (req, res) => {
       codingUsers, pdsaUsers,
       progAttempts,  // This is ProgrammingQuizAttempt for Java, Python, SQL, DSA
       satDocs, jeeAdvDocs, jeeMainDocs, jeeMainFullDocs, greDocs,
-      gateDaDocs, gateDaFullDocs, gmatDocs, catDocs, catFullDocs, actDocs,
+      gateDaDocs, gateDaFullDocs, gmatDocs, catDocs, catFullDocs,
       // Add these for additional course data
       javaSubmissions, pythonSubmissions, sqlSubmissions, dsaSubmissions,
       dbmsSubmissions
@@ -7025,11 +7025,6 @@ router.get('/admin-notifications', async (req, res) => {
       CatFullScore.find({}, { email:1, name:1, paper:1, year:1,
         score:1, maxScore:1, correctAnswers:1, totalQuestions:1, dateAttempted:1
       }).lean().catch(() => []),
-      ActScore.find({}, { email:1, name:1, subject:1,
-        'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
-        'attempts.totalQuestions':1, 'attempts.dateAttempted':1
-      }).lean().catch(() => []),
-
   
         
       // ADD: Java submissions from JavaSubmission model
@@ -7445,9 +7440,6 @@ router.get('/admin-notifications', async (req, res) => {
         timestamp: session.timestamp
       })
     })
-
-      
- 
 
 
 
@@ -8558,7 +8550,6 @@ router.get('/gre_exam_detail', async (req, res) => {
     res.status(500).json({ error: err.message })
   }
 })
-
 
 // POST /api/fix-jee-papers — one-time migration: relabel 'Single' attempts that
 // were Paper1/Paper2 quizzes (all 3 subjects saved within 10 min = paper session).
