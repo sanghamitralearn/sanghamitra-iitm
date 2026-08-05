@@ -7440,6 +7440,26 @@ router.get('/admin-notifications', async (req, res) => {
         timestamp: session.timestamp
       })
     })
+    
+    // ACT — section attempts from the same sitting (English, Mathematics, Reading, Science)
+    // are combined into a single notification instead of one per section
+    groupSectionAttempts(actDocs).forEach(session => {
+      all.push({
+        userName: session.userName,
+        subject: 'ACT',
+        subjectKey: 'act',
+        icon: 'bi-journal-richtext',
+        iconClass: 'act',
+        topic: session.sections.length > 1
+          ? `Full Test — ${session.sections.join(', ')}`
+          : (session.sections[0] || 'ACT Section'),
+        score: session.score,
+        marks: session.marks,
+        maxMarks: session.maxMarks,
+        timestamp: session.timestamp
+      })
+    })
+
 
 
 
