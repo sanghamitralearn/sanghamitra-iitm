@@ -840,6 +840,92 @@ const Home = () => {
                 </div>
               </div>
 
+            {/* ACT Course Card */}
+              <div className="col-lg-6 col-md-6 d-flex align-items-stretch mt-4" data-aos="zoom-in" data-aos-delay="900">
+                <div className="course-item" style={{ width: '100%' }}>
+                  <div style={{
+                    background: 'linear-gradient(135deg, #b71c1c 0%, #d32f2f 45%, #ff6659 100%)',
+                    height: '180px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '12px',
+                    position: 'relative',
+                    overflow: 'hidden',
+                  }}>
+                    {/* Decorative circles */}
+                    <div style={{
+                      position: 'absolute', top: -35, right: -35,
+                      width: 110, height: 110, borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.07)',
+                    }} />
+                    <div style={{
+                      position: 'absolute', bottom: -25, left: -25,
+                      width: 80, height: 80, borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.06)',
+                    }} />
+
+                    {/* Section icons */}
+                    <div style={{ display: 'flex', gap: '14px', zIndex: 1 }}>
+                      <div style={{ textAlign: 'center', color: '#fff' }}>
+                        <i className="bi bi-pencil-square" style={{ fontSize: '1.8rem' }}></i>
+                        <div style={{ fontSize: '0.75rem', marginTop: 4 }}>English</div>
+                      </div>
+                      <div style={{ textAlign: 'center', color: '#fff' }}>
+                        <i className="bi bi-calculator-fill" style={{ fontSize: '1.8rem' }}></i>
+                        <div style={{ fontSize: '0.75rem', marginTop: 4 }}>Math</div>
+                      </div>
+                      <div style={{ textAlign: 'center', color: '#fff' }}>
+                        <i className="bi bi-book-half" style={{ fontSize: '1.8rem' }}></i>
+                        <div style={{ fontSize: '0.75rem', marginTop: 4 }}>Reading</div>
+                      </div>
+                      <div style={{ textAlign: 'center', color: '#fff' }}>
+                        <i className="bi bi-flask-fill" style={{ fontSize: '1.8rem' }}></i>
+                        <div style={{ fontSize: '0.75rem', marginTop: 4 }}>Science</div>
+                      </div>
+                    </div>
+
+                    {/* Label row */}
+                    <div style={{ zIndex: 1, textAlign: 'center' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.8rem', letterSpacing: '1.5px', fontWeight: 600 }}>
+                        ACT PRACTICE
+                      </span>
+                      <div style={{ marginTop: 4 }}>
+                        <span style={{
+                          background: 'rgba(255,255,255,0.18)',
+                          color: '#fff',
+                          fontSize: '0.7rem',
+                          padding: '2px 10px',
+                          borderRadius: 20,
+                          border: '1px solid rgba(255,255,255,0.35)',
+                          letterSpacing: '0.5px',
+                        }}>
+                          Classic ACT
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="course-content">
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <Link to="/courses/act"><button className="category">ACT</button></Link>
+                      <span className="badge" style={{ background: '#b71c1c', fontSize: '0.75rem' }}>+1/0</span>
+                    </div>
+                    <p className="description">
+                      Practice ACT questions section-wise — English, Mathematics, Reading, and Science.
+                      +1 mark for each correct MCQ, 0 for wrong or unattempted (no negative marking).
+                      Includes a full-length mock test and detailed score analysis.
+                    </p>
+                    <div className="trainer d-flex justify-content-between align-items-center">
+                      <div className="trainer-rank d-flex align-items-center">
+                        <i className="bi bi-heart heart-icon"></i>&nbsp;92
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>E
+
             
             
             
