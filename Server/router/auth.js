@@ -85,6 +85,11 @@ const GreQuestion    = require('../model/gre_questions')
 const GreScore       = require('../model/gre_scores')
 const GreFullScore   = require('../model/gre_full_scores')
 
+const ActQuestion    = require('../model/act_questions')
+const ActScore       = require('../model/act_scores')
+const ActFullScore   = require('../model/act_full_scores')
+
+
 const GateDaQuestion  = require('../model/gate_da_questions')
 const GateDaScore     = require('../model/gate_da_scores')
 const GateDaFullScore = require('../model/gate_da_full_scores')
