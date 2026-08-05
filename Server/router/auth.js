@@ -8571,6 +8571,336 @@ router.get('/gre_exam_detail', async (req, res) => {
   }
 })
 
+// ─── ACT Debug — returns total count + distinct subjects in the collection ───
+router.get('/act_debug', async (req, res) => {
+  try {
+    const totalQuestions = await ActQuestion.countDocuments()
+    const distinctSubjects = await ActQuestion.distinct('subject')
+    res.json({ totalQuestions, distinctSubjects })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Maps 0-100% raw accuracy onto the official ACT 1-36 section scaled-score
+// range. No public ACT concordance table is available, so this is a linear
+// approximation, same convention as gmatScaledScore() above.
+function actScaledScore(correctAnswers, totalQuestions) {
+  if (!totalQuestions) return null
+  const pct = Math.max(0, Math.min(1, correctAnswers / totalQuestions))
+  return 1 + Math.round(pct * 35)
+}
+
+// Combines the four ACT section scaled scores (1-36 each) into the official
+// composite score — the ACT composite is the rounded average of the 4 section scores.
+function actTotalScaledScore(englishScaled, mathScaled, readingScaled, scienceScaled) {
+  if (englishScaled == null || mathScaled == null || readingScaled == null || scienceScaled == null) return null
+  return Math.round((englishScaled + mathScaled + readingScaled + scienceScaled) / 4)
+}
+
+// ─── ACT Questions ────────────────────────────────────────────────────────────
+// GET /api/act_questions?subject=Mathematics&paper=Practice Set 1&difficulty=easy&limit=30
+router.get('/act_questions', async (req, res) => {
+  try {
+    const { subject, difficulty, paper, limit } = req.query
+    const filter = {}
+    if (subject) {
+      const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      filter.subject = { $regex: new RegExp('^' + esc(subject) + '$', 'i') }
+    }
+    if (difficulty) filter.difficulty = difficulty
+    if (paper) {
+      const escapedPaper = paper.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      filter.paper = { $regex: new RegExp('^' + escapedPaper + '$', 'i') }
+    }
+    const qs = await ActQuestion.find(filter)
+      .limit(limit ? parseInt(limit) : 0)
+      .lean()
+    res.json(qs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/act_scores — upsert: one doc per (email+subject), keep last 5 attempts
+router.post('/act_scores', async (req, res) => {
+  try {
+    const { email, name, subject, totalQuestions, correctAnswers, wrongAnswers,
+            unattempted, score, maxScore, responses, source } = req.body
+    if (!email || !subject) return res.status(400).json({ error: 'email and subject are required' })
+
+    const newAttempt = {
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore,
+      scaledScore: actScaledScore(correctAnswers, totalQuestions),
+      responses: (responses || []).map(r => ({
+        questionId:   r.questionId,
+        userResponse: r.userResponse,
+        isCorrect:    r.isCorrect,
+        marksAwarded: r.marksAwarded,
+      })),
+      source: source === 'FullTest' ? 'FullTest' : 'Module',
+      dateAttempted: new Date(),
+    }
+
+    const doc = await ActScore.findOneAndUpdate(
+      { email, subject },
+      {
+        $set:  { name },
+        $push: { attempts: { $each: [newAttempt], $position: 0, $slice: 5 } },
+      },
+      { upsert: true, new: true }
+    )
+    res.json({ success: true, data: { email: doc.email, subject: doc.subject, attemptCount: doc.attempts.length } })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/act_scores?email=x@y.com  — returns all attempts as flat records (newest first per subject)
+router.get('/act_scores', async (req, res) => {
+  try {
+    const { email } = req.query
+    const filter = email ? { email } : {}
+    const docs = await ActScore.find(filter).lean()
+    const result = docs.flatMap(doc =>
+      (doc.attempts || []).map(attempt => ({
+        email:   doc.email,
+        name:    doc.name,
+        subject: doc.subject,
+        ...attempt,
+      }))
+    )
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── ACT Papers aggregation ───────────────────────────────────────────────────
+// GET /api/act_papers  — groups act_questions by (paper, year) and returns per-paper totals
+router.get('/act_papers', async (req, res) => {
+  try {
+    const grouped = await ActQuestion.aggregate([
+      {
+        $group: {
+          _id:   { paper: '$paper', year: '$year', subject: '$subject' },
+          count: { $sum: 1 },
+          marks: { $sum: { $ifNull: ['$points', 1] } },
+        },
+      },
+      {
+        $group: {
+          _id:            { paper: '$_id.paper', year: '$_id.year' },
+          totalQuestions: { $sum: '$count' },
+          totalMarks:     { $sum: '$marks' },
+          subjects:       { $push: { subject: '$_id.subject', count: '$count', totalMarks: '$marks' } },
+        },
+      },
+    ])
+
+    const result = grouped.map(p => {
+      const subjects = {}
+      p.subjects.forEach(s => { subjects[s.subject] = { count: s.count, totalMarks: s.totalMarks } })
+      return {
+        paper:          p._id.paper,
+        year:           p._id.year,
+        totalQuestions: p.totalQuestions,
+        totalMarks:     p.totalMarks,
+        subjects,
+      }
+    })
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/act_full_scores — save one full-paper attempt
+router.post('/act_full_scores', async (req, res) => {
+  try {
+    const {
+      email, name, paper, year,
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore, sectionScores, responses, totalTimeTaken,
+    } = req.body
+    if (!email || !paper) return res.status(400).json({ error: 'email and paper are required' })
+
+    // Fill in approximate scaled scores per section if the client didn't supply them.
+    const finalSectionScores = { ...(sectionScores || {}) }
+    ;['English', 'Mathematics', 'Reading', 'Science'].forEach(sec => {
+      if (finalSectionScores[sec] && finalSectionScores[sec].scaledScore == null) {
+        finalSectionScores[sec].scaledScore = actScaledScore(
+          finalSectionScores[sec].correctAnswers, finalSectionScores[sec].totalQuestions
+        )
+      }
+    })
+
+    const totalScaledScore = actTotalScaledScore(
+      finalSectionScores['English']?.scaledScore,
+      finalSectionScores['Mathematics']?.scaledScore,
+      finalSectionScores['Reading']?.scaledScore,
+      finalSectionScores['Science']?.scaledScore,
+    )
+
+    const doc = new ActFullScore({
+      email, name, paper, year,
+      totalQuestions, correctAnswers, wrongAnswers, unattempted,
+      score, maxScore, sectionScores: finalSectionScores, totalScaledScore,
+      responses: (responses || []).map(r => ({
+        questionId:   r.questionId,
+        subject:      r.subject,
+        userResponse: r.userResponse,
+        isCorrect:    r.isCorrect,
+        marksAwarded: r.marksAwarded,
+        unattempted:  r.unattempted,
+        timeTaken:    r.timeTaken,
+      })),
+      totalTimeTaken,
+      dateAttempted: new Date(),
+    })
+    await doc.save()
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/act_full_scores?email=x@y.com — all full-paper attempts newest first
+router.get('/act_full_scores', async (req, res) => {
+  try {
+    const { email } = req.query
+    if (!email) return res.status(400).json({ error: 'email is required' })
+    const docs = await ActFullScore.find({ email }).sort({ dateAttempted: -1 }).lean()
+    res.json(docs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/act_admin_scores — all attempts per student, grouped by email (for admin dashboard)
+router.get('/act_admin_scores', async (req, res) => {
+  try {
+    const docs = await ActScore.find({}).lean()
+    const byEmail = {}
+    docs.forEach(doc => {
+      if (!byEmail[doc.email]) {
+        byEmail[doc.email] = { email: doc.email, name: doc.name, quizScores: [] }
+      }
+      ;(doc.attempts || []).forEach((attempt, i) => {
+        const pct = attempt.totalQuestions > 0
+          ? Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100)
+          : (attempt.maxScore > 0 ? Math.round((attempt.score / attempt.maxScore) * 100) : 0)
+        byEmail[doc.email].quizScores.push({
+          topic:          doc.subject,
+          score:          attempt.score,
+          maxScore:       attempt.maxScore,
+          correctAnswers: attempt.correctAnswers,
+          totalQuestions: attempt.totalQuestions,
+          percentage:     pct,
+          scaledScore:    attempt.scaledScore ?? null,
+          timestamp:      attempt.dateAttempted,
+          attemptNumber:  i + 1,
+        })
+      })
+    })
+    res.json({ success: true, data: Object.values(byEmail) })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// GET /api/act_exam_detail?email=...&subject=...&attemptNumber=... — question-by-question breakdown for one attempt
+router.get('/act_exam_detail', async (req, res) => {
+  try {
+    const { email, subject, attemptNumber } = req.query
+    if (!email || !subject || !attemptNumber) {
+      return res.status(400).json({ success: false, message: 'email, subject, and attemptNumber are required' })
+    }
+
+    const doc = await ActScore.findOne({ email, subject }).lean()
+    if (!doc) return res.status(404).json({ success: false, message: 'Score record not found' })
+
+    const idx = parseInt(attemptNumber) - 1
+    const attempt = (doc.attempts || [])[idx]
+    if (!attempt) return res.status(404).json({ success: false, message: 'Attempt not found' })
+
+    const questionIds = (attempt.responses || []).map(r => r.questionId).filter(Boolean)
+    const questionMeta = await ActQuestion.find({ _id: { $in: questionIds } }).lean()
+    const metaMap = {}
+    questionMeta.forEach(q => { metaMap[String(q._id)] = q })
+
+    const enrichedResults = (attempt.responses || []).map((r, i) => {
+      const meta = metaMap[String(r.questionId)] || {}
+      return {
+        questionId:     r.questionId,
+        questionNumber: meta.question_number || i + 1,
+        questionText:   meta.question_text || '',
+        userAnswer:     r.userResponse,
+        correctAnswer:  meta.correct_answer,
+        isCorrect:      r.isCorrect,
+        marksAwarded:   r.marksAwarded,
+        difficulty:     meta.difficulty || null,
+        type:           meta.type || null,
+        options:        meta.options || [],
+        explanation:    meta.explanation || null,
+        points:         meta.points || 1,
+      }
+    })
+
+    const totalQuestions = attempt.totalQuestions || enrichedResults.length
+    const correctAnswers = attempt.correctAnswers || 0
+
+    // Compute difficulty breakdown
+    const difficultyStats = { easy: { total: 0, correct: 0 }, medium: { total: 0, correct: 0 }, hard: { total: 0, correct: 0 }, unknown: { total: 0, correct: 0 } }
+    enrichedResults.forEach(r => {
+      const d = r.difficulty || 'unknown'
+      difficultyStats[d].total++
+      if (r.isCorrect) difficultyStats[d].correct++
+    })
+
+    // Compute type breakdown
+    const typeStats = {}
+    enrichedResults.forEach(r => {
+      const t = r.type || 'unknown'
+      if (!typeStats[t]) typeStats[t] = { total: 0, correct: 0 }
+      typeStats[t].total++
+      if (r.isCorrect) typeStats[t].correct++
+    })
+
+    res.json({
+      success: true,
+      data: {
+        student: { email: doc.email, name: doc.name },
+        attempt: {
+          subject:        doc.subject,
+          attemptNumber:  parseInt(attemptNumber),
+          dateAttempted:  attempt.dateAttempted,
+          score:          attempt.score,
+          maxScore:       attempt.maxScore,
+          totalQuestions,
+          correctAnswers,
+          wrongAnswers:   attempt.wrongAnswers,
+          unattempted:    attempt.unattempted,
+          percentage:     totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0,
+          scaledScore:    attempt.scaledScore ?? null,
+        },
+        enrichedResults,
+        insights: {
+          difficultyStats,
+          typeStats,
+          hardestQuestions: enrichedResults
+            .filter(r => !r.isCorrect && r.difficulty === 'hard')
+            .map(r => ({ questionNumber: r.questionNumber, questionText: r.questionText, explanation: r.explanation })),
+        },
+      }
+    })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+
 // POST /api/fix-jee-papers — one-time migration: relabel 'Single' attempts that
 // were Paper1/Paper2 quizzes (all 3 subjects saved within 10 min = paper session).
 router.post('/fix-jee-papers', async (req, res) => {
