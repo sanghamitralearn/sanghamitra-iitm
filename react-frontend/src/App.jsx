@@ -109,6 +109,15 @@ import GMATExamAnalysis from './pages/GMATExamAnalysis'
 import GMATAnalysis from './pages/GMATAnalysis'
 import GMATScoreDashboard from './pages/courses/GMATScoreDashboard'
 
+//ACT
+import ACT from './pages/courses/ACT'
+import ACTMain from './pages/courses/ACTMain'
+import ACTQuiz from './pages/courses/ACTQuiz'
+import ACTFullTest from './pages/courses/ACTFullTest'
+import ACTDashboard from './pages/ACTDashboard'
+import ACTExamAnalysis from './pages/ACTExamAnalysis'
+import ACTAnalysis from './pages/ACTAnalysis'
+import ACTScoreDashboard from './pages/courses/ACTScoreDashboard'
 
 //gate da
 
@@ -273,6 +282,19 @@ function App() {
             <Route path="/admin/gmat" element={<GMATDashboard />} />
             <Route path="/courses/gmat/ScoreDashboard" element={<GMATScoreDashboard />} />
             <Route path="/admin/gmat/exam/:email/:subject/:attemptNumber" element={<GMATExamAnalysis />} />
+
+
+                 
+            {/* ACT — paper listing (like GMAT) + section-based quizzes */}
+            <Route path="/courses/act" element={<ACTMain />} />
+            <Route path="/courses/act/modules" element={<ACT />} />
+            <Route path="/courses/act/quiz/:section/:module" element={<ACTQuiz />} />
+            <Route path="/courses/act/full-test" element={<ACTFullTest />} />
+            <Route path="/courses/act/analysis" element={<ACTAnalysis />} />
+            <Route path="/admin/act" element={<ACTDashboard />} />
+            <Route path="/courses/act/ScoreDashboard" element={<ACTScoreDashboard />} />
+            <Route path="/admin/act/exam/:email/:subject/:attemptNumber" element={<ACTExamAnalysis />} />
+     
 
                  
             {/* GATE DA — paper listing (like SAT) + module-based quizzes, with negative marking */}
