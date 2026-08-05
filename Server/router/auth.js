@@ -6951,7 +6951,7 @@ router.get('/admin-notifications', async (req, res) => {
       codingUsers, pdsaUsers,
       progAttempts,  // This is ProgrammingQuizAttempt for Java, Python, SQL, DSA
       satDocs, jeeAdvDocs, jeeMainDocs, jeeMainFullDocs, greDocs,
-      gateDaDocs, gateDaFullDocs, gmatDocs, catDocs, catFullDocs,
+      gateDaDocs, gateDaFullDocs, gmatDocs, catDocs, catFullDocs, actDocs,
       // Add these for additional course data
       javaSubmissions, pythonSubmissions, sqlSubmissions, dsaSubmissions,
       dbmsSubmissions
@@ -7025,6 +7025,11 @@ router.get('/admin-notifications', async (req, res) => {
       CatFullScore.find({}, { email:1, name:1, paper:1, year:1,
         score:1, maxScore:1, correctAnswers:1, totalQuestions:1, dateAttempted:1
       }).lean().catch(() => []),
+      ActScore.find({}, { email:1, name:1, subject:1,
+        'attempts.score':1, 'attempts.maxScore':1, 'attempts.correctAnswers':1,
+        'attempts.totalQuestions':1, 'attempts.dateAttempted':1
+      }).lean().catch(() => []),
+
   
         
       // ADD: Java submissions from JavaSubmission model
