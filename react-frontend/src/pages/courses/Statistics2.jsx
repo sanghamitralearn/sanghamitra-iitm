@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
-
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
-
 
 const availableTopics = [
   {
@@ -18,7 +16,7 @@ const availableTopics = [
   },
   {
     id: 'week1',
-    topicName: 'Multiple_Random_Variables',
+    topicName: 'Multiple Random Variable',
     displayName: 'Week 1 - Multiple Random Variable',
     description: 'Probability distributions and random variables',
     icon: 'bi-bar-chart',
@@ -52,7 +50,7 @@ const availableTopics = [
     url: '/courses/statistics2/quiz/4',
     linkState: { quizName: 'Week 4 - Discrete vs continuous Random Variables' }
   },
-   {
+  {
     id: 'midterm',
     topicName: 'Midterm Assessment',
     displayName: 'Midterm Assessment - Weeks 1-4',
@@ -97,6 +95,14 @@ const availableTopics = [
     url: '/courses/statistics2/quiz/8',
     linkState: { quizName: 'Week 8 - Moment Generating Functions' }
   },
+    {
+    id: 'midterm2',
+    topicName: 'Midterm Assessment 2',
+    displayName: 'Midterm Assessment 2 - Weeks 5-8',
+    description: 'Comprehensive assessment covering Jointly Gaussian Random Variables, Marginal and Conditional Densities, Empirical Distributions, and Moment Generating Functions',
+    url: '/courses/statistics2/quiz/101',
+    linkState: { quizName: 'Midterm Assessment 2 - Weeks 5-8' }
+  },
   {
     id: 'week9',
     topicName: 'Parameter Estimation',
@@ -126,10 +132,10 @@ const availableTopics = [
   }
 ]
 
-
 // Topic grouping for flexible score matching
 const topicGroups = {
   Midterm_Assessment: ['Midterm_Assessment', 'Midterm', 'week100'],
+  Midterm_Assessment_2: ['Midterm_Assessment_2', 'Midterm2', 'week101'],
   Multiple_Random_Variables: ['Multiple_Random_Variables', 'Week1', 'week1'],
   Independence_and_Variable_Functions: ['Independence_and_Variable_Functions', 'Week2', 'week2'],
   Expectations_Variance_and_Bivariate_Data: ['Expectations_Variance_and_Bivariate_Data', 'Week3', 'week3'],
@@ -143,11 +149,9 @@ const topicGroups = {
   Hypotheses_Testing: ['Hypotheses_Testing', 'Week11', 'week11']
 }
 
-
 function getDisplayTopic(topicName) {
   if (!topicName) return null
   const searchName = topicName.toLowerCase().trim()
-
 
   for (const [displayTopic, variations] of Object.entries(topicGroups)) {
     for (const variation of variations) {
@@ -165,42 +169,35 @@ function getDisplayTopic(topicName) {
   return topicName
 }
 
-
 function findTopicAssessment(scores, topicId) {
   if (!scores || !Array.isArray(scores) || !topicId) return null
 
-
   const topicConfig = availableTopics.find(t => t.id === topicId)
   if (!topicConfig) return null
-
 
   const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '')
   const displayNorm = norm(topicConfig.displayName)
   const nameNorm = norm(topicConfig.topicName)
 
-
   const matched = scores.filter(s => {
     if (!s.topic) return false
     const st = norm(s.topic)
     return displayNorm.includes(st) || st.includes(nameNorm) ||
-           nameNorm.includes(st) || st === nameNorm || st === displayNorm
+           nameNorm.includes(st) || st === nameNorm || st === displayNorm ||
+           displayNorm.includes(st.replace(/week\d+/g, '').trim())
   })
-
 
   if (!matched.length) return null
 
-
   const latest = matched.sort(
-    (a, b) => new Date(b.timestamp || b.dateAttempted || 0) - new Date(a.timestamp || a.dateAttempted || 0)
+    (a, b) => new Date(b.timestamp || b.dateAttempted || b.createdAt || 0) - new Date(a.timestamp || a.dateAttempted || a.createdAt || 0)
   )[0]
-
 
   const percentage = latest.percentage != null
     ? Math.round(parseFloat(latest.percentage))
     : latest.totalQuestions > 0
       ? Math.round((latest.score / latest.totalQuestions) * 100)
       : 0
-
 
   return {
     percentage,
@@ -212,40 +209,45 @@ function findTopicAssessment(scores, topicId) {
 }
 
 
-
-
 const Statistics2 = () => {
   const navigate = useNavigate()
-  const [user, setUser]     = useState(null)
+  const [user, setUser]       = useState(null)
   const [loading, setLoading] = useState(true)
-  const [scores, setScores] = useState([])
-
+  const [authError, setAuthError] = useState(false)
+  const [scores, setScores]   = useState([])
 
   useEffect(() => { checkAuth() }, [])
 
-
   const checkAuth = async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/session-info`, { withCredentials: true })
+      const res = await axios.get(`${API_URL}/api/session-info`, {
+        withCredentials: true,
+        timeout: 8000,
+      })
       if (res.data?.email) {
         setUser(res.data)
         fetchScores(res.data.email)
       } else {
         navigate('/login', { replace: true })
       }
-    } catch {
-      navigate('/login', { replace: true })
+    } catch (err) {
+      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        setAuthError('Cannot reach the server. Make sure the backend is running on port 4000.')
+      } else {
+        navigate('/login', { replace: true })
+      }
     } finally {
       setLoading(false)
     }
   }
 
-
   const fetchScores = async (email) => {
     try {
-      const res = await axios.get(`${API_URL}/api/iitm_stats2_scores_databases?email=${encodeURIComponent(email)}`, { withCredentials: true })
+      const res = await axios.get(`${API_URL}/api/iitm_stats2_scores_databases?email=${encodeURIComponent(email)}`, {
+        withCredentials: true,
+        timeout: 8000,
+      })
       const d = res.data
-      // Handle both response shapes
       const quizScores = d?.data?.quizScores || d?.scores || d?.quizScores || []
       setScores(Array.isArray(quizScores) ? quizScores : [])
     } catch (err) {
@@ -253,20 +255,36 @@ const Statistics2 = () => {
     }
   }
 
-
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
-        <div className="spinner-border" role="status">
-          <span className="visually-hidden">Loading…</span>
+        <div className="text-center">
+          <div className="spinner-border text-primary mb-3" role="status">
+            <span className="visually-hidden">Loading…</span>
+          </div>
+          <p className="text-muted">Loading Statistics II…</p>
         </div>
       </div>
     )
   }
 
+  if (authError) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
+        <div className="text-center">
+          <i className="bi bi-wifi-off fs-1 text-danger mb-3 d-block" />
+          <h5 className="text-danger">Server Unavailable</h5>
+          <p className="text-muted">{authError}</p>
+          <button className="btn btn-primary me-2" onClick={() => { setAuthError(false); setLoading(true); checkAuth() }}>
+            Retry
+          </button>
+          <Link to="/login" className="btn btn-outline-secondary">Go to Login</Link>
+        </div>
+      </div>
+    )
+  }
 
   if (!user) { navigate('/login', { replace: true }); return null }
-
 
   return (
     <main className="main">
@@ -295,10 +313,23 @@ const Statistics2 = () => {
         </nav>
       </div>
 
-
       <div className="container">
         <div className="course-list" style={{ maxWidth: '900px', margin: '0 auto', padding: '0 15px' }}>
 
+          {/* Custom Quiz Banner */}
+          <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 14, background: 'linear-gradient(135deg,#667eea,#764ba2)', color: '#fff' }}>
+            <div className="card-body p-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
+              <div>
+                <h5 className="mb-1 fw-bold" style={{ color: '#fff' }}><i className="bi bi-sliders me-2"></i>Custom Practice Quiz</h5>
+                <p className="mb-0" style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.9rem' }}>
+                  Pick specific subtopics and difficulty levels to build a personalised quiz from any week.
+                </p>
+              </div>
+              <Link to="/courses/statistics2/custom-quiz" className="btn btn-light fw-semibold px-4">
+                <i className="bi bi-play-fill me-2"></i>Build My Quiz
+              </Link>
+            </div>
+          </div>
 
           {availableTopics.map((topic) => {
             const assessment    = findTopicAssessment(scores, topic.id)
@@ -309,7 +340,6 @@ const Statistics2 = () => {
             const lastAttempted = assessment?.timestamp      || null
             const attemptCount  = assessment?.attemptCount   || 0
 
-
             // Colour logic
             let progressBarClass = 'bg-primary'
             let badgeStyle = { background: 'linear-gradient(45deg,#007bff,#0056b3)' }
@@ -317,7 +347,6 @@ const Statistics2 = () => {
             else if (score >= 60) { progressBarClass = 'bg-info';    badgeStyle = { background: 'linear-gradient(45deg,#17a2b8,#138496)' } }
             else if (score >= 40) { progressBarClass = 'bg-warning'; badgeStyle = { background: 'linear-gradient(45deg,#ffc107,#fd7e14)' } }
             else if (score >  0)  { progressBarClass = 'bg-danger';  badgeStyle = { background: 'linear-gradient(45deg,#dc3545,#c82333)' } }
-
 
             return (
               <div className="course-item mb-3" key={topic.id}>
@@ -328,7 +357,6 @@ const Statistics2 = () => {
                   <div className="card-body p-3">
                     <div className="row align-items-center">
 
-
                       {/* Icon */}
                       <div className="col-lg-1 col-md-2 text-center">
                         <div
@@ -338,7 +366,6 @@ const Statistics2 = () => {
                           <i className={`bi ${isCompleted ? 'bi-check-circle' : topic.icon} fs-5`}></i>
                         </div>
                       </div>
-
 
                       {/* Title, description, progress bar */}
                       <div className="col-lg-6 col-md-5">
@@ -365,7 +392,6 @@ const Statistics2 = () => {
                         }
                       </div>
 
-
                       {/* Percentage badge */}
                       <div className="col-lg-2 col-md-2 text-center">
                         <span style={{
@@ -377,7 +403,6 @@ const Statistics2 = () => {
                           {score}%
                         </span>
                       </div>
-
 
                       {/* Action button */}
                       <div className="col-lg-3 col-md-3 text-end">
@@ -403,8 +428,4 @@ const Statistics2 = () => {
   )
 }
 
-
 export default Statistics2
-
-
-
