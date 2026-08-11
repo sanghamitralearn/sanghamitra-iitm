@@ -4,7 +4,7 @@ import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
-const MIDTERM_DURATION = 60 * 60  // 3600 seconds — fixed 1-hour window for week 100
+const MIDTERM_DURATION = 60 * 60  // 3600 seconds — fixed 1-hour window for midterms (weeks 100 and 101)
 
 // Topic map: each week number maps to the exact topic string the backend expects.
 const WEEK_TOPIC_MAP = {
@@ -20,6 +20,7 @@ const WEEK_TOPIC_MAP = {
   10: 'Bayesian Estimation',
   11: 'Hypotheses Testing',
   100: 'Midterm Assessment',
+  101: 'Midterm Assessment 2'
 }
 
 // KaTeX loader
@@ -41,6 +42,7 @@ function loadKaTeX() {
       document.head.appendChild(ar)
     }
     document.head.appendChild(core)
+    
   })
 }
 
@@ -175,8 +177,55 @@ const answerNormalizer = {
   },
 }
 
+function resolveOptionLabel(option, index) {
+  if (option && typeof option === 'object') {
+    const id = option.option_id
+    const idStr = id !== undefined && id !== null ? String(id).trim() : ''
+    if (/^[A-H]$/i.test(idStr)) return idStr.toUpperCase()
+    const lbl = option.label
+    if (lbl !== undefined && lbl !== null && String(lbl).trim() !== '') return String(lbl)
+  }
+  if (typeof option === 'string') {
+    const m = option.match(/^([A-H])[\.\)\s]/i)
+    if (m) return m[1].toUpperCase()
+  }
+  return OPTION_LABELS[index] || String(index + 1)
+}
+
+function resolveOptionText(option) {
+  if (option && typeof option === 'object') {
+    const t = option.text
+    if (t !== undefined && t !== null && String(t).trim() !== '') return String(t)
+    const id = option.option_id
+    if (id !== undefined && id !== null) {
+      const idStr = String(id).trim()
+      if (idStr !== '' && !/^[A-H]$/i.test(idStr)) return idStr
+    }
+    return ''
+  }
+  if (typeof option === 'string') {
+    // Strip leading "A. ", "B) ", etc. — label is shown separately
+    return option.replace(/^[A-H][\.\)\s]+/i, '').trim()
+  }
+  return String(option || '')
+}
+
+function resolveOptionValue(option, index) {
+  return resolveOptionLabel(option, index)
+}
+
+function matchesOptionAnswer(answer, option, index) {
+  if (answer === undefined || answer === null) return false
+  const normalizedAnswer = answerNormalizer.normalizeAnswer(answer, 'text_input')
+  const normalizedLabel = answerNormalizer.normalizeAnswer(resolveOptionLabel(option, index), 'text_input')
+  const normalizedText = answerNormalizer.normalizeAnswer(resolveOptionText(option), 'text_input')
+  return normalizedAnswer === normalizedLabel || normalizedAnswer === normalizedText
+}
+
+const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+
 function gradeQuestion(question, userAnswer) {
-  if (userAnswer === undefined || userAnswer === null) return false
+  if (userAnswer === undefined || userAnswer === null || userAnswer === '') return false
 
   const type = question.type
   const normUser = answerNormalizer.normalizeAnswer(userAnswer, type)
@@ -189,14 +238,75 @@ function gradeQuestion(question, userAnswer) {
     )
   }
 
-  if (type === 'multiple_choice' || type === 'text_input') {
+  if (type === 'multiple_choice') {
+    if (Array.isArray(question.options)) {
+      const correctValues = []
+      if (typeof question.correct_answer === 'number') {
+        const correctOpt = question.options[question.correct_answer]
+        if (correctOpt !== undefined) {
+          correctValues.push(resolveOptionLabel(correctOpt, question.correct_answer), resolveOptionText(correctOpt))
+        } else {
+          correctValues.push(String(question.correct_answer))
+        }
+      } else if (typeof question.correct_answer === 'string') {
+        const trimmedAnswer = question.correct_answer.trim()
+        correctValues.push(trimmedAnswer)
+        const matchedIndex = question.options.findIndex((opt, idx) => {
+          const label = resolveOptionLabel(opt, idx).trim()
+          const text = resolveOptionText(opt).trim()
+          return label.toLowerCase() === trimmedAnswer.toLowerCase() || text.toLowerCase() === trimmedAnswer.toLowerCase()
+        })
+        if (matchedIndex !== -1) {
+          const opt = question.options[matchedIndex]
+          correctValues.push(resolveOptionLabel(opt, matchedIndex), resolveOptionText(opt))
+        }
+      }
+      const normalizedCorrect = [...new Set(correctValues)]
+        .map(v => answerNormalizer.normalizeAnswer(v, 'text_input'))
+        .filter(Boolean)
+      return normalizedCorrect.includes(normUser) || normUser === normCorrect
+    }
     return normUser === normCorrect
   }
 
   if (type === 'multiple_select') {
-    if (!Array.isArray(userAnswer) || !Array.isArray(question.correct_answer)) return false
-    const ua = userAnswer.map(a => answerNormalizer.normalizeGeneral(a)).sort()
-    const ca = question.correct_answer.map(a => answerNormalizer.normalizeGeneral(a)).sort()
+    if (!Array.isArray(userAnswer)) return false
+    const expected = []
+    const addExpected = (ans) => {
+      if (typeof ans === 'number' && Array.isArray(question.options)) {
+        const opt = question.options[ans]
+        if (opt !== undefined) {
+          expected.push(resolveOptionLabel(opt, ans), resolveOptionText(opt))
+          return
+        }
+      }
+      if (typeof ans === 'string') {
+        const trimmedAns = ans.trim()
+        expected.push(trimmedAns)
+        if (Array.isArray(question.options)) {
+          const matchedIndex = question.options.findIndex((opt, idx) => {
+            const label = resolveOptionLabel(opt, idx).trim()
+            const text = resolveOptionText(opt).trim()
+            return label.toLowerCase() === trimmedAns.toLowerCase() || text.toLowerCase() === trimmedAns.toLowerCase()
+          })
+          if (matchedIndex !== -1) {
+            const opt = question.options[matchedIndex]
+            expected.push(resolveOptionLabel(opt, matchedIndex), resolveOptionText(opt))
+          }
+        }
+        return
+      }
+      expected.push(String(ans))
+    }
+
+    if (Array.isArray(question.correct_answer)) {
+      question.correct_answer.forEach(addExpected)
+    } else if (question.correct_answer !== undefined && question.correct_answer !== null) {
+      addExpected(question.correct_answer)
+    }
+
+    const ua = userAnswer.map(a => answerNormalizer.normalizeAnswer(a, 'text_input')).sort()
+    const ca = expected.map(a => answerNormalizer.normalizeAnswer(a, 'text_input')).filter(Boolean).sort()
     return ua.length === ca.length && ua.every((a, i) => a === ca[i])
   }
 
@@ -505,16 +615,18 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake }) => {
                     {q.type === 'multiple_choice' && Array.isArray(q.options) && (
                       <div className="mb-3">
                         {q.options.map((opt, oi) => {
-                          const isCorrectOpt = opt.option_id === q.correct_answer
-                          const userPicked   = answers[idx] === opt.option_id
+                          const optionLabel = resolveOptionLabel(opt, oi)
+                          const optionText = resolveOptionText(opt)
+                          const isCorrectOpt = matchesOptionAnswer(q.correct_answer, opt, oi)
+                          const userPicked = matchesOptionAnswer(answers[idx], opt, oi)
                           const bg = isCorrectOpt ? '#d4edda' : userPicked ? '#f8d7da' : 'transparent'
                           return (
                             <div key={oi} className="d-flex align-items-center gap-2 mb-1 px-2 py-1 rounded" style={{ background: bg }}>
                               {isCorrectOpt && <i className="bi bi-check-circle-fill text-success" />}
                               {userPicked && !isCorrectOpt && <i className="bi bi-x-circle-fill text-danger" />}
                               {!isCorrectOpt && !userPicked && <i className="bi bi-circle text-muted" />}
-                              <strong className="me-1">{opt.option_id}.</strong>
-                              <MathText text={opt.text} style={{ fontSize: '0.9rem' }} />
+                              <strong className="me-1">{optionLabel}.</strong>
+                              <MathText text={optionText} style={{ fontSize: '0.9rem' }} />
                             </div>
                           )
                         })}
@@ -524,17 +636,19 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake }) => {
                     {q.type === 'multiple_select' && Array.isArray(q.options) && (
                       <div className="mb-3">
                         {q.options.map((opt, oi) => {
-                          const correctArr   = Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer]
-                          const isCorrectOpt = correctArr.includes(opt.option_id)
-                          const userPicked   = Array.isArray(answers[idx]) && answers[idx].includes(opt.option_id)
+                          const optionLabel = resolveOptionLabel(opt, oi)
+                          const optionText = resolveOptionText(opt)
+                          const correctArr = Array.isArray(q.correct_answer) ? q.correct_answer : [q.correct_answer]
+                          const isCorrectOpt = correctArr.some(ans => matchesOptionAnswer(ans, opt, oi))
+                          const userPicked = Array.isArray(answers[idx]) && answers[idx].some(ans => matchesOptionAnswer(ans, opt, oi))
                           const bg = isCorrectOpt ? '#d4edda' : userPicked ? '#f8d7da' : 'transparent'
                           return (
                             <div key={oi} className="d-flex align-items-center gap-2 mb-1 px-2 py-1 rounded" style={{ background: bg }}>
                               {isCorrectOpt && <i className="bi bi-check-circle-fill text-success" />}
                               {userPicked && !isCorrectOpt && <i className="bi bi-x-circle-fill text-danger" />}
                               {!isCorrectOpt && !userPicked && <i className="bi bi-circle text-muted" />}
-                              <strong className="me-1">{opt.option_id}.</strong>
-                              <MathText text={opt.text} style={{ fontSize: '0.9rem' }} />
+                              <strong className="me-1">{optionLabel}.</strong>
+                              <MathText text={optionText} style={{ fontSize: '0.9rem' }} />
                             </div>
                           )
                         })}
@@ -578,8 +692,8 @@ const Stats2Quiz = () => {
   // Parse week number from URL parameter
   const weekNum = week ? parseInt(week, 10) : 1
 
-  // Validate week number (1-11, or 100 for the Midterm Assessment), default to 1 if invalid
-  const validWeekNum = !isNaN(weekNum) && ((weekNum >= 1 && weekNum <= 11) || weekNum === 100) ? weekNum : 1
+  // Validate week number (1-11, or 100/101 for the Midterm Assessments), default to 1 if invalid
+  const validWeekNum = !isNaN(weekNum) && ((weekNum >= 1 && weekNum <= 11) || weekNum === 100 || weekNum === 101) ? weekNum : 1
 
   // Get topic from the mapping
   const topic = WEEK_TOPIC_MAP[validWeekNum] || `Week_${validWeekNum}`
@@ -616,13 +730,13 @@ const Stats2Quiz = () => {
     if (questionRef.current) renderMathContent(questionRef.current)
   }, [currentIndex, questions])
 
-  // 1-hour countdown for Midterm Assessment (week 100) — auto-submits on expiry
+  // 1-hour countdown for Midterm Assessments (weeks 100 and 101) — auto-submits on expiry
   useEffect(() => {
-    if (validWeekNum !== 100 || timeLeft === null || submitted) return
+    if ((validWeekNum !== 100 && validWeekNum !== 101) || timeLeft === null || submitted) return
     if (timeLeft === 0) { handleSubmit(true); return }
     timerRef.current = setTimeout(() => setTimeLeft(t => t - 1), 1000)
     return () => clearTimeout(timerRef.current)
-  }, [timeLeft, submitted])
+  }, [timeLeft, submitted, validWeekNum])
 
   // Reset quiz state when week parameter changes
   useEffect(() => {
@@ -664,7 +778,7 @@ const Stats2Quiz = () => {
   const fetchQuestions = async () => {
     setLoading(true);
     try {
-      const url = `${API_URL}/api/iitm_stats2_questions_databases?week=${validWeekNum}&email=${encodeURIComponent(userRef.current.email)}&count=${validWeekNum === 100 ? 22 : 25}`;
+      const url = `${API_URL}/api/iitm_stats2_questions_databases?week=${validWeekNum}&email=${encodeURIComponent(userRef.current.email)}&count=${(validWeekNum === 100 || validWeekNum === 101) ? 22 : 25}`;
       const res  = await axios.get(url, { withCredentials: true });
       const qs   = res.data.questions || [];
 
@@ -675,7 +789,7 @@ const Stats2Quiz = () => {
       }
       setQuestions(qs);
       quizStartRef.current = Date.now();
-      if (validWeekNum === 100) setTimeLeft(MIDTERM_DURATION)
+      if (validWeekNum === 100 || validWeekNum === 101) setTimeLeft(MIDTERM_DURATION)
     } catch (e) {
       console.error('Fetch questions error:', e);
       setError('Failed to load questions. Please try again.');
@@ -865,7 +979,7 @@ const Stats2Quiz = () => {
     timesRef.current = {}
     cheatingRef.current = 0
     quizStartRef.current = Date.now()
-    if (validWeekNum === 100) setTimeLeft(MIDTERM_DURATION)
+    if (validWeekNum === 100 || validWeekNum === 101) setTimeLeft(MIDTERM_DURATION)
     if (userRef.current?.email) fetchQuestions()
   }
 
@@ -982,20 +1096,25 @@ const Stats2Quiz = () => {
 
                 {q.type === 'multiple_choice' && Array.isArray(q.options) && (
                   <div>
-                    {q.options.map((opt, oi) => (
-                      <div key={oi}
-                        onClick={() => setAnswer(currentIndex, opt.option_id)}
-                        className={`d-flex align-items-center gap-2 mb-2 p-3 rounded border ${userAns === opt.option_id ? 'border-primary bg-primary bg-opacity-10' : ''}`}
-                        style={{ cursor: 'pointer', transition: 'all 0.15s' }}>
-                        <div style={{
-                          width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-                          border: `2px solid ${userAns === opt.option_id ? '#0d6efd' : '#adb5bd'}`,
-                          background: userAns === opt.option_id ? '#0d6efd' : 'transparent',
-                        }} />
-                        <strong className="me-1" style={{ minWidth: 20 }}>{opt.option_id}.</strong>
-                        <MathText text={opt.text} style={{ fontSize: '0.95rem' }} />
-                      </div>
-                    ))}
+                    {q.options.map((opt, oi) => {
+                      const optionLabel = resolveOptionLabel(opt, oi)
+                      const optionText = resolveOptionText(opt)
+                      const selected = userAns === optionLabel || userAns === optionText
+                      return (
+                        <div key={oi}
+                          onClick={() => setAnswer(currentIndex, optionLabel)}
+                          className={`d-flex align-items-center gap-2 mb-2 p-3 rounded border ${selected ? 'border-primary bg-primary bg-opacity-10' : ''}`}
+                          style={{ cursor: 'pointer', transition: 'all 0.15s' }}>
+                          <div style={{
+                            width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                            border: `2px solid ${selected ? '#0d6efd' : '#adb5bd'}`,
+                            background: selected ? '#0d6efd' : 'transparent',
+                          }} />
+                          <strong className="me-1" style={{ minWidth: 20 }}>{optionLabel}.</strong>
+                          <MathText text={optionText} style={{ fontSize: '0.95rem' }} />
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
 
@@ -1003,10 +1122,15 @@ const Stats2Quiz = () => {
                   <div>
                     <p className="text-muted small mb-2">Select all that apply</p>
                     {q.options.map((opt, oi) => {
-                      const selected = Array.isArray(userAns) && userAns.includes(opt.option_id)
+                      const optionLabel = resolveOptionLabel(opt, oi)
+                      const optionText = resolveOptionText(opt)
+                      const selected = Array.isArray(userAns) && userAns.some(ans => (
+                        answerNormalizer.normalizeAnswer(ans, 'text_input') === answerNormalizer.normalizeAnswer(optionLabel, 'text_input') ||
+                        answerNormalizer.normalizeAnswer(ans, 'text_input') === answerNormalizer.normalizeAnswer(optionText, 'text_input')
+                      ))
                       return (
                         <div key={oi}
-                          onClick={() => toggleMSQ(currentIndex, opt.option_id)}
+                          onClick={() => toggleMSQ(currentIndex, optionLabel)}
                           className={`d-flex align-items-center gap-2 mb-2 p-3 rounded border ${selected ? 'border-primary bg-primary bg-opacity-10' : ''}`}
                           style={{ cursor: 'pointer', transition: 'all 0.15s' }}>
                           <div style={{
@@ -1017,8 +1141,8 @@ const Stats2Quiz = () => {
                           }}>
                             {selected && <i className="bi bi-check text-white" style={{ fontSize: 12 }} />}
                           </div>
-                          <strong className="me-1" style={{ minWidth: 20 }}>{opt.option_id}.</strong>
-                          <MathText text={opt.text} style={{ fontSize: '0.95rem' }} />
+                          <strong className="me-1" style={{ minWidth: 20 }}>{optionLabel}.</strong>
+                          <MathText text={optionText} style={{ fontSize: '0.95rem' }} />
                         </div>
                       )
                     })}
@@ -1070,7 +1194,7 @@ const Stats2Quiz = () => {
           </div>
 
           <div className="col-lg-4">
-            {validWeekNum === 100 && timeLeft !== null && (
+            {(validWeekNum === 100 || validWeekNum === 101) && timeLeft !== null && (
               <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 16, border: `2px solid ${timerColor}` }}>
                 <div className="card-body p-3 text-center">
                   <div className="text-muted small fw-semibold mb-1">
