@@ -76,22 +76,22 @@ const COURSE_CONFIG = {
     },
     { 
         week: 9,  
-        topic: 'Streams & I/O',        
+        topic: 'Java I/O and Streams',        
         description: 'Optional types, Collecting Results from Streams, Input output streams, Serialisation' 
     },
     { 
         week: 10,  
-        topic: 'Concurrency Fundamentals',        
+        topic: 'Concurrency in Java',        
         description: 'Concurrency: Threads and processes, Race conditions, Mutual Exclusion, Test and Set, Monitors' 
     },
     { 
         week: 11,  
-        topic: 'Concurrent Programming',        
+        topic: 'Advanced Concurrency in Java',        
         description: 'Monitoring, Thread, Concurrent Programming, Thread safe collection' 
     },
     { 
         week: 12,  
-        topic: 'GUI Programming & Practice',        
+        topic: 'Java GUI and Event-Driven Programming',        
         description: 'Graphical interface and event driven programming, Swing toolkit, Activity questions, Practice questions, Graded questions' 
     },
     // ─── ENDTERM (After Week 12) ─────────────────────────────────────────────
