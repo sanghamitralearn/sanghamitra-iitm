@@ -67,11 +67,11 @@ const COURSE_CONFIG = {
     { 
         week: 'midterm2',  
         topic: '📝 Midterm 2',        
-        description: 'Comprehensive exam covering Week 1 to Week 8',
+        description: 'Comprehensive exam covering Week 5 to Week 8',
         isExam: true,
         examId: 'midterm2',
         examTitle: 'Midterm 2',
-        weekRange: '1-8',
+        weekRange: '5-8',
         totalQuestions: 20
     },
     { 
@@ -98,11 +98,11 @@ const COURSE_CONFIG = {
     { 
         week: 'endterm',  
         topic: '🏆 End Term',        
-        description: 'Final comprehensive exam covering Week 1 to Week 12',
+        description: 'Final comprehensive exam covering Week 9 to Week 12',
         isExam: true,
         examId: 'endterm',
         examTitle: 'End Term',
-        weekRange: '1-12',
+        weekRange: '9-12',
         totalQuestions: 20
     },
     ],
@@ -182,7 +182,7 @@ const COURSE_CONFIG = {
         examId: 'midterm1',
         examTitle: 'Midterm 1',
         weekRange: '1-4',
-        totalQuestions: 30
+        totalQuestions: 20
       },
       { week: 5, topic: 'Relational Database Design',      description: 'Closure of attributes, Super Keys and Candidate Keys, Lossless Join Decomposition, Canonical Cover, Dependency Preservation' },
       { week: 6, topic: 'Normal Forms',  description: 'Case Study, MVD & 4NF, Design Summary & Temporal Data, Problem solving on normalization, Multivalued Dependency ' },
@@ -196,8 +196,8 @@ const COURSE_CONFIG = {
         isExam: true,
         examId: 'midterm2',
         examTitle: 'Midterm 2',
-        weekRange: '1-8',
-        totalQuestions: 40
+        weekRange: '5-8',
+        totalQuestions: 20
       },
       { week: 9,  topic: 'Indexing and Hashing',     description: 'Indexing, Index Design, B Trees' },
       { week: 10, topic: 'Transactions',   description: 'Serializability, Recoverability, Concurrency Control' },
@@ -212,7 +212,7 @@ const COURSE_CONFIG = {
         isExam: true,
         examId: 'endterm',
         examTitle: 'End Term',
-        weekRange: '1-12',
+        weekRange: '9-12',
         totalQuestions: 20
       },
     ],
@@ -236,7 +236,7 @@ const COURSE_CONFIG = {
         examId: 'midterm1',
         examTitle: 'Midterm 1',
         weekRange: '1-4',
-        totalQuestions: 30
+        totalQuestions: 20
       },
       { week: 5,  topic: 'Graph Algorithms', description: "Assessment on Dijkstra's Algorithm, Bellman-Ford Algorithm, Floyd-Warshall Algorithm, Prim's Algorithm, and Kruskal's Algorithm" },
       { week: 6,  topic: 'Advanced Data Structures', description: 'Assessment on Union-Find Data Structure, Priority Queues, Heaps, and Binary Search Trees' },
@@ -250,7 +250,7 @@ const COURSE_CONFIG = {
         isExam: true,
         examId: 'midterm2',
         examTitle: 'Midterm 2',
-        weekRange: '1-8',
+        weekRange: '5-8',
         totalQuestions: 20
       },
       { week: 9,  topic: 'Dynamic Programming',     description: 'Assessment on Fibonacci & Staircase Problems, 0/1 Knapsack, Rod Cutting, Longest Increasing Subsequence, Longest Common Subsequence, Matrix Chain Multiplication, Edit Distance, Coin Change Problem, Weighted Interval Scheduling, Grid Path Problems (Minimum Path Sum, Unique Paths), Palindrome Partitioning' },
@@ -264,7 +264,7 @@ const COURSE_CONFIG = {
         isExam: true,
         examId: 'endterm',
         examTitle: 'End Term',
-        weekRange: '1-11',
+        weekRange: '9-12',
         totalQuestions: 20
       },
     ],
