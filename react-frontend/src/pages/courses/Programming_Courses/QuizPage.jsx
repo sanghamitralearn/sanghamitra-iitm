@@ -478,6 +478,9 @@ const SubmissionOverview = ({ results, onRetake, onReview, course, week, quizId 
   const incorrect = total - correct
   const unanswered = stats.unattempted || 0
 
+  // Determine if this is an exam for display purposes
+  const isExamDisplay = week === 0 || week === 'exam' || (results?.isExam)
+
   return (
     <main className="main">
       <div className="page-title" data-aos="fade" style={{ marginBottom: '2rem' }}>
@@ -1080,9 +1083,21 @@ const QuizPage = () => {
   const { course, week: weekParam } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
+  
+  // ─── Check if this is an exam ─────────────────────────────────────────────
+  const isExam = weekParam === 'exam' || location.state?.isExam || false
+  const examTitle = location.state?.examTitle || ''
+  const weekRange = location.state?.weekRange || ''
+  const totalQuestions = location.state?.totalQuestions || 20
+  
+  // For regular quizzes, weekParam is a number
   const weekNum = parseInt(weekParam, 10)
   const { quizName } = location.state || {}
-  const displayName = quizName || `${course?.toUpperCase()} — Week ${weekNum}`
+  
+  // Display name for the page
+  const displayName = isExam 
+    ? examTitle || `${course?.toUpperCase()} — Exam`
+    : quizName || `${course?.toUpperCase()} — Week ${weekNum}`
 
   const [user, setUser]           = useState(null)
   const [loading, setLoading]     = useState(true)
@@ -1130,10 +1145,20 @@ const QuizPage = () => {
       
       console.log('API Response for attempts:', res.data)
       
-      const weekAttempts = res.data?.attempts?.filter(a => a.week === weekNum) || []
+      let existingAttempts = []
       
-      if (weekAttempts.length > 0) {
-        const latestAttempt = weekAttempts[weekAttempts.length - 1]
+      if (isExam && examTitle) {
+        // For exams: check by topic name
+        existingAttempts = res.data?.attempts?.filter(
+          a => a.topic && a.topic.includes(examTitle)
+        ) || []
+      } else if (weekNum && !isNaN(weekNum)) {
+        // For regular quizzes: check by week
+        existingAttempts = res.data?.attempts?.filter(a => a.week === weekNum) || []
+      }
+      
+      if (existingAttempts.length > 0) {
+        const latestAttempt = existingAttempts[0]
         setHasPreviousAttempt(true)
         
         console.log('Latest attempt data:', latestAttempt)
@@ -1174,7 +1199,8 @@ const QuizPage = () => {
                 isCorrect: r.is_correct || false,
                 marksAwarded: r.marks_awarded || 0,
                 userAnswer: r.user_answer || null,
-                timeTaken: r.time_taken_seconds || 0
+                timeTaken: r.time_taken_seconds || 0,
+                match_pairs: questionMap[r.question_id]?.match_pairs || null
               }))
             }
           }
@@ -1204,7 +1230,8 @@ const QuizPage = () => {
             unattempted: 0,
             submitted_at: latestAttempt.submitted_at || latestAttempt.createdAt || new Date().toISOString()
           },
-          question_results: questionResults
+          question_results: questionResults,
+          isExam: isExam
         })
         
         setShowOverview(true)
@@ -1219,24 +1246,44 @@ const QuizPage = () => {
   }
 
   const fetchQuestions = async () => {
-    try {
-      setLoading(true)
-      const res = await axios.get(
-        `${API}/api/mcq-questions?course=${course.toLowerCase()}&week=${weekNum}&count=20`,
-        { withCredentials: true }
-      )
-      const qs = res.data.questions || []
-      if (!qs.length) { setError(`No questions found for ${course} Week ${weekNum}.`); return }
-      setQuestions(qs)
-      startTimeRef.current = new Date().toISOString()
-    } catch (err) {
-      console.error('Error fetching questions:', err)
-      setError('Failed to load questions. Please try again.')
-    } finally {
-      setLoading(false)
+  try {
+    setLoading(true)
+    
+    // Ensure we have a valid course name
+    const courseName = course || location.state?.course || 'java'
+    
+    let url = `${API}/api/mcq-questions?course=${courseName.toLowerCase()}`
+    
+    if (isExam && weekRange) {
+      // For exams: fetch from week range
+      url += `&week=${weekRange}&count=${totalQuestions}`
+    } else if (weekNum && !isNaN(weekNum)) {
+      // For regular quizzes: fetch specific week
+      url += `&week=${weekNum}&count=20`
+    } else {
+      setError('Invalid parameters. Please try again.')
+      return
     }
+    
+    console.log('Fetching questions from:', url)
+    
+    const res = await axios.get(url, { withCredentials: true })
+    const qs = res.data.questions || []
+    
+    if (!qs.length) { 
+      setError(`No questions found. Please try again.`) 
+      return 
+    }
+    
+    setQuestions(qs)
+    startTimeRef.current = new Date().toISOString()
+  } catch (err) {
+    console.error('Error fetching questions:', err)
+    setError('Failed to load questions. Please try again.')
+  } finally {
+    setLoading(false)
   }
-
+}
   // Anti-cheat
   useEffect(() => {
     if (submitted || loading || showOverview) return
@@ -1292,8 +1339,6 @@ const QuizPage = () => {
     setAnswers(prev => ({ ...prev, [idx]: matches }))
   }
 
-
-
   const recordTime = () => {
     const elapsed = Math.round((Date.now() - questionStartRef.current) / 1000)
     timesRef.current[currentIndex] = (timesRef.current[currentIndex] || 0) + elapsed
@@ -1303,59 +1348,90 @@ const QuizPage = () => {
   const goTo = (idx) => { recordTime(); setCurrentIndex(idx) }
 
   const handleSubmit = async (forced = false) => {
-    if (!forced) {
-      const unanswered = questions.filter((_, i) => {
-        const a = answers[i]
-        return a === undefined || a === null || a === '' || (Array.isArray(a) && !a.length)
-      }).length
-      if (unanswered > 0 && !window.confirm(`${unanswered} question(s) unanswered. Submit anyway?`)) return
-    }
-    recordTime()
-
-    const u = userRef.current
-    if (!u?.email) { navigate('/login', { replace: true }); return }
-
-    setSaving(true)
-    const endTime = new Date().toISOString()
-    const totalTimeTaken = Object.values(timesRef.current).reduce((a, b) => a + b, 0)
-
-    const questionResults = questions.map((q, i) => ({
-      questionId: q._id,
-      userAnswer: answers[i] ?? null,
-      timeTaken: timesRef.current[i] || 0
-    }))
-
-    try {
-      const res = await axios.post(`${API}/api/mcq-quiz/submit`, {
-        email: u.email,
-        username: u.username || u.name || u.email,
-        quizData: {
-          course,
-          week: weekNum,
-          topic: questions[0]?.topic || `Week ${weekNum}`,
-          questionResults,
-          startTime: startTimeRef.current,
-          endTime,
-          totalTimeTaken,
-          cheatCount: cheatingRef.current
-        }
-      }, { withCredentials: true })
-
-      if (res.data.success) {
-        setResults(res.data)
-        setSubmitted(true)
-        setShowOverview(true)
-      } else {
-        alert('Failed to save quiz. Please try again.')
-      }
-    } catch (e) {
-      console.error('Submit failed:', e)
-      alert('Failed to submit quiz. Please check your connection.')
-    } finally {
-      setSaving(false)
-    }
+  if (!forced) {
+    const unanswered = questions.filter((_, i) => {
+      const a = answers[i]
+      return a === undefined || a === null || a === '' || 
+        (Array.isArray(a) && !a.length) || 
+        (typeof a === 'object' && Object.keys(a).length === 0)
+    }).length
+    if (unanswered > 0 && !window.confirm(`${unanswered} question(s) unanswered. Submit anyway?`)) return
   }
+  recordTime()
 
+  const u = userRef.current
+  if (!u?.email) { navigate('/login', { replace: true }); return }
+
+  setSaving(true)
+  const endTime = new Date().toISOString()
+  const totalTimeTaken = Object.values(timesRef.current).reduce((a, b) => a + b, 0)
+
+  const questionResults = questions.map((q, i) => ({
+    questionId: q._id,
+    userAnswer: answers[i] ?? null,
+    timeTaken: timesRef.current[i] || 0
+  }))
+
+  try {
+    // ─── Determine week and topic for the submission ──────────────────────
+    // IMPORTANT: For exams, we need to send a valid week number (1) or a special value
+    // The backend expects a week number, so for exams we'll use 99 or a special value
+    let submissionWeek = weekNum && !isNaN(weekNum) ? weekNum : 1
+    let submissionTopic = questions[0]?.topic || `Week ${submissionWeek}`
+    
+    if (isExam && examTitle) {
+      // For exams: use a special week number (99) and topic as exam title
+      submissionWeek = 99  // Use 99 to indicate exam in the database
+      submissionTopic = `Exam: ${examTitle} (Weeks ${weekRange})`
+    }
+    
+    // Ensure course is defined
+    const courseName = course || location.state?.course || 'java'
+    
+    console.log('Submitting quiz data:', {
+      email: u.email,
+      course: courseName,
+      week: submissionWeek,
+      topic: submissionTopic,
+      isExam: isExam,
+      questionCount: questionResults.length
+    })
+
+    const res = await axios.post(`${API}/api/mcq-quiz/submit`, {
+      email: u.email,
+      username: u.username || u.name || u.email,
+      quizData: {
+        course: courseName.toLowerCase(),
+        week: submissionWeek,
+        topic: submissionTopic,
+        questionResults,
+        startTime: startTimeRef.current,
+        endTime,
+        totalTimeTaken,
+        cheatCount: cheatingRef.current
+      }
+    }, { withCredentials: true })
+
+    if (res.data.success) {
+      res.data.isExam = isExam
+      setResults(res.data)
+      setSubmitted(true)
+      setShowOverview(true)
+    } else {
+      alert('Failed to save quiz. Please try again.')
+    }
+  } catch (e) {
+    console.error('Submit failed:', e)
+    if (e.response) {
+      console.error('Error response data:', e.response.data)
+      alert(`Failed to submit: ${e.response.data?.error || e.response.data?.details || 'Unknown error'}`)
+    } else {
+      alert('Failed to submit quiz. Please check your connection.')
+    }
+  } finally {
+    setSaving(false)
+  }
+}
   const handleRetake = () => {
     setAnswers({}); setSubmitted(false); setResults(null)
     setCurrentIndex(0); timesRef.current = {}; cheatingRef.current = 0
@@ -1395,7 +1471,7 @@ const QuizPage = () => {
         onRetake={handleRetake}
         onReview={handleReview}
         course={course}
-        week={weekNum}
+        week={isExam ? 0 : weekNum}
         quizId={data?.quizId}
       />
     )
@@ -1403,10 +1479,23 @@ const QuizPage = () => {
 
   if (showReview && (results || previousResults)) {
     const data = results || previousResults
-    return <ReviewPage results={data} course={course} week={weekNum} />
+    return <ReviewPage results={data} course={course} week={isExam ? 0 : weekNum} />
   }
 
   // Quiz taking mode
+  if (!questions || questions.length === 0) {
+    return (
+      <div className="container py-5 text-center">
+        <i className="bi bi-exclamation-triangle fs-1 text-warning" />
+        <h4 className="mt-3">No questions available</h4>
+        <p className="text-muted">
+          {isExam ? `No questions found for ${examTitle} (Weeks ${weekRange})` : `No questions found for Week ${weekNum}`}
+        </p>
+        <Link to={`/programming/courses/${course}`} className="btn btn-primary mt-3">Back to Course</Link>
+      </div>
+    )
+  }
+
   const q = questions[currentIndex]
   const userAns = answers[currentIndex]
   
@@ -1448,7 +1537,7 @@ const QuizPage = () => {
           <div className="row d-flex justify-content-center text-center">
             <div className="col-lg-8">
               <h1>{displayName}</h1>
-              <p className="mb-0">{course?.toUpperCase()} — Week {weekNum} Assessment</p>
+              <p className="mb-0">{course?.toUpperCase()} — {isExam ? examTitle : `Week ${weekNum} Assessment`}</p>
             </div>
           </div>
         </div></div>
