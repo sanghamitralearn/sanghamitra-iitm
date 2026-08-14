@@ -16,7 +16,7 @@ const ExamPage = () => {
       title: 'Midterm 1',
       description: 'Covers Week 1 to Week 4',
       weekRange: '1-4',
-      totalQuestions: 30,
+      totalQuestions: 20,
       icon: 'bi-clock-history',
       color: '#0d6efd'
     },
@@ -24,8 +24,8 @@ const ExamPage = () => {
       id: 'midterm2',
       title: 'Midterm 2',
       description: 'Covers Week 1 to Week 8',
-      weekRange: '1-8',
-      totalQuestions: 40,
+      weekRange: '5-8',
+      totalQuestions: 20,
       icon: 'bi-clock',
       color: '#fd7e14'
     },
@@ -33,8 +33,8 @@ const ExamPage = () => {
       id: 'endterm',
       title: 'End Term',
       description: 'Covers Week 1 to Week 12',
-      weekRange: '1-12',
-      totalQuestions: 50,
+      weekRange: '9-12',
+      totalQuestions: 25,
       icon: 'bi-trophy',
       color: '#dc3545'
     }
