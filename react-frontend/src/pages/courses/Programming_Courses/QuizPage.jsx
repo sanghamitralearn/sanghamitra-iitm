@@ -723,7 +723,7 @@ const ReviewPage = ({ results, course, week }) => {
         <div className="heading"><div className="container">
           <div className="row d-flex justify-content-center text-center">
             <div className="col-lg-8">
-              <h1>Week {week} — Review Mode</h1>
+              <h1>{typeof week === 'number' ? `Week ${week}` : 'Exam'} — Review Mode</h1>
               <p className="mb-0">Review your answers and see where you can improve</p>
             </div>
           </div>
@@ -1080,9 +1080,21 @@ const QuizPage = () => {
   const { course, week: weekParam } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
+  
+  // ─── Check if this is an exam ─────────────────────────────────────────────
+  const isExam = weekParam === 'exam' || location.state?.isExam || false
+  const examTitle = location.state?.examTitle || ''
+  const weekRange = location.state?.weekRange || ''
+  const totalQuestions = location.state?.totalQuestions || 20
+  
+  // For regular quizzes, weekParam is a number
   const weekNum = parseInt(weekParam, 10)
   const { quizName } = location.state || {}
-  const displayName = quizName || `${course?.toUpperCase()} — Week ${weekNum}`
+  
+  // Display name for the page
+  const displayName = isExam 
+    ? examTitle || `${course?.toUpperCase()} — Exam`
+    : quizName || `${course?.toUpperCase()} — Week ${weekNum}`
 
   const [user, setUser]           = useState(null)
   const [loading, setLoading]     = useState(true)
@@ -1130,10 +1142,20 @@ const QuizPage = () => {
       
       console.log('API Response for attempts:', res.data)
       
-      const weekAttempts = res.data?.attempts?.filter(a => a.week === weekNum) || []
+      let existingAttempts = []
       
-      if (weekAttempts.length > 0) {
-        const latestAttempt = weekAttempts[weekAttempts.length - 1]
+      if (isExam && examTitle) {
+        // For exams: check by topic name
+        existingAttempts = res.data?.attempts?.filter(
+          a => a.topic && a.topic.includes(examTitle)
+        ) || []
+      } else if (weekNum && !isNaN(weekNum)) {
+        // For regular quizzes: check by week
+        existingAttempts = res.data?.attempts?.filter(a => a.week === weekNum) || []
+      }
+      
+      if (existingAttempts.length > 0) {
+        const latestAttempt = existingAttempts[0]
         setHasPreviousAttempt(true)
         
         console.log('Latest attempt data:', latestAttempt)
@@ -1221,12 +1243,30 @@ const QuizPage = () => {
   const fetchQuestions = async () => {
     try {
       setLoading(true)
-      const res = await axios.get(
-        `${API}/api/mcq-questions?course=${course.toLowerCase()}&week=${weekNum}&count=20`,
-        { withCredentials: true }
-      )
+      
+      let url = `${API}/api/mcq-questions?course=${course.toLowerCase()}`
+      
+      if (isExam && weekRange) {
+        // For exams: fetch from week range
+        url += `&week=${weekRange}&count=${totalQuestions}`
+      } else if (weekNum && !isNaN(weekNum)) {
+        // For regular quizzes: fetch specific week
+        url += `&week=${weekNum}&count=20`
+      } else {
+        setError('Invalid parameters. Please try again.')
+        return
+      }
+      
+      console.log('Fetching questions from:', url)
+      
+      const res = await axios.get(url, { withCredentials: true })
       const qs = res.data.questions || []
-      if (!qs.length) { setError(`No questions found for ${course} Week ${weekNum}.`); return }
+      
+      if (!qs.length) { 
+        setError(`No questions found. Please try again.`) 
+        return 
+      }
+      
       setQuestions(qs)
       startTimeRef.current = new Date().toISOString()
     } catch (err) {
@@ -1292,8 +1332,6 @@ const QuizPage = () => {
     setAnswers(prev => ({ ...prev, [idx]: matches }))
   }
 
-
-
   const recordTime = () => {
     const elapsed = Math.round((Date.now() - questionStartRef.current) / 1000)
     timesRef.current[currentIndex] = (timesRef.current[currentIndex] || 0) + elapsed
@@ -1306,7 +1344,8 @@ const QuizPage = () => {
     if (!forced) {
       const unanswered = questions.filter((_, i) => {
         const a = answers[i]
-        return a === undefined || a === null || a === '' || (Array.isArray(a) && !a.length)
+        return a === undefined || a === null || a === '' || (Array.isArray(a) && !a.length) || 
+          (questions[i]?.question_type === 'match-pairs' && (!a || typeof a !== 'object' || Object.keys(a).length === 0))
       }).length
       if (unanswered > 0 && !window.confirm(`${unanswered} question(s) unanswered. Submit anyway?`)) return
     }
@@ -1326,13 +1365,23 @@ const QuizPage = () => {
     }))
 
     try {
+      // ─── Determine week and topic for the submission ──────────────────────
+      let submissionWeek = weekNum
+      let submissionTopic = questions[0]?.topic || `Week ${weekNum}`
+      
+      if (isExam && examTitle) {
+        // For exams: use 0 as week (or a placeholder) and topic as exam title
+        submissionWeek = 0  // Use 0 to indicate exam in the database
+        submissionTopic = `Exam: ${examTitle} (Weeks ${weekRange})`
+      }
+
       const res = await axios.post(`${API}/api/mcq-quiz/submit`, {
         email: u.email,
         username: u.username || u.name || u.email,
         quizData: {
-          course,
-          week: weekNum,
-          topic: questions[0]?.topic || `Week ${weekNum}`,
+          course: course.toLowerCase(),
+          week: submissionWeek,
+          topic: submissionTopic,
           questionResults,
           startTime: startTimeRef.current,
           endTime,
@@ -1350,7 +1399,13 @@ const QuizPage = () => {
       }
     } catch (e) {
       console.error('Submit failed:', e)
-      alert('Failed to submit quiz. Please check your connection.')
+      // Show more detailed error
+      if (e.response) {
+        console.error('Error response data:', e.response.data)
+        alert(`Failed to submit: ${e.response.data?.error || e.response.data?.details || 'Unknown error'}`)
+      } else {
+        alert('Failed to submit quiz. Please check your connection.')
+      }
     } finally {
       setSaving(false)
     }
@@ -1387,6 +1442,20 @@ const QuizPage = () => {
     </div>
   )
 
+  // ─── Check if questions are loaded ──────────────────────────────────────
+  if (!questions || questions.length === 0) {
+    return (
+      <div className="container py-5 text-center">
+        <i className="bi bi-exclamation-triangle fs-1 text-warning" />
+        <h4 className="mt-3">No questions available</h4>
+        <p className="text-muted">
+          {isExam ? `No questions found for ${examTitle} (Weeks ${weekRange})` : `No questions found for Week ${weekNum}`}
+        </p>
+        <Link to={`/programming/courses/${course.toLowerCase()}`} className="btn btn-primary mt-3">Back to Course</Link>
+      </div>
+    )
+  }
+
   if (showOverview && (previousResults || results)) {
     const data = results || previousResults
     return (
@@ -1395,7 +1464,7 @@ const QuizPage = () => {
         onRetake={handleRetake}
         onReview={handleReview}
         course={course}
-        week={weekNum}
+        week={isExam ? 0 : weekNum}
         quizId={data?.quizId}
       />
     )
@@ -1403,7 +1472,7 @@ const QuizPage = () => {
 
   if (showReview && (results || previousResults)) {
     const data = results || previousResults
-    return <ReviewPage results={data} course={course} week={weekNum} />
+    return <ReviewPage results={data} course={course} week={isExam ? 0 : weekNum} />
   }
 
   // Quiz taking mode
@@ -1448,7 +1517,12 @@ const QuizPage = () => {
           <div className="row d-flex justify-content-center text-center">
             <div className="col-lg-8">
               <h1>{displayName}</h1>
-              <p className="mb-0">{course?.toUpperCase()} — Week {weekNum} Assessment</p>
+              <p className="mb-0">
+                {isExam 
+                  ? `${course?.toUpperCase()} — ${examTitle} (Weeks ${weekRange})`
+                  : `${course?.toUpperCase()} — Week ${weekNum} Assessment`
+                }
+              </p>
             </div>
           </div>
         </div></div>
@@ -1621,7 +1695,8 @@ const QuizPage = () => {
                 <div className="d-flex flex-wrap gap-2">
                   {questions.map((_, i) => {
                     const a = answers[i]
-                    const done = a !== undefined && a !== null && a !== '' && !(Array.isArray(a) && !a.length)
+                    const done = a !== undefined && a !== null && a !== '' && !(Array.isArray(a) && !a.length) &&
+                      !(questions[i]?.question_type === 'match-pairs' && (!a || typeof a !== 'object' || Object.keys(a).length === 0))
                     return (
                       <button key={i} onClick={() => goTo(i)}
                         className={`btn btn-sm ${i === currentIndex ? 'btn-primary' : done ? 'btn-success' : 'btn-outline-secondary'}`}
