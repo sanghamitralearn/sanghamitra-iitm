@@ -4,7 +4,7 @@ import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
-const MIDTERM_DURATION = 60 * 60  // 3600 seconds — fixed 1-hour window for week 100
+const MIDTERM_DURATION = 60 * 60  // 3600 seconds — fixed 1-hour window for midterms (weeks 100 and 101)
 
 // Topic map: each week number maps to the exact topic string the backend expects.
 const WEEK_TOPIC_MAP = {
@@ -20,6 +20,7 @@ const WEEK_TOPIC_MAP = {
   10: 'Bayesian Estimation',
   11: 'Hypotheses Testing',
   100: 'Midterm Assessment',
+  101: 'Midterm Assessment 2'
 }
 
 // KaTeX loader
@@ -168,7 +169,7 @@ const answerNormalizer = {
     const str = answer.toString().trim()
     if (type === 'interval_input') return this.normalizeInterval(str)
     if (type === 'set_notation')   return this.normalizeSetNotation(str)
-    if (type === 'numeric' || type === 'numeric_input') {
+    if (type === 'numeric' || type === 'numeric_input' || type === 'numerical') {
       const n = this.normalizeNumeric(str)
       return isFinite(n) ? n.toString() : n === Infinity ? 'inf' : n === -Infinity ? '-inf' : this.normalizeGeneral(str)
     }
@@ -309,7 +310,7 @@ function gradeQuestion(question, userAnswer) {
     return ua.length === ca.length && ua.every((a, i) => a === ca[i])
   }
 
-  if (type === 'numeric' || type === 'numeric_input' || type === 'coordinate_input') {
+  if (type === 'numeric' || type === 'numerical' || type === 'numeric_input' || type === 'coordinate_input') {
     const uNum = answerNormalizer.normalizeNumeric(userAnswer)
     const cNum = answerNormalizer.normalizeNumeric(question.correct_answer)
     if (!isNaN(uNum) && !isNaN(cNum)) {
@@ -654,7 +655,7 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake }) => {
                       </div>
                     )}
 
-                    {['numeric', 'numeric_input', 'interval_input', 'coordinate_input', 'set_notation', 'text_input'].includes(q.type) && (
+                    {['numeric', 'numerical', 'numeric_input', 'interval_input', 'coordinate_input', 'set_notation', 'text_input'].includes(q.type) && (
                       <div className="d-flex gap-2 flex-wrap mb-3">
                         <span className="badge bg-light text-dark border">
                           Your answer: <strong><MathText text={String(answers[idx] || '(no answer)')} /></strong>
@@ -691,8 +692,8 @@ const Stats2Quiz = () => {
   // Parse week number from URL parameter
   const weekNum = week ? parseInt(week, 10) : 1
 
-  // Validate week number (1-11, or 100 for the Midterm Assessment), default to 1 if invalid
-  const validWeekNum = !isNaN(weekNum) && ((weekNum >= 1 && weekNum <= 11) || weekNum === 100) ? weekNum : 1
+  // Validate week number (1-11, or 100/101 for the Midterm Assessments), default to 1 if invalid
+  const validWeekNum = !isNaN(weekNum) && ((weekNum >= 1 && weekNum <= 11) || weekNum === 100 || weekNum === 101) ? weekNum : 1
 
   // Get topic from the mapping
   const topic = WEEK_TOPIC_MAP[validWeekNum] || `Week_${validWeekNum}`
@@ -729,13 +730,13 @@ const Stats2Quiz = () => {
     if (questionRef.current) renderMathContent(questionRef.current)
   }, [currentIndex, questions])
 
-  // 1-hour countdown for Midterm Assessment (week 100) — auto-submits on expiry
+  // 1-hour countdown for Midterm Assessments (weeks 100 and 101) — auto-submits on expiry
   useEffect(() => {
-    if (validWeekNum !== 100 || timeLeft === null || submitted) return
+    if ((validWeekNum !== 100 && validWeekNum !== 101) || timeLeft === null || submitted) return
     if (timeLeft === 0) { handleSubmit(true); return }
     timerRef.current = setTimeout(() => setTimeLeft(t => t - 1), 1000)
     return () => clearTimeout(timerRef.current)
-  }, [timeLeft, submitted])
+  }, [timeLeft, submitted, validWeekNum])
 
   // Reset quiz state when week parameter changes
   useEffect(() => {
@@ -777,7 +778,7 @@ const Stats2Quiz = () => {
   const fetchQuestions = async () => {
     setLoading(true);
     try {
-      const url = `${API_URL}/api/iitm_stats2_questions_databases?week=${validWeekNum}&email=${encodeURIComponent(userRef.current.email)}&count=${validWeekNum === 100 ? 22 : 25}`;
+      const url = `${API_URL}/api/iitm_stats2_questions_databases?week=${validWeekNum}&email=${encodeURIComponent(userRef.current.email)}&count=${(validWeekNum === 100 || validWeekNum === 101) ? 22 : 25}`;
       const res  = await axios.get(url, { withCredentials: true });
       const qs   = res.data.questions || [];
 
@@ -788,7 +789,7 @@ const Stats2Quiz = () => {
       }
       setQuestions(qs);
       quizStartRef.current = Date.now();
-      if (validWeekNum === 100) setTimeLeft(MIDTERM_DURATION)
+      if (validWeekNum === 100 || validWeekNum === 101) setTimeLeft(MIDTERM_DURATION)
     } catch (e) {
       console.error('Fetch questions error:', e);
       setError('Failed to load questions. Please try again.');
@@ -978,7 +979,7 @@ const Stats2Quiz = () => {
     timesRef.current = {}
     cheatingRef.current = 0
     quizStartRef.current = Date.now()
-    if (validWeekNum === 100) setTimeLeft(MIDTERM_DURATION)
+    if (validWeekNum === 100 || validWeekNum === 101) setTimeLeft(MIDTERM_DURATION)
     if (userRef.current?.email) fetchQuestions()
   }
 
@@ -1148,8 +1149,8 @@ const Stats2Quiz = () => {
                   </div>
                 )}
 
-                {['numeric', 'numeric_input', 'interval_input', 'coordinate_input', 'set_notation', 'text_input'].includes(q.type) && (
-                  <div>
+                {['numeric', 'numerical', 'numeric_input', 'interval_input', 'coordinate_input', 'set_notation', 'text_input'].includes(q.type) && (
+                  <div className="mt-3">
                     <p className="text-muted small mb-2">
                       {q.type === 'interval_input' ? 'Enter interval notation, e.g. (-∞, 3] or (-inf, 3]'
                         : q.type === 'set_notation' ? 'Enter set notation, e.g. {x ∈ ℝ | x ≠ 0}'
@@ -1157,7 +1158,7 @@ const Stats2Quiz = () => {
                         : 'Enter your numeric answer'}
                     </p>
                     <input
-                      type="text"
+                      type={['numeric', 'numerical', 'numeric_input'].includes(q.type) ? 'number' : 'text'}
                       className="form-control form-control-lg"
                       placeholder={
                         q.type === 'interval_input' ? 'e.g., (-inf, 3], [1,5)∪(5,∞)'
@@ -1167,7 +1168,7 @@ const Stats2Quiz = () => {
                       }
                       value={String(userAns ?? '')}
                       onChange={e => setAnswer(currentIndex, e.target.value)}
-                      style={{ maxWidth: 320, fontFamily: 'monospace', fontSize: '1.1rem' }}
+                      style={{ maxWidth: 400, background: '#E6F1FB', borderColor: '#85B7EB', color: '#042C53', fontFamily: 'monospace', fontSize: '1rem', fontWeight: 500 }}
                       autoComplete="off"
                       spellCheck={false}
                     />
@@ -1193,7 +1194,7 @@ const Stats2Quiz = () => {
           </div>
 
           <div className="col-lg-4">
-            {validWeekNum === 100 && timeLeft !== null && (
+            {(validWeekNum === 100 || validWeekNum === 101) && timeLeft !== null && (
               <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 16, border: `2px solid ${timerColor}` }}>
                 <div className="card-body p-3 text-center">
                   <div className="text-muted small fw-semibold mb-1">
