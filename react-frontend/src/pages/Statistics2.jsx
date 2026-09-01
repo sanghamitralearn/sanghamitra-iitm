@@ -114,6 +114,24 @@ const availableTopics = [
     icon: 'bi-check2-circle',
     url: '/courses/statistics2/quiz/11',
     linkState: { quizName: 'week 11- Hypotheses Testing' }
+  },
+  {
+    id: 'week12',
+    topicName: 'Sample Testing',
+    displayName: 'week 12- Sample Testing',
+    description: 'Sample testing and statistical inference',
+    icon: 'bi-check2-circle',
+    url: '/courses/statistics2/quiz/12',
+    linkState: { quizName: 'week 12- Sample Testing' }
+  },
+  {
+    id: 'Endterm',
+    topicName: 'End Term',
+    displayName: 'End Term - Statistics II',
+    description: 'End Term assessment covering the core Statistics II syllabus',
+    icon: 'bi-journal-check',
+    url: '/courses/statistics2/quiz/102',
+    linkState: { quizName: 'End Term - Statistics II' }
   }
 ]
 
@@ -130,7 +148,10 @@ const topicGroups = {
   Moment_Generating_Functions: ['Moment_Generating_Functions', 'Week8', 'week8'],
   Parameter_Estimation: ['Parameter_Estimation', 'Week9', 'week9'],
   Bayesian_Estimation: ['Bayesian_Estimation', 'Week10', 'week10'],
-  Hypotheses_Testing: ['Hypotheses_Testing', 'Week11', 'week11']
+  Hypotheses_Testing: ['Hypotheses_Testing', 'Week11', 'week11'],
+  Sample_Testing: ['Sample_Testing', 'Week12', 'week12'],
+  End_Term: ['End_Term', 'endterm', 'Week102', 'week102'],
+
 }
 
 
