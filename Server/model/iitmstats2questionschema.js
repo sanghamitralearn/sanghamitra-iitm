@@ -40,7 +40,7 @@ const iitmstats2questionschema = new mongoose.Schema({
     required: true,
     index: true,
     min: 1,
-    max: 100      // BSMA1003 has exactly 11 weeks
+    max: 102      // BSMA1003 has exactly 11 weeks
   },
 
 
