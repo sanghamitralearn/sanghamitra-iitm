@@ -19,8 +19,10 @@ const WEEK_TOPIC_MAP = {
   9:  'Parameter Estimation',
   10: 'Bayesian Estimation',
   11: 'Hypotheses Testing',
+  12: 'Sample Testing',
   100: 'Midterm Assessment',
-  101: 'Midterm Assessment 2'
+  101: 'Midterm Assessment 2',
+  102:'End Term',
 }
 
 // KaTeX loader
@@ -693,8 +695,7 @@ const Stats2Quiz = () => {
   const weekNum = week ? parseInt(week, 10) : 1
 
   // Validate week number (1-11, or 100/101 for the Midterm Assessments), default to 1 if invalid
-  const validWeekNum = !isNaN(weekNum) && ((weekNum >= 1 && weekNum <= 11) || weekNum === 100 || weekNum === 101) ? weekNum : 1
-
+  const validWeekNum = !isNaN(weekNum) && ((weekNum >= 1 && weekNum <= 12) || weekNum === 100 || weekNum === 101 || weekNum === 102) ? weekNum : 1
   // Get topic from the mapping
   const topic = WEEK_TOPIC_MAP[validWeekNum] || `Week_${validWeekNum}`
 
@@ -732,7 +733,8 @@ const Stats2Quiz = () => {
 
   // 1-hour countdown for Midterm Assessments (weeks 100 and 101) — auto-submits on expiry
   useEffect(() => {
-    if ((validWeekNum !== 100 && validWeekNum !== 101) || timeLeft === null || submitted) return
+    if ((validWeekNum !== 100 && validWeekNum !== 101 && validWeekNum !==102) || timeLeft === null || submitted) return
+    if (timeLeft === 0) { handleSubmit(true); return }
     if (timeLeft === 0) { handleSubmit(true); return }
     timerRef.current = setTimeout(() => setTimeLeft(t => t - 1), 1000)
     return () => clearTimeout(timerRef.current)
@@ -778,7 +780,7 @@ const Stats2Quiz = () => {
   const fetchQuestions = async () => {
     setLoading(true);
     try {
-      const url = `${API_URL}/api/iitm_stats2_questions_databases?week=${validWeekNum}&email=${encodeURIComponent(userRef.current.email)}&count=${(validWeekNum === 100 || validWeekNum === 101) ? 22 : 25}`;
+      const url = `${API_URL}/api/iitm_stats2_questions_databases?week=${validWeekNum}&email=${encodeURIComponent(userRef.current.email)}&count=${validWeekNum === 100 || validWeekNum === 101 || validWeekNum === 102 ? 22 : 25}`;
       const res  = await axios.get(url, { withCredentials: true });
       const qs   = res.data.questions || [];
 
@@ -789,7 +791,7 @@ const Stats2Quiz = () => {
       }
       setQuestions(qs);
       quizStartRef.current = Date.now();
-      if (validWeekNum === 100 || validWeekNum === 101) setTimeLeft(MIDTERM_DURATION)
+      if (validWeekNum === 100 || validWeekNum === 101 || validWeekNum === 102) setTimeLeft(MIDTERM_DURATION)
     } catch (e) {
       console.error('Fetch questions error:', e);
       setError('Failed to load questions. Please try again.');
@@ -979,7 +981,7 @@ const Stats2Quiz = () => {
     timesRef.current = {}
     cheatingRef.current = 0
     quizStartRef.current = Date.now()
-    if (validWeekNum === 100 || validWeekNum === 101) setTimeLeft(MIDTERM_DURATION)
+    if (validWeekNum === 100 || validWeekNum === 101 || validWeekNum === 102) setTimeLeft(MIDTERM_DURATION)
     if (userRef.current?.email) fetchQuestions()
   }
 
@@ -1194,7 +1196,7 @@ const Stats2Quiz = () => {
           </div>
 
           <div className="col-lg-4">
-            {(validWeekNum === 100 || validWeekNum === 101) && timeLeft !== null && (
+            {(validWeekNum === 100 || validWeekNum === 101 || validWeekNum === 102) && timeLeft !== null && (
               <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 16, border: `2px solid ${timerColor}` }}>
                 <div className="card-body p-3 text-center">
                   <div className="text-muted small fw-semibold mb-1">
