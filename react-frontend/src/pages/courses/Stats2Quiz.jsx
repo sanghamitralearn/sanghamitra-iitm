@@ -2,9 +2,12 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom'
 import axios from 'axios'
 
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
-const MIDTERM_DURATION = 60 * 60  // 3600 seconds — fixed 1-hour window for midterms (weeks 100 and 101)
+
+const MIDTERM_DURATION = 60 * 60  // 3600 seconds — fixed 1-hour window for week 100
+
 
 // Topic map: each week number maps to the exact topic string the backend expects.
 const WEEK_TOPIC_MAP = {
@@ -19,9 +22,12 @@ const WEEK_TOPIC_MAP = {
   9:  'Parameter Estimation',
   10: 'Bayesian Estimation',
   11: 'Hypotheses Testing',
+  12: 'Sample Testing',
   100: 'Midterm Assessment',
-  101: 'Midterm Assessment 2'
+  101: 'Midterm Assessment 2',
+  102:'End Term',
 }
+
 
 // KaTeX loader
 function loadKaTeX() {
@@ -42,9 +48,10 @@ function loadKaTeX() {
       document.head.appendChild(ar)
     }
     document.head.appendChild(core)
-    
+   
   })
 }
+
 
 function renderMathContent(element) {
   if (!element) return
@@ -65,10 +72,13 @@ function renderMathContent(element) {
   setTimeout(run, 100)
 }
 
+
 function formatMathText(text) {
   if (!text) return text
 
+
   let result = text
+
 
   const matrices = []
   result = result.replace(/\[\s*\[([\s\S]*?)\]\s*\]/g, (match) => {
@@ -84,9 +94,11 @@ function formatMathText(text) {
     } catch { return match }
   })
 
+
   result = result.replace(/detdet/g, 'det')
   result = result.replace(/det\(/g, '__DET__(')
   result = result.replace(/trace\(/g, '__TRACE__(')
+
 
   result = result.replace(/\(([^)]*,[^)]*)\)\^([A-Za-z])/g, '__PARENCOMMA_$1_EXP_$2__')
   result = result.replace(/\(([A-Za-z\s+\-*/]+)\)\^([A-Za-z])/g, '__PARENEXPR_$1_EXP_$2__')
@@ -97,6 +109,7 @@ function formatMathText(text) {
   result = result.replace(/([A-Za-z])\^(-?\d+)/g, '__VAR_$1_EXP_$2__')
   result = result.replace(/([A-Za-z])\^\{([^}]+)\}/g, '__VAR_$1_EXP_$2__')
   result = result.replace(/([A-Za-z])\^\(([^)]+)\)/g, '__VAR_$1_EXP_$2__')
+
 
   const words = result.split(/(\s+)/)
   const processed = words.map(word => {
@@ -109,6 +122,7 @@ function formatMathText(text) {
   })
   result = processed.join('')
 
+
   result = result.replace(/__DET__/g, '$\\det$')
   result = result.replace(/__TRACE__/g, '$\\text{trace}$')
   result = result.replace(/__PARENCOMMA_([^_]+)_EXP_([A-Za-z])__/g, '$$($1)^{$2}$$')
@@ -120,11 +134,14 @@ function formatMathText(text) {
     result = result.replace(`__MATRIX${i}__`, `$$${matrix}$$`)
   })
 
+
   result = result.replace(/\$\$\s*\$\$/g, ' ')
   result = result.replace(/\$\s+\$/g, ' ')
 
+
   return result
 }
+
 
 const answerNormalizer = {
   normalizeInterval: (answer) =>
@@ -136,6 +153,7 @@ const answerNormalizer = {
       .replace(/union|∪/gi, '∪')
       .toLowerCase(),
 
+
   normalizeSetNotation: (answer) =>
     (answer || '').toString().trim()
       .replace(/\s+/g, '')
@@ -145,6 +163,7 @@ const answerNormalizer = {
       .replace(/[|:]/g, ',')
       .toLowerCase(),
 
+
   normalizeNumeric: (num) => {
     const str = (num || '').toString().trim().toLowerCase()
     if (['inf', 'infinity', '+inf', '+infinity', '∞', '+∞'].includes(str)) return Infinity
@@ -152,6 +171,7 @@ const answerNormalizer = {
     const cleaned = str.replace(/[^\d.\-]/g, '')
     return cleaned ? parseFloat(cleaned) : NaN
   },
+
 
   normalizeGeneral: (text) =>
     (text || '').toString()
@@ -163,6 +183,7 @@ const answerNormalizer = {
       .replace(/≤/g, '<=')
       .replace(/≥/g, '>=')
       .toLowerCase(),
+
 
   normalizeAnswer(answer, type) {
     if (!answer) return ''
@@ -176,6 +197,7 @@ const answerNormalizer = {
     return this.normalizeGeneral(str)
   },
 }
+
 
 function resolveOptionLabel(option, index) {
   if (option && typeof option === 'object') {
@@ -191,6 +213,7 @@ function resolveOptionLabel(option, index) {
   }
   return OPTION_LABELS[index] || String(index + 1)
 }
+
 
 function resolveOptionText(option) {
   if (option && typeof option === 'object') {
@@ -210,9 +233,11 @@ function resolveOptionText(option) {
   return String(option || '')
 }
 
+
 function resolveOptionValue(option, index) {
   return resolveOptionLabel(option, index)
 }
+
 
 function matchesOptionAnswer(answer, option, index) {
   if (answer === undefined || answer === null) return false
@@ -222,14 +247,18 @@ function matchesOptionAnswer(answer, option, index) {
   return normalizedAnswer === normalizedLabel || normalizedAnswer === normalizedText
 }
 
+
 const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+
 
 function gradeQuestion(question, userAnswer) {
   if (userAnswer === undefined || userAnswer === null || userAnswer === '') return false
 
+
   const type = question.type
   const normUser = answerNormalizer.normalizeAnswer(userAnswer, type)
   const normCorrect = answerNormalizer.normalizeAnswer(question.correct_answer, type)
+
 
   if (type === 'interval_input' || type === 'set_notation') {
     if (normUser === normCorrect) return true
@@ -237,6 +266,7 @@ function gradeQuestion(question, userAnswer) {
       answerNormalizer.normalizeAnswer(alt, type) === normUser
     )
   }
+
 
   if (type === 'multiple_choice') {
     if (Array.isArray(question.options)) {
@@ -269,6 +299,7 @@ function gradeQuestion(question, userAnswer) {
     return normUser === normCorrect
   }
 
+
   if (type === 'multiple_select') {
     if (!Array.isArray(userAnswer)) return false
     const expected = []
@@ -299,16 +330,19 @@ function gradeQuestion(question, userAnswer) {
       expected.push(String(ans))
     }
 
+
     if (Array.isArray(question.correct_answer)) {
       question.correct_answer.forEach(addExpected)
     } else if (question.correct_answer !== undefined && question.correct_answer !== null) {
       addExpected(question.correct_answer)
     }
 
+
     const ua = userAnswer.map(a => answerNormalizer.normalizeAnswer(a, 'text_input')).sort()
     const ca = expected.map(a => answerNormalizer.normalizeAnswer(a, 'text_input')).filter(Boolean).sort()
     return ua.length === ca.length && ua.every((a, i) => a === ca[i])
   }
+
 
   if (type === 'numeric' || type === 'numeric_input' || type === 'coordinate_input') {
     const uNum = answerNormalizer.normalizeNumeric(userAnswer)
@@ -334,14 +368,17 @@ function gradeQuestion(question, userAnswer) {
     return normUser === normCorrect
   }
 
+
   return normUser === normCorrect
 }
+
 
 const Calculator = ({ onClose }) => {
   const [display, setDisplay] = useState('0')
   const [prev, setPrev] = useState(null)
   const [op, setOp] = useState(null)
   const [fresh, setFresh] = useState(true)
+
 
   const pressNum = v => { if (fresh) { setDisplay(String(v)); setFresh(false) } else setDisplay(d => d === '0' ? String(v) : d + v) }
   const pressOp  = o => { setPrev(parseFloat(display)); setOp(o); setFresh(true) }
@@ -391,13 +428,16 @@ const Calculator = ({ onClose }) => {
   )
 }
 
+
 const MathText = ({ text, style, className }) => {
   const ref = useRef(null)
   useEffect(() => { renderMathContent(ref.current) }, [text])
 
+
   // If text already has $ or \( \) / \[ \] delimiters, it's proper LaTeX — don't run formatMathText
   // formatMathText is only for plain text that needs auto-detection
   const formatted = (text && (text.includes('$') || text.includes('\\('))) ? text : formatMathText(text || '')
+
 
   return (
     <span
@@ -408,6 +448,7 @@ const MathText = ({ text, style, className }) => {
     />
   )
 }
+
 
 // ─── Pipe-table detection/rendering ───────────────────────────────────────────
 // Recognizes both standard markdown tables (with a |---|---| separator row)
@@ -421,10 +462,12 @@ function splitCells(line) {
   return l.split('|').map(c => c.trim())
 }
 
+
 function isSeparatorRow(line) {
   const t = line.trim()
   return /^[\s|:-]+$/.test(t) && t.includes('-')
 }
+
 
 function looksLikeTableRow(line) {
   const t = line.trim()
@@ -432,6 +475,7 @@ function looksLikeTableRow(line) {
   if (isSeparatorRow(t)) return true
   return splitCells(t).filter(c => c.length).length >= 2
 }
+
 
 function parseTable(lines) {
   const dataLines = lines.filter(l => !isSeparatorRow(l))
@@ -443,6 +487,7 @@ function parseTable(lines) {
   if (!rows.every(r => r.length === cols)) return null
   return { header, rows }
 }
+
 
 const QuestionRenderer = ({ text, style }) => {
   if (!text) return null
@@ -468,6 +513,7 @@ const QuestionRenderer = ({ text, style }) => {
     i++
   }
   if (buffer.length) segments.push({ type: 'text', content: buffer.join('\n') })
+
 
   return (
     <span style={style}>
@@ -502,8 +548,10 @@ const QuestionRenderer = ({ text, style }) => {
   )
 }
 
+
 const ReviewPage = ({ questions, answers, results, quizName, onRetake }) => {
   const [expanded, setExpanded] = useState(null)
+
 
   return (
     <main className="main">
@@ -521,6 +569,7 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake }) => {
           <li className="current">Review</li>
         </ol></div></nav>
       </div>
+
 
       <div className="container mb-5">
         <div className="card border-0 shadow-sm mb-4 text-center" style={{ borderRadius: 16 }}>
@@ -567,10 +616,12 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake }) => {
           </div>
         </div>
 
+
         {questions.map((q, idx) => {
           const res = results.responses[idx]
           const isOpen = expanded === idx
           const diffColor = { easy: '#28a745', medium: '#ffc107', hard: '#dc3545' }
+
 
           return (
             <div key={q._id || idx} className="card border-0 shadow-sm mb-3"
@@ -610,6 +661,7 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake }) => {
                   </div>
                 </div>
 
+
                 {isOpen && (
                   <div className="mt-3 ms-5 ps-2">
                     {q.type === 'multiple_choice' && Array.isArray(q.options) && (
@@ -633,6 +685,7 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake }) => {
                       </div>
                     )}
 
+
                     {q.type === 'multiple_select' && Array.isArray(q.options) && (
                       <div className="mb-3">
                         {q.options.map((opt, oi) => {
@@ -655,6 +708,7 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake }) => {
                       </div>
                     )}
 
+
                     {['numeric', 'numeric_input', 'interval_input', 'coordinate_input', 'set_notation', 'text_input'].includes(q.type) && (
                       <div className="d-flex gap-2 flex-wrap mb-3">
                         <span className="badge bg-light text-dark border">
@@ -665,6 +719,7 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake }) => {
                         </span>
                       </div>
                     )}
+
 
                     {q.explanation && (
                       <div className="mt-2 p-2 rounded" style={{ background: '#f0f4ff', fontSize: '0.88rem' }}>
@@ -683,23 +738,29 @@ const ReviewPage = ({ questions, answers, results, quizName, onRetake }) => {
   )
 }
 
+
 // ─── Main Quiz Component ───────────────────────────────────────────────────────
 const Stats2Quiz = () => {
   const { week } = useParams()  // Now using 'week' parameter from route
   const navigate = useNavigate()
   const location = useLocation()
 
+
   // Parse week number from URL parameter
   const weekNum = week ? parseInt(week, 10) : 1
 
-  // Validate week number (1-11, or 100/101 for the Midterm Assessments), default to 1 if invalid
-  const validWeekNum = !isNaN(weekNum) && ((weekNum >= 1 && weekNum <= 11) || weekNum === 100 || weekNum === 101) ? weekNum : 1
+
+  // Validate week number (1-12, or 100 for the Midterm Assessment), default to 1 if invalid
+  const validWeekNum = !isNaN(weekNum) && ((weekNum >= 1 && weekNum <= 12) || weekNum === 100 || weekNum === 101 || weekNum === 102) ? weekNum : 1
+
 
   // Get topic from the mapping
   const topic = WEEK_TOPIC_MAP[validWeekNum] || `Week_${validWeekNum}`
 
+
   const { quizName } = location.state || {}
   const displayName = quizName || `Week ${validWeekNum} — ${topic.replace(/_/g, ' ')}`
+
 
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -714,6 +775,7 @@ const Stats2Quiz = () => {
   const [tabWarning, setTabWarning] = useState(false)
   const [timeLeft, setTimeLeft] = useState(null)  // seconds; null = no timer active
 
+
   const questionStartRef = useRef(Date.now())
   const quizStartRef = useRef(Date.now())
   const timesRef = useRef({})
@@ -722,25 +784,30 @@ const Stats2Quiz = () => {
   const questionRef = useRef(null)
   const timerRef = useRef(null)
 
+
   // Load KaTeX once on mount
   useEffect(() => { loadKaTeX() }, [])
+
 
   // Re-render math whenever the displayed question changes
   useEffect(() => {
     if (questionRef.current) renderMathContent(questionRef.current)
   }, [currentIndex, questions])
 
+
   // 1-hour countdown for Midterm Assessments (weeks 100 and 101) — auto-submits on expiry
   useEffect(() => {
-    if ((validWeekNum !== 100 && validWeekNum !== 101) || timeLeft === null || submitted) return
+    if ((validWeekNum !== 100 && validWeekNum !== 101 && validWeekNum !==102) || timeLeft === null || submitted) return
     if (timeLeft === 0) { handleSubmit(true); return }
     timerRef.current = setTimeout(() => setTimeLeft(t => t - 1), 1000)
     return () => clearTimeout(timerRef.current)
-  }, [timeLeft, submitted, validWeekNum])
+  }, [timeLeft, submitted])
+
 
   // Reset quiz state when week parameter changes
   useEffect(() => {
     if (!userRef.current?.email) return
+
 
     setQuestions([])
     setAnswers({})
@@ -752,11 +819,14 @@ const Stats2Quiz = () => {
     cheatingRef.current = 0
     quizStartRef.current = Date.now()
 
+
     fetchQuestions()
   }, [week])  // Re-run when week parameter changes
 
+
   // Auth - runs once on mount
   useEffect(() => { checkAuth() }, [])
+
 
   const checkAuth = async () => {
     try {
@@ -775,12 +845,14 @@ const Stats2Quiz = () => {
     }
   }
 
+
   const fetchQuestions = async () => {
     setLoading(true);
     try {
-      const url = `${API_URL}/api/iitm_stats2_questions_databases?week=${validWeekNum}&email=${encodeURIComponent(userRef.current.email)}&count=${(validWeekNum === 100 || validWeekNum === 101) ? 22 : 25}`;
+      const url = `${API_URL}/api/iitm_stats2_questions_databases?week=${validWeekNum}&email=${encodeURIComponent(userRef.current.email)}&count=${validWeekNum === 100 || validWeekNum === 101 || validWeekNum === 102 ? 22 : 25}`;
       const res  = await axios.get(url, { withCredentials: true });
       const qs   = res.data.questions || [];
+
 
       if (!qs.length) {
         setError('No questions found for this week.');
@@ -789,7 +861,7 @@ const Stats2Quiz = () => {
       }
       setQuestions(qs);
       quizStartRef.current = Date.now();
-      if (validWeekNum === 100 || validWeekNum === 101) setTimeLeft(MIDTERM_DURATION)
+      if (validWeekNum === 100 || validWeekNum === 101 || validWeekNum === 102) setTimeLeft(MIDTERM_DURATION)
     } catch (e) {
       console.error('Fetch questions error:', e);
       setError('Failed to load questions. Please try again.');
@@ -797,6 +869,7 @@ const Stats2Quiz = () => {
       setLoading(false);
     }
   };
+
 
   const resetUserProgress = async (email, currentTopic) => {
     try {
@@ -808,6 +881,7 @@ const Stats2Quiz = () => {
       console.error('Failed to reset progress:', e)
     }
   }
+
 
   // Anti-cheat
   useEffect(() => {
@@ -842,6 +916,7 @@ const Stats2Quiz = () => {
     }
   }, [submitted, loading])
 
+
   const logCheat = async (type) => {
     cheatingRef.current += 1
     try {
@@ -853,6 +928,7 @@ const Stats2Quiz = () => {
     if (cheatingRef.current >= 5) handleSubmit(true)
   }
 
+
   const setAnswer = (idx, val) => setAnswers(prev => ({ ...prev, [idx]: val }))
   const toggleMSQ = (idx, opt) => {
     setAnswers(prev => {
@@ -861,12 +937,14 @@ const Stats2Quiz = () => {
     })
   }
 
+
   const recordTime = () => {
     const elapsed = Math.round((Date.now() - questionStartRef.current) / 1000)
     timesRef.current[currentIndex] = elapsed
     questionStartRef.current = Date.now()
   }
   const goTo = (idx) => { recordTime(); setCurrentIndex(idx) }
+
 
   const handleSubmit = async (forced = false) => {
     if (!forced) {
@@ -878,6 +956,7 @@ const Stats2Quiz = () => {
     }
     recordTime()
 
+
     let score = 0
     let maxPossibleScore = 0
     const difficultyBreakdown = {
@@ -887,6 +966,7 @@ const Stats2Quiz = () => {
     }
     const questionResults = []
 
+
     questions.forEach((q, i) => {
       const userAnswer = answers[i]
       const isCorrect  = gradeQuestion(q, userAnswer)
@@ -894,12 +974,14 @@ const Stats2Quiz = () => {
       maxPossibleScore += pts
       if (isCorrect) score += pts
 
+
       const diff = q.difficulty || 'medium'
       difficultyBreakdown[diff].attempted++
       if (isCorrect) {
         difficultyBreakdown[diff].correct++
         difficultyBreakdown[diff].points += pts
       }
+
 
       questionResults.push({
         questionId:   q._id,
@@ -919,11 +1001,13 @@ const Stats2Quiz = () => {
       })
     })
 
+
     const endTime   = new Date()
     const startTime = new Date(quizStartRef.current)
     const totalTime = Math.round((endTime - startTime) / 1000)
     const correctCount = questionResults.filter(r => r.isCorrect).length
     const percentage   = maxPossibleScore > 0 ? Math.round((score / maxPossibleScore) * 100) : 0
+
 
     setResults({
       score,
@@ -935,9 +1019,11 @@ const Stats2Quiz = () => {
     })
     setSubmitted(true)
 
+
     const u = userRef.current
     if (!u?.email) return
     setSaving(true)
+
 
     try {
       const quizData = {
@@ -958,11 +1044,13 @@ const Stats2Quiz = () => {
         isCompleted:     true,
       }
 
+
       await axios.post(`${API_URL}/api/iitm_stats2_quiz_attempt`, {
         email:    u.email,
         username: u.username || u.name || u.email,
         quizData  // ✅ week is inside quizData, not at root level
       }, { withCredentials: true })
+
 
     } catch (e) {
       console.error('Failed to save score:', e)
@@ -970,6 +1058,7 @@ const Stats2Quiz = () => {
       setSaving(false)
     }
   }
+
 
   const handleRetake = () => {
     setAnswers({})
@@ -979,9 +1068,10 @@ const Stats2Quiz = () => {
     timesRef.current = {}
     cheatingRef.current = 0
     quizStartRef.current = Date.now()
-    if (validWeekNum === 100 || validWeekNum === 101) setTimeLeft(MIDTERM_DURATION)
+    if (validWeekNum === 100 || validWeekNum === 101 || validWeekNum === 102) setTimeLeft(MIDTERM_DURATION)
     if (userRef.current?.email) fetchQuestions()
   }
+
 
   // Loading / error states
   if (loading) return (
@@ -993,6 +1083,7 @@ const Stats2Quiz = () => {
     </div>
   )
 
+
   if (error) return (
     <div className="container py-5 text-center">
       <i className="bi bi-exclamation-triangle fs-1 text-danger" />
@@ -1002,6 +1093,7 @@ const Stats2Quiz = () => {
     </div>
   )
 
+
   if (submitted && results) return (
     <ReviewPage
       questions={questions} answers={answers} results={results}
@@ -1009,9 +1101,11 @@ const Stats2Quiz = () => {
     />
   )
 
+
   // Quiz render
   const q = questions[currentIndex]
   if (!q) return null
+
 
   const userAns = answers[currentIndex]
   const isAnswered = userAns !== undefined && userAns !== null && userAns !== '' && !(Array.isArray(userAns) && !userAns.length)
@@ -1020,7 +1114,9 @@ const Stats2Quiz = () => {
     return a !== undefined && a !== null && a !== '' && !(Array.isArray(a) && !a.length)
   }).length
 
+
   const diffColor = { easy: '#28a745', medium: '#ffc107', hard: '#dc3545' }
+
 
   // Timer helpers (midterm only)
   const formatTime = (secs) => {
@@ -1034,6 +1130,7 @@ const Stats2Quiz = () => {
     : timeLeft > 300  ? '#fd7e14'
     : '#dc3545'
   const showTimerWarning = timeLeft !== null && timeLeft <= 300 && timeLeft > 0
+
 
   return (
     <main className="main">
@@ -1050,6 +1147,7 @@ const Stats2Quiz = () => {
         </div>
       )}
 
+
       <div className="page-title" data-aos="fade" style={{ marginBottom: '2rem' }}>
         <div className="heading"><div className="container">
           <div className="row d-flex justify-content-center text-center">
@@ -1065,6 +1163,7 @@ const Stats2Quiz = () => {
           <li className="current">{displayName}</li>
         </ol></div></nav>
       </div>
+
 
       <div className="container mb-5">
         <div className="row g-4">
@@ -1086,13 +1185,16 @@ const Stats2Quiz = () => {
                   </div>
                 </div>
 
+
                 <div className="progress mb-4" style={{ height: 6 }}>
                   <div className="progress-bar bg-primary" style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }} />
                 </div>
 
+
                 <p className="mb-4" style={{ fontSize: '1.05rem', lineHeight: 1.75 }}>
                   <QuestionRenderer text={q.question_text} />
                 </p>
+
 
                 {q.type === 'multiple_choice' && Array.isArray(q.options) && (
                   <div>
@@ -1117,6 +1219,7 @@ const Stats2Quiz = () => {
                     })}
                   </div>
                 )}
+
 
                 {q.type === 'multiple_select' && Array.isArray(q.options) && (
                   <div>
@@ -1149,6 +1252,7 @@ const Stats2Quiz = () => {
                   </div>
                 )}
 
+
                 {['numeric', 'numeric_input', 'interval_input', 'coordinate_input', 'set_notation', 'text_input'].includes(q.type) && (
                   <div>
                     <p className="text-muted small mb-2">
@@ -1175,6 +1279,7 @@ const Stats2Quiz = () => {
                   </div>
                 )}
 
+
                 <div className="d-flex justify-content-between align-items-center mt-4">
                   <button className="btn btn-outline-secondary" onClick={() => goTo(currentIndex - 1)} disabled={currentIndex === 0}>
                     <i className="bi bi-arrow-left me-1" />Prev
@@ -1193,8 +1298,9 @@ const Stats2Quiz = () => {
             </div>
           </div>
 
+
           <div className="col-lg-4">
-            {(validWeekNum === 100 || validWeekNum === 101) && timeLeft !== null && (
+            {(validWeekNum === 100 || validWeekNum === 101 || validWeekNum === 102) && timeLeft !== null && (
               <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 16, border: `2px solid ${timerColor}` }}>
                 <div className="card-body p-3 text-center">
                   <div className="text-muted small fw-semibold mb-1">
@@ -1209,6 +1315,7 @@ const Stats2Quiz = () => {
                 </div>
               </div>
             )}
+
 
             <div className="card border-0 shadow-sm mb-3" style={{ borderRadius: 16 }}>
               <div className="card-body p-3">
@@ -1235,6 +1342,7 @@ const Stats2Quiz = () => {
               </div>
             </div>
 
+
             <div className="card border-0 shadow-sm" style={{ borderRadius: 16 }}>
               <div className="card-body p-3 text-center">
                 <p className="text-muted small mb-2">{answeredCount}/{questions.length} answered</p>
@@ -1250,6 +1358,7 @@ const Stats2Quiz = () => {
         </div>
       </div>
 
+
       <button onClick={() => setShowCalc(v => !v)}
         style={{
           position: 'fixed', bottom: 20, right: 20, width: 48, height: 48,
@@ -1264,4 +1373,9 @@ const Stats2Quiz = () => {
   )
 }
 
+
 export default Stats2Quiz
+
+
+
+
