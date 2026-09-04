@@ -3943,12 +3943,6 @@ router.get("/iitm_math2_scores", async (req, res) => {
 
 
 
-
-
-
-
-
-
 // competitive Mathematics routes 
 
 // CHANGED: Route path updated
